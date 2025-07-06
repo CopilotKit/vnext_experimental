@@ -11,4 +11,8 @@ export default class CopilotKitRuntime {
   constructor({ agents }: CopilotKitRuntimeOptions) {
     this.agents = agents;
   }
+
+  getAgents(): MaybePromise<NonEmptyRecord<string, AbstractAgent>> {
+    return this.agents;
+  }
 }
