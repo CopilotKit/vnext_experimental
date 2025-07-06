@@ -1,1 +1,1 @@
-// Empty index file for shared package
+export { type MaybePromise } from "./utils";

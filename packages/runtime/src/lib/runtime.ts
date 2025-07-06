@@ -1,6 +1,5 @@
+import { MaybePromise } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
-
-type MaybePromise<T> = T | Promise<T>;
 
 interface CopilotKitRuntimeOptions {
   agents: MaybePromise<Record<string, AbstractAgent>>;

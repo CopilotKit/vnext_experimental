@@ -1,3 +1,3 @@
-import baseConfig from "@repo/eslint-config/base.js";
+import baseConfig from "@copilotkit/eslint-config/base.js";
 
 export default [...baseConfig];
