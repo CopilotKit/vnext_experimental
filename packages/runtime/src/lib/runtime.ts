@@ -1,12 +1,12 @@
-import { MaybePromise } from "@copilotkit/shared";
+import { MaybePromise, NonEmptyRecord } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
 
 interface CopilotKitRuntimeOptions {
-  agents: MaybePromise<Record<string, AbstractAgent>>;
+  agents: MaybePromise<NonEmptyRecord<string, AbstractAgent>>;
 }
 
 export default class CopilotKitRuntime {
-  private agents: MaybePromise<Record<string, AbstractAgent>>;
+  private agents: MaybePromise<NonEmptyRecord<string, AbstractAgent>>;
 
   constructor({ agents }: CopilotKitRuntimeOptions) {
     this.agents = agents;
