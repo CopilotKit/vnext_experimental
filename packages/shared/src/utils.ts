@@ -9,3 +9,11 @@ export type NonEmptyRecord<T> =
       ? never
       : T
     : never;
+
+/**
+ * Type representing an agent's basic information
+ */
+export type AgentDescription = {
+  name: string;
+  description: string;
+};

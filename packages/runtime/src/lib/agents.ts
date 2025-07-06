@@ -1,25 +1,30 @@
 import CopilotKitRuntime from "./runtime";
+import { AgentDescription } from "@copilotkit/shared";
+import { AbstractAgent } from "@ag-ui/client";
 
 interface AgentsParameters {
   runtime: CopilotKitRuntime;
   request: Request;
 }
 
-export async function handleGetAgents({ runtime, request }: AgentsParameters) {
+export async function handleGetAgents({ runtime }: AgentsParameters) {
   try {
-    // Get agents from runtime (handle both sync and async cases)
     const agents = await runtime.getAgents();
 
-    // Extract agent names and descriptions
-    const agentList = Object.entries(agents).map(([name, agent]) => ({
-      name,
-      description: agent.description,
-    }));
+    const agentsDict = Object.entries(agents).reduce(
+      (acc, [name, agent]) => {
+        acc[name] = {
+          name,
+          description: agent.description,
+        };
+        return acc;
+      },
+      {} as Record<string, AgentDescription>
+    );
 
     return new Response(
       JSON.stringify({
-        agents: agentList,
-        count: agentList.length,
+        agents: agentsDict,
       }),
       {
         status: 200,

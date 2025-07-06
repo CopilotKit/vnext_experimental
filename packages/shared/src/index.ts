@@ -1,1 +1,5 @@
-export { type MaybePromise, type NonEmptyRecord } from "./utils";
+export {
+  type MaybePromise,
+  type NonEmptyRecord,
+  type AgentDescription,
+} from "./utils";
