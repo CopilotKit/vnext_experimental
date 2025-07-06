@@ -1,8 +1,8 @@
 import CopilotKitRuntime from "./runtime";
 
 interface RunParameters {
-  runtime: CopilotKitRuntime;
   request: Request;
+  runtime: CopilotKitRuntime;
   agentName: string;
 }
 

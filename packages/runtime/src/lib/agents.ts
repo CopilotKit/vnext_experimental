@@ -13,7 +13,7 @@ export async function handleGetAgents({ runtime, request }: AgentsParameters) {
     // Extract agent names and descriptions
     const agentList = Object.entries(agents).map(([name, agent]) => ({
       name,
-      description: agent.description || "No description available",
+      description: agent.description,
     }));
 
     return new Response(
