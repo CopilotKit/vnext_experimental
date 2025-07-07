@@ -1,4 +1,4 @@
-[ ] middleware
+[x] middleware
 [ ] observability
 [x] get agents
 [x] get info
