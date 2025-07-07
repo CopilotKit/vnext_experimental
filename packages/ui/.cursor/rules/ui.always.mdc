@@ -1,0 +1,9 @@
+---
+description: UI package conventions.
+globs: "*"
+alwaysApply: true
+---
+
+- React components are in `src/` written in TypeScript React (`.tsx`).
+- Components are exported via `package.json` `exports` field.
+- Use the provided generator (`pnpm -F @copilotkit/ui generate:component`) for new components.

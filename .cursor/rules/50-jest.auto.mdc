@@ -1,0 +1,13 @@
+---
+description: Jest testing conventions.
+globs:
+  - "**/jest.config.js"
+  - "**/*.{spec,test}.{ts,tsx}"
+  - "**/__tests__/**"
+---
+
+- Use the `ts-jest` preset; see `packages/runtime/jest.config.js` for example.
+- Place tests under `__tests__/` or with `.test.ts` suffix.
+- Use the Arrange-Act-Assert pattern in tests.
+- Store coverage output in `coverage/`.
+- Snapshots, if used, should live next to the test file in `__snapshots__`.
