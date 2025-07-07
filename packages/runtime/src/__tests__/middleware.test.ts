@@ -28,7 +28,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   const setupFetchMock = (
     beforeUrl: string,
     afterUrl: string,
-    modifiedReqUrl: string
+    modifiedReqUrl: string,
   ) => {
     originalFetch = global.fetch;
     fetchMock = jest.fn(async (url: string) => {
@@ -111,7 +111,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         request: new Request("https://example.com/test"),
         requestType: CopilotKitRequestType.GetInfo,
         handler,
-      })
+      }),
     ).rejects.toThrow(error);
 
     expect(logSpy).toHaveBeenCalledWith(
@@ -120,7 +120,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         url: "https://example.com/test",
         requestType: CopilotKitRequestType.GetInfo,
       },
-      "Error running before request middleware"
+      "Error running before request middleware",
     );
     expect(handler).not.toHaveBeenCalled();
     expect(after).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         request: new Request("https://example.com/test"),
         requestType: CopilotKitRequestType.GetInfo,
         handler,
-      })
+      }),
     ).rejects.toThrow(error);
 
     expect(logSpy).toHaveBeenCalledWith(
@@ -155,12 +155,12 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         url: "https://example.com/test",
         requestType: CopilotKitRequestType.GetInfo,
       },
-      "Error running request handler"
+      "Error running request handler",
     );
     expect(after).not.toHaveBeenCalled();
   });
 
-  it("logs and rethrows error from afterRequestMiddleware", async () => {
+  it("logs but does not rethrow error from afterRequestMiddleware", async () => {
     const error = new Error("after");
     const before = jest.fn();
     const handler = jest.fn().mockResolvedValue(new Response("ok"));
@@ -174,14 +174,19 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    await expect(
-      runHandlerWithMiddlewareAndLogging({
-        runtime,
-        request: new Request("https://example.com/test"),
-        requestType: CopilotKitRequestType.GetInfo,
-        handler,
-      })
-    ).rejects.toThrow(error);
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request: new Request("https://example.com/test"),
+      requestType: CopilotKitRequestType.GetInfo,
+      handler,
+    });
+
+    expect(response).toBeInstanceOf(Response);
+    expect(after).toHaveBeenCalledWith({
+      runtime,
+      response,
+      requestType: CopilotKitRequestType.GetInfo,
+    });
 
     expect(logSpy).toHaveBeenCalledWith(
       {
@@ -189,7 +194,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         url: "https://example.com/test",
         requestType: CopilotKitRequestType.GetInfo,
       },
-      "Error running after request middleware"
+      "Error running after request middleware",
     );
   });
 

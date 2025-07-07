@@ -347,6 +347,10 @@ const rateLimitMiddleware: BeforeRequestMiddlewareFn = async ({ request }) => {
 
 Middleware functions can throw errors to prevent request processing:
 
+Errors thrown from **before-request** middleware will abort the handler and the
+error will propagate to the caller. Errors thrown from **after-request**
+middleware are logged but the original handler response is still returned.
+
 ```typescript
 const validationMiddleware: BeforeRequestMiddlewareFn = async ({ request }) => {
   const body = await request.text();
@@ -393,6 +397,8 @@ const safeMiddleware: BeforeRequestMiddlewareFn = async (params) => {
 ### Webhook Middleware Errors
 
 If a webhook returns a non-2xx status code, CopilotKit will throw an error:
+
+`before_request` webhook failures propagate and abort the request. `after_request` webhook failures are logged but do not affect the response.
 
 ```
 Error: before_request webhook https://api.example.com/middleware responded with 500
