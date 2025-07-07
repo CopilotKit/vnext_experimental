@@ -29,6 +29,10 @@ importers:
         version: 4.2.3(@types/node@22.15.3)(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(typescript@5.8.2)
 
   packages/core:
+    dependencies:
+      zod:
+        specifier: ^3.25.75
+        version: 3.25.75
     devDependencies:
       '@copilotkit/eslint-config':
         specifier: workspace:*
@@ -129,6 +133,10 @@ importers:
         version: 5.8.2
 
   packages/shared:
+    dependencies:
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
     devDependencies:
       '@copilotkit/eslint-config':
         specifier: workspace:*
@@ -4681,6 +4689,9 @@ packages:
 
   zod@3.25.74:
     resolution: {integrity: sha512-J8poo92VuhKjNknViHRAIuuN6li/EwFbAC8OedzI8uxpEPGiXHGQu9wemIAioIpqgfB4SySaJhdk0mH5Y4ICBg==}
+
+  zod@3.25.75:
+    resolution: {integrity: sha512-OhpzAmVzabPOL6C3A3gpAifqr9MqihV/Msx3gor2b2kviCgcb+HM9SEOpMWwwNp9MRunWnhtAKUoo0AHhjyPPg==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -10750,5 +10761,7 @@ snapshots:
   zod@3.23.8: {}
 
   zod@3.25.74: {}
+
+  zod@3.25.75: {}
 
   zwitch@2.0.4: {}

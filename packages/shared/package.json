@@ -25,7 +25,9 @@
     "eslint": "^9.30.0",
     "typescript": "5.8.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "uuid": "^11.1.0"
+  },
   "engines": {
     "node": ">=18"
   }

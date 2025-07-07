@@ -25,7 +25,9 @@
     "eslint": "^9.30.0",
     "typescript": "5.8.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^3.25.75"
+  },
   "engines": {
     "node": ">=18"
   }
