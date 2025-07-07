@@ -9,12 +9,12 @@ export const VERSION = pkg.version;
 interface BeforeRequestMiddlewareParameters {
   runtime: CopilotKitRuntime;
   request: Request;
-  handlerType: CopilotKitRequestType;
+  requestType: CopilotKitRequestType;
 }
 interface AfterRequestMiddlewareParameters {
   runtime: CopilotKitRuntime;
   response: Response;
-  handlerType: CopilotKitRequestType;
+  requestType: CopilotKitRequestType;
 }
 
 type BeforeRequestMiddleware = (

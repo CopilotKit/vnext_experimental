@@ -8,13 +8,13 @@ import { logger } from "./logger";
 
 export default (runtime: CopilotKitRuntime) =>
   createServerAdapter(async (request: Request) => {
-    const { handlerType, info } = routeRequest(request);
-    switch (handlerType) {
+    const { requestType, info } = routeRequest(request);
+    switch (requestType) {
       case CopilotKitRequestType.RunAgent:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
-          handlerType,
+          requestType,
           handler: async ({ request }) =>
             handleRunAgent({
               runtime,
@@ -26,14 +26,14 @@ export default (runtime: CopilotKitRuntime) =>
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
-          handlerType,
+          requestType,
           handler: async ({ request }) => handleGetAgents({ runtime, request }),
         });
       case CopilotKitRequestType.GetInfo:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
-          handlerType,
+          requestType,
           handler: async ({ request }) => handleGetInfo({ runtime, request }),
         });
       default:
@@ -43,8 +43,8 @@ export default (runtime: CopilotKitRuntime) =>
     }
   });
 
-function routeRequest(request: Request): {
-  handlerType: CopilotKitRequestType;
+export function routeRequest(request: Request): {
+  requestType: CopilotKitRequestType;
   info?: Record<string, unknown>;
 } {
   const url = new URL(request.url);
@@ -55,30 +55,30 @@ function routeRequest(request: Request): {
   if (runMatch && runMatch[1]) {
     const agentName = runMatch[1];
     return {
-      handlerType: CopilotKitRequestType.RunAgent,
+      requestType: CopilotKitRequestType.RunAgent,
       info: { agentName },
     };
   }
 
   if (path.endsWith("/agents")) {
     return {
-      handlerType: CopilotKitRequestType.GetAgents,
+      requestType: CopilotKitRequestType.GetAgents,
     };
   }
 
   return {
-    handlerType: CopilotKitRequestType.GetInfo,
+    requestType: CopilotKitRequestType.GetInfo,
   };
 }
 
 async function runHandlerWithMiddlewareAndLogging({
   request,
-  handlerType,
+  requestType,
   runtime,
   handler,
 }: {
   request: Request;
-  handlerType: CopilotKitRequestType;
+  requestType: CopilotKitRequestType;
   runtime: CopilotKitRuntime;
   handler: CopilotKitRequestHandler;
 }) {
@@ -87,14 +87,14 @@ async function runHandlerWithMiddlewareAndLogging({
       const maybeModifiedRequest = await runtime.beforeRequestMiddleware({
         runtime,
         request,
-        handlerType,
+        requestType,
       });
       if (maybeModifiedRequest) {
         request = maybeModifiedRequest;
       }
     } catch (error) {
       logger.error(
-        { err: error, url: request.url, handlerType },
+        { err: error, url: request.url, requestType },
         "Error running before request middleware"
       );
       throw error;
@@ -106,7 +106,7 @@ async function runHandlerWithMiddlewareAndLogging({
     response = await handler({ request });
   } catch (error) {
     logger.error(
-      { err: error, url: request.url, handlerType },
+      { err: error, url: request.url, requestType },
       "Error running request handler"
     );
     throw error;
@@ -117,11 +117,11 @@ async function runHandlerWithMiddlewareAndLogging({
       await runtime.afterRequestMiddleware({
         runtime,
         response,
-        handlerType,
+        requestType,
       });
     } catch (error) {
       logger.error(
-        { err: error, url: request.url, handlerType },
+        { err: error, url: request.url, requestType },
         "Error running after request middleware"
       );
       throw error;
