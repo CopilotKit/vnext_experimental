@@ -8,7 +8,8 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
@@ -22,11 +23,13 @@
         "**/*.test.*",
         "**/*.spec.*"
       ],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "test:watch": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "test:coverage": {
       "dependsOn": ["^build"],
@@ -37,7 +40,8 @@
         "**/*.test.*",
         "**/*.spec.*"
       ],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "dev": {
       "cache": false,

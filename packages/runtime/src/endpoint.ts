@@ -55,7 +55,7 @@ export function routeRequest(request: Request): {
   const path = url.pathname;
 
   // Check if path ends with agent/<agentName>/run
-  const runMatch = path.match(/\/agent\/([^\/]+)\/run$/);
+  const runMatch = path.match(/\/agent\/([^/]+)\/run$/);
   if (runMatch && runMatch[1]) {
     const agentName = runMatch[1];
     return {

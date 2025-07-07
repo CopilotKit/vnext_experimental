@@ -7,8 +7,11 @@ interface RunAgentParameters {
 }
 
 export function handleRunAgent({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   runtime,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   request,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   agentName,
 }: RunAgentParameters) {
   return new Response(JSON.stringify({ message: "Hello, world!" }), {

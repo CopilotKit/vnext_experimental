@@ -160,6 +160,7 @@ export async function callBeforeRequestMiddleware({
     }
 
     if (json && typeof json === "object" && "request" in json) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return deserializeRequest((json as any).request as SerializedRequest);
     }
     return;

@@ -102,6 +102,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     });
     const logSpy = jest
       .spyOn(logger, "error")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
     await expect(
@@ -136,6 +137,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     });
     const logSpy = jest
       .spyOn(logger, "error")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
     await expect(
@@ -169,6 +171,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     });
     const logSpy = jest
       .spyOn(logger, "error")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
     await expect(

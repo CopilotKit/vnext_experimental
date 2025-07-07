@@ -6,7 +6,10 @@ interface HandleGetInfoParameters {
   request: Request;
 }
 
-export async function handleGetInfo(_params: HandleGetInfoParameters) {
+export async function handleGetInfo(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _params: HandleGetInfoParameters
+) {
   return new Response(
     JSON.stringify({
       version: VERSION,
