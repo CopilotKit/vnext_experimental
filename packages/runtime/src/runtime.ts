@@ -1,36 +1,28 @@
 import { MaybePromise, NonEmptyRecord } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
 import pkg from "../package.json";
-import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
-import { logger } from "./logger";
+import type {
+  BeforeRequestMiddleware,
+  AfterRequestMiddleware,
+} from "./middleware";
 
 export const VERSION = pkg.version;
 
-interface BeforeRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime;
-  request: Request;
-  requestType: CopilotKitRequestType;
-}
-interface AfterRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime;
-  response: Response;
-  requestType: CopilotKitRequestType;
-}
-
-type BeforeRequestMiddleware = (
-  params: BeforeRequestMiddlewareParameters
-) => MaybePromise<Request | void>;
-
-type AfterRequestMiddleware = (
-  params: AfterRequestMiddlewareParameters
-) => MaybePromise<void>;
-
-interface CopilotKitRuntimeOptions {
+/**
+ * Options used to construct a `CopilotKitRuntime` instance.
+ */
+export interface CopilotKitRuntimeOptions {
+  /** Map of available agents (loaded lazily is fine). */
   agents: MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>>;
+  /** Optional *before* middleware – callback function or webhook URL. */
   beforeRequestMiddleware?: BeforeRequestMiddleware;
+  /** Optional *after* middleware – callback function or webhook URL. */
   afterRequestMiddleware?: AfterRequestMiddleware;
 }
 
+/**
+ * Central runtime object passed to all request handlers.
+ */
 export class CopilotKitRuntime {
   public agents: CopilotKitRuntimeOptions["agents"];
   public beforeRequestMiddleware: CopilotKitRuntimeOptions["beforeRequestMiddleware"];

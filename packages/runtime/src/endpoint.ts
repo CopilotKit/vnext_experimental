@@ -5,6 +5,10 @@ import { CopilotKitRuntime } from "./runtime";
 import { handleGetInfo } from "./handlers/get-info";
 import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
 import { logger } from "./logger";
+import {
+  callBeforeRequestMiddleware,
+  callAfterRequestMiddleware,
+} from "./middleware";
 
 export default (runtime: CopilotKitRuntime) =>
   createServerAdapter(async (request: Request) => {
@@ -82,23 +86,21 @@ export async function runHandlerWithMiddlewareAndLogging({
   runtime: CopilotKitRuntime;
   handler: CopilotKitRequestHandler;
 }) {
-  if (runtime.beforeRequestMiddleware) {
-    try {
-      const maybeModifiedRequest = await runtime.beforeRequestMiddleware({
-        runtime,
-        request,
-        requestType,
-      });
-      if (maybeModifiedRequest) {
-        request = maybeModifiedRequest;
-      }
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, requestType },
-        "Error running before request middleware"
-      );
-      throw error;
+  try {
+    const maybeModifiedRequest = await callBeforeRequestMiddleware({
+      runtime,
+      request,
+      requestType,
+    });
+    if (maybeModifiedRequest) {
+      request = maybeModifiedRequest;
     }
+  } catch (error) {
+    logger.error(
+      { err: error, url: request.url, requestType },
+      "Error running before request middleware"
+    );
+    throw error;
   }
 
   let response: Response;
@@ -112,20 +114,18 @@ export async function runHandlerWithMiddlewareAndLogging({
     throw error;
   }
 
-  if (runtime.afterRequestMiddleware) {
-    try {
-      await runtime.afterRequestMiddleware({
-        runtime,
-        response,
-        requestType,
-      });
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, requestType },
-        "Error running after request middleware"
-      );
-      throw error;
-    }
+  try {
+    await callAfterRequestMiddleware({
+      runtime,
+      response,
+      requestType,
+    });
+  } catch (error) {
+    logger.error(
+      { err: error, url: request.url, requestType },
+      "Error running after request middleware"
+    );
+    throw error;
   }
 
   return response;
