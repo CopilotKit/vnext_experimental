@@ -8,3 +8,4 @@
 [ ] clean error handling
 [ ] middleware error handling
 [ ] logging
+[ ] telemetry
