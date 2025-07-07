@@ -19,5 +19,17 @@
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ],
+      "allowedVersions": {
+        "react": "*",
+        "react-dom": "*"
+      }
+    }
   }
 }

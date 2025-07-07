@@ -1,0 +1,32 @@
+{
+  "name": "@copilotkit/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Core web utilities for CopilotKit2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@copilotkit/eslint-config": "workspace:*",
+    "@copilotkit/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.30.0",
+    "typescript": "5.8.2"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
