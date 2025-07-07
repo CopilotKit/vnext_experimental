@@ -1,15 +1,17 @@
-import CopilotKitRuntime from "./runtime";
+import CopilotKitRuntime from "../runtime";
 import { AgentDescription } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
 
-interface AgentsParameters {
+interface GetAgentsEndpointParameters {
   runtime: CopilotKitRuntime;
   request: Request;
 }
 
-export async function handleGetAgents({ runtime }: AgentsParameters) {
+export async function handleGetAgentsEndpoint({
+  runtime,
+}: GetAgentsEndpointParameters) {
   try {
-    const agents = await runtime.getAgents();
+    const agents = await runtime.agents;
 
     const agentsDict = Object.entries(agents).reduce(
       (acc, [name, agent]) => {

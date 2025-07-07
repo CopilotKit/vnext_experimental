@@ -1,5 +1,7 @@
 import { MaybePromise, NonEmptyRecord } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
+import pkg from "../../package.json";
+export const VERSION = pkg.version;
 
 interface CopilotKitRuntimeOptions {
   agents: MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>>;
@@ -14,15 +16,9 @@ interface CopilotKitRuntimeOptions {
 }
 
 export default class CopilotKitRuntime {
-  private agents: MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>>;
-  public beforeRequestMiddleware?: (
-    runtime: CopilotKitRuntime,
-    request: Request
-  ) => MaybePromise<Request | void>;
-  public afterRequestMiddleware?: (
-    runtime: CopilotKitRuntime,
-    response: Response
-  ) => MaybePromise<void>;
+  public agents: CopilotKitRuntimeOptions["agents"];
+  public beforeRequestMiddleware: CopilotKitRuntimeOptions["beforeRequestMiddleware"];
+  public afterRequestMiddleware: CopilotKitRuntimeOptions["afterRequestMiddleware"];
 
   constructor({
     agents,
@@ -32,9 +28,5 @@ export default class CopilotKitRuntime {
     this.agents = agents;
     this.beforeRequestMiddleware = beforeRequestMiddleware;
     this.afterRequestMiddleware = afterRequestMiddleware;
-  }
-
-  getAgents(): MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>> {
-    return this.agents;
   }
 }

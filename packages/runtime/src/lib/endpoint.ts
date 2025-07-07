@@ -2,7 +2,7 @@ import { createServerAdapter } from "@whatwg-node/server";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { handleRun } from "./run";
-import { handleGetAgents } from "./agents";
+import { handleGetAgentsEndpoint } from "./handlers/get-agents";
 import CopilotKitRuntime from "./runtime";
 
 const packageJsonPath = resolve(__dirname, "../../package.json");
@@ -23,7 +23,7 @@ export default (runtime: CopilotKitRuntime) =>
 
     // Check if path ends with /agents
     if (path.endsWith("/agents")) {
-      return handleGetAgents({ runtime, request });
+      return handleGetAgentsEndpoint({ runtime, request });
     }
 
     // Default response with version
