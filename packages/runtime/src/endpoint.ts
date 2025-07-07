@@ -3,17 +3,14 @@ import { handleRunAgent } from "./handlers/handle-run";
 import { handleGetAgents } from "./handlers/get-agents";
 import { CopilotKitRuntime } from "./runtime";
 import { handleGetInfo } from "./handlers/get-info";
-import {
-  CopilotKitRequestHandler,
-  CopilotKitRequestHandlerType,
-} from "./handler";
+import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
 import { logger } from "./logger";
 
 export default (runtime: CopilotKitRuntime) =>
   createServerAdapter(async (request: Request) => {
     const { handlerType, info } = routeRequest(request);
     switch (handlerType) {
-      case CopilotKitRequestHandlerType.RunAgent:
+      case CopilotKitRequestType.RunAgent:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
@@ -25,14 +22,14 @@ export default (runtime: CopilotKitRuntime) =>
               agentName: info!.agentName as string,
             }),
         });
-      case CopilotKitRequestHandlerType.GetAgents:
+      case CopilotKitRequestType.GetAgents:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
           handlerType,
           handler: async ({ request }) => handleGetAgents({ runtime, request }),
         });
-      case CopilotKitRequestHandlerType.GetInfo:
+      case CopilotKitRequestType.GetInfo:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
@@ -47,7 +44,7 @@ export default (runtime: CopilotKitRuntime) =>
   });
 
 function routeRequest(request: Request): {
-  handlerType: CopilotKitRequestHandlerType;
+  handlerType: CopilotKitRequestType;
   info?: Record<string, unknown>;
 } {
   const url = new URL(request.url);
@@ -58,19 +55,19 @@ function routeRequest(request: Request): {
   if (runMatch && runMatch[1]) {
     const agentName = runMatch[1];
     return {
-      handlerType: CopilotKitRequestHandlerType.RunAgent,
+      handlerType: CopilotKitRequestType.RunAgent,
       info: { agentName },
     };
   }
 
   if (path.endsWith("/agents")) {
     return {
-      handlerType: CopilotKitRequestHandlerType.GetAgents,
+      handlerType: CopilotKitRequestType.GetAgents,
     };
   }
 
   return {
-    handlerType: CopilotKitRequestHandlerType.GetInfo,
+    handlerType: CopilotKitRequestType.GetInfo,
   };
 }
 
@@ -81,7 +78,7 @@ async function runHandlerWithMiddlewareAndLogging({
   handler,
 }: {
   request: Request;
-  handlerType: CopilotKitRequestHandlerType;
+  handlerType: CopilotKitRequestType;
   runtime: CopilotKitRuntime;
   handler: CopilotKitRequestHandler;
 }) {

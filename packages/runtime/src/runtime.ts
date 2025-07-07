@@ -1,10 +1,7 @@
 import { MaybePromise, NonEmptyRecord } from "@copilotkit/shared";
 import { AbstractAgent } from "@ag-ui/client";
 import pkg from "../package.json";
-import {
-  CopilotKitRequestHandler,
-  CopilotKitRequestHandlerType,
-} from "./handler";
+import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
 import { logger } from "./logger";
 
 export const VERSION = pkg.version;
@@ -12,12 +9,12 @@ export const VERSION = pkg.version;
 interface BeforeRequestMiddlewareParameters {
   runtime: CopilotKitRuntime;
   request: Request;
-  handlerType: CopilotKitRequestHandlerType;
+  handlerType: CopilotKitRequestType;
 }
 interface AfterRequestMiddlewareParameters {
   runtime: CopilotKitRuntime;
   response: Response;
-  handlerType: CopilotKitRequestHandlerType;
+  handlerType: CopilotKitRequestType;
 }
 
 type BeforeRequestMiddleware = (
