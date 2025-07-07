@@ -50,7 +50,7 @@
     },
     {
       "group": "Essentials",
-      "pages": ["essentials/middleware"]
+      "pages": ["essentials/middleware", "essentials/endpoints"]
     }
   ],
   "footerSocials": {

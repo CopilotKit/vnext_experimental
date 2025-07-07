@@ -1,0 +1,517 @@
+---
+title: "Endpoints"
+description: "Setting up CopilotKit endpoints with runtime configuration"
+---
+
+# CopilotKit Endpoints
+
+CopilotKit Runtime provides a flexible endpoint system that can be integrated with any web framework through the `@whatwg-node/server` adapter. This allows you to add AI agent capabilities to your existing application with minimal setup.
+
+## Runtime Configuration
+
+First, create and configure your CopilotKit runtime:
+
+```typescript
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+// Configure your runtime
+const runtime = new CopilotKitRuntime({
+  agents: {
+    // Your agents configuration
+    "customer-support": customerSupportAgent,
+    "code-assistant": codeAssistantAgent,
+  },
+  beforeRequestMiddleware: async ({ request, requestType }) => {
+    // Optional: Add authentication, logging, etc.
+    console.log(`Processing ${requestType} request`);
+    return request;
+  },
+  afterRequestMiddleware: async ({ response, requestType }) => {
+    // Optional: Add response logging, analytics, etc.
+    console.log(
+      `Completed ${requestType} request with status ${response.status}`
+    );
+  },
+});
+
+// Create the endpoint handler
+const copilotKitEndpoint = createEndpoint(runtime);
+```
+
+## Available Endpoints
+
+The runtime automatically provides these endpoints:
+
+| Endpoint                 | Method | Description                          |
+| ------------------------ | ------ | ------------------------------------ |
+| `/`                      | GET    | Runtime information and health check |
+| `/agents`                | GET    | List available agents                |
+| `/agent/{agentName}/run` | POST   | Execute a specific agent             |
+
+## Framework Integrations
+
+CopilotKit uses `@whatwg-node/server` under the hood, which provides seamless integration with any framework. Here are the official integration patterns:
+
+<CodeGroup>
+
+```typescript Next.js (Pages Router)
+// pages/api/copilotkit/[...copilotkit].ts
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+export const config = {
+  api: {
+    // Disable body parsing if you expect non-JSON requests
+    bodyParser: false,
+  },
+};
+
+// The adapter handles the conversion automatically
+export default copilotKitEndpoint;
+```
+
+```typescript Next.js (App Router)
+// app/api/copilotkit/[...copilotkit]/route.ts
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+export async function GET(request: Request) {
+  return copilotKitEndpoint(request);
+}
+
+export async function POST(request: Request) {
+  return copilotKitEndpoint(request);
+}
+```
+
+```javascript Node.js
+// server.js
+import { createServer } from "http";
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Create Node server using the adapter directly
+const nodeServer = createServer(copilotKitEndpoint);
+nodeServer.listen(4000, () => {
+  console.log("Server running on http://localhost:4000");
+});
+```
+
+```javascript Express.js
+// server.js
+import express from "express";
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const app = express();
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Bind adapter to /api/copilotkit endpoint
+app.use("/api/copilotkit", copilotKitEndpoint);
+
+app.listen(4000, () => {
+  console.log("Running server at http://localhost:4000/api/copilotkit");
+});
+```
+
+```javascript Fastify
+// server.js
+import fastify from "fastify";
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const app = fastify({ logger: true });
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+app.route({
+  url: "/api/copilotkit",
+  method: ["GET", "POST", "OPTIONS"],
+  handler: (req, reply) =>
+    copilotKitEndpoint.handleNodeRequestAndResponse(req, reply, {
+      req,
+      reply,
+    }),
+});
+
+app.listen({ port: 4000 });
+```
+
+```javascript Koa.js
+// server.js
+import Koa from "koa";
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const app = new Koa();
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+app.use(async (ctx) => {
+  if (ctx.path.startsWith("/api/copilotkit")) {
+    const response = await copilotKitEndpoint.handleNodeRequestAndResponse(
+      ctx.request,
+      ctx.res,
+      ctx
+    );
+
+    // Set status code
+    ctx.status = response.status;
+
+    // Set headers
+    response.headers.forEach((value, key) => {
+      ctx.append(key, value);
+    });
+
+    ctx.body = response.body;
+  }
+});
+
+app.listen(4000, () => {
+  console.log("Running server at http://localhost:4000");
+});
+```
+
+```javascript Deno
+// server.ts
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Deno's serve function works directly with the adapter
+Deno.serve(copilotKitEndpoint);
+```
+
+```javascript Bun
+// server.js
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Bun's serve function works directly with the adapter
+const server = Bun.serve(copilotKitEndpoint);
+
+console.info(`Server is running on ${server.hostname}:${server.port}`);
+```
+
+```javascript SvelteKit
+// src/routes/api/copilotkit/+server.js
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Export as SvelteKit request handlers
+export { copilotKitEndpoint as GET, copilotKitEndpoint as POST };
+```
+
+```javascript Cloudflare Workers
+// worker.js
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Cloudflare Workers event listener
+self.addEventListener("fetch", copilotKitEndpoint);
+```
+
+```javascript AWS Lambda
+// lambda.js
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+import createEndpoint from "@copilotkit/runtime/endpoint";
+
+const runtime = new CopilotKitRuntime({
+  agents: {
+    assistant: myAssistantAgent,
+  },
+});
+
+const copilotKitEndpoint = createEndpoint(runtime);
+
+export async function handler(event, lambdaContext) {
+  const url = new URL(event.path, "http://localhost");
+
+  if (event.queryStringParameters != null) {
+    for (const name in event.queryStringParameters) {
+      const value = event.queryStringParameters[name];
+      if (value != null) {
+        url.searchParams.set(name, value);
+      }
+    }
+  }
+
+  const response = await copilotKitEndpoint.fetch(
+    url,
+    {
+      method: event.requestContext.http.method,
+      headers: event.headers,
+      body: event.body
+        ? Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8")
+        : undefined,
+    },
+    {
+      event,
+      lambdaContext,
+    }
+  );
+
+  const responseHeaders = {};
+  response.headers.forEach((value, name) => {
+    responseHeaders[name] = value;
+  });
+
+  return {
+    statusCode: response.status,
+    headers: responseHeaders,
+    body: await response.text(),
+    isBase64Encoded: false,
+  };
+}
+```
+
+</CodeGroup>
+
+## Custom Request Routing
+
+The endpoint handler automatically routes requests based on URL patterns:
+
+```typescript
+import {
+  routeRequest,
+  CopilotKitRequestType,
+} from "@copilotkit/runtime/endpoint";
+
+// Example of how routing works internally
+const { requestType, info } = routeRequest(request);
+
+switch (requestType) {
+  case CopilotKitRequestType.GetInfo:
+    // GET / - Runtime information
+    break;
+  case CopilotKitRequestType.GetAgents:
+    // GET /agents - List agents
+    break;
+  case CopilotKitRequestType.RunAgent:
+    // POST /agent/{agentName}/run - Run agent
+    const agentName = info.agentName;
+    break;
+}
+```
+
+## Advanced Configuration
+
+### Environment-specific Runtime
+
+```typescript
+const runtime = new CopilotKitRuntime({
+  agents: await loadAgents(),
+  beforeRequestMiddleware:
+    process.env.NODE_ENV === "production"
+      ? "https://middleware.yourapp.com/before" // Webhook in production
+      : async ({ request }) => {
+          // Function in development
+          console.log("Dev middleware:", request.url);
+          return request;
+        },
+  afterRequestMiddleware: async ({ response, requestType }) => {
+    if (process.env.NODE_ENV === "production") {
+      await analytics.track("copilotkit_request", { requestType });
+    }
+  },
+});
+```
+
+### Error Handling
+
+```typescript
+const copilotKitEndpoint = createEndpoint(runtime);
+
+// Wrap with custom error handling
+export async function POST(request: Request) {
+  try {
+    return await copilotKitEndpoint(request);
+  } catch (error) {
+    console.error("CopilotKit endpoint error:", error);
+
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        requestId: generateRequestId(),
+      }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+}
+```
+
+### CORS Configuration
+
+For browser-based applications, you may need to configure CORS:
+
+```typescript
+export async function OPTIONS(request: Request) {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
+
+export async function POST(request: Request) {
+  const response = await copilotKitEndpoint(request);
+
+  // Add CORS headers to response
+  response.headers.set("Access-Control-Allow-Origin", "*");
+
+  return response;
+}
+```
+
+## Testing Your Endpoints
+
+### Health Check
+
+```bash
+curl http://localhost:3000/api/copilotkit
+```
+
+Expected response:
+
+```json
+{
+  "version": "2.0.0",
+  "status": "ok"
+}
+```
+
+### List Agents
+
+```bash
+curl http://localhost:3000/api/copilotkit/agents
+```
+
+### Run an Agent
+
+```bash
+curl -X POST http://localhost:3000/api/copilotkit/agent/assistant/run \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, assistant!"}'
+```
+
+## Performance Considerations
+
+1. **Agent Loading**: Use lazy loading for agents to improve startup time
+2. **Middleware**: Keep middleware lightweight to avoid request latency
+3. **Caching**: Consider caching agent responses for repeated queries
+4. **Rate Limiting**: Implement rate limiting in your middleware
+5. **Monitoring**: Use after-request middleware for performance monitoring
+
+## Security Best Practices
+
+1. **Authentication**: Always validate requests in your before-request middleware
+2. **Input Validation**: Sanitize and validate all inputs
+3. **HTTPS**: Use HTTPS in production environments
+4. **API Keys**: Protect your endpoints with API keys or tokens
+5. **Rate Limiting**: Prevent abuse with proper rate limiting
+
+```typescript
+const secureRuntime = new CopilotKitRuntime({
+  agents: myAgents,
+  beforeRequestMiddleware: async ({ request }) => {
+    // Validate API key
+    const apiKey = request.headers.get("x-api-key");
+    if (!(await validateApiKey(apiKey))) {
+      throw new Error("Invalid API key");
+    }
+
+    // Rate limiting
+    const clientIP = request.headers.get("x-forwarded-for");
+    if (await isRateLimited(clientIP)) {
+      throw new Error("Rate limit exceeded");
+    }
+
+    return request;
+  },
+});
+```
+
+```
+
+```
