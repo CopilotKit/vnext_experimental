@@ -71,7 +71,7 @@ export function routeRequest(request: Request): {
   };
 }
 
-async function runHandlerWithMiddlewareAndLogging({
+export async function runHandlerWithMiddlewareAndLogging({
   request,
   requestType,
   runtime,
