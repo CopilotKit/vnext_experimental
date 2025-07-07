@@ -1,5 +1,5 @@
 [x] middleware
-[ ] observability
+[x] observability
 [x] get agents
 [x] get info
 [ ] run agent
