@@ -1,0 +1,405 @@
+---
+title: "Middleware"
+description: "CopilotKit middleware documentation"
+---
+
+# CopilotKit Middleware
+
+CopilotKit Runtime provides a powerful middleware system that allows you to intercept and modify requests and responses in your application. Middleware can be implemented in two ways:
+
+1. **Function-based middleware** - Callback functions executed in-process (ideal for open source deployments)
+2. **Webhook middleware** - HTTP endpoints that receive middleware events (ideal for CopilotKit platform)
+
+## Lifecycle Hooks
+
+CopilotKit middleware supports two lifecycle events:
+
+### Before Request (`BEFORE_REQUEST`)
+
+Runs **before** the request handler processes the request. This hook allows you to:
+
+- Inspect the incoming request
+- Modify request headers, body, or URL
+- Add authentication or validation logic
+- Transform the request before processing
+
+### After Request (`AFTER_REQUEST`)
+
+Runs **after** the handler returns a response. This hook allows you to:
+
+- Log request/response data
+- Add response headers
+- Trigger analytics or monitoring
+- Perform cleanup operations
+
+## Function-Based Middleware
+
+Function-based middleware runs in-process and receives the actual Request/Response objects.
+
+### Before Request Middleware
+
+```typescript
+import type { BeforeRequestMiddlewareFn } from "@copilotkit/runtime";
+
+const beforeRequestMiddleware: BeforeRequestMiddlewareFn = async ({
+  runtime,
+  request,
+  requestType,
+}) => {
+  // Log the incoming request
+  console.log(`Processing ${requestType} request to ${request.url}`);
+
+  // Add custom headers
+  const modifiedRequest = new Request(request, {
+    headers: {
+      ...Object.fromEntries(request.headers.entries()),
+      "X-Custom-Header": "middleware-processed",
+      "X-Request-Type": requestType,
+    },
+  });
+
+  // Return the modified request
+  return modifiedRequest;
+};
+```
+
+### After Request Middleware
+
+```typescript
+import type { AfterRequestMiddlewareFn } from "@copilotkit/runtime";
+
+const afterRequestMiddleware: AfterRequestMiddlewareFn = async ({
+  runtime,
+  response,
+  requestType,
+}) => {
+  // Log response details
+  console.log(`Request type: ${requestType}`);
+  console.log(`Response status: ${response.status}`);
+  console.log(
+    `Response headers:`,
+    Object.fromEntries(response.headers.entries())
+  );
+
+  // Track analytics
+  await analytics.track("copilotkit_request_completed", {
+    requestType,
+    status: response.status,
+    timestamp: new Date().toISOString(),
+  });
+};
+```
+
+### Setting Up Function Middleware
+
+```typescript
+import { CopilotKitRuntime } from "@copilotkit/runtime";
+
+const runtime = new CopilotKitRuntime({
+  beforeRequestMiddleware,
+  afterRequestMiddleware,
+});
+```
+
+## Webhook Middleware
+
+Webhook middleware allows you to process middleware events via HTTP endpoints, which is particularly useful for:
+
+- CopilotKit platform deployments
+- Distributed architectures
+- External service integrations
+- Language-agnostic middleware
+
+### Webhook URL Format
+
+Webhook URLs must start with `http://` or `https://`:
+
+```typescript
+const runtime = new CopilotKitRuntime({
+  beforeRequestMiddleware: "https://your-api.com/middleware/before",
+  afterRequestMiddleware: "https://your-api.com/middleware/after",
+});
+```
+
+### Before Request Webhook Payload
+
+CopilotKit sends a POST request with the following JSON payload:
+
+```json
+{
+  "event": "BEFORE_REQUEST",
+  "requestType": "agents" | "info" | "run",
+  "runtimeVersion": "2.0.0",
+  "request": {
+    "url": "https://your-app.com/api/copilotkit/run",
+    "method": "POST",
+    "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer token"
+    },
+    "body": "{\"message\":\"Hello\"}"
+  }
+}
+```
+
+### Before Request Webhook Response
+
+To modify the request, return a JSON response with a `request` object:
+
+```json
+{
+  "request": {
+    "url": "https://your-app.com/api/copilotkit/run",
+    "method": "POST",
+    "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer token",
+      "x-custom-header": "added-by-middleware"
+    },
+    "body": "{\"message\":\"Hello\",\"userId\":\"123\"}"
+  }
+}
+```
+
+To make no changes, return HTTP status `204 No Content` or an empty response.
+
+### After Request Webhook Payload
+
+```json
+{
+  "event": "AFTER_REQUEST",
+  "requestType": "run",
+  "runtimeVersion": "2.0.0",
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": "{\"result\":\"success\"}"
+  }
+}
+```
+
+### Webhook Implementation Examples
+
+#### Node.js Express Example
+
+```javascript
+app.post("/middleware/before", async (req, res) => {
+  const { event, requestType, request } = req.body;
+
+  if (event === "BEFORE_REQUEST") {
+    // Add user context to the request
+    const modifiedRequest = {
+      ...request,
+      headers: {
+        ...request.headers,
+        "x-user-id": await getUserIdFromToken(request.headers.authorization),
+      },
+    };
+
+    res.json({ request: modifiedRequest });
+  } else {
+    res.status(204).send();
+  }
+});
+
+app.post("/middleware/after", async (req, res) => {
+  const { event, requestType, response } = req.body;
+
+  if (event === "AFTER_REQUEST") {
+    // Log to analytics
+    await analytics.track("copilotkit_request", {
+      type: requestType,
+      status: response.status,
+      timestamp: new Date(),
+    });
+  }
+
+  res.status(204).send();
+});
+```
+
+#### Python Flask Example
+
+```python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/middleware/before', methods=['POST'])
+def before_middleware():
+    data = request.json
+
+    if data['event'] == 'BEFORE_REQUEST':
+        # Add custom headers
+        modified_request = data['request'].copy()
+        modified_request['headers']['x-processed-by'] = 'python-middleware'
+
+        return jsonify({'request': modified_request})
+
+    return '', 204
+
+@app.route('/middleware/after', methods=['POST'])
+def after_middleware():
+    data = request.json
+
+    if data['event'] == 'AFTER_REQUEST':
+        # Log the response
+        print(f"Request completed: {data['requestType']} -> {data['response']['status']}")
+
+    return '', 204
+```
+
+## Request Types
+
+The `requestType` parameter indicates what type of CopilotKit operation is being processed:
+
+- `"agents"` - Agent-related requests
+- `"info"` - Runtime information requests
+- `"run"` - Agent execution requests
+
+## Middleware Parameters
+
+### BeforeRequestMiddlewareParameters
+
+```typescript
+interface BeforeRequestMiddlewareParameters {
+  runtime: CopilotKitRuntime; // The runtime instance
+  request: Request; // The incoming HTTP request
+  requestType: CopilotKitRequestType; // Type of CopilotKit operation
+}
+```
+
+### AfterRequestMiddlewareParameters
+
+```typescript
+interface AfterRequestMiddlewareParameters {
+  runtime: CopilotKitRuntime; // The runtime instance
+  response: Response; // The outgoing HTTP response
+  requestType: CopilotKitRequestType; // Type of CopilotKit operation
+}
+```
+
+## Common Use Cases
+
+### Authentication & Authorization
+
+```typescript
+const authMiddleware: BeforeRequestMiddlewareFn = async ({
+  request,
+  requestType,
+}) => {
+  const token = request.headers.get("authorization");
+
+  if (!token) {
+    throw new Error("Authentication required");
+  }
+
+  const user = await validateToken(token);
+
+  // Add user context to request
+  return new Request(request, {
+    headers: {
+      ...Object.fromEntries(request.headers.entries()),
+      "x-user-id": user.id,
+      "x-user-role": user.role,
+    },
+  });
+};
+```
+
+### Request Logging
+
+```typescript
+const loggingMiddleware: AfterRequestMiddlewareFn = async ({
+  request,
+  response,
+  requestType,
+}) => {
+  console.log({
+    timestamp: new Date().toISOString(),
+    requestType,
+    method: request.method,
+    url: request.url,
+    status: response.status,
+    userAgent: request.headers.get("user-agent"),
+  });
+};
+```
+
+### Rate Limiting
+
+```typescript
+const rateLimitMiddleware: BeforeRequestMiddlewareFn = async ({ request }) => {
+  const clientIP = request.headers.get("x-forwarded-for") || "unknown";
+
+  if (await isRateLimited(clientIP)) {
+    throw new Error("Rate limit exceeded");
+  }
+
+  await recordRequest(clientIP);
+  return request;
+};
+```
+
+### Error Handling
+
+Middleware functions can throw errors to prevent request processing:
+
+```typescript
+const validationMiddleware: BeforeRequestMiddlewareFn = async ({ request }) => {
+  const body = await request.text();
+
+  if (!isValidRequest(body)) {
+    throw new Error("Invalid request format");
+  }
+
+  // Create new request with the consumed body
+  return new Request(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: body,
+  });
+};
+```
+
+## Best Practices
+
+1. **Keep middleware lightweight** - Avoid heavy computations that could slow down requests
+2. **Handle errors gracefully** - Use try/catch blocks and provide meaningful error messages
+3. **Preserve request body** - When reading the request body, create a new Request object with the body
+4. **Use webhook middleware for external services** - Keep business logic separate from your main application
+5. **Log important events** - Use after-request middleware for comprehensive logging
+6. **Validate webhook responses** - Ensure webhook endpoints return proper status codes
+
+## Error Handling
+
+### Function Middleware Errors
+
+```typescript
+const safeMiddleware: BeforeRequestMiddlewareFn = async (params) => {
+  try {
+    // Your middleware logic
+    return modifyRequest(params.request);
+  } catch (error) {
+    console.error("Middleware error:", error);
+    // Return original request on error
+    return params.request;
+  }
+};
+```
+
+### Webhook Middleware Errors
+
+If a webhook returns a non-2xx status code, CopilotKit will throw an error:
+
+```
+Error: before_request webhook https://api.example.com/middleware responded with 500
+```
+
+Ensure your webhook endpoints:
+
+- Return appropriate HTTP status codes
+- Handle errors gracefully
+- Return `204 No Content` when no modifications are needed
