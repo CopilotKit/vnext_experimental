@@ -1,2 +1,2 @@
-export * from "./lib/runtime";
-export * from "./lib/endpoint";
+export * from "./runtime";
+export * from "./endpoint";

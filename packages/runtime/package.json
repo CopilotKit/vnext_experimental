@@ -23,13 +23,15 @@
     "@copilotkit/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
+    "pino-pretty": "^13.0.0",
     "typescript": "5.8.2"
   },
   "dependencies": {
     "@ag-ui/client": "^0.0.30",
     "@ag-ui/core": "^0.0.30",
+    "@copilotkit/shared": "workspace:*",
     "@whatwg-node/server": "^0.10.10",
-    "@copilotkit/shared": "workspace:*"
+    "pino": "^9.7.0"
   },
   "engines": {
     "node": ">=18"

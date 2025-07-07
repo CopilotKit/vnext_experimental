@@ -1,14 +1,12 @@
-import CopilotKitRuntime from "../runtime";
+import { CopilotKitRuntime } from "../runtime";
 import { VERSION } from "../runtime";
 
-interface GetInfoEndpointParameters {
+interface HandleGetInfoParameters {
   runtime: CopilotKitRuntime;
   request: Request;
 }
 
-export async function handleGetInfoEndpoint(
-  _params: GetInfoEndpointParameters
-) {
+export async function handleGetInfo(_params: HandleGetInfoParameters) {
   return new Response(
     JSON.stringify({
       version: VERSION,
