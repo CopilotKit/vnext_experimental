@@ -11,7 +11,7 @@ interface CopilotTool<T = unknown> {
   name: string;
   schema: z.ZodSchema<T>;
   handler?: (params: T) => MaybePromise<unknown>;
-  render?: (params: T) => MaybePromise<unknown>;
+  render?: (params: T) => unknown;
 }
 
 export class CopilotKitCore {
@@ -28,13 +28,12 @@ export class CopilotKitCore {
     delete this.context[id];
   }
 
-  addTool<T = unknown>(tool: CopilotTool<T>): string {
-    const id = randomUUID();
-    this.tools[id] = tool as CopilotTool<unknown>;
-    return id;
+  addTool<T = unknown>(tool: CopilotTool<T>) {
+    // TODO: warn
+    this.tools[tool.name] = tool as CopilotTool<unknown>;
   }
 
-  removeTool(id: string) {
-    delete this.tools[id];
+  removeTool(name: string) {
+    delete this.tools[name];
   }
 }

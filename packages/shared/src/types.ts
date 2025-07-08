@@ -1,4 +1,4 @@
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybePromise<T> = T | PromiseLike<T>;
 
 /**
  * More specific utility for records with at least one key
