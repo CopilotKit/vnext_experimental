@@ -16,7 +16,7 @@ import type { CopilotKitRuntime } from "./runtime";
 import { VERSION } from "./runtime";
 import type { CopilotKitRequestType } from "./handler";
 import type { MaybePromise } from "@copilotkit/shared";
-import { logger } from "./logger";
+import { logger } from "@copilotkit/shared";
 
 /* ------------------------------------------------------------------------------------------------
  * Public types
@@ -37,10 +37,10 @@ export interface AfterRequestMiddlewareParameters {
 }
 
 export type BeforeRequestMiddlewareFn = (
-  params: BeforeRequestMiddlewareParameters
+  params: BeforeRequestMiddlewareParameters,
 ) => MaybePromise<Request | void>;
 export type AfterRequestMiddlewareFn = (
-  params: AfterRequestMiddlewareParameters
+  params: AfterRequestMiddlewareParameters,
 ) => MaybePromise<void>;
 
 /**
@@ -147,7 +147,7 @@ export async function callBeforeRequestMiddleware({
 
     if (!res.ok) {
       throw new Error(
-        `before_request webhook ${mw} responded with ${res.status}`
+        `before_request webhook ${mw} responded with ${res.status}`,
       );
     }
     if (res.status === 204) return; // no modifications
@@ -198,7 +198,7 @@ export async function callAfterRequestMiddleware({
 
     if (!res.ok) {
       throw new Error(
-        `after_request webhook ${mw} responded with ${res.status}`
+        `after_request webhook ${mw} responded with ${res.status}`,
       );
     }
     return;

@@ -103,9 +103,6 @@ importers:
       '@whatwg-node/server':
         specifier: ^0.10.10
         version: 0.10.10
-      pino:
-        specifier: ^9.7.0
-        version: 9.7.0
     devDependencies:
       '@copilotkit/eslint-config':
         specifier: workspace:*
@@ -125,9 +122,6 @@ importers:
       jest:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@22.15.3)(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.2))
-      pino-pretty:
-        specifier: ^13.0.0
-        version: 13.0.0
       ts-jest:
         specifier: ^29.1.2
         version: 29.4.0(@babel/core@7.28.0)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.0))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.15.3)(ts-node@10.9.2(@types/node@22.15.3)(typescript@5.8.2)))(typescript@5.8.2)
@@ -137,6 +131,9 @@ importers:
 
   packages/shared:
     dependencies:
+      pino:
+        specifier: ^9.7.0
+        version: 9.7.0
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
@@ -153,6 +150,9 @@ importers:
       eslint:
         specifier: ^9.30.0
         version: 9.30.0
+      pino-pretty:
+        specifier: ^13.0.0
+        version: 13.0.0
       typescript:
         specifier: 5.8.2
         version: 5.8.2

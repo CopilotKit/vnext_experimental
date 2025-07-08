@@ -42,7 +42,7 @@ describe("routeRequest", () => {
 
     it("should match agent run URL with complex path prefix", () => {
       const request = createRequest(
-        "https://example.com/api/v1/copilot/agent/testAgent/run"
+        "https://example.com/api/v1/copilot/agent/testAgent/run",
       );
       const result = routeRequest(request);
 
@@ -68,7 +68,7 @@ describe("routeRequest", () => {
 
     it("should not match agent run URL with extra path segments", () => {
       const request = createRequest(
-        "https://example.com/agent/myAgent/run/extra"
+        "https://example.com/agent/myAgent/run/extra",
       );
       const result = routeRequest(request);
 
@@ -88,7 +88,7 @@ describe("routeRequest", () => {
 
     it("should match agents URL with path prefix", () => {
       const request = createRequest(
-        "https://example.com/api/v1/copilot/agents"
+        "https://example.com/api/v1/copilot/agents",
       );
       const result = routeRequest(request);
 
@@ -166,7 +166,7 @@ describe("routeRequest", () => {
 
     it("should handle URLs with hash fragments", () => {
       const request = createRequest(
-        "https://example.com/agent/myAgent/run#section"
+        "https://example.com/agent/myAgent/run#section",
       );
       const result = routeRequest(request);
 
@@ -176,7 +176,7 @@ describe("routeRequest", () => {
 
     it("should handle URLs with special characters in agent names", () => {
       const request = createRequest(
-        "https://example.com/agent/test%20agent/run"
+        "https://example.com/agent/test%20agent/run",
       );
       const result = routeRequest(request);
 
