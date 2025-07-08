@@ -8,7 +8,7 @@ interface HandleGetInfoParameters {
 
 export async function handleGetInfo(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _params: HandleGetInfoParameters
+  _params: HandleGetInfoParameters,
 ) {
   return new Response(
     JSON.stringify({
@@ -17,6 +17,6 @@ export async function handleGetInfo(
     {
       status: 200,
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 }

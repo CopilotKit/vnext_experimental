@@ -4,7 +4,7 @@ import { handleGetAgents } from "./handlers/get-agents";
 import { CopilotKitRuntime } from "./runtime";
 import { handleGetInfo } from "./handlers/get-info";
 import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
-import { logger } from "./logger";
+import { logger } from "@copilotkit/shared";
 import {
   callBeforeRequestMiddleware,
   callAfterRequestMiddleware,

@@ -1,7 +1,7 @@
 import { runHandlerWithMiddlewareAndLogging } from "../endpoint";
 import { CopilotKitRuntime } from "../runtime";
 import { CopilotKitRequestType } from "../handler";
-import { logger } from "../logger";
+import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
 import { CopilotKitMiddlewareEvent } from "../middleware";
 
