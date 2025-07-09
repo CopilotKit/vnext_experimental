@@ -13,7 +13,6 @@
  */
 
 import type { CopilotKitRuntime } from "./runtime";
-import { VERSION } from "./runtime";
 import type { CopilotKitRequestType } from "./handler";
 import type { MaybePromise } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
@@ -55,66 +54,19 @@ export enum CopilotKitMiddlewareEvent {
   AfterRequest = "AFTER_REQUEST",
 }
 
+/** Stages used by the Middleware Webhook Protocol */
+/** Stages used by the CopilotKit webhook protocol */
+export enum WebhookStage {
+  BeforeRequest = "before_request",
+  AfterRequest = "after_request",
+}
+
 /* ------------------------------------------------------------------------------------------------
  * Internal helpers – (de)serialisation
  * --------------------------------------------------------------------------------------------- */
 
-interface SerializedRequest {
-  url: string;
-  method: string;
-  headers: Record<string, string>;
-  body?: string;
-}
-interface SerializedResponse {
-  status: number;
-  headers: Record<string, string>;
-  body?: string;
-}
-
 function isMiddlewareURL(value: unknown): value is MiddlewareURL {
   return typeof value === "string" && /^https?:\/\//.test(value);
-}
-
-async function serializeRequest(request: Request): Promise<SerializedRequest> {
-  const clone = request.clone();
-  const headers: Record<string, string> = {};
-  clone.headers.forEach((v, k) => {
-    headers[k] = v;
-  });
-  let body: string | undefined;
-  try {
-    body = await clone.text();
-    if (!body) body = undefined;
-  } catch {
-    /* ignore */
-  }
-
-  return { url: clone.url, method: clone.method, headers, body };
-}
-
-async function serializeResponse(res: Response): Promise<SerializedResponse> {
-  const clone = res.clone();
-  const headers: Record<string, string> = {};
-  clone.headers.forEach((v, k) => {
-    headers[k] = v;
-  });
-  let body: string | undefined;
-  try {
-    body = await clone.text();
-    if (!body) body = undefined;
-  } catch {
-    /* ignore */
-  }
-
-  return { status: clone.status, headers, body };
-}
-
-function deserializeRequest(sr: SerializedRequest): Request {
-  return new Request(sr.url, {
-    method: sr.method,
-    headers: sr.headers,
-    body: sr.body,
-  });
 }
 
 export async function callBeforeRequestMiddleware({
@@ -132,25 +84,59 @@ export async function callBeforeRequestMiddleware({
 
   // Webhook middleware
   if (isMiddlewareURL(mw)) {
+    const clone = request.clone();
+    const url = new URL(request.url);
+    const headersObj: Record<string, string> = {};
+    clone.headers.forEach((v, k) => {
+      headersObj[k] = v;
+    });
+    let bodyJson: unknown = undefined;
+    try {
+      bodyJson = await clone.json();
+    } catch {
+      /* ignore */
+    }
+
     const payload = {
-      event: CopilotKitMiddlewareEvent.BeforeRequest,
-      requestType,
-      runtimeVersion: VERSION,
-      request: await serializeRequest(request),
+      method: request.method,
+      path: url.pathname,
+      query: url.search.startsWith("?") ? url.search.slice(1) : url.search,
+      headers: headersObj,
+      body: bodyJson,
     };
 
-    const res = await fetch(mw, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error(
-        `before_request webhook ${mw} responded with ${res.status}`,
-      );
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 2000);
+    let res: Response;
+    try {
+      res = await fetch(mw, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "X-CopilotKit-Webhook-Stage": WebhookStage.BeforeRequest,
+        },
+        body: JSON.stringify(payload),
+        signal: ac.signal,
+      });
+    } catch {
+      clearTimeout(to);
+      throw new Response(undefined, { status: 502 });
     }
-    if (res.status === 204) return; // no modifications
+    clearTimeout(to);
+
+    if (res.status >= 500) {
+      throw new Response(undefined, { status: 502 });
+    }
+    if (res.status >= 400) {
+      const errBody = await res.text();
+      throw new Response(errBody || null, {
+        status: res.status,
+        headers: {
+          "content-type": res.headers.get("content-type") || "application/json",
+        },
+      });
+    }
+    if (res.status === 204) return;
 
     let json: unknown;
     try {
@@ -159,9 +145,19 @@ export async function callBeforeRequestMiddleware({
       return;
     }
 
-    if (json && typeof json === "object" && "request" in json) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return deserializeRequest((json as any).request as SerializedRequest);
+    if (json && typeof json === "object") {
+      const { headers, body } = json as {
+        headers?: Record<string, string>;
+        body?: unknown;
+      };
+      const init: RequestInit = {};
+      if (headers) {
+        init.headers = headers;
+      }
+      if (body !== undefined) {
+        init.body = JSON.stringify(body);
+      }
+      return new Request(request, init);
     }
     return;
   }
@@ -183,18 +179,40 @@ export async function callAfterRequestMiddleware({
   }
 
   if (isMiddlewareURL(mw)) {
+    const clone = response.clone();
+    const headersObj: Record<string, string> = {};
+    clone.headers.forEach((v, k) => {
+      headersObj[k] = v;
+    });
+    let body = "";
+    try {
+      body = await clone.text();
+    } catch {
+      /* ignore */
+    }
+
     const payload = {
-      event: CopilotKitMiddlewareEvent.AfterRequest,
-      requestType,
-      runtimeVersion: VERSION,
-      response: await serializeResponse(response),
+      status: clone.status,
+      headers: headersObj,
+      body,
     };
 
-    const res = await fetch(mw, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 2000);
+    let res: Response;
+    try {
+      res = await fetch(mw, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "X-CopilotKit-Webhook-Stage": WebhookStage.AfterRequest,
+        },
+        body: JSON.stringify(payload),
+        signal: ac.signal,
+      });
+    } finally {
+      clearTimeout(to);
+    }
 
     if (!res.ok) {
       throw new Error(

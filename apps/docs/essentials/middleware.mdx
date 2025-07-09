@@ -123,60 +123,45 @@ const runtime = new CopilotKitRuntime({
 
 ### Before Request Webhook Payload
 
-CopilotKit sends a POST request with the following JSON payload:
+The gateway sends a POST request (with header `X-CopilotKit-Webhook-Stage: before_request`) containing:
 
 ```json
 {
-  "event": "BEFORE_REQUEST",
-  "requestType": "agents" | "info" | "run",
-  "runtimeVersion": "2.0.0",
-  "request": {
-    "url": "https://your-app.com/api/copilotkit/run",
-    "method": "POST",
-    "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer token"
-    },
-    "body": "{\"message\":\"Hello\"}"
-  }
+  "method": "POST",
+  "path": "/api/copilotkit/run",
+  "query": "",
+  "headers": {
+    "content-type": "application/json",
+    "authorization": "Bearer token"
+  },
+  "body": { "message": "Hello" }
 }
 ```
 
 ### Before Request Webhook Response
 
-To modify the request, return a JSON response with a `request` object:
+Return `204 No Content` to forward the request unchanged. To modify it, respond
+with HTTP `200 OK` and an object containing optional `headers` and `body` keys:
 
 ```json
 {
-  "request": {
-    "url": "https://your-app.com/api/copilotkit/run",
-    "method": "POST",
-    "headers": {
-      "content-type": "application/json",
-      "authorization": "Bearer token",
-      "x-custom-header": "added-by-middleware"
-    },
-    "body": "{\"message\":\"Hello\",\"userId\":\"123\"}"
-  }
+  "headers": { "Authorization": "Bearer abc123" },
+  "body": { "message": "Hello", "approved": true }
 }
 ```
 
-To make no changes, return HTTP status `204 No Content` or an empty response.
 
 ### After Request Webhook Payload
 
+The gateway sends a POST request (with header `X-CopilotKit-Webhook-Stage: after_request`) containing:
+
 ```json
 {
-  "event": "AFTER_REQUEST",
-  "requestType": "run",
-  "runtimeVersion": "2.0.0",
-  "response": {
-    "status": 200,
-    "headers": {
-      "content-type": "application/json"
-    },
-    "body": "{\"result\":\"success\"}"
-  }
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"result\":\"success\"}"
 }
 ```
 
@@ -186,35 +171,27 @@ To make no changes, return HTTP status `204 No Content` or an empty response.
 
 ```javascript
 app.post("/middleware/before", async (req, res) => {
-  const { event, requestType, request } = req.body;
+  const { headers, body } = req.body;
 
-  if (event === "BEFORE_REQUEST") {
-    // Add user context to the request
-    const modifiedRequest = {
-      ...request,
-      headers: {
-        ...request.headers,
-        "x-user-id": await getUserIdFromToken(request.headers.authorization),
-      },
-    };
+  const modified = {
+    headers: {
+      ...headers,
+      "x-user-id": await getUserIdFromToken(headers.authorization),
+    },
+    body: { ...body, approved: true },
+  };
 
-    res.json({ request: modifiedRequest });
-  } else {
-    res.status(204).send();
-  }
+  res.json(modified);
 });
 
 app.post("/middleware/after", async (req, res) => {
-  const { event, requestType, response } = req.body;
+  const { status, headers, body } = req.body;
 
-  if (event === "AFTER_REQUEST") {
-    // Log to analytics
-    await analytics.track("copilotkit_request", {
-      type: requestType,
-      status: response.status,
-      timestamp: new Date(),
-    });
-  }
+  // Log to analytics
+  await analytics.track("copilotkit_request", {
+    status,
+    timestamp: new Date(),
+  });
 
   res.status(204).send();
 });
@@ -231,22 +208,18 @@ app = Flask(__name__)
 def before_middleware():
     data = request.json
 
-    if data['event'] == 'BEFORE_REQUEST':
-        # Add custom headers
-        modified_request = data['request'].copy()
-        modified_request['headers']['x-processed-by'] = 'python-middleware'
+    modified = {
+        'headers': { **data['headers'], 'x-processed-by': 'python-middleware' },
+        'body': { **data.get('body', {}), 'approved': True }
+    }
 
-        return jsonify({'request': modified_request})
-
-    return '', 204
+    return jsonify(modified)
 
 @app.route('/middleware/after', methods=['POST'])
 def after_middleware():
     data = request.json
-
-    if data['event'] == 'AFTER_REQUEST':
-        # Log the response
-        print(f"Request completed: {data['requestType']} -> {data['response']['status']}")
+    # Log the response
+    print(f"Request completed with {data['status']}")
 
     return '', 204
 ```

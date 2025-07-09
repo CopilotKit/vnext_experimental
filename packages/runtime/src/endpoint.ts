@@ -100,6 +100,9 @@ export async function runHandlerWithMiddlewareAndLogging({
       { err: error, url: request.url, requestType },
       "Error running before request middleware",
     );
+    if (error instanceof Response) {
+      return error;
+    }
     throw error;
   }
 
@@ -114,19 +117,14 @@ export async function runHandlerWithMiddlewareAndLogging({
     throw error;
   }
 
-  try {
-    await callAfterRequestMiddleware({
-      runtime,
-      response,
-      requestType,
-    });
-  } catch (error) {
-    logger.error(
-      { err: error, url: request.url, requestType },
-      "Error running after request middleware",
-    );
-    // After-request middleware errors are logged but do not fail the request
-  }
+  callAfterRequestMiddleware({ runtime, response, requestType }).catch(
+    (error) => {
+      logger.error(
+        { err: error, url: request.url, requestType },
+        "Error running after request middleware",
+      );
+    },
+  );
 
   return response;
 }
