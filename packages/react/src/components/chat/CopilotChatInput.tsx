@@ -39,7 +39,7 @@ const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
   ...props
 }) => <div {...props}>{children}</div>;
 
-export type ChatInputProps = {
+export type CopilotChatInputProps = {
   /** Called with trimmed text when user submits. Clears input. */
   onSend: (text: string) => void;
 
@@ -75,7 +75,7 @@ export type ChatInputProps = {
   }) => React.ReactNode;
 };
 
-export const ChatInput: React.FC<ChatInputProps> = ({
+export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   onSend,
   components = {},
   appearance = {},
@@ -157,4 +157,4 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
 };
 
-export default ChatInput;
+export default CopilotChatInput;

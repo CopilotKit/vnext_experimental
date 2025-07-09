@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { within, userEvent, expect } from "@storybook/test";
-import { ChatInput } from "@copilotkit/react";
+import { CopilotChatInput } from "@copilotkit/react";
 
 const meta = {
-  title: "UI/ChatInput",
-  component: ChatInput,
+  title: "UI/CopilotChatInput",
+  component: CopilotChatInput,
   args: { onSend: (t: string) => console.log(`Message sent: ${t}`) },
-} satisfies Meta<typeof ChatInput>;
+} satisfies Meta<typeof CopilotChatInput>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

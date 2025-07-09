@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { ChatInput } from "../components/chat/ChatInput";
+import { CopilotChatInput } from "../components/chat/CopilotChatInput";
 
 // Mock onSend function to track calls
 const mockOnSend = jest.fn();
@@ -10,9 +10,9 @@ beforeEach(() => {
   mockOnSend.mockClear();
 });
 
-describe("ChatInput", () => {
+describe("CopilotChatInput", () => {
   it("renders with default components and styling", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
@@ -23,7 +23,7 @@ describe("ChatInput", () => {
   });
 
   it("calls onSend with trimmed text when Enter is pressed", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
 
@@ -36,7 +36,7 @@ describe("ChatInput", () => {
   });
 
   it("calls onSend when button is clicked", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
@@ -49,7 +49,7 @@ describe("ChatInput", () => {
   });
 
   it("does not send when Enter is pressed with Shift key", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
 
@@ -61,7 +61,7 @@ describe("ChatInput", () => {
   });
 
   it("does not send empty or whitespace-only messages", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
@@ -78,7 +78,7 @@ describe("ChatInput", () => {
   });
 
   it("enables button when text is entered", () => {
-    render(<ChatInput onSend={mockOnSend} />);
+    render(<CopilotChatInput onSend={mockOnSend} />);
 
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
@@ -94,7 +94,7 @@ describe("ChatInput", () => {
 
   it("accepts custom appearance classes", () => {
     const { container } = render(
-      <ChatInput
+      <CopilotChatInput
         onSend={mockOnSend}
         appearance={{
           container: "custom-container",
@@ -123,7 +123,10 @@ describe("ChatInput", () => {
     );
 
     render(
-      <ChatInput onSend={mockOnSend} components={{ Button: CustomButton }} />
+      <CopilotChatInput
+        onSend={mockOnSend}
+        components={{ Button: CustomButton }}
+      />
     );
 
     const customButton = screen.getByTestId("custom-button");
@@ -133,7 +136,7 @@ describe("ChatInput", () => {
 
   it("supports custom layout via children render prop", () => {
     render(
-      <ChatInput onSend={mockOnSend}>
+      <CopilotChatInput onSend={mockOnSend}>
         {({ Input, Button }) => (
           <div data-testid="custom-layout">
             Custom Layout:
@@ -141,7 +144,7 @@ describe("ChatInput", () => {
             {Input}
           </div>
         )}
-      </ChatInput>
+      </CopilotChatInput>
     );
 
     const customLayout = screen.getByTestId("custom-layout");

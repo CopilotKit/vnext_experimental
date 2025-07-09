@@ -1,2 +1,5 @@
-export { ChatInput, type ChatInputProps } from "./ChatInput";
-export { default as ChatInputDefault } from "./ChatInput";
+export {
+  CopilotChatInput,
+  type CopilotChatInputProps,
+} from "./CopilotChatInput";
+export { default as CopilotChatInputDefault } from "./CopilotChatInput";
