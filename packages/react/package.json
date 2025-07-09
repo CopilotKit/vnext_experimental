@@ -1,0 +1,51 @@
+{
+  "name": "@copilotkit/react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React components for CopilotKit2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@copilotkit/eslint-config": "workspace:*",
+    "@copilotkit/typescript-config": "workspace:*",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^22.15.3",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "eslint": "^9.30.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "typescript": "5.8.2"
+  },
+  "dependencies": {
+    "@copilotkit/core": "workspace:*",
+    "@copilotkit/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

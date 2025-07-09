@@ -8,5 +8,8 @@ export default {
     "^.+\\.(ts|tsx)$": "ts-jest",
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-  setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
+  testEnvironmentOptions: {
+    customExportConditions: [""],
+  },
 };

@@ -46,6 +46,13 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "storybook:dev": {
+      "cache": false,
+      "dependsOn": ["^build"]
+    },
+    "storybook:build": {
+      "outputs": ["apps/storybook/storybook-static/**"]
     }
   }
 }

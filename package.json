@@ -9,10 +9,16 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "test:coverage": "turbo run test:coverage"
+    "test:coverage": "turbo run test:coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
+    "@storybook/addon-docs": "^9.0.16",
+    "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
+    "@storybook/react-webpack5": "^9.0.16",
     "prettier": "^3.6.0",
+    "storybook": "^9.0.16",
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
   },
