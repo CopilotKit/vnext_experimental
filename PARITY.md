@@ -8,4 +8,5 @@
 [ ] clean error handling
 [ ] middleware error handling
 [x] logging
-[ ] telemetry
+[x] telemetry functionality exists
+[ ] telemetry functionality is used
