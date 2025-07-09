@@ -5,7 +5,7 @@ import { ChatInput } from "@copilotkit/react";
 const meta = {
   title: "UI/ChatInput",
   component: ChatInput,
-  args: { onSend: (t: string) => alert(`→ ${t}`) },
+  args: { onSend: (t: string) => console.log(`Message sent: ${t}`) },
 } satisfies Meta<typeof ChatInput>;
 export default meta;
 type Story = StoryObj<typeof meta>;
