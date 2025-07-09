@@ -15,10 +15,11 @@ export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
         acc[name] = {
           name,
           description: agent.description,
+          className: agent.constructor.name,
         };
         return acc;
       },
-      {} as Record<string, AgentDescription>,
+      {} as Record<string, AgentDescription>
     );
 
     return new Response(
@@ -28,7 +29,7 @@ export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
   } catch (error) {
     return new Response(
@@ -39,7 +40,7 @@ export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
   }
 }

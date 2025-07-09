@@ -15,5 +15,6 @@ export type NonEmptyRecord<T> =
  */
 export type AgentDescription = {
   name: string;
+  className: string;
   description: string;
 };

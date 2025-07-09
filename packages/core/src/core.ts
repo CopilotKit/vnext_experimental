@@ -1,38 +1,7 @@
-import { randomUUID } from "@copilotkit/shared";
-import type { MaybePromise } from "@copilotkit/shared";
-import { z } from "zod";
+import { AgentDescription, randomUUID } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
-import type { HttpAgent } from "@ag-ui/client";
-
-export interface CopilotContext {
-  description: string;
-  value: string;
-}
-
-export type CopilotToolRenderState<T> =
-  | {
-      status: "inProgress";
-      args: Partial<T>;
-      result: undefined;
-    }
-  | {
-      status: "executing";
-      args: T;
-      result: undefined;
-    }
-  | {
-      status: "complete";
-      args: T;
-      result: any;
-    };
-
-export interface CopilotTool<T = unknown> {
-  name: string;
-  description?: string;
-  schema: z.ZodSchema<T>;
-  handler?: (params: T) => MaybePromise<unknown>;
-  render?: (state: CopilotToolRenderState<T>) => unknown;
-}
+import type { CopilotContext, CopilotTool } from "./types";
+import { CopilotAgent } from "./agent";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl: string;
@@ -40,26 +9,68 @@ export interface CopilotKitCoreConfig {
   properties: Record<string, unknown>;
 }
 
+export interface CopilotKitCoreAddAgentParams {
+  id: string;
+  agent: CopilotAgent;
+}
+
 export class CopilotKitCore {
+  static instance: CopilotKitCore;
+
+  static getInstance(config: CopilotKitCoreConfig) {
+    if (!CopilotKitCore.instance) {
+      CopilotKitCore.instance = new CopilotKitCore(config);
+    }
+    CopilotKitCore.instance.setHeaders(config.headers);
+    CopilotKitCore.instance.setProperties(config.properties);
+    return CopilotKitCore.instance;
+  }
+
   context: Record<string, CopilotContext> = {};
   tools: Record<string, CopilotTool<unknown>> = {};
   headers: Record<string, string>;
   runtimeUrl: string;
   properties: Record<string, unknown>;
-
-  // https://chatgpt.com/share/686d8cb9-9284-800b-8a12-a03911d50f12
-  agents: Promise<Record<string, HttpAgent>>;
+  agents: Record<string, CopilotAgent> = {};
+  didLoadAgents: boolean = false;
 
   constructor({ headers, runtimeUrl, properties }: CopilotKitCoreConfig) {
     this.headers = headers;
-    this.runtimeUrl = runtimeUrl;
+    this.runtimeUrl = runtimeUrl.replace(/\/$/, "");
     this.properties = properties;
-    this.agents = this.fetchAgents();
+    this.getAgents().then((agents) => {
+      this.agents = { ...this.agents, ...agents };
+      this.didLoadAgents = true;
+    });
   }
 
-  private async fetchAgents(): Promise<Record<string, HttpAgent>> {
-    // TODO: hook into agents: before request, change tools etc.
-    throw new Error("Not implemented");
+  private async getAgents(): Promise<Record<string, CopilotAgent>> {
+    const response = await fetch(`${this.runtimeUrl}/agents`, {
+      headers: this.headers,
+    });
+    const agentDescriptions: Record<string, AgentDescription> =
+      await response.json();
+
+    const agents: Record<string, CopilotAgent> = Object.fromEntries(
+      Object.entries(agentDescriptions).map(([id, { description }]) => {
+        const agent = new CopilotAgent({
+          url: `${this.runtimeUrl}/agent/${id}/run`,
+          agentId: id,
+          description: description,
+        });
+        return [id, agent];
+      })
+    );
+
+    return agents;
+  }
+
+  addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
+    this.agents[id] = agent;
+  }
+
+  removeAgent(id: string) {
+    delete this.agents[id];
   }
 
   addContext({ description, value }: CopilotContext): string {
