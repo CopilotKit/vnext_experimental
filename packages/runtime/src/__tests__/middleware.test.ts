@@ -3,7 +3,7 @@ import { CopilotKitRuntime } from "../runtime";
 import { CopilotKitRequestType } from "../handler";
 import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
-import { CopilotKitMiddlewareEvent } from "../middleware";
+import { WebhookStage } from "../middleware";
 
 const dummyRuntime = (opts: Partial<CopilotKitRuntime> = {}) => {
   const runtime = new CopilotKitRuntime({
@@ -25,21 +25,13 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   let originalFetch: typeof fetch;
   let fetchMock: jest.Mock | null = null;
 
-  const setupFetchMock = (
-    beforeUrl: string,
-    afterUrl: string,
-    modifiedReqUrl: string,
-  ) => {
+  const setupFetchMock = (beforeUrl: string, afterUrl: string) => {
     originalFetch = global.fetch;
     fetchMock = jest.fn(async (url: string) => {
       if (url === beforeUrl) {
         const body = {
-          request: {
-            url: modifiedReqUrl,
-            method: "GET",
-            headers: {},
-            body: undefined,
-          },
+          headers: { "x-modified": "yes" },
+          body: { foo: "bar" },
         };
         return new Response(JSON.stringify(body), {
           status: 200,
@@ -181,12 +173,16 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       handler,
     });
 
+    await new Promise((r) => setImmediate(r));
+
     expect(response).toBeInstanceOf(Response);
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
       requestType: CopilotKitRequestType.GetInfo,
     });
+
+    await new Promise((r) => setImmediate(r));
 
     expect(logSpy).toHaveBeenCalledWith(
       {
@@ -201,9 +197,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   it("processes request through webhook middleware URLs", async () => {
     const beforeURL = "https://hooks.example.com/before";
     const afterURL = "https://hooks.example.com/after";
-    const modifiedURL = "https://example.com/modified";
-
-    setupFetchMock(beforeURL, afterURL, modifiedURL);
+    setupFetchMock(beforeURL, afterURL);
 
     const runtime = dummyRuntime({
       beforeRequestMiddleware: beforeURL,
@@ -212,10 +206,25 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
 
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
-      request: new Request("https://example.com/original"),
+      request: new Request("https://example.com/original?x=1", {
+        headers: { foo: "bar" },
+        body: JSON.stringify({ original: true }),
+        method: "POST",
+      }),
       requestType: CopilotKitRequestType.GetInfo,
-      handler: async ({ request }) => new Response(request.url),
+      handler: async ({ request }) => {
+        const body = await request.json();
+        return new Response(
+          JSON.stringify({
+            header: request.headers.get("x-modified"),
+            body,
+          }),
+          { headers: { "content-type": "application/json" } },
+        );
+      },
     });
+
+    await new Promise((r) => setImmediate(r));
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
@@ -223,14 +232,163 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const beforeCall = fetchMock!.mock.calls[0];
     expect(beforeCall[0]).toBe(beforeURL);
     const beforePayload = JSON.parse(beforeCall[1].body);
-    expect(beforePayload.event).toBe(CopilotKitMiddlewareEvent.BeforeRequest);
+    expect(beforeCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
+      WebhookStage.BeforeRequest,
+    );
+    expect(beforePayload.method).toBe("POST");
+    expect(beforePayload.path).toBe("/original");
+    expect(beforePayload.query).toBe("x=1");
 
     // Assert payload for after-hook
     const afterCall = fetchMock!.mock.calls[1];
     expect(afterCall[0]).toBe(afterURL);
     const afterPayload = JSON.parse(afterCall[1].body);
-    expect(afterPayload.event).toBe(CopilotKitMiddlewareEvent.AfterRequest);
+    expect(afterCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
+      WebhookStage.AfterRequest,
+    );
+    expect(afterPayload.status).toBe(200);
 
-    expect(await response.text()).toBe(modifiedURL);
+    const output = await response.json();
+    expect(output).toEqual({ header: "yes", body: { foo: "bar" } });
+  });
+
+  it("forwards original request when webhook returns 204", async () => {
+    const beforeURL = "https://hooks.example.com/before-204";
+    const afterURL = "https://hooks.example.com/after";
+    originalFetch = global.fetch;
+    fetchMock = jest.fn(async (url: string) => {
+      if (url === beforeURL) {
+        return new Response(null, { status: 204 });
+      }
+      if (url === afterURL) {
+        return new Response(null, { status: 204 });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: beforeURL,
+      afterRequestMiddleware: afterURL,
+    });
+
+    const handler = jest.fn(async ({ request }) => new Response(request.url));
+
+    const request = new Request("https://example.com/test");
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request,
+      requestType: CopilotKitRequestType.GetInfo,
+      handler,
+    });
+
+    expect(handler).toHaveBeenCalledWith({ request });
+
+    await new Promise((r) => setImmediate(r));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("https://example.com/test");
+  });
+
+  it("returns 4xx response from before webhook to client", async () => {
+    const beforeURL = "https://hooks.example.com/before-4xx";
+    originalFetch = global.fetch;
+    fetchMock = jest.fn(async (url: string) => {
+      if (url === beforeURL) {
+        return new Response(JSON.stringify({ error: "nope" }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: beforeURL,
+    });
+
+    const handler = jest.fn();
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request: new Request("https://example.com/deny"),
+      requestType: CopilotKitRequestType.GetInfo,
+      handler,
+    });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "nope" });
+  });
+
+  it("returns 502 when before webhook fails", async () => {
+    const beforeURL = "https://hooks.example.com/before-fail";
+    originalFetch = global.fetch;
+    fetchMock = jest.fn(async (url: string) => {
+      if (url === beforeURL) {
+        return new Response(null, { status: 500 });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: beforeURL,
+    });
+
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request: new Request("https://example.com/fail"),
+      requestType: CopilotKitRequestType.GetInfo,
+      handler: jest.fn(),
+    });
+
+    expect(response.status).toBe(502);
+  });
+
+  it("supports Response throwing from function middleware", async () => {
+    const before = jest.fn(() => {
+      throw new Response("blocked", { status: 401 });
+    });
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: before,
+    });
+
+    const handler = jest.fn();
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request: new Request("https://example.com/func-block"),
+      requestType: CopilotKitRequestType.GetInfo,
+      handler,
+    });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(response.status).toBe(401);
+    expect(await response.text()).toBe("blocked");
+  });
+
+  it("keeps request unchanged when function middleware returns void", async () => {
+    const before = jest.fn().mockResolvedValue(undefined);
+    const runtime = dummyRuntime({ beforeRequestMiddleware: before });
+
+    const handler = jest.fn(async ({ request }) => new Response(request.url));
+    const request = new Request("https://example.com/original");
+    const response = await runHandlerWithMiddlewareAndLogging({
+      runtime,
+      request,
+      requestType: CopilotKitRequestType.GetInfo,
+      handler,
+    });
+
+    expect(before).toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledWith({ request });
+    expect(await response.text()).toBe("https://example.com/original");
   });
 });
