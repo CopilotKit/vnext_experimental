@@ -13,8 +13,13 @@ export type NonEmptyRecord<T> =
 /**
  * Type representing an agent's basic information
  */
-export type AgentDescription = {
+export interface AgentDescription {
   name: string;
   className: string;
   description: string;
-};
+}
+
+export interface RuntimeInfo {
+  version: string;
+  agents: Record<string, AgentDescription>;
+}

@@ -1,4 +1,4 @@
-import { AgentDescription, randomUUID } from "@copilotkit/shared";
+import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
 import type { CopilotContext, CopilotTool } from "./types";
 import { CopilotAgent } from "./agent";
@@ -38,21 +38,26 @@ export class CopilotKitCore {
     this.headers = headers;
     this.runtimeUrl = runtimeUrl.replace(/\/$/, "");
     this.properties = properties;
-    this.getAgents().then((agents) => {
+    this.getRuntimeInfo().then(({ agents, version }) => {
       this.agents = { ...this.agents, ...agents };
       this.didLoadAgents = true;
     });
   }
 
-  private async getAgents(): Promise<Record<string, CopilotAgent>> {
-    const response = await fetch(`${this.runtimeUrl}/agents`, {
+  private async getRuntimeInfo() {
+    const response = await fetch(`${this.runtimeUrl}/info`, {
       headers: this.headers,
     });
-    const agentDescriptions: Record<string, AgentDescription> =
-      await response.json();
+    const {
+      version,
+      ...runtimeInfo
+    }: {
+      agents: Record<string, AgentDescription>;
+      version: string;
+    } = (await response.json()) as RuntimeInfo;
 
     const agents: Record<string, CopilotAgent> = Object.fromEntries(
-      Object.entries(agentDescriptions).map(([id, { description }]) => {
+      Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
         const agent = new CopilotAgent({
           url: `${this.runtimeUrl}/agent/${id}/run`,
           agentId: id,
@@ -62,7 +67,7 @@ export class CopilotKitCore {
       })
     );
 
-    return agents;
+    return { agents, version };
   }
 
   addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
