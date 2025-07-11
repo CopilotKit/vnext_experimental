@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "storybook dev -p 6006",
+    "dev": "concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006\"",
     "build": "storybook build",
-    "storybook:dev": "storybook dev -p 6006",
+    "storybook:dev": "concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006\"",
     "storybook:build": "storybook build"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
   "devDependencies": {
     "@copilotkit/react": "workspace:*",
     "@types/node": "^22",
-    "typescript": "5.8.2"
+    "typescript": "5.8.2",
+    "concurrently": "^9.1.0"
   }
 }

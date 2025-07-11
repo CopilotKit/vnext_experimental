@@ -1,12 +1,12 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
-
-// Simple utility to merge Tailwind classes
-const merge = (base: string, override?: string): string => {
-  return override ? `${base} ${override}` : base;
-};
+import { twMerge } from "tailwind-merge";
+import { Plus, Settings, Mic, ArrowUp } from "lucide-react";
+import AutoResizingTextarea from "./AutoResizingTextarea";
+import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
 
 // Input component props interface
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface TextAreaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   className?: string;
 }
 
@@ -20,24 +20,79 @@ interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
 }
 
-// Default components
-const DefaultInput = React.forwardRef<HTMLInputElement, InputProps>(
-  (props, ref) => (
-    <input ref={ref} type="text" placeholder="Type a message..." {...props} />
-  )
-);
-DefaultInput.displayName = "DefaultInput";
+// ToolBar component props interface
+interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+}
 
-const DefaultButton: React.FC<ButtonProps> = (props) => (
-  <button type="button" {...props}>
-    ➤
+// Default components
+const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
+  (props, ref) => {
+    const { labels } = useCopilotChatContext();
+    return (
+      <AutoResizingTextarea
+        ref={ref}
+        placeholder={labels.inputPlaceholder}
+        maxRows={4}
+        {...props}
+      />
+    );
+  }
+);
+DefaultTextArea.displayName = "DefaultTextArea";
+
+const DefaultButton: React.FC<ButtonProps> = ({ className, ...props }) => (
+  <button
+    type="button"
+    className={twMerge(
+      // Base styles
+      "flex items-center justify-center rounded-full transition-colors h-9 w-9",
+      // Position
+      "ml-auto mr-[10px]",
+      // Normal state
+      "bg-black text-white",
+      // Dark mode
+      "dark:bg-white dark:text-black dark:focus-visible:outline-white",
+      // Disabled state
+      "disabled:bg-[#EBEBEB] disabled:text-[#0d0d0d] disabled:cursor-not-allowed",
+      // Dark mode disabled
+      "dark:disabled:bg-token-text-quaternary dark:disabled:text-token-main-surface-secondary",
+      // Hover/focus states
+      "hover:opacity-70 disabled:hover:opacity-100",
+      className
+    )}
+    {...props}
+  >
+    <ArrowUp size={16} />
   </button>
 );
 
 const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
   children,
+  className,
   ...props
-}) => <div {...props}>{children}</div>;
+}) => (
+  <div
+    className={twMerge(
+      "flex w-full cursor-text flex-col items-center justify-center overflow-clip bg-clip-padding contain-inline-size",
+      "bg-token-bg-primary dark:bg-[#303030] shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+const DefaultToolBar: React.FC<ToolBarProps> = ({ className, ...props }) => (
+  <div
+    className={twMerge(
+      "w-full h-[60px] bg-transparent flex items-center",
+      className
+    )}
+    {...props}
+  />
+);
 
 export type CopilotChatInputProps = {
   /** Called with trimmed text when user submits. Clears input. */
@@ -45,14 +100,16 @@ export type CopilotChatInputProps = {
 
   /**
    * Component slots — override one or many:
-   * - Input:   must render <input …> or <textarea …>
+   * - TextArea: must render <textarea …>
    * - Button:  must render <button …>
    * - Container: wrapper around everything (default is <div>)
+   * - ToolBar: bottom toolbar area (default is <div>)
    */
   components?: {
-    Input?: React.ComponentType<InputProps>;
+    TextArea?: React.ComponentType<TextAreaProps>;
     Button?: React.ComponentType<ButtonProps>;
     Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
+    ToolBar?: React.ComponentType<ToolBarProps>;
   };
 
   /**
@@ -61,8 +118,9 @@ export type CopilotChatInputProps = {
    */
   appearance?: {
     container?: string;
-    input?: string;
+    textarea?: string;
     button?: string;
+    toolbar?: string;
   };
 
   /**
@@ -70,8 +128,9 @@ export type CopilotChatInputProps = {
    * Receives the *pre-wired* sub-components so users never touch handlers.
    */
   children?: (parts: {
-    Input: JSX.Element;
+    TextArea: JSX.Element;
     Button: JSX.Element;
+    ToolBar: JSX.Element;
   }) => React.ReactNode;
 };
 
@@ -82,21 +141,22 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   children,
 }) => {
   const [text, setText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Extract component overrides with defaults
   const {
-    Input = DefaultInput,
+    TextArea = DefaultTextArea,
     Button = DefaultButton,
     Container = DefaultContainer,
+    ToolBar = DefaultToolBar,
   } = components;
 
   // Handlers
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
@@ -116,13 +176,18 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   };
 
   // Build bound components with handlers
-  const BoundInput = (
-    <Input
+  const BoundTextArea = (
+    <TextArea
       ref={inputRef}
       value={text}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
-      className={merge("flex-1 outline-none", appearance.input)}
+      className={twMerge(
+        "w-full outline-none bg-transparent p-5 resize-none",
+        "antialiased font-regular text-base leading-relaxed",
+        "placeholder:text-[#00000077]",
+        appearance.textarea
+      )}
     />
   );
 
@@ -130,29 +195,31 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     <Button
       onClick={send}
       disabled={!text.trim()}
-      className={merge(
-        "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed",
-        appearance.button
-      )}
+      className={appearance.button}
     />
   );
+
+  const BoundToolBar = <ToolBar className={appearance.toolbar} />;
 
   // Render algorithm
   if (children) {
     // Custom layout via render prop
-    return <>{children({ Input: BoundInput, Button: BoundButton })}</>;
+    return (
+      <>
+        {children({
+          TextArea: BoundTextArea,
+          Button: BoundButton,
+          ToolBar: BoundToolBar,
+        })}
+      </>
+    );
   }
 
   // Default layout
   return (
-    <Container
-      className={merge(
-        "flex gap-2 items-center border p-2 rounded",
-        appearance.container
-      )}
-    >
-      {BoundInput}
-      {BoundButton}
+    <Container className={appearance.container}>
+      {BoundTextArea}
+      <ToolBar className={appearance.toolbar}>{BoundButton}</ToolBar>
     </Container>
   );
 };
