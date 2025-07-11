@@ -90,14 +90,16 @@ export async function handleTranscribe({
       );
     }
 
-    // Transcribe the audio file
-    const transcription =
-      await runtime.transcriptionService.transcribeFile(audioFile);
+    // Transcribe the audio file with options
+    const transcription = await runtime.transcriptionService.transcribeFile({
+      audioFile,
+      mimeType: audioFile.type,
+      size: audioFile.size,
+    });
 
     return new Response(
       JSON.stringify({
         text: transcription,
-        filename: audioFile.name,
         size: audioFile.size,
         type: audioFile.type,
       }),

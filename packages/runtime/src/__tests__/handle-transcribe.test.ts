@@ -1,9 +1,14 @@
 import { handleTranscribe } from "../handlers/handle-transcribe";
 import { CopilotKitRuntime } from "../runtime";
-import { TranscriptionService } from "../transcription-service/transcription-service";
+import {
+  TranscriptionService,
+  TranscribeFileOptions,
+} from "../transcription-service/transcription-service";
 
 // Mock TranscriptionService
 class MockTranscriptionService extends TranscriptionService {
+  public lastOptions?: TranscribeFileOptions;
+
   constructor(
     private shouldThrow = false,
     private returnText = "Mock transcription"
@@ -11,10 +16,8 @@ class MockTranscriptionService extends TranscriptionService {
     super();
   }
 
-  async transcribeFile(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    audioFile: File
-  ): Promise<string> {
+  async transcribeFile(options: TranscribeFileOptions): Promise<string> {
+    this.lastOptions = options;
     if (this.shouldThrow) {
       throw new Error("Transcription service error");
     }
@@ -77,7 +80,6 @@ describe("handleTranscribe", () => {
     const body = await response.json();
     expect(body).toEqual({
       text: "Hello world",
-      filename: "test.mp3",
       size: 2048,
       type: "audio/mpeg",
     });
@@ -260,6 +262,27 @@ describe("handleTranscribe", () => {
       error: "Missing audio file",
       message:
         "No audio file found in form data. Please include an 'audio' field.",
+    });
+  });
+
+  it("should pass file metadata to transcription service", async () => {
+    const mockService = new MockTranscriptionService();
+    const runtime = createMockRuntime(mockService);
+    const audioFile = createMockAudioFile(
+      "my-recording.wav",
+      "audio/wav",
+      2048
+    );
+
+    const request = createFormDataRequest(audioFile);
+
+    const response = await handleTranscribe({ runtime, request });
+
+    expect(response.status).toBe(200);
+    expect(mockService.lastOptions).toEqual({
+      audioFile,
+      mimeType: "audio/wav",
+      size: 2048,
     });
   });
 });

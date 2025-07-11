@@ -1,4 +1,7 @@
-import { TranscriptionService } from "./transcription-service";
+import {
+  TranscribeFileOptions,
+  TranscriptionService,
+} from "./transcription-service";
 import OpenAI from "openai";
 
 export interface TranscribeAdapterOpenAIConfig {
@@ -16,9 +19,9 @@ export class TranscriptionServiceOpenAI extends TranscriptionService {
     this.model = config.model ?? "whisper-1";
   }
 
-  async transcribeFile(audioFile: File): Promise<string> {
+  async transcribeFile(options: TranscribeFileOptions): Promise<string> {
     const response = await this.openai.audio.transcriptions.create({
-      file: audioFile,
+      file: options.audioFile,
       model: this.model,
     });
     return response.text;
