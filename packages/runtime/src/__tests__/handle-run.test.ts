@@ -7,6 +7,7 @@ describe("handleRunAgent", () => {
   ): CopilotKitRuntime => {
     return {
       agents: Promise.resolve(agents),
+      transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
     } as CopilotKitRuntime;
@@ -66,6 +67,7 @@ describe("handleRunAgent", () => {
   it("should return 500 when runtime.agents throws an error", async () => {
     const runtime = {
       agents: Promise.reject(new Error("Database connection failed")),
+      transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
     } as CopilotKitRuntime;

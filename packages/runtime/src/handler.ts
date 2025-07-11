@@ -5,4 +5,5 @@ export type CopilotKitRequestHandler = (params: {
 export enum CopilotKitRequestType {
   RunAgent = "RUN_AGENT",
   GetRuntimeInfo = "GET_RUNTIME_INFO",
+  Transcribe = "TRANSCRIBE",
 }

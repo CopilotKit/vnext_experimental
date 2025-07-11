@@ -1,6 +1,7 @@
 import { createServerAdapter } from "@whatwg-node/server";
 import { handleRunAgent } from "./handlers/handle-run";
 import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
+import { handleTranscribe } from "./handlers/handle-transcribe";
 import { CopilotKitRuntime } from "./runtime";
 import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
 import { logger } from "@copilotkit/shared";
@@ -41,6 +42,14 @@ export default (runtime: CopilotKitRuntime) =>
           handler: async ({ request }) =>
             handleGetRuntimeInfo({ runtime, request }),
         });
+      case CopilotKitRequestType.Transcribe:
+        return runHandlerWithMiddlewareAndLogging({
+          runtime,
+          request,
+          requestType,
+          handler: async ({ request }) =>
+            handleTranscribe({ runtime, request }),
+        });
       default:
         return new Response(JSON.stringify({ error: "Not found" }), {
           status: 404,
@@ -70,6 +79,13 @@ export function routeRequest(request: Request): {
   if (path.endsWith("/info")) {
     return {
       requestType: CopilotKitRequestType.GetRuntimeInfo,
+    };
+  }
+
+  // Check if path ends with /transcribe
+  if (path.endsWith("/transcribe")) {
+    return {
+      requestType: CopilotKitRequestType.Transcribe,
     };
   }
 

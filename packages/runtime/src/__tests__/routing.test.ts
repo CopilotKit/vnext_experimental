@@ -111,6 +111,44 @@ describe("routeRequest", () => {
     });
   });
 
+  describe("Transcribe route pattern (/transcribe endpoint)", () => {
+    it("should match simple transcribe URL", () => {
+      const request = createRequest("https://example.com/transcribe");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should match transcribe URL with path prefix", () => {
+      const request = createRequest(
+        "https://example.com/api/v1/copilot/transcribe"
+      );
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should match transcribe URL with query parameters", () => {
+      const request = createRequest(
+        "https://example.com/transcribe?format=json"
+      );
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should not match transcribe URLs with extra path segments", () => {
+      const request = createRequest("https://example.com/transcribe/extra");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
+      expect(result.info).toBeUndefined();
+    });
+  });
+
   describe("Unmatched routes (404 behavior)", () => {
     it("should return null for root path", () => {
       const request = createRequest("https://example.com/");
@@ -154,11 +192,19 @@ describe("routeRequest", () => {
       expect(result.info).toEqual({ agentName: "test" });
     });
 
-    it("should handle URLs with ports", () => {
+    it("should handle URLs with ports for info endpoint", () => {
       const request = createRequest("https://api.example.com:8080/info");
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should handle URLs with ports for transcribe endpoint", () => {
+      const request = createRequest("https://api.example.com:8080/transcribe");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
       expect(result.info).toBeUndefined();
     });
 
