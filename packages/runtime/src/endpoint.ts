@@ -12,6 +12,14 @@ import {
 export default (runtime: CopilotKitRuntime) =>
   createServerAdapter(async (request: Request) => {
     const { requestType, info } = routeRequest(request);
+
+    if (!requestType) {
+      return new Response(JSON.stringify({ error: "Not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     switch (requestType) {
       case CopilotKitRequestType.RunAgent:
         return runHandlerWithMiddlewareAndLogging({
@@ -19,7 +27,7 @@ export default (runtime: CopilotKitRuntime) =>
           request,
           requestType,
           handler: async ({ request }) =>
-            handleRunAgent({
+            await handleRunAgent({
               runtime,
               request,
               agentName: info!.agentName as string,
@@ -36,12 +44,13 @@ export default (runtime: CopilotKitRuntime) =>
       default:
         return new Response(JSON.stringify({ error: "Not found" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         });
     }
   });
 
 export function routeRequest(request: Request): {
-  requestType: CopilotKitRequestType;
+  requestType: CopilotKitRequestType | null;
   info?: Record<string, unknown>;
 } {
   const url = new URL(request.url);
@@ -57,9 +66,16 @@ export function routeRequest(request: Request): {
     };
   }
 
-  // All other paths return runtime info (combines agents and version info)
+  // Check if path ends with /info
+  if (path.endsWith("/info")) {
+    return {
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
+    };
+  }
+
+  // Return null for unmatched paths (will result in 404)
   return {
-    requestType: CopilotKitRequestType.GetRuntimeInfo,
+    requestType: null,
   };
 }
 

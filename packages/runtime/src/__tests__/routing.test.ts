@@ -54,7 +54,7 @@ describe("routeRequest", () => {
       const request = createRequest("https://example.com/agent//run");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
+      expect(result.requestType).toBe(null);
       expect(result.info).toBeUndefined();
     });
 
@@ -62,7 +62,7 @@ describe("routeRequest", () => {
       const request = createRequest("https://example.com/agent/myAgent");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
+      expect(result.requestType).toBe(null);
       expect(result.info).toBeUndefined();
     });
 
@@ -72,57 +72,13 @@ describe("routeRequest", () => {
       );
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
+      expect(result.requestType).toBe(null);
       expect(result.info).toBeUndefined();
     });
   });
 
-  describe("GetRuntimeInfo route pattern", () => {
-    it("should match simple agents URL", () => {
-      const request = createRequest("https://example.com/agents");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should match agents URL with path prefix", () => {
-      const request = createRequest(
-        "https://example.com/api/v1/copilot/agents"
-      );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should match agents URL with query parameters", () => {
-      const request = createRequest("https://example.com/agents?filter=active");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should match agents URL with extra path segments", () => {
-      const request = createRequest("https://example.com/agents/123");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-  });
-
-  describe("GetRuntimeInfo route pattern (default)", () => {
-    it("should default to GetRuntimeInfo for root path", () => {
-      const request = createRequest("https://example.com/");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should default to GetRuntimeInfo for info path", () => {
+  describe("GetRuntimeInfo route pattern (/info endpoint)", () => {
+    it("should match simple info URL", () => {
       const request = createRequest("https://example.com/info");
       const result = routeRequest(request);
 
@@ -130,19 +86,61 @@ describe("routeRequest", () => {
       expect(result.info).toBeUndefined();
     });
 
-    it("should default to GetRuntimeInfo for unknown paths", () => {
-      const request = createRequest("https://example.com/unknown/path");
+    it("should match info URL with path prefix", () => {
+      const request = createRequest("https://example.com/api/v1/copilot/info");
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
-    it("should default to GetRuntimeInfo for malformed agent paths", () => {
-      const request = createRequest("https://example.com/agent/run");
+    it("should match info URL with query parameters", () => {
+      const request = createRequest("https://example.com/info?param=value");
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should not match non-info URLs", () => {
+      const request = createRequest("https://example.com/agents");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
+      expect(result.info).toBeUndefined();
+    });
+  });
+
+  describe("Unmatched routes (404 behavior)", () => {
+    it("should return null for root path", () => {
+      const request = createRequest("https://example.com/");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should return null for unknown paths", () => {
+      const request = createRequest("https://example.com/unknown/path");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should return null for malformed agent paths", () => {
+      const request = createRequest("https://example.com/agent/run");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
+      expect(result.info).toBeUndefined();
+    });
+
+    it("should return null for agents path", () => {
+      const request = createRequest("https://example.com/agents");
+      const result = routeRequest(request);
+
+      expect(result.requestType).toBe(null);
       expect(result.info).toBeUndefined();
     });
   });
@@ -157,7 +155,7 @@ describe("routeRequest", () => {
     });
 
     it("should handle URLs with ports", () => {
-      const request = createRequest("https://api.example.com:8080/agents");
+      const request = createRequest("https://api.example.com:8080/info");
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);

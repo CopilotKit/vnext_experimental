@@ -6,16 +6,44 @@ interface RunAgentParameters {
   agentName: string;
 }
 
-export function handleRunAgent({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function handleRunAgent({
   runtime,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   request,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   agentName,
 }: RunAgentParameters) {
-  return new Response(JSON.stringify({ message: "Hello, world!" }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  try {
+    const agents = await runtime.agents;
+
+    // Check if the requested agent exists
+    if (!agents[agentName]) {
+      return new Response(
+        JSON.stringify({
+          error: "Agent not found",
+          message: `Agent '${agentName}' does not exist`,
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // TODO: Implement actual agent execution logic here
+    return new Response(JSON.stringify({ message: "Hello, world!" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: "Failed to run agent",
+        message: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
