@@ -15,6 +15,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
 }
 
+// TranscribeButton component props interface
+interface TranscribeButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  className?: string;
+}
+
 // Container component props interface
 interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -27,7 +33,7 @@ interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 // Default components
 const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
-  (props, ref) => {
+  ({ className, ...props }, ref) => {
     const { labels } = useCopilotChatContext();
     return (
       <AutoResizingTextarea
@@ -45,7 +51,7 @@ const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           "antialiased font-regular text-base leading-relaxed",
           // Placeholder styles
           "placeholder:text-[#00000077]",
-          props.className
+          className
         )}
         {...props}
       />
@@ -61,7 +67,7 @@ const DefaultButton: React.FC<ButtonProps> = ({ className, ...props }) => (
       // Base styles
       "flex items-center justify-center rounded-full transition-colors h-9 w-9",
       // Position
-      "ml-auto mr-[10px]",
+      "mr-[10px]",
       // Normal state
       "bg-black text-white",
       // Dark mode
@@ -79,6 +85,39 @@ const DefaultButton: React.FC<ButtonProps> = ({ className, ...props }) => (
     <ArrowUp size={16} />
   </button>
 );
+
+const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
+  className,
+  ...props
+}) => {
+  return (
+    <div className="relative ml-auto group mr-2">
+      <button
+        type="button"
+        className={twMerge(
+          // Base styles
+          "flex items-center justify-center rounded-full transition-colors h-9 w-9",
+          // Normal state
+          "bg-transparent text-[#666666]",
+          // Dark mode
+          "dark:text-[#CCCCCC] dark:border-[#404040]",
+          // Hover states
+          "hover:bg-[#fafafa] hover:text-[#333333]",
+          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
+          // Disabled state
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          className
+        )}
+        {...props}
+      >
+        <Mic size={16} />
+      </button>
+      <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
+        Dictate
+      </div>
+    </div>
+  );
+};
 
 const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
   children,
@@ -119,16 +158,21 @@ export type CopilotChatInputProps = {
   /** Called with trimmed text when user submits. Clears input. */
   onSend: (text: string) => void;
 
+  /** Called when user starts transcription. Optional. */
+  onTranscribe?: () => void;
+
   /**
    * Component slots — override one or many:
    * - TextArea: must render <textarea …>
    * - Button:  must render <button …>
+   * - TranscribeButton: must render <button …> with built-in tooltip
    * - Container: wrapper around everything (default is <div>)
    * - ToolBar: bottom toolbar area (default is <div>)
    */
   components?: {
     TextArea?: React.ComponentType<TextAreaProps>;
     Button?: React.ComponentType<ButtonProps>;
+    TranscribeButton?: React.ComponentType<TranscribeButtonProps>;
     Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
     ToolBar?: React.ComponentType<ToolBarProps>;
   };
@@ -141,6 +185,7 @@ export type CopilotChatInputProps = {
     container?: string;
     textarea?: string;
     button?: string;
+    transcribeButton?: string;
     toolbar?: string;
   };
 
@@ -151,12 +196,14 @@ export type CopilotChatInputProps = {
   children?: (parts: {
     TextArea: JSX.Element;
     Button: JSX.Element;
+    TranscribeButton: JSX.Element;
     ToolBar: JSX.Element;
   }) => React.ReactNode;
 };
 
 export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   onSend,
+  onTranscribe,
   components = {},
   appearance = {},
   children,
@@ -168,6 +215,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   const {
     TextArea = DefaultTextArea,
     Button = DefaultButton,
+    TranscribeButton = DefaultTranscribeButton,
     Container = DefaultContainer,
     ToolBar = DefaultToolBar,
   } = components;
@@ -215,6 +263,17 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     />
   );
 
+  const BoundTranscribeButton = (
+    <TranscribeButton
+      onClick={onTranscribe}
+      className={
+        TranscribeButton === DefaultTranscribeButton
+          ? appearance.transcribeButton
+          : undefined
+      }
+    />
+  );
+
   const BoundToolBar = (
     <ToolBar
       className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
@@ -229,6 +288,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
         {children({
           TextArea: BoundTextArea,
           Button: BoundButton,
+          TranscribeButton: BoundTranscribeButton,
           ToolBar: BoundToolBar,
         })}
       </>
@@ -246,6 +306,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
       <ToolBar
         className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
       >
+        {onTranscribe && BoundTranscribeButton}
         {BoundButton}
       </ToolBar>
     </Container>
