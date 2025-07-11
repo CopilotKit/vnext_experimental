@@ -34,6 +34,19 @@ const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
         ref={ref}
         placeholder={labels.inputPlaceholder}
         maxRows={4}
+        className={twMerge(
+          // Layout and sizing
+          "w-full p-5",
+          // Behavior
+          "outline-none resize-none",
+          // Background
+          "bg-transparent",
+          // Typography
+          "antialiased font-regular text-base leading-relaxed",
+          // Placeholder styles
+          "placeholder:text-[#00000077]",
+          props.className
+        )}
         {...props}
       />
     );
@@ -74,8 +87,16 @@ const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
 }) => (
   <div
     className={twMerge(
-      "flex w-full cursor-text flex-col items-center justify-center overflow-clip bg-clip-padding contain-inline-size",
-      "bg-token-bg-primary dark:bg-[#303030] shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
+      // Layout
+      "flex w-full flex-col items-center justify-center",
+      // Interaction
+      "cursor-text",
+      // Overflow and clipping
+      "overflow-clip bg-clip-padding contain-inline-size",
+      // Background
+      "bg-token-bg-primary dark:bg-[#303030]",
+      // Visual effects
+      "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
       className
     )}
     {...props}
@@ -182,12 +203,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
       value={text}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
-      className={twMerge(
-        "w-full outline-none bg-transparent p-5 resize-none",
-        "antialiased font-regular text-base leading-relaxed",
-        "placeholder:text-[#00000077]",
-        appearance.textarea
-      )}
+      className={TextArea === DefaultTextArea ? appearance.textarea : undefined}
     />
   );
 
@@ -195,11 +211,15 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     <Button
       onClick={send}
       disabled={!text.trim()}
-      className={appearance.button}
+      className={Button === DefaultButton ? appearance.button : undefined}
     />
   );
 
-  const BoundToolBar = <ToolBar className={appearance.toolbar} />;
+  const BoundToolBar = (
+    <ToolBar
+      className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
+    />
+  );
 
   // Render algorithm
   if (children) {
@@ -217,9 +237,17 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
 
   // Default layout
   return (
-    <Container className={appearance.container}>
+    <Container
+      className={
+        Container === DefaultContainer ? appearance.container : undefined
+      }
+    >
       {BoundTextArea}
-      <ToolBar className={appearance.toolbar}>{BoundButton}</ToolBar>
+      <ToolBar
+        className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
+      >
+        {BoundButton}
+      </ToolBar>
     </Container>
   );
 };
