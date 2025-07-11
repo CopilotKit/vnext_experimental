@@ -6,14 +6,14 @@ import React, {
   useImperativeHandle,
 } from "react";
 
-interface AutoResizingTextareaProps
+interface CopilotChatInputTextAreaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   maxRows?: number;
 }
 
-const AutoResizingTextarea = forwardRef<
+const CopilotChatInputTextArea = forwardRef<
   HTMLTextAreaElement,
-  AutoResizingTextareaProps
+  CopilotChatInputTextAreaProps
 >(({ maxRows = 1, style, ...props }, ref) => {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [maxHeight, setMaxHeight] = useState<number>(0);
@@ -62,6 +62,6 @@ const AutoResizingTextarea = forwardRef<
   );
 });
 
-AutoResizingTextarea.displayName = "AutoResizingTextarea";
+CopilotChatInputTextArea.displayName = "CopilotChatInputTextArea";
 
-export default AutoResizingTextarea;
+export default CopilotChatInputTextArea;

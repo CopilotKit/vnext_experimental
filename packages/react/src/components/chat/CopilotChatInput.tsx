@@ -1,7 +1,7 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings, Mic, ArrowUp } from "lucide-react";
-import AutoResizingTextarea from "./AutoResizingTextarea";
+import CopilotChatInputTextArea from "./CopilotChatInputTextarea";
 import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
 
 // Input component props interface
@@ -36,19 +36,19 @@ const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, ...props }, ref) => {
     const { labels } = useCopilotChatContext();
     return (
-      <AutoResizingTextarea
+      <CopilotChatInputTextArea
         ref={ref}
         placeholder={labels.inputPlaceholder}
         maxRows={4}
         className={twMerge(
           // Layout and sizing
-          "w-full p-5",
+          "w-full p-5 pb-0",
           // Behavior
           "outline-none resize-none",
           // Background
           "bg-transparent",
           // Typography
-          "antialiased font-regular text-base leading-relaxed",
+          "antialiased font-regular leading-relaxed text-[16px]",
           // Placeholder styles
           "placeholder:text-[#00000077]",
           className
@@ -90,6 +90,7 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
   className,
   ...props
 }) => {
+  const { labels } = useCopilotChatContext();
   return (
     <div className="relative ml-auto group mr-2">
       <button
@@ -113,7 +114,7 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
         <Mic size={16} />
       </button>
       <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
-        Dictate
+        {labels.inputTranscribeButtonLabel}
       </div>
     </div>
   );
@@ -133,7 +134,7 @@ const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
       // Overflow and clipping
       "overflow-visible bg-clip-padding contain-inline-size",
       // Background
-      "bg-token-bg-primary dark:bg-[#303030]",
+      "bg-white dark:bg-[#303030]",
       // Visual effects
       "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
       className
