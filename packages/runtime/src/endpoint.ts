@@ -1,8 +1,7 @@
 import { createServerAdapter } from "@whatwg-node/server";
 import { handleRunAgent } from "./handlers/handle-run";
-import { handleGetAgents } from "./handlers/get-agents";
+import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
 import { CopilotKitRuntime } from "./runtime";
-import { handleGetInfo } from "./handlers/get-info";
 import { CopilotKitRequestHandler, CopilotKitRequestType } from "./handler";
 import { logger } from "@copilotkit/shared";
 import {
@@ -26,19 +25,13 @@ export default (runtime: CopilotKitRuntime) =>
               agentName: info!.agentName as string,
             }),
         });
-      case CopilotKitRequestType.GetAgents:
+      case CopilotKitRequestType.GetRuntimeInfo:
         return runHandlerWithMiddlewareAndLogging({
           runtime,
           request,
           requestType,
-          handler: async ({ request }) => handleGetAgents({ runtime, request }),
-        });
-      case CopilotKitRequestType.GetInfo:
-        return runHandlerWithMiddlewareAndLogging({
-          runtime,
-          request,
-          requestType,
-          handler: async ({ request }) => handleGetInfo({ runtime, request }),
+          handler: async ({ request }) =>
+            handleGetRuntimeInfo({ runtime, request }),
         });
       default:
         return new Response(JSON.stringify({ error: "Not found" }), {
@@ -64,14 +57,9 @@ export function routeRequest(request: Request): {
     };
   }
 
-  if (path.endsWith("/agents")) {
-    return {
-      requestType: CopilotKitRequestType.GetAgents,
-    };
-  }
-
+  // All other paths return runtime info (combines agents and version info)
   return {
-    requestType: CopilotKitRequestType.GetInfo,
+    requestType: CopilotKitRequestType.GetRuntimeInfo,
   };
 }
 
@@ -98,7 +86,7 @@ export async function runHandlerWithMiddlewareAndLogging({
   } catch (error) {
     logger.error(
       { err: error, url: request.url, requestType },
-      "Error running before request middleware",
+      "Error running before request middleware"
     );
     if (error instanceof Response) {
       return error;
@@ -112,7 +100,7 @@ export async function runHandlerWithMiddlewareAndLogging({
   } catch (error) {
     logger.error(
       { err: error, url: request.url, requestType },
-      "Error running request handler",
+      "Error running request handler"
     );
     throw error;
   }
@@ -121,9 +109,9 @@ export async function runHandlerWithMiddlewareAndLogging({
     (error) => {
       logger.error(
         { err: error, url: request.url, requestType },
-        "Error running after request middleware",
+        "Error running after request middleware"
       );
-    },
+    }
   );
 
   return response;

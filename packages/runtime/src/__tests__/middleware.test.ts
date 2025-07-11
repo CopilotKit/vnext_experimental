@@ -65,20 +65,20 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: originalRequest,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 
     expect(before).toHaveBeenCalledWith({
       runtime,
       request: originalRequest,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
     });
     expect(handler).toHaveBeenCalledWith({ request: modifiedRequest });
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
     });
     expect(await response.text()).toBe(modifiedRequest.url);
   });
@@ -101,18 +101,18 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       runHandlerWithMiddlewareAndLogging({
         runtime,
         request: new Request("https://example.com/test"),
-        requestType: CopilotKitRequestType.GetInfo,
+        requestType: CopilotKitRequestType.GetRuntimeInfo,
         handler,
-      }),
+      })
     ).rejects.toThrow(error);
 
     expect(logSpy).toHaveBeenCalledWith(
       {
         err: error,
         url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetInfo,
+        requestType: CopilotKitRequestType.GetRuntimeInfo,
       },
-      "Error running before request middleware",
+      "Error running before request middleware"
     );
     expect(handler).not.toHaveBeenCalled();
     expect(after).not.toHaveBeenCalled();
@@ -136,18 +136,18 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       runHandlerWithMiddlewareAndLogging({
         runtime,
         request: new Request("https://example.com/test"),
-        requestType: CopilotKitRequestType.GetInfo,
+        requestType: CopilotKitRequestType.GetRuntimeInfo,
         handler,
-      }),
+      })
     ).rejects.toThrow(error);
 
     expect(logSpy).toHaveBeenCalledWith(
       {
         err: error,
         url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetInfo,
+        requestType: CopilotKitRequestType.GetRuntimeInfo,
       },
-      "Error running request handler",
+      "Error running request handler"
     );
     expect(after).not.toHaveBeenCalled();
   });
@@ -169,7 +169,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/test"),
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 
@@ -179,7 +179,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
     });
 
     await new Promise((r) => setImmediate(r));
@@ -188,9 +188,9 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       {
         err: error,
         url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetInfo,
+        requestType: CopilotKitRequestType.GetRuntimeInfo,
       },
-      "Error running after request middleware",
+      "Error running after request middleware"
     );
   });
 
@@ -211,7 +211,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
         body: JSON.stringify({ original: true }),
         method: "POST",
       }),
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler: async ({ request }) => {
         const body = await request.json();
         return new Response(
@@ -219,7 +219,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
             header: request.headers.get("x-modified"),
             body,
           }),
-          { headers: { "content-type": "application/json" } },
+          { headers: { "content-type": "application/json" } }
         );
       },
     });
@@ -233,7 +233,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(beforeCall[0]).toBe(beforeURL);
     const beforePayload = JSON.parse(beforeCall[1].body);
     expect(beforeCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
-      WebhookStage.BeforeRequest,
+      WebhookStage.BeforeRequest
     );
     expect(beforePayload.method).toBe("POST");
     expect(beforePayload.path).toBe("/original");
@@ -244,7 +244,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(afterCall[0]).toBe(afterURL);
     const afterPayload = JSON.parse(afterCall[1].body);
     expect(afterCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
-      WebhookStage.AfterRequest,
+      WebhookStage.AfterRequest
     );
     expect(afterPayload.status).toBe(200);
 
@@ -280,7 +280,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 
@@ -317,7 +317,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/deny"),
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 
@@ -346,7 +346,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/fail"),
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler: jest.fn(),
     });
 
@@ -365,7 +365,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/func-block"),
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 
@@ -383,7 +383,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request,
-      requestType: CopilotKitRequestType.GetInfo,
+      requestType: CopilotKitRequestType.GetRuntimeInfo,
       handler,
     });
 

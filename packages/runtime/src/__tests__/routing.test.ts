@@ -42,7 +42,7 @@ describe("routeRequest", () => {
 
     it("should match agent run URL with complex path prefix", () => {
       const request = createRequest(
-        "https://example.com/api/v1/copilot/agent/testAgent/run",
+        "https://example.com/api/v1/copilot/agent/testAgent/run"
       );
       const result = routeRequest(request);
 
@@ -54,7 +54,7 @@ describe("routeRequest", () => {
       const request = createRequest("https://example.com/agent//run");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
@@ -62,37 +62,37 @@ describe("routeRequest", () => {
       const request = createRequest("https://example.com/agent/myAgent");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
     it("should not match agent run URL with extra path segments", () => {
       const request = createRequest(
-        "https://example.com/agent/myAgent/run/extra",
+        "https://example.com/agent/myAgent/run/extra"
       );
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
   });
 
-  describe("GetAgents route pattern", () => {
+  describe("GetRuntimeInfo route pattern", () => {
     it("should match simple agents URL", () => {
       const request = createRequest("https://example.com/agents");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetAgents);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
     it("should match agents URL with path prefix", () => {
       const request = createRequest(
-        "https://example.com/api/v1/copilot/agents",
+        "https://example.com/api/v1/copilot/agents"
       );
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetAgents);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
@@ -100,49 +100,49 @@ describe("routeRequest", () => {
       const request = createRequest("https://example.com/agents?filter=active");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetAgents);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
-    it("should not match agents URL with extra path segments", () => {
+    it("should match agents URL with extra path segments", () => {
       const request = createRequest("https://example.com/agents/123");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
   });
 
-  describe("GetInfo route pattern (default)", () => {
-    it("should default to GetInfo for root path", () => {
+  describe("GetRuntimeInfo route pattern (default)", () => {
+    it("should default to GetRuntimeInfo for root path", () => {
       const request = createRequest("https://example.com/");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
-    it("should default to GetInfo for info path", () => {
+    it("should default to GetRuntimeInfo for info path", () => {
       const request = createRequest("https://example.com/info");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
-    it("should default to GetInfo for unknown paths", () => {
+    it("should default to GetRuntimeInfo for unknown paths", () => {
       const request = createRequest("https://example.com/unknown/path");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
-    it("should default to GetInfo for malformed agent paths", () => {
+    it("should default to GetRuntimeInfo for malformed agent paths", () => {
       const request = createRequest("https://example.com/agent/run");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetInfo);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
   });
@@ -160,13 +160,13 @@ describe("routeRequest", () => {
       const request = createRequest("https://api.example.com:8080/agents");
       const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetAgents);
+      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
       expect(result.info).toBeUndefined();
     });
 
     it("should handle URLs with hash fragments", () => {
       const request = createRequest(
-        "https://example.com/agent/myAgent/run#section",
+        "https://example.com/agent/myAgent/run#section"
       );
       const result = routeRequest(request);
 
@@ -176,7 +176,7 @@ describe("routeRequest", () => {
 
     it("should handle URLs with special characters in agent names", () => {
       const request = createRequest(
-        "https://example.com/agent/test%20agent/run",
+        "https://example.com/agent/test%20agent/run"
       );
       const result = routeRequest(request);
 

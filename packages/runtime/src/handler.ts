@@ -4,6 +4,5 @@ export type CopilotKitRequestHandler = (params: {
 
 export enum CopilotKitRequestType {
   RunAgent = "RUN_AGENT",
-  GetAgents = "GET_AGENTS",
-  GetInfo = "GET_INFO",
+  GetRuntimeInfo = "GET_RUNTIME_INFO",
 }

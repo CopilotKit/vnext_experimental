@@ -1,12 +1,15 @@
 import { CopilotKitRuntime } from "../runtime";
 import { AgentDescription } from "@copilotkit/shared";
+import { VERSION } from "../runtime";
 
-interface HandleGetAgentsParameters {
+interface HandleGetRuntimeInfoParameters {
   runtime: CopilotKitRuntime;
   request: Request;
 }
 
-export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
+export async function handleGetRuntimeInfo({
+  runtime,
+}: HandleGetRuntimeInfoParameters) {
   try {
     const agents = await runtime.agents;
 
@@ -24,6 +27,7 @@ export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
 
     return new Response(
       JSON.stringify({
+        version: VERSION,
         agents: agentsDict,
       }),
       {
@@ -34,7 +38,7 @@ export async function handleGetAgents({ runtime }: HandleGetAgentsParameters) {
   } catch (error) {
     return new Response(
       JSON.stringify({
-        error: "Failed to retrieve agents",
+        error: "Failed to retrieve runtime information",
         message: error instanceof Error ? error.message : "Unknown error",
       }),
       {
