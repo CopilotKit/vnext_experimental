@@ -5,6 +5,7 @@ export interface CopilotChatLabels {
   inputPlaceholder: string;
   inputTranscribeButtonLabel: string;
   inputAddButtonLabel: string;
+  inputToolsButtonLabel: string;
 }
 
 // Define the full context interface
@@ -18,6 +19,7 @@ const defaultLabels: CopilotChatLabels = {
   inputPlaceholder: "Type a message...",
   inputTranscribeButtonLabel: "Transcribe",
   inputAddButtonLabel: "Add photos or files",
+  inputToolsButtonLabel: "Tools",
 };
 
 // Default context value

@@ -1,40 +1,34 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { twMerge } from "tailwind-merge";
-import { Plus, Settings, Mic, ArrowUp } from "lucide-react";
+import { Plus, Settings2, Mic, ArrowUp } from "lucide-react";
 import CopilotChatInputTextArea from "./CopilotChatInputTextarea";
 import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
 
 // Input component props interface
 interface TextAreaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  className?: string;
-}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
 // Button component props interface
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  className?: string;
-}
+interface SendButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 // TranscribeButton component props interface
 interface TranscribeButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  className?: string;
-}
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 // AddButton component props interface
-interface AddButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  className?: string;
-}
+interface AddButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+
+// ToolsButton component props interface
+interface ToolsButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 // Container component props interface
-interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-}
+interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 // ToolBar component props interface
-interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-}
+interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 // Default components
 const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
@@ -65,7 +59,10 @@ const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
 );
 DefaultTextArea.displayName = "DefaultTextArea";
 
-const DefaultButton: React.FC<ButtonProps> = ({ className, ...props }) => (
+const DefaultSendButton: React.FC<SendButtonProps> = ({
+  className,
+  ...props
+}) => (
   <button
     type="button"
     className={twMerge(
@@ -159,6 +156,50 @@ const DefaultAddButton: React.FC<AddButtonProps> = ({
   );
 };
 
+const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
+  className,
+  ...props
+}) => {
+  const { labels } = useCopilotChatContext();
+  return (
+    <div className="relative group">
+      <button
+        type="button"
+        className={twMerge(
+          // Base styles
+          "flex items-center gap-2 rounded-full transition-colors h-9 px-3",
+          // Normal state
+          "bg-transparent text-[#666666]",
+          // Dark mode
+          "dark:text-[#CCCCCC] dark:border-[#404040]",
+          // Hover states
+          "hover:bg-[#f8f8f8] hover:text-[#333333]",
+          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
+          // Disabled state
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          className
+        )}
+        {...props}
+      >
+        <Settings2 size={20} />
+        <span className="text-sm font-normal">
+          {labels.inputToolsButtonLabel}
+        </span>
+      </button>
+      <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
+        {labels.inputToolsButtonLabel}
+      </div>
+    </div>
+  );
+};
+
+// Container component props interface
+interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+// ToolBar component props interface
+interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+// Default components
 const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
   children,
   className,
@@ -204,20 +245,25 @@ export type CopilotChatInputProps = {
   /** Called when user wants to add photos or files. Optional. */
   onAdd?: () => void;
 
+  /** Called when user wants to open tools. Optional. */
+  onTools?: () => void;
+
   /**
    * Component slots — override one or many:
    * - TextArea: must render <textarea …>
-   * - Button:  must render <button …>
+   * - SendButton:  must render <button …>
    * - TranscribeButton: must render <button …> with built-in tooltip
    * - AddButton: must render <button …> with built-in tooltip
+   * - ToolsButton: must render <button …> with built-in tooltip and text
    * - Container: wrapper around everything (default is <div>)
    * - ToolBar: bottom toolbar area (default is <div>)
    */
   components?: {
     TextArea?: React.ComponentType<TextAreaProps>;
-    Button?: React.ComponentType<ButtonProps>;
+    SendButton?: React.ComponentType<SendButtonProps>;
     TranscribeButton?: React.ComponentType<TranscribeButtonProps>;
     AddButton?: React.ComponentType<AddButtonProps>;
+    ToolsButton?: React.ComponentType<ToolsButtonProps>;
     Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
     ToolBar?: React.ComponentType<ToolBarProps>;
   };
@@ -229,9 +275,10 @@ export type CopilotChatInputProps = {
   appearance?: {
     container?: string;
     textarea?: string;
-    button?: string;
+    sendButton?: string;
     transcribeButton?: string;
     addButton?: string;
+    toolsButton?: string;
     toolbar?: string;
   };
 
@@ -241,9 +288,10 @@ export type CopilotChatInputProps = {
    */
   children?: (parts: {
     TextArea: JSX.Element;
-    Button: JSX.Element;
+    SendButton: JSX.Element;
     TranscribeButton: JSX.Element;
     AddButton: JSX.Element;
+    ToolsButton: JSX.Element;
     ToolBar: JSX.Element;
   }) => React.ReactNode;
 };
@@ -252,6 +300,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   onSend,
   onTranscribe,
   onAdd,
+  onTools,
   components = {},
   appearance = {},
   children,
@@ -262,9 +311,10 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   // Extract component overrides with defaults
   const {
     TextArea = DefaultTextArea,
-    Button = DefaultButton,
+    SendButton = DefaultSendButton,
     TranscribeButton = DefaultTranscribeButton,
     AddButton = DefaultAddButton,
+    ToolsButton = DefaultToolsButton,
     Container = DefaultContainer,
     ToolBar = DefaultToolBar,
   } = components;
@@ -304,11 +354,13 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     />
   );
 
-  const BoundButton = (
-    <Button
+  const BoundSendButton = (
+    <SendButton
       onClick={send}
       disabled={!text.trim()}
-      className={Button === DefaultButton ? appearance.button : undefined}
+      className={
+        SendButton === DefaultSendButton ? appearance.sendButton : undefined
+      }
     />
   );
 
@@ -332,6 +384,15 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     />
   );
 
+  const BoundToolsButton = (
+    <ToolsButton
+      onClick={onTools}
+      className={
+        ToolsButton === DefaultToolsButton ? appearance.toolsButton : undefined
+      }
+    />
+  );
+
   const BoundToolBar = (
     <ToolBar
       className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
@@ -345,9 +406,10 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
       <>
         {children({
           TextArea: BoundTextArea,
-          Button: BoundButton,
+          SendButton: BoundSendButton,
           TranscribeButton: BoundTranscribeButton,
           AddButton: BoundAddButton,
+          ToolsButton: BoundToolsButton,
           ToolBar: BoundToolBar,
         })}
       </>
@@ -368,10 +430,13 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
           ToolBar === DefaultToolBar ? appearance.toolbar : undefined
         )}
       >
-        <div className="flex items-center">{onAdd && BoundAddButton}</div>
+        <div className="flex items-center">
+          {onAdd && BoundAddButton}
+          {onTools && BoundToolsButton}
+        </div>
         <div className="flex items-center">
           {onTranscribe && BoundTranscribeButton}
-          {BoundButton}
+          {BoundSendButton}
         </div>
       </ToolBar>
     </Container>
