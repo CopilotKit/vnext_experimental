@@ -217,7 +217,7 @@ importers:
         specifier: ^8.4.47
         version: 8.5.6
       tailwindcss:
-        specifier: ^3.4.14
+        specifier: ^3.4.17
         version: 3.4.17(ts-node@10.9.2(@swc/core@1.12.11(@swc/helpers@0.5.15))(@types/node@22.15.3)(typescript@5.8.2))
       ts-jest:
         specifier: ^29.2.0

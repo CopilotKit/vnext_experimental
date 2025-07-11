@@ -8,6 +8,7 @@ const meta = {
   args: {
     onSend: (t: string) => console.log(`Message sent: ${t}`),
     onTranscribe: () => console.log("Transcribe started"),
+    onAdd: () => console.log("Add files clicked"),
   },
 } satisfies Meta<typeof CopilotChatInput>;
 export default meta;
@@ -41,10 +42,11 @@ export const SwappedElements: Story = {
 
 export const CustomLayout: Story = {
   args: {
-    children: ({ TextArea, Button, TranscribeButton }) => (
+    children: ({ TextArea, Button, TranscribeButton, AddButton }) => (
       <fieldset className="border p-4 space-y-2">
         <legend className="font-semibold">Custom wrapper</legend>
         <div className="flex gap-2 items-center">
+          {AddButton}
           {TranscribeButton}
           {Button}
           {TextArea}

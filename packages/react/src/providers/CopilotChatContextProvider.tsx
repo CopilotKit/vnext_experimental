@@ -4,6 +4,7 @@ import React, { createContext, useContext, ReactNode } from "react";
 export interface CopilotChatLabels {
   inputPlaceholder: string;
   inputTranscribeButtonLabel: string;
+  inputAddButtonLabel: string;
 }
 
 // Define the full context interface
@@ -16,6 +17,7 @@ export interface CopilotChatContextValue {
 const defaultLabels: CopilotChatLabels = {
   inputPlaceholder: "Type a message...",
   inputTranscribeButtonLabel: "Transcribe",
+  inputAddButtonLabel: "Add photos or files",
 };
 
 // Default context value
