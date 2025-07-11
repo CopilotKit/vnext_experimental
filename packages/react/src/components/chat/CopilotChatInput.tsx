@@ -131,7 +131,7 @@ const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
       // Interaction
       "cursor-text",
       // Overflow and clipping
-      "overflow-clip bg-clip-padding contain-inline-size",
+      "overflow-visible bg-clip-padding contain-inline-size",
       // Background
       "bg-token-bg-primary dark:bg-[#303030]",
       // Visual effects
