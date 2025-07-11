@@ -1,3 +1,3 @@
-export abstract class TranscribeAdapter {
+export abstract class TranscriptionService {
   abstract transcribeFile(audioFile: File): Promise<string>;
 }

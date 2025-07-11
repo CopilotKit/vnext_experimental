@@ -1,4 +1,4 @@
-import { TranscribeAdapter } from "./transcribe-adapter";
+import { TranscriptionService } from "./transcription-service";
 import OpenAI from "openai";
 
 export interface TranscribeAdapterOpenAIConfig {
@@ -6,7 +6,7 @@ export interface TranscribeAdapterOpenAIConfig {
   model?: string;
 }
 
-export class TranscribeAdapterOpenAI extends TranscribeAdapter {
+export class TranscriptionServiceOpenAI extends TranscriptionService {
   private openai: OpenAI;
   private model: string;
 
