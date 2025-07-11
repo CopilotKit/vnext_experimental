@@ -98,7 +98,7 @@ describe("CopilotChatInput", () => {
         onSend={mockOnSend}
         appearance={{
           container: "custom-container",
-          input: "custom-input",
+          textarea: "custom-textarea",
           button: "custom-button",
         }}
       />
@@ -109,7 +109,7 @@ describe("CopilotChatInput", () => {
     const button = screen.getByRole("button");
 
     expect(containerDiv).toHaveClass("custom-container");
-    expect(input).toHaveClass("custom-input");
+    expect(input).toHaveClass("custom-textarea");
     expect(button).toHaveClass("custom-button");
   });
 
@@ -137,11 +137,11 @@ describe("CopilotChatInput", () => {
   it("supports custom layout via children render prop", () => {
     render(
       <CopilotChatInput onSend={mockOnSend}>
-        {({ Input, Button }) => (
+        {({ TextArea, Button }) => (
           <div data-testid="custom-layout">
             Custom Layout:
             {Button}
-            {Input}
+            {TextArea}
           </div>
         )}
       </CopilotChatInput>
