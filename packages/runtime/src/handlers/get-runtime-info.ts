@@ -1,5 +1,5 @@
 import { CopilotKitRuntime } from "../runtime";
-import { AgentDescription } from "@copilotkit/shared";
+import { AgentDescription, RuntimeInfo } from "@copilotkit/shared";
 import { VERSION } from "../runtime";
 
 interface HandleGetRuntimeInfoParameters {
@@ -25,16 +25,16 @@ export async function handleGetRuntimeInfo({
       {} as Record<string, AgentDescription>
     );
 
-    return new Response(
-      JSON.stringify({
-        version: VERSION,
-        agents: agentsDict,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const runtimeInfo: RuntimeInfo = {
+      version: VERSION,
+      agents: agentsDict,
+      audioFileTranscriptionEnabled: !!runtime.transcriptionService,
+    };
+
+    return new Response(JSON.stringify(runtimeInfo), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     return new Response(
       JSON.stringify({

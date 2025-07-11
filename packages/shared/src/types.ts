@@ -22,4 +22,5 @@ export interface AgentDescription {
 export interface RuntimeInfo {
   version: string;
   agents: Record<string, AgentDescription>;
+  audioFileTranscriptionEnabled: boolean;
 }
