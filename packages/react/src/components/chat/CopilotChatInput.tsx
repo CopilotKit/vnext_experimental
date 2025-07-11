@@ -82,7 +82,7 @@ const DefaultButton: React.FC<ButtonProps> = ({ className, ...props }) => (
     )}
     {...props}
   >
-    <ArrowUp size={16} />
+    <ArrowUp size={20} />
   </button>
 );
 
@@ -103,7 +103,7 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
           // Dark mode
           "dark:text-[#CCCCCC] dark:border-[#404040]",
           // Hover states
-          "hover:bg-[#fafafa] hover:text-[#333333]",
+          "hover:bg-[#f8f8f8] hover:text-[#333333]",
           "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
           // Disabled state
           "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -111,7 +111,7 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
         )}
         {...props}
       >
-        <Mic size={16} />
+        <Mic size={20} />
       </button>
       <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
         {labels.inputTranscribeButtonLabel}
