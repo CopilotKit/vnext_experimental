@@ -1,8 +1,9 @@
 import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp } from "lucide-react";
-import CopilotChatInputTextArea from "./CopilotChatInputTextarea";
-import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
+import AutoResizingTextArea from "./AutoResizingTextArea";
+import { useCopilotChatContext } from "../../../providers/CopilotChatContextProvider";
+import { cva } from "class-variance-authority";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -31,7 +32,7 @@ export type CopilotChatInputProps = {
   components?: {
     TextArea?: React.ComponentType<TextAreaProps>;
     SendButton?: React.ComponentType<SendButtonProps>;
-    StartTranscribeButton?: React.ComponentType<StartTranscribeButtonProps>;
+    TranscribeButton?: React.ComponentType<TranscribeButtonProps>;
     AddButton?: React.ComponentType<AddButtonProps>;
     ToolsButton?: React.ComponentType<ToolsButtonProps>;
     Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
@@ -46,7 +47,7 @@ export type CopilotChatInputProps = {
     container?: string;
     textarea?: string;
     sendButton?: string;
-    StartTranscribeButton?: string;
+    transcribeButton?: string;
     addButton?: string;
     toolsButton?: string;
     toolbar?: string;
@@ -59,7 +60,7 @@ export type CopilotChatInputProps = {
   children?: (parts: {
     TextArea: JSX.Element;
     SendButton: JSX.Element;
-    StartTranscribeButton: JSX.Element;
+    TranscribeButton: JSX.Element;
     AddButton: JSX.Element;
     ToolsButton: JSX.Element;
     ToolBar: JSX.Element;
@@ -97,7 +98,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   const {
     TextArea = DefaultTextArea,
     SendButton = DefaultSendButton,
-    StartTranscribeButton = DefaultStartTranscribeButton,
+    TranscribeButton = DefaultTranscribeButton,
     AddButton = DefaultAddButton,
     ToolsButton = DefaultToolsButton,
     Container = DefaultContainer,
@@ -149,12 +150,12 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     />
   );
 
-  const BoundStartTranscribeButton = (
-    <StartTranscribeButton
+  const BoundTranscribeButton = (
+    <TranscribeButton
       onClick={onStartTranscribe}
       className={
-        StartTranscribeButton === DefaultStartTranscribeButton
-          ? appearance.StartTranscribeButton
+        TranscribeButton === DefaultTranscribeButton
+          ? appearance.transcribeButton
           : undefined
       }
     />
@@ -192,7 +193,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
         {children({
           TextArea: BoundTextArea,
           SendButton: BoundSendButton,
-          StartTranscribeButton: BoundStartTranscribeButton,
+          TranscribeButton: BoundTranscribeButton,
           AddButton: BoundAddButton,
           ToolsButton: BoundToolsButton,
           ToolBar: BoundToolBar,
@@ -220,7 +221,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
           {onTools && BoundToolsButton}
         </div>
         <div className="flex items-center">
-          {onStartTranscribe && BoundStartTranscribeButton}
+          {onStartTranscribe && BoundTranscribeButton}
           {BoundSendButton}
         </div>
       </ToolBar>
@@ -235,7 +236,7 @@ type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 type SendButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // StartTranscribeButton component props interface
-type StartTranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+type TranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // AddButton component props interface
 type AddButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -249,12 +250,99 @@ type ContainerProps = React.HTMLAttributes<HTMLDivElement>;
 // ToolBar component props interface
 type ToolBarProps = React.HTMLAttributes<HTMLDivElement>;
 
+const chatInputButton = cva(
+  [
+    // Layout
+    "flex items-center justify-center",
+    // Shape and sizing
+    "rounded-full h-9",
+    // Interactions
+    "transition-colors",
+    // Focus states
+    "focus:outline-none",
+    // Disabled states
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+  ],
+  {
+    variants: {
+      intent: {
+        primary: [
+          // Background and text
+          "bg-black text-white",
+          // Dark mode
+          "dark:bg-white dark:text-black dark:focus-visible:outline-white",
+          // Hover states
+          "hover:opacity-70 disabled:hover:opacity-100",
+        ],
+        secondary: [
+          // Background and text
+          "bg-transparent text-[#666666]",
+          // Dark mode
+          "dark:text-[#CCCCCC] dark:border-[#404040]",
+          // Hover states
+          "hover:bg-[#f8f8f8] hover:text-[#333333]",
+          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
+        ],
+      },
+      size: {
+        icon: ["w-9"],
+        iconLabel: [
+          // Layout
+          "gap-2",
+          // Sizing
+          "px-3",
+        ],
+      },
+      margin: {
+        left: "ml-2",
+        leftTight: "ml-1",
+        leftWide: "ml-[11px]",
+        right: "mr-2",
+        rightWide: "mr-[10px]",
+        none: "",
+      },
+    },
+    defaultVariants: {
+      intent: "secondary",
+      size: "icon",
+      margin: "none",
+    },
+  }
+);
+
+const chatTooltip = cva(
+  [
+    // Positioning
+    "absolute z-50 top-full left-1/2",
+    // Layout
+    "mt-2 px-2 py-1",
+    // Transform
+    "transform -translate-x-1/2",
+    // Background and text
+    "bg-black text-white",
+    // Typography
+    "text-xs",
+    // Shape
+    "rounded whitespace-nowrap",
+    // Interactions
+    "pointer-events-none",
+    // Animation
+    "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+  ],
+  {
+    variants: {
+      // Add variants here if you want to support different placements, colors, etc.
+    },
+    defaultVariants: {},
+  }
+);
+
 // Default components
 const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, ...props }, ref) => {
     const { labels } = useCopilotChatContext();
     return (
-      <CopilotChatInputTextArea
+      <AutoResizingTextArea
         ref={ref}
         placeholder={labels.inputPlaceholder}
         maxRows={4}
@@ -285,20 +373,7 @@ const DefaultSendButton: React.FC<SendButtonProps> = ({
   <button
     type="button"
     className={twMerge(
-      // Base styles
-      "flex items-center justify-center rounded-full transition-colors h-9 w-9",
-      // Position
-      "mr-[10px]",
-      // Normal state
-      "bg-black text-white",
-      // Dark mode
-      "dark:bg-white dark:text-black dark:focus-visible:outline-white",
-      // Disabled state
-      "disabled:bg-[#EBEBEB] disabled:text-[#0d0d0d] disabled:cursor-not-allowed",
-      // Dark mode disabled
-      "dark:disabled:bg-token-text-quaternary dark:disabled:text-token-main-surface-secondary",
-      // Hover/focus states
-      "hover:opacity-70 disabled:hover:opacity-100",
+      chatInputButton({ intent: "primary", size: "icon", margin: "rightWide" }),
       className
     )}
     {...props}
@@ -307,34 +382,28 @@ const DefaultSendButton: React.FC<SendButtonProps> = ({
   </button>
 );
 
-const DefaultStartTranscribeButton: React.FC<StartTranscribeButtonProps> = ({
+const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
   className,
   ...props
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group mr-2">
+    <div className="relative group">
       <button
         type="button"
         className={twMerge(
-          // Base styles
-          "flex items-center justify-center rounded-full transition-colors h-9 w-9",
-          // Normal state
-          "bg-transparent text-[#666666]",
-          // Dark mode
-          "dark:text-[#CCCCCC] dark:border-[#404040]",
-          // Hover states
-          "hover:bg-[#f8f8f8] hover:text-[#333333]",
-          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
-          // Disabled state
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          chatInputButton({
+            intent: "secondary",
+            size: "icon",
+            margin: "right",
+          }),
           className
         )}
         {...props}
       >
         <Mic size={20} />
       </button>
-      <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
+      <div className={chatTooltip()}>
         {labels.inputStartTranscribeButtonLabel}
       </div>
     </div>
@@ -347,30 +416,22 @@ const DefaultAddButton: React.FC<AddButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group ml-3">
+    <div className="relative group">
       <button
         type="button"
         className={twMerge(
-          // Base styles
-          "flex items-center justify-center rounded-full transition-colors h-9 w-9",
-          // Normal state
-          "bg-transparent text-[#666666]",
-          // Dark mode
-          "dark:text-[#CCCCCC] dark:border-[#404040]",
-          // Hover states
-          "hover:bg-[#f8f8f8] hover:text-[#333333]",
-          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
-          // Disabled state
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          chatInputButton({
+            intent: "secondary",
+            size: "icon",
+            margin: "leftWide",
+          }),
           className
         )}
         {...props}
       >
         <Plus size={20} />
       </button>
-      <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
-        {labels.inputAddButtonLabel}
-      </div>
+      <div className={chatTooltip()}>{labels.inputAddButtonLabel}</div>
     </div>
   );
 };
@@ -385,17 +446,12 @@ const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
       <button
         type="button"
         className={twMerge(
-          // Base styles
-          "flex items-center gap-2 rounded-full transition-colors h-9 px-3",
-          // Normal state
-          "bg-transparent text-[#666666]",
-          // Dark mode
-          "dark:text-[#CCCCCC] dark:border-[#404040]",
-          // Hover states
-          "hover:bg-[#f8f8f8] hover:text-[#333333]",
-          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
-          // Disabled state
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          chatInputButton({
+            intent: "secondary",
+            size: "iconLabel",
+            margin: "none",
+          }),
+          "font-normal",
           className
         )}
         {...props}
@@ -405,9 +461,7 @@ const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
           {labels.inputToolsButtonLabel}
         </span>
       </button>
-      <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
-        {labels.inputToolsButtonLabel}
-      </div>
+      <div className={chatTooltip()}>{labels.inputToolsButtonLabel}</div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 export {
   default as CopilotChatInput,
   type CopilotChatInputProps,
-} from "./CopilotChatInput";
-export { default as CopilotChatInputTextArea } from "./CopilotChatInputTextarea";
+} from "./CopilotChatInput/CopilotChatInput";
+export { default as AutoResizingTextArea } from "./CopilotChatInput/AutoResizingTextArea";

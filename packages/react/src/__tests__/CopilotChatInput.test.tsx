@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { CopilotChatInput } from "../components/chat/CopilotChatInput";
+import { CopilotChatInput } from "../components/chat/CopilotChatInput/CopilotChatInput";
 
 // Mock onSend function to track calls
 const mockOnSend = jest.fn();
