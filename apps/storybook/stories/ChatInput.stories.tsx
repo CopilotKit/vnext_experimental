@@ -7,7 +7,9 @@ const meta = {
   component: CopilotChatInput,
   args: {
     onSend: (t: string) => console.log(`Message sent: ${t}`),
-    onTranscribe: () => console.log("Transcribe started"),
+    onStartTranscribe: () => console.log("Transcribe started"),
+    onCancelTranscribe: () => console.log("Transcribe cancelled"),
+    onDoneTranscribe: () => console.log("Transcribe completed"),
     onAdd: () => console.log("Add files clicked"),
     onTools: () => console.log("Tools opened"),
   },

@@ -5,30 +5,25 @@ import CopilotChatInputTextArea from "./CopilotChatInputTextarea";
 import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
 
 // Input component props interface
-interface TextAreaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 // Button component props interface
-interface SendButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+type SendButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // TranscribeButton component props interface
-interface TranscribeButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+type TranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // AddButton component props interface
-interface AddButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+type AddButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // ToolsButton component props interface
-interface ToolsButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+type ToolsButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // Container component props interface
-interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {}
+type ContainerProps = React.HTMLAttributes<HTMLDivElement>;
 
 // ToolBar component props interface
-interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {}
+type ToolBarProps = React.HTMLAttributes<HTMLDivElement>;
 
 // Default components
 const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
@@ -193,12 +188,6 @@ const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
   );
 };
 
-// Container component props interface
-interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-// ToolBar component props interface
-interface ToolBarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
 // Default components
 const DefaultContainer: React.FC<React.PropsWithChildren<ContainerProps>> = ({
   children,
@@ -238,9 +227,6 @@ const DefaultToolBar: React.FC<ToolBarProps> = ({ className, ...props }) => (
 export type CopilotChatInputProps = {
   /** Called with trimmed text when user submits. Clears input. */
   onSend: (text: string) => void;
-
-  /** Called when user starts transcription. Optional. */
-  onTranscribe?: () => void;
 
   /** Called when user wants to add photos or files. Optional. */
   onAdd?: () => void;
@@ -294,11 +280,25 @@ export type CopilotChatInputProps = {
     ToolsButton: JSX.Element;
     ToolBar: JSX.Element;
   }) => React.ReactNode;
-};
+} &
+  // Either all or none of the transcribe callbacks are provided
+  (| {
+        onStartTranscribe: () => void;
+        onCancelTranscribe: () => void;
+        onDoneTranscribe: () => void;
+      }
+    | {
+        onStartTranscribe?: never;
+        onCancelTranscribe?: never;
+        onDoneTranscribe?: never;
+      }
+  );
 
 export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   onSend,
-  onTranscribe,
+  onStartTranscribe,
+  onCancelTranscribe,
+  onDoneTranscribe,
   onAdd,
   onTools,
   components = {},
@@ -366,7 +366,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
 
   const BoundTranscribeButton = (
     <TranscribeButton
-      onClick={onTranscribe}
+      onClick={onStartTranscribe}
       className={
         TranscribeButton === DefaultTranscribeButton
           ? appearance.transcribeButton
@@ -435,7 +435,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
           {onTools && BoundToolsButton}
         </div>
         <div className="flex items-center">
-          {onTranscribe && BoundTranscribeButton}
+          {onStartTranscribe && BoundTranscribeButton}
           {BoundSendButton}
         </div>
       </ToolBar>
