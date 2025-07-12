@@ -263,7 +263,7 @@ const chatInputButton = cva(
     // Focus states
     "focus:outline-none",
     // Disabled states
-    "disabled:opacity-50 disabled:cursor-not-allowed",
+    "disabled:cursor-not-allowed",
   ],
   {
     variants: {
@@ -275,6 +275,8 @@ const chatInputButton = cva(
           "dark:bg-white dark:text-black dark:focus-visible:outline-white",
           // Hover states
           "hover:opacity-70 disabled:hover:opacity-100",
+          // Disabled states
+          "disabled:bg-[#00000014] disabled:text-[rgb(13,13,13)]",
         ],
         secondary: [
           // Background and text
@@ -284,6 +286,10 @@ const chatInputButton = cva(
           // Hover states
           "hover:bg-[#f8f8f8] hover:text-[#333333]",
           "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
+          // Disabled states
+          "disabled:opacity-50",
+          "disabled:hover:bg-transparent disabled:hover:text-[#666666]",
+          "dark:disabled:hover:bg-transparent dark:disabled:hover:text-[#CCCCCC]",
         ],
       },
       size: {
@@ -405,9 +411,11 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
       >
         <Mic size={20} />
       </button>
-      <div className={chatTooltip()}>
-        {labels.inputStartTranscribeButtonLabel}
-      </div>
+      {props.disabled !== true && (
+        <div className={chatTooltip()}>
+          {labels.inputStartTranscribeButtonLabel}
+        </div>
+      )}
     </div>
   );
 };
@@ -425,7 +433,7 @@ const DefaultAddButton: React.FC<AddButtonProps> = ({
           chatInputButton({
             intent: "secondary",
             size: "icon",
-            margin: "leftWide",
+            margin: "left",
           }),
           className
         )}
@@ -433,7 +441,9 @@ const DefaultAddButton: React.FC<AddButtonProps> = ({
       >
         <Plus size={20} />
       </button>
-      <div className={chatTooltip()}>{labels.inputAddButtonLabel}</div>
+      {props.disabled !== true && (
+        <div className={chatTooltip()}>{labels.inputAddButtonLabel}</div>
+      )}
     </div>
   );
 };
@@ -463,7 +473,9 @@ const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
           {labels.inputToolsButtonLabel}
         </span>
       </button>
-      <div className={chatTooltip()}>{labels.inputToolsButtonLabel}</div>
+      {props.disabled !== true && (
+        <div className={chatTooltip()}>{labels.inputToolsButtonLabel}</div>
+      )}
     </div>
   );
 };
