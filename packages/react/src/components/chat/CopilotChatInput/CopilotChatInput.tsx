@@ -32,7 +32,7 @@ export type CopilotChatInputProps = {
   components?: {
     TextArea?: React.ComponentType<TextAreaProps>;
     SendButton?: React.ComponentType<SendButtonProps>;
-    TranscribeButton?: React.ComponentType<TranscribeButtonProps>;
+    StartTranscribeButton?: React.ComponentType<StartTranscribeButtonProps>;
     AddButton?: React.ComponentType<AddButtonProps>;
     ToolsButton?: React.ComponentType<ToolsButtonProps>;
     Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
@@ -47,7 +47,7 @@ export type CopilotChatInputProps = {
     container?: string;
     textarea?: string;
     sendButton?: string;
-    transcribeButton?: string;
+    startTranscribeButton?: string;
     addButton?: string;
     toolsButton?: string;
     toolbar?: string;
@@ -60,7 +60,7 @@ export type CopilotChatInputProps = {
   children?: (parts: {
     TextArea: JSX.Element;
     SendButton: JSX.Element;
-    TranscribeButton: JSX.Element;
+    StartTranscribeButton: JSX.Element;
     AddButton: JSX.Element;
     ToolsButton: JSX.Element;
     ToolBar: JSX.Element;
@@ -98,7 +98,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   const {
     TextArea = DefaultTextArea,
     SendButton = DefaultSendButton,
-    TranscribeButton = DefaultTranscribeButton,
+    StartTranscribeButton = DefaultStartTranscribeButton,
     AddButton = DefaultAddButton,
     ToolsButton = DefaultToolsButton,
     Container = DefaultContainer,
@@ -150,12 +150,12 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
     />
   );
 
-  const BoundTranscribeButton = (
-    <TranscribeButton
+  const BoundStartTranscribeButton = (
+    <StartTranscribeButton
       onClick={onStartTranscribe}
       className={
-        TranscribeButton === DefaultTranscribeButton
-          ? appearance.transcribeButton
+        StartTranscribeButton === DefaultStartTranscribeButton
+          ? appearance.startTranscribeButton
           : undefined
       }
     />
@@ -195,7 +195,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
         {children({
           TextArea: BoundTextArea,
           SendButton: BoundSendButton,
-          TranscribeButton: BoundTranscribeButton,
+          StartTranscribeButton: BoundStartTranscribeButton,
           AddButton: BoundAddButton,
           ToolsButton: BoundToolsButton,
           ToolBar: BoundToolBar,
@@ -223,7 +223,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
           {onTools && BoundToolsButton}
         </div>
         <div className="flex items-center">
-          {onStartTranscribe && BoundTranscribeButton}
+          {onStartTranscribe && BoundStartTranscribeButton}
           {BoundSendButton}
         </div>
       </ToolBar>
@@ -238,7 +238,7 @@ type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 type SendButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // StartTranscribeButton component props interface
-type TranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+type StartTranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // AddButton component props interface
 type AddButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -390,7 +390,7 @@ const DefaultSendButton: React.FC<SendButtonProps> = ({
   </button>
 );
 
-const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
+const DefaultStartTranscribeButton: React.FC<StartTranscribeButtonProps> = ({
   className,
   ...props
 }) => {
