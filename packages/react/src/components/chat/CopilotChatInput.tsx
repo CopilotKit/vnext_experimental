@@ -4,14 +4,238 @@ import { Plus, Settings2, Mic, ArrowUp } from "lucide-react";
 import CopilotChatInputTextArea from "./CopilotChatInputTextarea";
 import { useCopilotChatContext } from "../../providers/CopilotChatContextProvider";
 
+export type CopilotChatInputMode = "input" | "transcribe" | "processing";
+
+export type CopilotChatInputProps = {
+  mode?: CopilotChatInputMode;
+
+  /** Called with trimmed text when user submits. Clears input. */
+  onSend: (text: string) => void;
+
+  /** Called when user wants to add photos or files. Optional. */
+  onAdd?: () => void;
+
+  /** Called when user wants to open tools. Optional. */
+  onTools?: () => void;
+
+  /**
+   * Component slots — override one or many:
+   * - TextArea: must render <textarea …>
+   * - SendButton:  must render <button …>
+   * - StartTranscribeButton: must render <button …> with built-in tooltip
+   * - AddButton: must render <button …> with built-in tooltip
+   * - ToolsButton: must render <button …> with built-in tooltip and text
+   * - Container: wrapper around everything (default is <div>)
+   * - ToolBar: bottom toolbar area (default is <div>)
+   */
+  components?: {
+    TextArea?: React.ComponentType<TextAreaProps>;
+    SendButton?: React.ComponentType<SendButtonProps>;
+    StartTranscribeButton?: React.ComponentType<StartTranscribeButtonProps>;
+    AddButton?: React.ComponentType<AddButtonProps>;
+    ToolsButton?: React.ComponentType<ToolsButtonProps>;
+    Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
+    ToolBar?: React.ComponentType<ToolBarProps>;
+  };
+
+  /**
+   * Style-only overrides (merged onto defaults).
+   * Ignore if user also swaps that component.
+   */
+  appearance?: {
+    container?: string;
+    textarea?: string;
+    sendButton?: string;
+    StartTranscribeButton?: string;
+    addButton?: string;
+    toolsButton?: string;
+    toolbar?: string;
+  };
+
+  /**
+   * Full-layout override (highest priority).
+   * Receives the *pre-wired* sub-components so users never touch handlers.
+   */
+  children?: (parts: {
+    TextArea: JSX.Element;
+    SendButton: JSX.Element;
+    StartTranscribeButton: JSX.Element;
+    AddButton: JSX.Element;
+    ToolsButton: JSX.Element;
+    ToolBar: JSX.Element;
+  }) => React.ReactNode;
+} &
+  // Either all or none of the transcribe callbacks are provided
+  (| {
+        onStartTranscribe: () => void;
+        onCancelTranscribe: () => void;
+        onFinishTranscribe: () => void;
+      }
+    | {
+        onStartTranscribe?: never;
+        onCancelTranscribe?: never;
+        onFinishTranscribe?: never;
+      }
+  );
+
+export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
+  mode = "input",
+  onSend,
+  onStartTranscribe,
+  onCancelTranscribe,
+  onFinishTranscribe,
+  onAdd,
+  onTools,
+  components = {},
+  appearance = {},
+  children,
+}) => {
+  const [text, setText] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Extract component overrides with defaults
+  const {
+    TextArea = DefaultTextArea,
+    SendButton = DefaultSendButton,
+    StartTranscribeButton = DefaultStartTranscribeButton,
+    AddButton = DefaultAddButton,
+    ToolsButton = DefaultToolsButton,
+    Container = DefaultContainer,
+    ToolBar = DefaultToolBar,
+  } = components;
+
+  // Handlers
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setText(e.target.value);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  };
+
+  const send = () => {
+    const trimmed = text.trim();
+    if (trimmed) {
+      onSend(trimmed);
+      setText("");
+      // Refocus input after sending
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  };
+
+  // Build bound components with handlers
+  const BoundTextArea = (
+    <TextArea
+      ref={inputRef}
+      value={text}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      className={TextArea === DefaultTextArea ? appearance.textarea : undefined}
+    />
+  );
+
+  const BoundSendButton = (
+    <SendButton
+      onClick={send}
+      disabled={!text.trim()}
+      className={
+        SendButton === DefaultSendButton ? appearance.sendButton : undefined
+      }
+    />
+  );
+
+  const BoundStartTranscribeButton = (
+    <StartTranscribeButton
+      onClick={onStartTranscribe}
+      className={
+        StartTranscribeButton === DefaultStartTranscribeButton
+          ? appearance.StartTranscribeButton
+          : undefined
+      }
+    />
+  );
+
+  const BoundAddButton = (
+    <AddButton
+      onClick={onAdd}
+      className={
+        AddButton === DefaultAddButton ? appearance.addButton : undefined
+      }
+    />
+  );
+
+  const BoundToolsButton = (
+    <ToolsButton
+      onClick={onTools}
+      className={
+        ToolsButton === DefaultToolsButton ? appearance.toolsButton : undefined
+      }
+    />
+  );
+
+  const BoundToolBar = (
+    <ToolBar
+      className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
+    />
+  );
+
+  // Render algorithm
+  if (children) {
+    // Custom layout via render prop
+    return (
+      <>
+        {children({
+          TextArea: BoundTextArea,
+          SendButton: BoundSendButton,
+          StartTranscribeButton: BoundStartTranscribeButton,
+          AddButton: BoundAddButton,
+          ToolsButton: BoundToolsButton,
+          ToolBar: BoundToolBar,
+        })}
+      </>
+    );
+  }
+
+  // Default layout
+  return (
+    <Container
+      className={
+        Container === DefaultContainer ? appearance.container : undefined
+      }
+    >
+      {BoundTextArea}
+      <ToolBar
+        className={twMerge(
+          "w-full h-[60px] bg-transparent flex items-center justify-between",
+          ToolBar === DefaultToolBar ? appearance.toolbar : undefined
+        )}
+      >
+        <div className="flex items-center">
+          {onAdd && BoundAddButton}
+          {onTools && BoundToolsButton}
+        </div>
+        <div className="flex items-center">
+          {onStartTranscribe && BoundStartTranscribeButton}
+          {BoundSendButton}
+        </div>
+      </ToolBar>
+    </Container>
+  );
+};
+
 // Input component props interface
 type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 // Button component props interface
 type SendButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-// TranscribeButton component props interface
-type TranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+// StartTranscribeButton component props interface
+type StartTranscribeButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 // AddButton component props interface
 type AddButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
@@ -83,7 +307,7 @@ const DefaultSendButton: React.FC<SendButtonProps> = ({
   </button>
 );
 
-const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
+const DefaultStartTranscribeButton: React.FC<StartTranscribeButtonProps> = ({
   className,
   ...props
 }) => {
@@ -111,7 +335,7 @@ const DefaultTranscribeButton: React.FC<TranscribeButtonProps> = ({
         <Mic size={20} />
       </button>
       <div className="absolute z-50 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap transform -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full mt-2 left-1/2">
-        {labels.inputTranscribeButtonLabel}
+        {labels.inputStartTranscribeButtonLabel}
       </div>
     </div>
   );
@@ -223,224 +447,5 @@ const DefaultToolBar: React.FC<ToolBarProps> = ({ className, ...props }) => (
     {...props}
   />
 );
-
-export type CopilotChatInputProps = {
-  /** Called with trimmed text when user submits. Clears input. */
-  onSend: (text: string) => void;
-
-  /** Called when user wants to add photos or files. Optional. */
-  onAdd?: () => void;
-
-  /** Called when user wants to open tools. Optional. */
-  onTools?: () => void;
-
-  /**
-   * Component slots — override one or many:
-   * - TextArea: must render <textarea …>
-   * - SendButton:  must render <button …>
-   * - TranscribeButton: must render <button …> with built-in tooltip
-   * - AddButton: must render <button …> with built-in tooltip
-   * - ToolsButton: must render <button …> with built-in tooltip and text
-   * - Container: wrapper around everything (default is <div>)
-   * - ToolBar: bottom toolbar area (default is <div>)
-   */
-  components?: {
-    TextArea?: React.ComponentType<TextAreaProps>;
-    SendButton?: React.ComponentType<SendButtonProps>;
-    TranscribeButton?: React.ComponentType<TranscribeButtonProps>;
-    AddButton?: React.ComponentType<AddButtonProps>;
-    ToolsButton?: React.ComponentType<ToolsButtonProps>;
-    Container?: React.ComponentType<React.PropsWithChildren<ContainerProps>>;
-    ToolBar?: React.ComponentType<ToolBarProps>;
-  };
-
-  /**
-   * Style-only overrides (merged onto defaults).
-   * Ignore if user also swaps that component.
-   */
-  appearance?: {
-    container?: string;
-    textarea?: string;
-    sendButton?: string;
-    transcribeButton?: string;
-    addButton?: string;
-    toolsButton?: string;
-    toolbar?: string;
-  };
-
-  /**
-   * Full-layout override (highest priority).
-   * Receives the *pre-wired* sub-components so users never touch handlers.
-   */
-  children?: (parts: {
-    TextArea: JSX.Element;
-    SendButton: JSX.Element;
-    TranscribeButton: JSX.Element;
-    AddButton: JSX.Element;
-    ToolsButton: JSX.Element;
-    ToolBar: JSX.Element;
-  }) => React.ReactNode;
-} &
-  // Either all or none of the transcribe callbacks are provided
-  (| {
-        onStartTranscribe: () => void;
-        onCancelTranscribe: () => void;
-        onDoneTranscribe: () => void;
-      }
-    | {
-        onStartTranscribe?: never;
-        onCancelTranscribe?: never;
-        onDoneTranscribe?: never;
-      }
-  );
-
-export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
-  onSend,
-  onStartTranscribe,
-  onCancelTranscribe,
-  onDoneTranscribe,
-  onAdd,
-  onTools,
-  components = {},
-  appearance = {},
-  children,
-}) => {
-  const [text, setText] = useState("");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // Extract component overrides with defaults
-  const {
-    TextArea = DefaultTextArea,
-    SendButton = DefaultSendButton,
-    TranscribeButton = DefaultTranscribeButton,
-    AddButton = DefaultAddButton,
-    ToolsButton = DefaultToolsButton,
-    Container = DefaultContainer,
-    ToolBar = DefaultToolBar,
-  } = components;
-
-  // Handlers
-  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
-  };
-
-  const send = () => {
-    const trimmed = text.trim();
-    if (trimmed) {
-      onSend(trimmed);
-      setText("");
-      // Refocus input after sending
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }
-  };
-
-  // Build bound components with handlers
-  const BoundTextArea = (
-    <TextArea
-      ref={inputRef}
-      value={text}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      className={TextArea === DefaultTextArea ? appearance.textarea : undefined}
-    />
-  );
-
-  const BoundSendButton = (
-    <SendButton
-      onClick={send}
-      disabled={!text.trim()}
-      className={
-        SendButton === DefaultSendButton ? appearance.sendButton : undefined
-      }
-    />
-  );
-
-  const BoundTranscribeButton = (
-    <TranscribeButton
-      onClick={onStartTranscribe}
-      className={
-        TranscribeButton === DefaultTranscribeButton
-          ? appearance.transcribeButton
-          : undefined
-      }
-    />
-  );
-
-  const BoundAddButton = (
-    <AddButton
-      onClick={onAdd}
-      className={
-        AddButton === DefaultAddButton ? appearance.addButton : undefined
-      }
-    />
-  );
-
-  const BoundToolsButton = (
-    <ToolsButton
-      onClick={onTools}
-      className={
-        ToolsButton === DefaultToolsButton ? appearance.toolsButton : undefined
-      }
-    />
-  );
-
-  const BoundToolBar = (
-    <ToolBar
-      className={ToolBar === DefaultToolBar ? appearance.toolbar : undefined}
-    />
-  );
-
-  // Render algorithm
-  if (children) {
-    // Custom layout via render prop
-    return (
-      <>
-        {children({
-          TextArea: BoundTextArea,
-          SendButton: BoundSendButton,
-          TranscribeButton: BoundTranscribeButton,
-          AddButton: BoundAddButton,
-          ToolsButton: BoundToolsButton,
-          ToolBar: BoundToolBar,
-        })}
-      </>
-    );
-  }
-
-  // Default layout
-  return (
-    <Container
-      className={
-        Container === DefaultContainer ? appearance.container : undefined
-      }
-    >
-      {BoundTextArea}
-      <ToolBar
-        className={twMerge(
-          "w-full h-[60px] bg-transparent flex items-center justify-between",
-          ToolBar === DefaultToolBar ? appearance.toolbar : undefined
-        )}
-      >
-        <div className="flex items-center">
-          {onAdd && BoundAddButton}
-          {onTools && BoundToolsButton}
-        </div>
-        <div className="flex items-center">
-          {onStartTranscribe && BoundTranscribeButton}
-          {BoundSendButton}
-        </div>
-      </ToolBar>
-    </Container>
-  );
-};
 
 export default CopilotChatInput;

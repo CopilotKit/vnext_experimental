@@ -1,26 +1,20 @@
 import React, { createContext, useContext, ReactNode } from "react";
 
-// Define the labels interface
-export interface CopilotChatLabels {
-  inputPlaceholder: string;
-  inputTranscribeButtonLabel: string;
-  inputAddButtonLabel: string;
-  inputToolsButtonLabel: string;
-}
+// Default labels
+const defaultLabels = {
+  inputPlaceholder: "Type a message...",
+  inputStartTranscribeButtonLabel: "Transcribe",
+  inputAddButtonLabel: "Add photos or files",
+  inputToolsButtonLabel: "Tools",
+};
+
+export type CopilotChatLabels = typeof defaultLabels;
 
 // Define the full context interface
 export interface CopilotChatContextValue {
   labels: CopilotChatLabels;
   // Room for other context properties in the future
 }
-
-// Default labels
-const defaultLabels: CopilotChatLabels = {
-  inputPlaceholder: "Type a message...",
-  inputTranscribeButtonLabel: "Transcribe",
-  inputAddButtonLabel: "Add photos or files",
-  inputToolsButtonLabel: "Tools",
-};
 
 // Default context value
 const defaultContextValue: CopilotChatContextValue = {
