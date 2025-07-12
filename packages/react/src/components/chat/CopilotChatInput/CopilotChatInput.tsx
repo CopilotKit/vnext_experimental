@@ -164,6 +164,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   const BoundAddButton = (
     <AddButton
       onClick={onAdd}
+      disabled={mode === "transcribe"}
       className={
         AddButton === DefaultAddButton ? appearance.addButton : undefined
       }
@@ -173,6 +174,7 @@ export const CopilotChatInput: React.FC<CopilotChatInputProps> = ({
   const BoundToolsButton = (
     <ToolsButton
       onClick={onTools}
+      disabled={mode === "transcribe"}
       className={
         ToolsButton === DefaultToolsButton ? appearance.toolsButton : undefined
       }

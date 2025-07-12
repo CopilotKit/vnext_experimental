@@ -19,6 +19,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const Transcribe: Story = {
+  args: {
+    mode: "transcribe",
+  },
+};
+
 export const Restyled: Story = {
   args: {
     appearance: {
