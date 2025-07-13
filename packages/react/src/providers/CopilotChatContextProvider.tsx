@@ -3,7 +3,10 @@ import React, { createContext, useContext, ReactNode } from "react";
 // Default labels
 const defaultLabels = {
   inputPlaceholder: "Type a message...",
+  inputRecordingLabel: "Recording...",
   inputStartTranscribeButtonLabel: "Transcribe",
+  inputCancelTranscribeButtonLabel: "Cancel",
+  inputFinishTranscribeButtonLabel: "Finish",
   inputAddButtonLabel: "Add photos or files",
   inputToolsButtonLabel: "Tools",
 };

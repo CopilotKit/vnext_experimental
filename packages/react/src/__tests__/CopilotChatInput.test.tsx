@@ -99,7 +99,7 @@ describe("CopilotChatInput", () => {
         appearance={{
           container: "custom-container",
           textarea: "custom-textarea",
-          button: "custom-button",
+          sendButton: "custom-button",
         }}
       />
     );
@@ -125,7 +125,7 @@ describe("CopilotChatInput", () => {
     render(
       <CopilotChatInput
         onSend={mockOnSend}
-        components={{ Button: CustomButton }}
+        components={{ SendButton: CustomButton }}
       />
     );
 
@@ -137,10 +137,10 @@ describe("CopilotChatInput", () => {
   it("supports custom layout via children render prop", () => {
     render(
       <CopilotChatInput onSend={mockOnSend}>
-        {({ TextArea, Button }) => (
+        {({ TextArea, SendButton }) => (
           <div data-testid="custom-layout">
             Custom Layout:
-            {Button}
+            {SendButton}
             {TextArea}
           </div>
         )}
@@ -150,5 +150,102 @@ describe("CopilotChatInput", () => {
     const customLayout = screen.getByTestId("custom-layout");
     expect(customLayout).toBeInTheDocument();
     expect(customLayout).toHaveTextContent("Custom Layout:");
+  });
+
+  it("shows cancel and finish buttons in transcribe mode", () => {
+    const { container } = render(
+      <CopilotChatInput
+        mode="transcribe"
+        onSend={mockOnSend}
+        onStartTranscribe={() => {}}
+        onCancelTranscribe={() => {}}
+        onFinishTranscribe={() => {}}
+        onAdd={() => {}}
+        onTools={() => {}}
+      />
+    );
+
+    // Should show cancel button (X icon) - find by svg class
+    const cancelIcon = container.querySelector("svg.lucide-x");
+    expect(cancelIcon).toBeInTheDocument();
+
+    // Should show finish button (checkmark icon) - find by svg class
+    const finishIcon = container.querySelector("svg.lucide-check");
+    expect(finishIcon).toBeInTheDocument();
+
+    // Verify tooltips are present
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("Finish")).toBeInTheDocument();
+
+    // Should NOT show transcribe button (mic icon) in transcribe mode
+    const transcribeIcon = container.querySelector("svg.lucide-mic");
+    expect(transcribeIcon).not.toBeInTheDocument();
+
+    // Should NOT show send button (arrow-up icon) in transcribe mode
+    const sendIcon = container.querySelector("svg.lucide-arrow-up");
+    expect(sendIcon).not.toBeInTheDocument();
+  });
+
+  it("disables add and tools buttons in transcribe mode", () => {
+    const { container } = render(
+      <CopilotChatInput
+        mode="transcribe"
+        onSend={mockOnSend}
+        onStartTranscribe={() => {}}
+        onCancelTranscribe={() => {}}
+        onFinishTranscribe={() => {}}
+        onAdd={() => {}}
+        onTools={() => {}}
+      />
+    );
+
+    // Add button should be disabled (find by Plus icon)
+    const addIcon = container.querySelector("svg.lucide-plus");
+    const addButton = addIcon?.closest("button");
+    expect(addButton).toBeDisabled();
+
+    // Tools button should be disabled (find by "Tools" text)
+    const toolsButton = screen.getByRole("button", { name: /tools/i });
+    expect(toolsButton).toBeDisabled();
+  });
+
+  it("shows recording indicator instead of textarea in transcribe mode", () => {
+    render(
+      <CopilotChatInput
+        mode="transcribe"
+        onSend={mockOnSend}
+        onStartTranscribe={() => {}}
+        onCancelTranscribe={() => {}}
+        onFinishTranscribe={() => {}}
+        onAdd={() => {}}
+        onTools={() => {}}
+      />
+    );
+
+    // Should show recording indicator text
+    expect(screen.getByText("Recording...")).toBeInTheDocument();
+
+    // Should NOT show textarea in transcribe mode
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("shows textarea in input mode", () => {
+    render(
+      <CopilotChatInput
+        mode="input"
+        onSend={mockOnSend}
+        onStartTranscribe={() => {}}
+        onCancelTranscribe={() => {}}
+        onFinishTranscribe={() => {}}
+        onAdd={() => {}}
+        onTools={() => {}}
+      />
+    );
+
+    // Should show textarea in input mode
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+
+    // Should NOT show recording indicator text
+    expect(screen.queryByText("Recording...")).not.toBeInTheDocument();
   });
 });
