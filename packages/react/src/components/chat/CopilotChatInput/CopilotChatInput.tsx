@@ -2,6 +2,7 @@ import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 import AutoResizingTextArea from "./AutoResizingTextArea";
+import { RecordingIndicator as ImportedRecordingIndicator } from "./RecordingIndicator";
 import { useCopilotChatContext } from "../../../providers/CopilotChatContextProvider";
 import { cva } from "class-variance-authority";
 import { RecordingIndicator } from "./RecordingIndicator";
@@ -445,38 +446,8 @@ const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
 );
 DefaultTextArea.displayName = "DefaultTextArea";
 
-const DefaultRecordingIndicator: React.FC<RecordingIndicatorProps> = ({
-  className,
-  ...props
-}) => {
-  const { labels } = useCopilotChatContext();
-  return (
-    <div
-      className={twMerge(
-        // Layout and sizing
-        "w-full p-5 pb-0",
-        // Background
-        "bg-transparent",
-        // Typography
-        "antialiased font-regular leading-relaxed text-[16px]",
-        // Flex layout for content
-        "flex items-center gap-3",
-        // Text color
-        "text-[#666666] dark:text-[#CCCCCC]",
-        className
-      )}
-      {...props}
-    >
-      {/* Recording pulse animation */}
-      <div className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-        <span className="text-sm font-medium">
-          {labels.inputRecordingLabel}
-        </span>
-      </div>
-    </div>
-  );
-};
+const DefaultRecordingIndicator: React.FC<RecordingIndicatorProps> =
+  ImportedRecordingIndicator;
 
 const DefaultSendButton: React.FC<SendButtonProps> = ({
   className,

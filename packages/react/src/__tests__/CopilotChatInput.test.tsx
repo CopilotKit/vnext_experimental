@@ -210,7 +210,7 @@ describe("CopilotChatInput", () => {
   });
 
   it("shows recording indicator instead of textarea in transcribe mode", () => {
-    render(
+    const { container } = render(
       <CopilotChatInput
         mode="transcribe"
         onSend={mockOnSend}
@@ -222,15 +222,16 @@ describe("CopilotChatInput", () => {
       />
     );
 
-    // Should show recording indicator text
-    expect(screen.getByText("Recording...")).toBeInTheDocument();
+    // Should show recording indicator (red div)
+    const recordingIndicator = container.querySelector(".bg-red-500");
+    expect(recordingIndicator).toBeInTheDocument();
 
     // Should NOT show textarea in transcribe mode
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("shows textarea in input mode", () => {
-    render(
+    const { container } = render(
       <CopilotChatInput
         mode="input"
         onSend={mockOnSend}
@@ -245,7 +246,8 @@ describe("CopilotChatInput", () => {
     // Should show textarea in input mode
     expect(screen.getByRole("textbox")).toBeInTheDocument();
 
-    // Should NOT show recording indicator text
-    expect(screen.queryByText("Recording...")).not.toBeInTheDocument();
+    // Should NOT show recording indicator (red div)
+    const recordingIndicator = container.querySelector(".bg-red-500");
+    expect(recordingIndicator).not.toBeInTheDocument();
   });
 });

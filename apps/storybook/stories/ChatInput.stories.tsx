@@ -18,6 +18,21 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const CustomSendButton: Story = {
+  args: {
+    components: {
+      SendButton: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+        <button
+          {...props}
+          className="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2"
+        >
+          ✈️
+        </button>
+      ),
+    },
+  },
+};
+
 export const Transcribe: Story = {
   args: {
     mode: "transcribe",
