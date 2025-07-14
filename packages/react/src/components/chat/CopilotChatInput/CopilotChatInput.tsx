@@ -392,7 +392,7 @@ export namespace CopilotChatInput {
             <Mic size={20} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="bottom">
           <p>{labels.inputStartTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
@@ -416,7 +416,7 @@ export namespace CopilotChatInput {
             <X size={20} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="bottom">
           <p>{labels.inputCancelTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
@@ -440,7 +440,7 @@ export namespace CopilotChatInput {
             <Check size={20} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="bottom">
           <p>{labels.inputFinishTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
@@ -464,7 +464,7 @@ export namespace CopilotChatInput {
             <Plus size={20} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="bottom">
           <p>{labels.inputAddButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
@@ -491,7 +491,7 @@ export namespace CopilotChatInput {
             </span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="bottom">
           <p>{labels.inputToolsButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
