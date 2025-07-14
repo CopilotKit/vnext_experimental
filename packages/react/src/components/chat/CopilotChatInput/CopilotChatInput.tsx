@@ -1,7 +1,15 @@
-import React, { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
+import React, {
+  useState,
+  useRef,
+  KeyboardEvent,
+  ChangeEvent,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
-import AutoResizingTextArea from "./AutoResizingTextArea";
+
 import { RecordingIndicator as ImportedRecordingIndicator } from "./RecordingIndicator";
 import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
 import { Button } from "@/components/ui/button";
@@ -327,34 +335,6 @@ export function CopilotChatInput({
 }
 
 export namespace CopilotChatInput {
-  export const TextArea = React.forwardRef<
-    HTMLTextAreaElement,
-    React.TextareaHTMLAttributes<HTMLTextAreaElement>
-  >(({ className, ...props }, ref) => {
-    const { labels } = useCopilotChatContext();
-    return (
-      <AutoResizingTextArea
-        ref={ref}
-        placeholder={labels.inputPlaceholder}
-        maxRows={4}
-        className={twMerge(
-          // Layout and sizing
-          "w-full p-5 pb-0",
-          // Behavior
-          "outline-none resize-none",
-          // Background
-          "bg-transparent",
-          // Typography
-          "antialiased font-regular leading-relaxed text-[16px]",
-          // Placeholder styles
-          "placeholder:text-[#00000077]",
-          className
-        )}
-        {...props}
-      />
-    );
-  });
-
   export const RecordingIndicator: React.FC<
     React.HTMLAttributes<HTMLDivElement>
   > = ImportedRecordingIndicator;
@@ -532,6 +512,77 @@ export namespace CopilotChatInput {
       )}
       {...props}
     />
+  );
+
+  interface TextAreaProps
+    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    maxRows?: number;
+  }
+
+  export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
+    ({ maxRows = 1, style, className, ...props }, ref) => {
+      const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+      const [maxHeight, setMaxHeight] = useState<number>(0);
+
+      const { labels } = useCopilotChatContext();
+
+      useImperativeHandle(
+        ref,
+        () => internalTextareaRef.current as HTMLTextAreaElement
+      );
+
+      useEffect(() => {
+        const calculateMaxHeight = () => {
+          const textarea = internalTextareaRef.current;
+          if (textarea) {
+            textarea.style.height = "auto";
+            const singleRowHeight = textarea.scrollHeight;
+            setMaxHeight(singleRowHeight * maxRows);
+            if (props.autoFocus) {
+              textarea.focus();
+            }
+          }
+        };
+
+        calculateMaxHeight();
+      }, [maxRows, props.autoFocus]);
+
+      useEffect(() => {
+        const textarea = internalTextareaRef.current;
+        if (textarea) {
+          textarea.style.height = "auto";
+          textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+        }
+      }, [props.value, maxHeight]);
+
+      return (
+        <textarea
+          ref={internalTextareaRef}
+          {...props}
+          style={{
+            overflow: "auto",
+            resize: "none",
+            maxHeight: `${maxHeight}px`,
+            ...style,
+          }}
+          placeholder={labels.inputPlaceholder}
+          className={twMerge(
+            // Layout and sizing
+            "w-full p-5 pb-0",
+            // Behavior
+            "outline-none resize-none",
+            // Background
+            "bg-transparent",
+            // Typography
+            "antialiased font-regular leading-relaxed text-[16px]",
+            // Placeholder styles
+            "placeholder:text-[#00000077]",
+            className
+          )}
+          rows={1}
+        />
+      );
+    }
   );
 }
 
