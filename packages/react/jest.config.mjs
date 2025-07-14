@@ -9,6 +9,9 @@ export default {
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
   testEnvironmentOptions: {
     customExportConditions: [""],
   },

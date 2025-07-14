@@ -4,7 +4,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@copilotkit/react": ["../../packages/react/src"]
+      "@copilotkit/react": ["../../packages/react/src"],
+      "@/*": ["../../packages/react/src/*"]
     },
     "types": ["node"]
   },

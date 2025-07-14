@@ -3,9 +3,9 @@ import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 import AutoResizingTextArea from "./AutoResizingTextArea";
 import { RecordingIndicator as ImportedRecordingIndicator } from "./RecordingIndicator";
-import { useCopilotChatContext } from "../../../providers/CopilotChatContextProvider";
-import { cva } from "class-variance-authority";
-import { RecordingIndicator } from "./RecordingIndicator";
+import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
+import { Button } from "@/components/ui/button";
+import { ToolbarButton } from "./ToolbarButton";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -324,99 +324,6 @@ type ContainerProps = React.HTMLAttributes<HTMLDivElement>;
 // ToolBar component props interface
 type ToolBarProps = React.HTMLAttributes<HTMLDivElement>;
 
-const chatInputButton = cva(
-  [
-    // Layout
-    "flex items-center justify-center",
-    // Shape and sizing
-    "rounded-full h-9",
-    // Interactions
-    "transition-colors",
-    // Focus states
-    "focus:outline-none",
-    // Disabled states
-    "disabled:cursor-not-allowed",
-  ],
-  {
-    variants: {
-      intent: {
-        primary: [
-          // Background and text
-          "bg-black text-white",
-          // Dark mode
-          "dark:bg-white dark:text-black dark:focus-visible:outline-white",
-          // Hover states
-          "hover:opacity-70 disabled:hover:opacity-100",
-          // Disabled states
-          "disabled:bg-[#00000014] disabled:text-[rgb(13,13,13)]",
-        ],
-        secondary: [
-          // Background and text
-          "bg-transparent text-[#444444]",
-          // Dark mode
-          "dark:text-[#CCCCCC] dark:border-[#404040]",
-          // Hover states
-          "hover:bg-[#f8f8f8] hover:text-[#333333]",
-          "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
-          // Disabled states
-          "disabled:opacity-50",
-          "disabled:hover:bg-transparent disabled:hover:text-[#444444]",
-          "dark:disabled:hover:bg-transparent dark:disabled:hover:text-[#CCCCCC]",
-        ],
-      },
-      size: {
-        icon: ["w-9"],
-        iconLabel: [
-          // Layout
-          "gap-2",
-          // Sizing
-          "px-3",
-        ],
-      },
-      margin: {
-        left: "ml-2",
-        leftTight: "ml-1",
-        leftWide: "ml-[11px]",
-        right: "mr-2",
-        rightWide: "mr-[10px]",
-        none: "",
-      },
-    },
-    defaultVariants: {
-      intent: "secondary",
-      size: "icon",
-      margin: "none",
-    },
-  }
-);
-
-const chatTooltip = cva(
-  [
-    // Positioning
-    "absolute z-50 top-full left-1/2",
-    // Layout
-    "mt-2 px-2 py-1",
-    // Transform
-    "transform -translate-x-1/2",
-    // Background and text
-    "bg-black text-white",
-    // Typography
-    "text-xs",
-    // Shape
-    "rounded whitespace-nowrap",
-    // Interactions
-    "pointer-events-none",
-    // Animation
-    "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-  ],
-  {
-    variants: {
-      // Add variants here if you want to support different placements, colors, etc.
-    },
-    defaultVariants: {},
-  }
-);
-
 // Default components
 const DefaultTextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, ...props }, ref) => {
@@ -453,16 +360,17 @@ const DefaultSendButton: React.FC<SendButtonProps> = ({
   className,
   ...props
 }) => (
-  <button
-    type="button"
-    className={twMerge(
-      chatInputButton({ intent: "primary", size: "icon", margin: "rightWide" }),
-      className
-    )}
-    {...props}
-  >
-    <ArrowUp size={20} />
-  </button>
+  <div className="mr-[10px]">
+    <Button
+      type="button"
+      variant="chatInputToolbarPrimary"
+      size="chatInputToolbarIcon"
+      className={className}
+      {...props}
+    >
+      <ArrowUp size={20} />
+    </Button>
+  </div>
 );
 
 const DefaultStartTranscribeButton: React.FC<StartTranscribeButtonProps> = ({
@@ -471,27 +379,21 @@ const DefaultStartTranscribeButton: React.FC<StartTranscribeButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group">
-      <button
+    <ToolbarButton
+      tooltip={labels.inputStartTranscribeButtonLabel}
+      disabled={props.disabled}
+      className="mr-2"
+    >
+      <Button
         type="button"
-        className={twMerge(
-          chatInputButton({
-            intent: "secondary",
-            size: "icon",
-            margin: "right",
-          }),
-          className
-        )}
+        variant="chatInputToolbarSecondary"
+        size="chatInputToolbarIcon"
+        className={className}
         {...props}
       >
         <Mic size={20} />
-      </button>
-      {props.disabled !== true && (
-        <div className={chatTooltip()}>
-          {labels.inputStartTranscribeButtonLabel}
-        </div>
-      )}
-    </div>
+      </Button>
+    </ToolbarButton>
   );
 };
 
@@ -501,27 +403,21 @@ const DefaultCancelTranscribeButton: React.FC<CancelTranscribeButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group">
-      <button
+    <ToolbarButton
+      tooltip={labels.inputCancelTranscribeButtonLabel}
+      disabled={props.disabled}
+      className="mr-2"
+    >
+      <Button
         type="button"
-        className={twMerge(
-          chatInputButton({
-            intent: "secondary",
-            size: "icon",
-            margin: "right",
-          }),
-          className
-        )}
+        variant="chatInputToolbarSecondary"
+        size="chatInputToolbarIcon"
+        className={className}
         {...props}
       >
         <X size={20} />
-      </button>
-      {props.disabled !== true && (
-        <div className={chatTooltip()}>
-          {labels.inputCancelTranscribeButtonLabel}
-        </div>
-      )}
-    </div>
+      </Button>
+    </ToolbarButton>
   );
 };
 
@@ -531,27 +427,21 @@ const DefaultFinishTranscribeButton: React.FC<FinishTranscribeButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group">
-      <button
+    <ToolbarButton
+      tooltip={labels.inputFinishTranscribeButtonLabel}
+      disabled={props.disabled}
+      className="mr-[10px]"
+    >
+      <Button
         type="button"
-        className={twMerge(
-          chatInputButton({
-            intent: "secondary",
-            size: "icon",
-            margin: "rightWide",
-          }),
-          className
-        )}
+        variant="chatInputToolbarSecondary"
+        size="chatInputToolbarIcon"
+        className={className}
         {...props}
       >
         <Check size={20} />
-      </button>
-      {props.disabled !== true && (
-        <div className={chatTooltip()}>
-          {labels.inputFinishTranscribeButtonLabel}
-        </div>
-      )}
-    </div>
+      </Button>
+    </ToolbarButton>
   );
 };
 
@@ -561,25 +451,21 @@ const DefaultAddButton: React.FC<AddButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group">
-      <button
+    <ToolbarButton
+      tooltip={labels.inputAddButtonLabel}
+      disabled={props.disabled}
+      className="ml-2"
+    >
+      <Button
         type="button"
-        className={twMerge(
-          chatInputButton({
-            intent: "secondary",
-            size: "icon",
-            margin: "left",
-          }),
-          className
-        )}
+        variant="chatInputToolbarSecondary"
+        size="chatInputToolbarIcon"
+        className={className}
         {...props}
       >
         <Plus size={20} />
-      </button>
-      {props.disabled !== true && (
-        <div className={chatTooltip()}>{labels.inputAddButtonLabel}</div>
-      )}
-    </div>
+      </Button>
+    </ToolbarButton>
   );
 };
 
@@ -589,29 +475,23 @@ const DefaultToolsButton: React.FC<ToolsButtonProps> = ({
 }) => {
   const { labels } = useCopilotChatContext();
   return (
-    <div className="relative group">
-      <button
+    <ToolbarButton
+      tooltip={labels.inputToolsButtonLabel}
+      disabled={props.disabled}
+    >
+      <Button
         type="button"
-        className={twMerge(
-          chatInputButton({
-            intent: "secondary",
-            size: "iconLabel",
-            margin: "none",
-          }),
-          "font-normal",
-          className
-        )}
+        variant="chatInputToolbarSecondary"
+        size="chatInputToolbarIconLabel"
+        className={className}
         {...props}
       >
         <Settings2 size={20} />
         <span className="text-sm font-normal">
           {labels.inputToolsButtonLabel}
         </span>
-      </button>
-      {props.disabled !== true && (
-        <div className={chatTooltip()}>{labels.inputToolsButtonLabel}</div>
-      )}
-    </div>
+      </Button>
+    </ToolbarButton>
   );
 };
 

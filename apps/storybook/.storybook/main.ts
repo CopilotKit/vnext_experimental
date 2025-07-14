@@ -13,6 +13,7 @@ const config: StorybookConfig = {
     cfg.resolve!.alias = {
       ...(cfg.resolve!.alias ?? {}),
       "@copilotkit/react": resolve(__dirname, "../../../packages/react/src"),
+      "@": resolve(__dirname, "../../../packages/react/src"),
     };
 
     // Add custom resolver to handle package.json exports correctly
