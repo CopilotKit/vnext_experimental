@@ -16,6 +16,13 @@ const config: StorybookConfig = {
       "@": resolve(__dirname, "../../../packages/react/src"),
     };
 
+    // Suppress size warnings for development
+    cfg.performance = {
+      ...cfg.performance,
+      maxAssetSize: 5000000, // 5MB
+      maxEntrypointSize: 5000000, // 5MB
+    };
+
     // Add custom resolver to handle package.json exports correctly
     const originalResolve = cfg.resolve!;
     cfg.resolve = {
