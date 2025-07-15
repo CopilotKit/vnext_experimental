@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { CopilotChatInput } from "../components/chat/CopilotChatInput/CopilotChatInput";
+import { CopilotChatInput } from "../components/chat/CopilotChatInput";
 import { CopilotChatContextProvider } from "../providers/CopilotChatContextProvider";
 
 // Mock onSend function to track calls
