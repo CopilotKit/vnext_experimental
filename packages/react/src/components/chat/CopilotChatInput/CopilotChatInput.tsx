@@ -17,8 +17,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AudioRecorderComponent } from "@/types/audio-recorder";
-import { WaveSurferRecorder } from "./WaveSurferRecorder";
+import {
+  AudioRecorderComponent,
+  AudioRecorderControls,
+} from "@/types/audio-recorder";
+import { WebAudioRecorder } from "./WebAudioRecorder";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -141,6 +144,35 @@ export function CopilotChatInput({
 }: CopilotChatInputProps) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const audioRecorderRef = useRef<AudioRecorderControls>(null);
+
+  // Handle recording based on mode changes
+  useEffect(() => {
+    console.log("[CopilotChatInput] Mode changed to:", mode);
+    const recorder = audioRecorderRef.current;
+    if (!recorder) {
+      console.log("[CopilotChatInput] No recorder ref available");
+      return;
+    }
+
+    if (mode === "transcribe") {
+      // Start recording when entering transcribe mode
+      console.log(
+        "[CopilotChatInput] Starting recording due to transcribe mode"
+      );
+      recorder.start().catch(console.error);
+    } else {
+      // Stop recording when leaving transcribe mode
+      console.log(
+        "[CopilotChatInput] Mode is not transcribe, checking if need to stop. Current recorder state:",
+        recorder.state
+      );
+      if (recorder.state === "recording") {
+        console.log("[CopilotChatInput] Stopping recording due to mode change");
+        recorder.stop().catch(console.error);
+      }
+    }
+  }, [mode]);
 
   // Extract component overrides with defaults
   const {
@@ -153,7 +185,7 @@ export function CopilotChatInput({
     ToolsButton = CopilotChatInput.ToolsButton,
     Container = CopilotChatInput.Container,
     Toolbar = CopilotChatInput.Toolbar,
-    AudioRecorder = WaveSurferRecorder,
+    AudioRecorder = WebAudioRecorder,
   } = components;
 
   // Handlers
@@ -195,8 +227,9 @@ export function CopilotChatInput({
 
   const BoundAudioRecorder = (
     <AudioRecorder
+      ref={audioRecorderRef}
       className={
-        AudioRecorder === WaveSurferRecorder
+        AudioRecorder === WebAudioRecorder
           ? appearance.audioRecorder
           : undefined
       }

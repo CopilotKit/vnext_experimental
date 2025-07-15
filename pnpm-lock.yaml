@@ -158,9 +158,6 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.7
         version: 1.2.7(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@wavesurfer/react':
-        specifier: ^1.0.11
-        version: 1.0.11(react@19.1.0)(wavesurfer.js@7.9.9)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -182,9 +179,6 @@ importers:
       tw-animate-css:
         specifier: ^1.3.5
         version: 1.3.5
-      wavesurfer.js:
-        specifier: ^7.9.9
-        version: 7.9.9
     devDependencies:
       '@copilotkit/eslint-config':
         specifier: workspace:*
@@ -3023,12 +3017,6 @@ packages:
 
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
-
-  '@wavesurfer/react@1.0.11':
-    resolution: {integrity: sha512-DRpaA3MRTKy4Jby12xvoHASa+w31FZtxaqanXcJjfqNqfamkKi8VJfRnz+Uub9LkpdgoAc3g5SuZF75lEcGgzQ==}
-    peerDependencies:
-      react: ^18.2.0 || ^19.0.0
-      wavesurfer.js: '>=7.7.14'
 
   '@webassemblyjs/ast@1.14.1':
     resolution: {integrity: sha512-nuBEDgQfm1ccRp/8bCQrx1frohyufl4JlbMMZ4P1wpeOfDhF6FQkxZJ1b/e+PLwr6X1Nhw6OLme5usuBWYBvuQ==}
@@ -7674,9 +7662,6 @@ packages:
     resolution: {integrity: sha512-c5EGNOiyxxV5qmTtAB7rbiXxi1ooX1pQKMLX/MIabJjRA0SJBQOjKF+KSVfHkr9U1cADPon0mRiVe/riyaiDUA==}
     engines: {node: '>=10.13.0'}
 
-  wavesurfer.js@7.9.9:
-    resolution: {integrity: sha512-8O/zu+RC7yjikxiuhsXzRZ8vvjV+Qq4PUKZBQsLLcq6fqbrSF3Vh99l7fT8zeEjKjDBNH2Qxsxq5mRJIuBmM3Q==}
-
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
 
@@ -11214,11 +11199,6 @@ snapshots:
       '@vitest/pretty-format': 3.2.4
       loupe: 3.1.4
       tinyrainbow: 2.0.0
-
-  '@wavesurfer/react@1.0.11(react@19.1.0)(wavesurfer.js@7.9.9)':
-    dependencies:
-      react: 19.1.0
-      wavesurfer.js: 7.9.9
 
   '@webassemblyjs/ast@1.14.1':
     dependencies:
@@ -17141,8 +17121,6 @@ snapshots:
     dependencies:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
-
-  wavesurfer.js@7.9.9: {}
 
   web-namespaces@2.0.1: {}
 

@@ -49,13 +49,11 @@
     "@copilotkit/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@wavesurfer/react": "^1.0.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
     "tailwind-merge": "^3.3.1",
-    "tw-animate-css": "^1.3.5",
-    "wavesurfer.js": "^7.9.9"
+    "tw-animate-css": "^1.3.5"
   },
   "peerDependencies": {
     "react": ">=16.8.0",

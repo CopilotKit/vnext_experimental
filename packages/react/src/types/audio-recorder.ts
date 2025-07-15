@@ -20,7 +20,7 @@ export class AudioRecorderError extends Error {
  * - `state` is always the current FSM value.
  * - `dispose()` is optional but useful for React unmounts / test cleanup.
  */
-export interface AudioRecorder {
+export interface AudioRecorderControls {
   /** Observable state */
   readonly state: AudioRecorderState;
 
@@ -42,5 +42,6 @@ export interface AudioRecorder {
  * ```
  */
 export type AudioRecorderComponent = React.ForwardRefExoticComponent<
-  React.HTMLAttributes<HTMLDivElement> & React.RefAttributes<AudioRecorder>
+  React.HTMLAttributes<HTMLDivElement> &
+    React.RefAttributes<AudioRecorderControls>
 >;
