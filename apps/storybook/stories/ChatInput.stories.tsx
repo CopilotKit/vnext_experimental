@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { CopilotChatInput } from "@copilotkit/react";
+import {
+  CopilotChatInput,
+  CopilotChatContextProvider,
+} from "@copilotkit/react";
 
 const meta = {
   title: "UI/CopilotChatInput",
   component: CopilotChatInput,
+  decorators: [
+    (Story) => (
+      <CopilotChatContextProvider>
+        <Story />
+      </CopilotChatContextProvider>
+    ),
+  ],
   args: {
     onSend: (t: string) => console.log(`Message sent: ${t}`),
     onStartTranscribe: () => console.log("Transcribe started"),

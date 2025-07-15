@@ -37,6 +37,9 @@ export type CopilotChatInputProps = {
   /** Called when user wants to open tools. Optional. */
   onTools?: () => void;
 
+  /** Whether to automatically focus the textarea on mount. Default: true */
+  autoFocus?: boolean;
+
   /**
    * Component slots — override one or many:
    * - TextArea: must render <textarea …>
@@ -49,7 +52,7 @@ export type CopilotChatInputProps = {
    * - ToolsButton: must render <button …> with built-in tooltip and text
    * - Container: wrapper around everything (default is <div>)
    * - Toolbar: bottom toolbar area (default is <div>)
-   * - AudioRecorder: must render <div …>
+   * - AudioRecorder: see audio-recorder.ts
    */
   components?: {
     TextArea?: React.ComponentType<
@@ -138,11 +141,12 @@ export function CopilotChatInput({
   onFinishTranscribe,
   onAdd,
   onTools,
+  autoFocus = true,
   components = {},
   appearance = {},
   children,
 }: CopilotChatInputProps) {
-  const [text, setText] = useState("");
+  const { text, setText } = useCopilotChatContext();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef = useRef<AudioRecorderControls>(null);
 
@@ -219,6 +223,7 @@ export function CopilotChatInput({
       value={text}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      autoFocus={autoFocus}
       className={
         TextArea === CopilotChatInput.TextArea ? appearance.textarea : undefined
       }
@@ -553,7 +558,7 @@ export namespace CopilotChatInput {
   }
 
   export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
-    ({ maxRows = 1, style, className, ...props }, ref) => {
+    ({ maxRows = 5, style, className, ...props }, ref) => {
       const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
       const [maxHeight, setMaxHeight] = useState<number>(0);
 
@@ -568,9 +573,27 @@ export namespace CopilotChatInput {
         const calculateMaxHeight = () => {
           const textarea = internalTextareaRef.current;
           if (textarea) {
+            // Save current value
+            const currentValue = textarea.value;
+            // Clear content to measure single row height
+            textarea.value = "";
             textarea.style.height = "auto";
-            const singleRowHeight = textarea.scrollHeight;
-            setMaxHeight(singleRowHeight * maxRows);
+
+            // Get computed styles to account for padding
+            const computedStyle = window.getComputedStyle(textarea);
+            const paddingTop = parseFloat(computedStyle.paddingTop);
+            const paddingBottom = parseFloat(computedStyle.paddingBottom);
+
+            // Calculate actual content height (without padding)
+            const contentHeight =
+              textarea.scrollHeight - paddingTop - paddingBottom;
+
+            // Calculate max height: content height for maxRows + padding
+            setMaxHeight(contentHeight * maxRows + paddingTop + paddingBottom);
+
+            // Restore original value
+            textarea.value = currentValue;
+
             if (props.autoFocus) {
               textarea.focus();
             }
@@ -617,6 +640,8 @@ export namespace CopilotChatInput {
       );
     }
   );
+
+  export const AudioRecorder = WebAudioRecorder;
 }
 
 CopilotChatInput.TextArea.displayName = "CopilotChatInput.TextArea";

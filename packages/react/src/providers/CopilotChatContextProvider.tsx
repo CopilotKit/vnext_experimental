@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useState } from "react";
 
 // Default labels
 const defaultLabels = {
@@ -15,17 +15,13 @@ export type CopilotChatLabels = typeof defaultLabels;
 // Define the full context interface
 export interface CopilotChatContextValue {
   labels: CopilotChatLabels;
+  text: string;
+  setText: (text: string) => void;
   // Room for other context properties in the future
 }
 
-// Default context value
-const defaultContextValue: CopilotChatContextValue = {
-  labels: defaultLabels,
-};
-
 // Create the context
-const CopilotChatContext =
-  createContext<CopilotChatContextValue>(defaultContextValue);
+const CopilotChatContext = createContext<CopilotChatContextValue | null>(null);
 
 // Provider props interface
 export interface CopilotChatContextProviderProps {
@@ -37,6 +33,8 @@ export interface CopilotChatContextProviderProps {
 export const CopilotChatContextProvider: React.FC<
   CopilotChatContextProviderProps
 > = ({ children, labels = {} }) => {
+  const [text, setText] = useState<string>("");
+
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
     ...defaultLabels,
@@ -45,6 +43,8 @@ export const CopilotChatContextProvider: React.FC<
 
   const contextValue: CopilotChatContextValue = {
     labels: mergedLabels,
+    text,
+    setText,
   };
 
   return (
@@ -58,8 +58,9 @@ export const CopilotChatContextProvider: React.FC<
 export const useCopilotChatContext = (): CopilotChatContextValue => {
   const context = useContext(CopilotChatContext);
   if (!context) {
-    // Return default context if no provider is found
-    return defaultContextValue;
+    throw new Error(
+      "useCopilotChatContext must be used within CopilotChatContextProvider"
+    );
   }
   return context;
 };
