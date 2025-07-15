@@ -19,13 +19,35 @@ export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
 >((props, ref) => {
   const { className, ...divProps } = props;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [state, setState] = useState<AudioRecorderState>("idle");
 
-  // Simple state management
-
-  // Simplified loudness function - returns zeros for now
+  // Generate fake waveform that moves with time
   const getLoudness = (n: number): number[] => {
-    return new Array(n).fill(0);
+    const elapsed = Date.now() / 1000; // Use current timestamp directly
+    const samples: number[] = [];
+
+    for (let i = 0; i < n; i++) {
+      // Create a position that moves from left to right over time
+      const position = (i / n) * 10 + elapsed * 0.5; // Scroll speed (slower)
+
+      // Generate waveform using multiple sine waves for realism
+      const wave1 = Math.sin(position * 2) * 0.3;
+      const wave2 = Math.sin(position * 5 + elapsed) * 0.2;
+      const wave3 = Math.sin(position * 0.5 + elapsed * 0.3) * 0.4;
+
+      // Add some randomness for natural variation
+      const noise = (Math.random() - 0.5) * 0.1;
+
+      // Combine waves and add envelope for realistic amplitude variation
+      const envelope = Math.sin(elapsed * 0.7) * 0.5 + 0.5; // Slow amplitude modulation
+      let amplitude = (wave1 + wave2 + wave3 + noise) * envelope;
+
+      // Clamp to 0-1 range
+      amplitude = Math.max(0, Math.min(1, amplitude * 0.5 + 0.3));
+
+      samples.push(amplitude);
+    }
+
+    return samples;
   };
 
   // No setup needed - stub implementation
@@ -104,35 +126,26 @@ export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
     ref,
     () => ({
       get state() {
-        return state;
+        return "idle" as AudioRecorderState;
       },
       start: async () => {
         try {
-          setState("recording");
           // Stub implementation - no actual recording
         } catch (error) {
-          setState("idle");
           throw error;
         }
       },
       stop: () =>
         new Promise<Blob>((resolve, reject) => {
-          if (state !== "recording") {
-            return reject(new Error("Not recording"));
-          }
-
-          setState("processing");
-
           // Stub implementation - return empty blob
           const emptyBlob = new Blob([], { type: "audio/webm" });
-          setState("idle");
           resolve(emptyBlob);
         }),
       dispose: () => {
-        setState("idle");
+        // No cleanup needed
       },
     }),
-    [state]
+    []
   );
 
   return (
