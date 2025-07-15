@@ -18,12 +18,35 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   AudioRecorderComponent,
   AudioRecorderControls,
 } from "@/types/audio-recorder";
 import { WebAudioRecorder } from "./WebAudioRecorder";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
+
+export type ToolsMenuItem = {
+  label: string;
+} & (
+  | {
+      action: () => void;
+      items?: never;
+    }
+  | {
+      action?: never;
+      items: (ToolsMenuItem | "-")[];
+    }
+);
 
 export type CopilotChatInputProps = {
   mode?: CopilotChatInputMode;
@@ -32,10 +55,10 @@ export type CopilotChatInputProps = {
   onSend: (text: string) => void;
 
   /** Called when user wants to add photos or files. Optional. */
-  onAdd?: () => void;
+  onAddFile?: () => void;
 
-  /** Called when user wants to open tools. Optional. */
-  onTools?: () => void;
+  /** Menu items for the tools dropdown. If provided, replaces the default tools button with a dropdown. Use "-" string for separators. */
+  toolsMenu?: (ToolsMenuItem | "-")[];
 
   /** Whether to automatically focus the textarea on mount. Default: true */
   autoFocus?: boolean;
@@ -139,8 +162,8 @@ export function CopilotChatInput({
   onStartTranscribe,
   onCancelTranscribe,
   onFinishTranscribe,
-  onAdd,
-  onTools,
+  onAddFile: onAdd,
+  toolsMenu,
   autoFocus = true,
   components = {},
   appearance = {},
@@ -300,13 +323,14 @@ export function CopilotChatInput({
 
   const BoundToolsButton = (
     <ToolsButton
-      onClick={onTools}
       disabled={mode === "transcribe"}
       className={
         ToolsButton === CopilotChatInput.ToolsButton
           ? appearance.toolsButton
           : undefined
       }
+      // Pass toolsMenu as a prop for the default component
+      {...(ToolsButton === CopilotChatInput.ToolsButton && { toolsMenu })}
     />
   );
 
@@ -356,7 +380,7 @@ export function CopilotChatInput({
       >
         <div className="flex items-center">
           {onAdd && BoundAddButton}
-          {onTools && BoundToolsButton}
+          {BoundToolsButton}
         </div>
         <div className="flex items-center">
           {mode === "transcribe" ? (
@@ -490,12 +514,49 @@ export namespace CopilotChatInput {
   };
 
   export const ToolsButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      toolsMenu?: (ToolsMenuItem | "-")[];
+    }
+  > = ({ className, toolsMenu, ...props }) => {
     const { labels } = useCopilotChatContext();
+
+    const renderMenuItems = (
+      items: (ToolsMenuItem | "-")[]
+    ): React.ReactNode => {
+      return items.map((item, index) => {
+        if (item === "-") {
+          // Separator
+          return <DropdownMenuSeparator key={index} />;
+        } else if (item.items && item.items.length > 0) {
+          // Nested menu
+          return (
+            <DropdownMenuSub key={index}>
+              <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {renderMenuItems(item.items)}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          );
+        } else {
+          // Regular menu item
+          return (
+            <DropdownMenuItem key={index} onClick={item.action}>
+              {item.label}
+            </DropdownMenuItem>
+          );
+        }
+      });
+    };
+
+    // Only render if toolsMenu is provided and has items
+    if (!toolsMenu || toolsMenu.length === 0) {
+      return null;
+    }
+
+    // Render dropdown menu
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
             type="button"
             variant="chatInputToolbarSecondary"
@@ -508,11 +569,11 @@ export namespace CopilotChatInput {
               {labels.inputToolsButtonLabel}
             </span>
           </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.inputToolsButtonLabel}</p>
-        </TooltipContent>
-      </Tooltip>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="end">
+          {renderMenuItems(toolsMenu)}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   };
 

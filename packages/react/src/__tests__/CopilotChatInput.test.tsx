@@ -160,8 +160,7 @@ describe("CopilotChatInput", () => {
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
-        onAdd={() => {}}
-        onTools={() => {}}
+        onAddFile={() => {}}
       />
     );
 
@@ -194,8 +193,7 @@ describe("CopilotChatInput", () => {
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
-        onAdd={() => {}}
-        onTools={() => {}}
+        onAddFile={() => {}}
       />
     );
 
@@ -217,8 +215,7 @@ describe("CopilotChatInput", () => {
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
-        onAdd={() => {}}
-        onTools={() => {}}
+        onAddFile={() => {}}
       />
     );
 
@@ -238,8 +235,7 @@ describe("CopilotChatInput", () => {
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
-        onAdd={() => {}}
-        onTools={() => {}}
+        onAddFile={() => {}}
       />
     );
 
