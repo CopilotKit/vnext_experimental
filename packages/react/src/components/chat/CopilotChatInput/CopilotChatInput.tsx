@@ -10,7 +10,6 @@ import React, {
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 
-import { RecordingIndicator as ImportedRecordingIndicator } from "./RecordingIndicator";
 import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +17,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AudioRecorderComponent } from "@/types/audio-recorder";
+import { WaveSurferRecorder } from "./WaveSurferRecorder";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -44,7 +45,8 @@ export type CopilotChatInputProps = {
    * - AddButton: must render <button …> with built-in tooltip
    * - ToolsButton: must render <button …> with built-in tooltip and text
    * - Container: wrapper around everything (default is <div>)
-   * - ToolBar: bottom toolbar area (default is <div>)
+   * - Toolbar: bottom toolbar area (default is <div>)
+   * - AudioRecorder: must render <div …>
    */
   components?: {
     TextArea?: React.ComponentType<
@@ -74,7 +76,8 @@ export type CopilotChatInputProps = {
     Container?: React.ComponentType<
       React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
     >;
-    ToolBar?: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
+    Toolbar?: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
+    AudioRecorder?: AudioRecorderComponent;
   };
 
   /**
@@ -92,6 +95,7 @@ export type CopilotChatInputProps = {
     addButton?: string;
     toolsButton?: string;
     toolbar?: string;
+    audioRecorder?: string;
   };
 
   /**
@@ -100,14 +104,14 @@ export type CopilotChatInputProps = {
    */
   children?: (parts: {
     TextArea: JSX.Element;
-    RecordingIndicator: JSX.Element;
     SendButton: JSX.Element;
     StartTranscribeButton: JSX.Element;
     CancelTranscribeButton: JSX.Element;
     FinishTranscribeButton: JSX.Element;
     AddButton: JSX.Element;
     ToolsButton: JSX.Element;
-    ToolBar: JSX.Element;
+    Toolbar: JSX.Element;
+    AudioRecorder: JSX.Element;
   }) => React.ReactNode;
 } &
   // Either all or none of the transcribe callbacks are provided
@@ -141,7 +145,6 @@ export function CopilotChatInput({
   // Extract component overrides with defaults
   const {
     TextArea = CopilotChatInput.TextArea,
-    RecordingIndicator = CopilotChatInput.RecordingIndicator,
     SendButton = CopilotChatInput.SendButton,
     StartTranscribeButton = CopilotChatInput.StartTranscribeButton,
     CancelTranscribeButton = CopilotChatInput.CancelTranscribeButton,
@@ -149,7 +152,8 @@ export function CopilotChatInput({
     AddButton = CopilotChatInput.AddButton,
     ToolsButton = CopilotChatInput.ToolsButton,
     Container = CopilotChatInput.Container,
-    ToolBar = CopilotChatInput.ToolBar,
+    Toolbar = CopilotChatInput.Toolbar,
+    AudioRecorder = WaveSurferRecorder,
   } = components;
 
   // Handlers
@@ -189,11 +193,11 @@ export function CopilotChatInput({
     />
   );
 
-  const BoundRecordingIndicator = (
-    <RecordingIndicator
+  const BoundAudioRecorder = (
+    <AudioRecorder
       className={
-        RecordingIndicator === CopilotChatInput.RecordingIndicator
-          ? appearance.recordingIndicator
+        AudioRecorder === WaveSurferRecorder
+          ? appearance.audioRecorder
           : undefined
       }
     />
@@ -269,9 +273,9 @@ export function CopilotChatInput({
   );
 
   const BoundToolBar = (
-    <ToolBar
+    <Toolbar
       className={
-        ToolBar === CopilotChatInput.ToolBar ? appearance.toolbar : undefined
+        Toolbar === CopilotChatInput.Toolbar ? appearance.toolbar : undefined
       }
     />
   );
@@ -283,14 +287,14 @@ export function CopilotChatInput({
       <>
         {children({
           TextArea: BoundTextArea,
-          RecordingIndicator: BoundRecordingIndicator,
+          AudioRecorder: BoundAudioRecorder,
           SendButton: BoundSendButton,
           StartTranscribeButton: BoundStartTranscribeButton,
           CancelTranscribeButton: BoundCancelTranscribeButton,
           FinishTranscribeButton: BoundFinishTranscribeButton,
           AddButton: BoundAddButton,
           ToolsButton: BoundToolsButton,
-          ToolBar: BoundToolBar,
+          Toolbar: BoundToolBar,
         })}
       </>
     );
@@ -305,11 +309,11 @@ export function CopilotChatInput({
           : undefined
       }
     >
-      {mode === "transcribe" ? BoundRecordingIndicator : BoundTextArea}
-      <ToolBar
+      {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
+      <Toolbar
         className={twMerge(
           "w-full h-[60px] bg-transparent flex items-center justify-between",
-          ToolBar === CopilotChatInput.ToolBar ? appearance.toolbar : undefined
+          Toolbar === CopilotChatInput.Toolbar ? appearance.toolbar : undefined
         )}
       >
         <div className="flex items-center">
@@ -329,16 +333,12 @@ export function CopilotChatInput({
             </>
           )}
         </div>
-      </ToolBar>
+      </Toolbar>
     </Container>
   );
 }
 
 export namespace CopilotChatInput {
-  export const RecordingIndicator: React.FC<
-    React.HTMLAttributes<HTMLDivElement>
-  > = ImportedRecordingIndicator;
-
   export const SendButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, ...props }) => (
@@ -501,7 +501,7 @@ export namespace CopilotChatInput {
     </div>
   );
 
-  export const ToolBar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     className,
     ...props
   }) => (
@@ -587,8 +587,6 @@ export namespace CopilotChatInput {
 }
 
 CopilotChatInput.TextArea.displayName = "CopilotChatInput.TextArea";
-CopilotChatInput.RecordingIndicator.displayName =
-  "CopilotChatInput.RecordingIndicator";
 CopilotChatInput.SendButton.displayName = "CopilotChatInput.SendButton";
 CopilotChatInput.StartTranscribeButton.displayName =
   "CopilotChatInput.StartTranscribeButton";
@@ -599,6 +597,6 @@ CopilotChatInput.FinishTranscribeButton.displayName =
 CopilotChatInput.AddButton.displayName = "CopilotChatInput.AddButton";
 CopilotChatInput.ToolsButton.displayName = "CopilotChatInput.ToolsButton";
 CopilotChatInput.Container.displayName = "CopilotChatInput.Container";
-CopilotChatInput.ToolBar.displayName = "CopilotChatInput.ToolBar";
+CopilotChatInput.Toolbar.displayName = "CopilotChatInput.Toolbar";
 
 export default CopilotChatInput;
