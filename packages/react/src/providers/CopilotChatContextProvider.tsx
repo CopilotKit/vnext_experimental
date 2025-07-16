@@ -8,6 +8,8 @@ const defaultLabels = {
   inputFinishTranscribeButtonLabel: "Finish",
   inputAddButtonLabel: "Add photos or files",
   inputToolsButtonLabel: "Tools",
+  assistantCopyCodeLabel: "Copy",
+  assistantCopyCodeCopiedLabel: "Copied",
 };
 
 export type CopilotChatLabels = typeof defaultLabels;

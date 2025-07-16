@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
@@ -124,4 +125,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+figure[data-rehype-pretty-code-figure] {
+  background-color: rgb(249, 249, 249);
+  @apply rounded-lg;
+}
+
+figure[data-rehype-pretty-code-figure] pre {
+  background-color: rgb(249, 249, 249);
 }

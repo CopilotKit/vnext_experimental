@@ -10,7 +10,7 @@ import type {
   AudioRecorderControls,
   AudioRecorderState,
   AudioRecorderComponent,
-} from "../../../types/audio-recorder";
+} from "../../types/audio-recorder";
 import { twMerge } from "tailwind-merge";
 
 export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
