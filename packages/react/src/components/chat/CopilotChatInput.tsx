@@ -63,6 +63,9 @@ export type CopilotChatInputProps = {
   /** Whether to automatically focus the textarea on mount. Default: true */
   autoFocus?: boolean;
 
+  /** Additional custom toolbar items to render alongside the default buttons. */
+  additionalToolbarItems?: React.ReactNode;
+
   /**
    * Component slots — override one or many:
    * - TextArea: must render <textarea …>
@@ -165,6 +168,7 @@ export function CopilotChatInput({
   onAddFile: onAdd,
   toolsMenu,
   autoFocus = true,
+  additionalToolbarItems,
   components = {},
   appearance = {},
   children,
@@ -334,12 +338,32 @@ export function CopilotChatInput({
     />
   );
 
-  const BoundToolBar = (
+  const BoundToolbar = (
     <Toolbar
-      className={
+      className={twMerge(
+        "w-full h-[60px] bg-transparent flex items-center justify-between",
         Toolbar === CopilotChatInput.Toolbar ? appearance.toolbar : undefined
-      }
-    />
+      )}
+    >
+      <div className="flex items-center">
+        {onAdd && BoundAddButton}
+        {BoundToolsButton}
+        {additionalToolbarItems}
+      </div>
+      <div className="flex items-center">
+        {mode === "transcribe" ? (
+          <>
+            {onCancelTranscribe && BoundCancelTranscribeButton}
+            {onFinishTranscribe && BoundFinishTranscribeButton}
+          </>
+        ) : (
+          <>
+            {onStartTranscribe && BoundStartTranscribeButton}
+            {BoundSendButton}
+          </>
+        )}
+      </div>
+    </Toolbar>
   );
 
   // Render algorithm
@@ -356,7 +380,7 @@ export function CopilotChatInput({
           FinishTranscribeButton: BoundFinishTranscribeButton,
           AddButton: BoundAddButton,
           ToolsButton: BoundToolsButton,
-          Toolbar: BoundToolBar,
+          Toolbar: BoundToolbar,
         })}
       </>
     );
@@ -372,30 +396,7 @@ export function CopilotChatInput({
       }
     >
       {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
-      <Toolbar
-        className={twMerge(
-          "w-full h-[60px] bg-transparent flex items-center justify-between",
-          Toolbar === CopilotChatInput.Toolbar ? appearance.toolbar : undefined
-        )}
-      >
-        <div className="flex items-center">
-          {onAdd && BoundAddButton}
-          {BoundToolsButton}
-        </div>
-        <div className="flex items-center">
-          {mode === "transcribe" ? (
-            <>
-              {onCancelTranscribe && BoundCancelTranscribeButton}
-              {onFinishTranscribe && BoundFinishTranscribeButton}
-            </>
-          ) : (
-            <>
-              {onStartTranscribe && BoundStartTranscribeButton}
-              {BoundSendButton}
-            </>
-          )}
-        </div>
-      </Toolbar>
+      {BoundToolbar}
     </Container>
   );
 }

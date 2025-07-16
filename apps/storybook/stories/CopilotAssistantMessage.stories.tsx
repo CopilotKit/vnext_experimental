@@ -5,6 +5,14 @@ import {
   type CopilotAssistantMessageProps,
 } from "@copilotkit/react";
 
+// Simple default message
+const simpleMessage = {
+  id: "simple-message",
+  content: "Hello! How can I help you today?",
+  timestamp: new Date(),
+  role: "assistant" as const,
+};
+
 // Comprehensive markdown test content
 const markdownTestMessage = {
   id: "test-message",
@@ -127,7 +135,10 @@ const meta = {
     ),
   ],
   args: {
-    message: markdownTestMessage,
+    message: simpleMessage,
+    onThumbsUp: () => console.log("Thumbs up clicked!"),
+    onThumbsDown: () => console.log("Thumbs down clicked!"),
+    onReadAloud: () => console.log("Read aloud clicked!"),
   },
 } satisfies Meta<typeof CopilotAssistantMessage>;
 
@@ -135,6 +146,48 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const TestAllMarkdownFeatures: Story = {
+  args: {
+    message: markdownTestMessage,
+  },
+};
+
+export const WithToolbarButtons: Story = {
+  args: {
+    message: simpleMessage,
+    onThumbsUp: () => alert("Thumbs up clicked!"),
+    onThumbsDown: () => alert("Thumbs down clicked!"),
+    onReadAloud: () => alert("Read aloud clicked!"),
+  },
+};
+
+export const WithAdditionalToolbarItems: Story = {
+  args: {
+    message: simpleMessage,
+    onThumbsUp: () => console.log("Thumbs up clicked!"),
+    onThumbsDown: () => console.log("Thumbs down clicked!"),
+    onReadAloud: () => console.log("Read aloud clicked!"),
+    additionalToolbarItems: (
+      <>
+        <button
+          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+          onClick={() => alert("Custom button 1 clicked!")}
+          title="Custom Action 1"
+        >
+          📌
+        </button>
+        <button
+          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+          onClick={() => alert("Custom button 2 clicked!")}
+          title="Custom Action 2"
+        >
+          ❤️
+        </button>
+      </>
+    ),
+  },
+};
 
 // Message with code blocks and inline literals
 const codeBlocksTestMessage = {

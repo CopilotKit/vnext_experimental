@@ -78,3 +78,26 @@ export const Transcribe: Story = {
     mode: "transcribe",
   },
 };
+
+export const WithAdditionalToolbarItems: Story = {
+  args: {
+    additionalToolbarItems: (
+      <>
+        <button
+          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-2"
+          onClick={() => alert("Custom action clicked!")}
+          title="Custom Action"
+        >
+          ⭐
+        </button>
+        <button
+          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-1"
+          onClick={() => alert("Another custom action clicked!")}
+          title="Another Custom Action"
+        >
+          🔖
+        </button>
+      </>
+    ),
+  },
+};

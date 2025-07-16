@@ -10,6 +10,10 @@ const defaultLabels = {
   inputToolsButtonLabel: "Tools",
   assistantCopyCodeLabel: "Copy",
   assistantCopyCodeCopiedLabel: "Copied",
+  assistantCopyMessageLabel: "Copy",
+  assistantThumbsUpLabel: "Good response",
+  assistantThumbsDownLabel: "Bad response",
+  assistantReadAloudLabel: "Read aloud",
 };
 
 export type CopilotChatLabels = typeof defaultLabels;
