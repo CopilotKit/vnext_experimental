@@ -164,15 +164,15 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.7
         version: 1.2.7(@types/react-dom@18.3.7(@types/react@18.3.23))(@types/react@18.3.23)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@rehype-pretty/transformers':
-        specifier: ^0.13.2
-        version: 0.13.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      katex:
+        specifier: ^0.16.22
+        version: 0.16.22
       lucide-react:
         specifier: ^0.525.0
         version: 0.525.0(react@19.1.0)
@@ -185,12 +185,18 @@ importers:
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@18.3.23)(react@19.1.0)
+      rehype-katex:
+        specifier: ^7.0.1
+        version: 7.0.1
       rehype-pretty-code:
         specifier: ^0.14.1
         version: 0.14.1(shiki@3.8.0)
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      remark-math:
+        specifier: ^6.0.0
+        version: 6.0.0
       shiki:
         specifier: ^3.8.0
         version: 3.8.0
@@ -2276,10 +2282,6 @@ packages:
 
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
-
-  '@rehype-pretty/transformers@0.13.2':
-    resolution: {integrity: sha512-p2ciQSwqy5Ip8aNUa9q6rdS/hJZXrxHYYfDVOHvKOsBu3t9HDmQ65YX6r9Qbl19vi160OAxmGF7MIoCRDJrRhg==}
-    engines: {node: '>=18'}
 
   '@shikijs/core@3.7.0':
     resolution: {integrity: sha512-yilc0S9HvTPyahHpcum8eonYrQtmGTU0lbtwxhA6jHv4Bm1cAdlPFRCJX4AHebkCm75aKTjjRAW+DezqD1b/cg==}
@@ -10355,8 +10357,6 @@ snapshots:
       '@types/react-dom': 18.3.7(@types/react@18.3.23)
 
   '@radix-ui/rect@1.1.1': {}
-
-  '@rehype-pretty/transformers@0.13.2': {}
 
   '@shikijs/core@3.7.0':
     dependencies:

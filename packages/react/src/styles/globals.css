@@ -135,3 +135,21 @@ figure[data-rehype-pretty-code-figure] {
 figure[data-rehype-pretty-code-figure] pre {
   background-color: rgb(249, 249, 249);
 }
+
+.prose
+  :where(code):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  )::before {
+  content: "";
+}
+
+.prose
+  :where(code):not(
+    :where([class~="not-prose"], [class~="not-prose"] *)
+  )::after {
+  content: "";
+}
+
+.prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  font-weight: 400;
+}
