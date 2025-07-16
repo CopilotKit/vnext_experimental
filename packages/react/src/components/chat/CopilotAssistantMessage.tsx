@@ -103,6 +103,7 @@ export function CopilotAssistantMessage({
   appearance = {},
   children,
 }: CopilotAssistantMessageProps) {
+  const [copied, setCopied] = useState(false);
   const {
     Container = CopilotAssistantMessage.Container,
     MarkdownRenderer = CopilotAssistantMessage.MarkdownRenderer,
@@ -126,11 +127,18 @@ export function CopilotAssistantMessage({
 
   const BoundCopyButton = (
     <CopyButton
-      onClick={() => {
+      onClick={async () => {
         if (message.content) {
-          navigator.clipboard.writeText(message.content).catch(console.error);
+          try {
+            await navigator.clipboard.writeText(message.content);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } catch (err) {
+            console.error("Failed to copy message:", err);
+          }
         }
       }}
+      copied={copied}
       className={
         CopyButton === CopilotAssistantMessage.CopyButton
           ? appearance.copyButton
@@ -370,8 +378,8 @@ export namespace CopilotAssistantMessage {
   );
 
   export const CopyButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
+  > = ({ className, copied = false, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <Tooltip>
@@ -386,7 +394,11 @@ export namespace CopilotAssistantMessage {
             )}
             {...props}
           >
-            <Copy className="h-4 w-4" />
+            {copied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
