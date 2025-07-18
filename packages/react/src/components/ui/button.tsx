@@ -20,7 +20,22 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer",
         link: "text-primary underline-offset-4 hover:underline",
+        assistantMessageButton: [
+          "cursor-pointer",
+          // Background and text
+          "p-0 text-[rgb(93,93,93)]",
+          // Dark mode - lighter gray for better contrast
+          "dark:text-[rgb(160,160,160)]",
+          // Shape and sizing
+          "h-8 w-8",
+          // Interactions
+          "transition-colors",
+          // Hover states
+          "hover:text-[rgb(93,93,93)]",
+          "dark:hover:text-[rgb(200,200,200)]",
+        ],
         chatInputToolbarPrimary: [
+          "cursor-pointer",
           // Background and text
           "bg-black text-white",
           // Dark mode
@@ -35,12 +50,14 @@ const buttonVariants = cva(
           "hover:opacity-70 disabled:hover:opacity-100",
           // Disabled states
           "disabled:cursor-not-allowed disabled:bg-[#00000014] disabled:text-[rgb(13,13,13)]",
+          "dark:disabled:bg-[#454545] dark:disabled:text-white ",
         ],
         chatInputToolbarSecondary: [
+          "cursor-pointer",
           // Background and text
           "bg-transparent text-[#444444]",
           // Dark mode
-          "dark:text-[#CCCCCC] dark:border-[#404040]",
+          "dark:text-white dark:border-[#404040]",
           // Shape and sizing
           "rounded-full",
           // Interactions
@@ -48,7 +65,7 @@ const buttonVariants = cva(
           // Focus states
           "focus:outline-none",
           // Hover states
-          "hover:bg-[#f8f8f8] hover:text-[#333333]",
+          "hover:bg-[#454545] hover:text-[#333333]",
           "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
           // Disabled states
           "disabled:cursor-not-allowed disabled:opacity-50",

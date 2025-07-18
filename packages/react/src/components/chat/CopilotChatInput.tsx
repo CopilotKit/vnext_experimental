@@ -694,7 +694,7 @@ export namespace CopilotChatInput {
             // Typography
             "antialiased font-regular leading-relaxed text-[16px]",
             // Placeholder styles
-            "placeholder:text-[#00000077]",
+            "placeholder:text-[#00000077] dark:placeholder:text-[#fffc]",
             className
           )}
           rows={1}

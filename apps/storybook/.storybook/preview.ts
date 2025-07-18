@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/react-webpack5";
 import { withThemeByClassName } from "@storybook/addon-themes";
 import "@copilotkit/react/styles.css";
+import "./preview.css";
 
 const preview: Preview = {
   parameters: {
