@@ -391,9 +391,9 @@ export namespace CopilotAssistantMessage {
             {...props}
           >
             {copied ? (
-              <Check className="h-4 w-4" />
+              <Check className="size-[18px]" />
             ) : (
-              <Copy className="h-4 w-4" />
+              <Copy className="size-[18px]" />
             )}
           </Button>
         </TooltipTrigger>
@@ -417,7 +417,7 @@ export namespace CopilotAssistantMessage {
             className={twMerge(className)}
             {...props}
           >
-            <ThumbsUp className="h-4 w-4" />
+            <ThumbsUp className="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -440,7 +440,7 @@ export namespace CopilotAssistantMessage {
             className={twMerge(className)}
             {...props}
           >
-            <ThumbsDown className="h-4 w-4" />
+            <ThumbsDown className="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -463,7 +463,7 @@ export namespace CopilotAssistantMessage {
             className={twMerge(className)}
             {...props}
           >
-            <Volume2 className="h-4 w-4" />
+            <Volume2 className="size-[20px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">

@@ -65,7 +65,7 @@ const buttonVariants = cva(
           // Focus states
           "focus:outline-none",
           // Hover states
-          "hover:bg-[#454545] hover:text-[#333333]",
+          "hover:bg-[#f8f8f8] hover:text-[#333333]",
           "dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]",
           // Disabled states
           "disabled:cursor-not-allowed disabled:opacity-50",

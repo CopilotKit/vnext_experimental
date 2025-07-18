@@ -413,7 +413,7 @@ export namespace CopilotChatInput {
         className={className}
         {...props}
       >
-        <ArrowUp size={20} />
+        <ArrowUp className="size-[18px]" />
       </Button>
     </div>
   );
@@ -432,7 +432,7 @@ export namespace CopilotChatInput {
             className={twMerge("mr-2", className)}
             {...props}
           >
-            <Mic size={20} />
+            <Mic className="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -456,7 +456,7 @@ export namespace CopilotChatInput {
             className={twMerge("mr-2", className)}
             {...props}
           >
-            <X size={20} />
+            <X className="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -480,7 +480,7 @@ export namespace CopilotChatInput {
             className={twMerge("mr-[10px]", className)}
             {...props}
           >
-            <Check size={20} />
+            <Check className="size-[18px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -504,7 +504,7 @@ export namespace CopilotChatInput {
             className={twMerge("ml-2", className)}
             {...props}
           >
-            <Plus size={20} />
+            <Plus className="size-[20px]" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -565,7 +565,7 @@ export namespace CopilotChatInput {
             className={className}
             {...props}
           >
-            <Settings2 size={20} />
+            <Settings2 className="size-[18px]" />
             <span className="text-sm font-normal">
               {labels.inputToolsButtonLabel}
             </span>
