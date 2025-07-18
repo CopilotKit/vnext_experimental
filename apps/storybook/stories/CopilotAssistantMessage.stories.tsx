@@ -129,9 +129,21 @@ const meta = {
   component: CopilotAssistantMessage,
   decorators: [
     (Story) => (
-      <CopilotChatContextProvider>
-        <Story />
-      </CopilotChatContextProvider>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          minHeight: "100vh",
+          padding: "16px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "640px" }}>
+          <CopilotChatContextProvider>
+            <Story />
+          </CopilotChatContextProvider>
+        </div>
+      </div>
     ),
   ],
   args: {

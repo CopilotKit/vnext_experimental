@@ -231,7 +231,7 @@ export namespace CopilotAssistantMessage {
   const InlineCode = ({ children, ...props }: any) => {
     return (
       <code
-        className="px-1.5 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono font-regular!"
+        className="px-[4.8px] py-[2.5px] bg-[rgb(236,236,236)] dark:bg-gray-800 rounded text-sm font-mono font-medium! text-foreground!"
         {...props}
       >
         {children}
@@ -280,7 +280,7 @@ export namespace CopilotAssistantMessage {
           {/* Copy button */}
           <button
             className={cn(
-              "px-2 gap-1.5 text-xs flex items-center cursor-pointer text-gray-500"
+              "px-2 gap-0.5 text-xs flex items-center cursor-pointer text-gray-500"
             )}
             onClick={copyToClipboard}
             title={
@@ -338,7 +338,7 @@ export namespace CopilotAssistantMessage {
           rehypePrettyCode,
           {
             keepBackground: false,
-            theme: "github-light",
+            theme: "one-light",
           },
         ],
         rehypeKatex,
@@ -370,7 +370,7 @@ export namespace CopilotAssistantMessage {
   }) => (
     <div
       className={twMerge(
-        "w-full bg-transparent flex items-center -ml-[7px] -mt-[10px]",
+        "w-full bg-transparent flex items-center -ml-[5px] -mt-[0px]",
         className
       )}
       {...props}
