@@ -386,12 +386,8 @@ export namespace CopilotAssistantMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
-            size="sm"
-            className={twMerge(
-              "h-8 w-8 p-0 text-[rgb(93,93,93)] hover:text-[rgb(93,93,93)]",
-              className
-            )}
+            variant="assistantMessageButton"
+            className={twMerge(className)}
             {...props}
           >
             {copied ? (
@@ -417,12 +413,8 @@ export namespace CopilotAssistantMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
-            size="sm"
-            className={twMerge(
-              "h-8 w-8 p-0 text-[rgb(93,93,93)] hover:text-[rgb(93,93,93)]",
-              className
-            )}
+            variant="assistantMessageButton"
+            className={twMerge(className)}
             {...props}
           >
             <ThumbsUp className="h-4 w-4" />
@@ -444,12 +436,8 @@ export namespace CopilotAssistantMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
-            size="sm"
-            className={twMerge(
-              "h-8 w-8 p-0 text-[rgb(93,93,93)] hover:text-[rgb(93,93,93)]",
-              className
-            )}
+            variant="assistantMessageButton"
+            className={twMerge(className)}
             {...props}
           >
             <ThumbsDown className="h-4 w-4" />
@@ -471,12 +459,8 @@ export namespace CopilotAssistantMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="ghost"
-            size="sm"
-            className={twMerge(
-              "h-8 w-8 p-0 text-[rgb(93,93,93)] hover:text-[rgb(93,93,93)]",
-              className
-            )}
+            variant="assistantMessageButton"
+            className={twMerge(className)}
             {...props}
           >
             <Volume2 className="h-4 w-4" />

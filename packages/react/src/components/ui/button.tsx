@@ -23,16 +23,16 @@ const buttonVariants = cva(
         assistantMessageButton: [
           "cursor-pointer",
           // Background and text
-          "p-0 text-[rgb(93,93,93)]",
+          "p-0 text-[rgb(93,93,93)] hover:bg-[#E8E8E8]",
           // Dark mode - lighter gray for better contrast
-          "dark:text-[rgb(160,160,160)]",
+          "dark:text-[rgb(243,243,243)] dark:hover:bg-[#303030]",
           // Shape and sizing
           "h-8 w-8",
           // Interactions
           "transition-colors",
           // Hover states
           "hover:text-[rgb(93,93,93)]",
-          "dark:hover:text-[rgb(200,200,200)]",
+          "dark:hover:text-[rgb(243,243,243)]",
         ],
         chatInputToolbarPrimary: [
           "cursor-pointer",
