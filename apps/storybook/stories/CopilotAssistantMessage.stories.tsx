@@ -151,6 +151,7 @@ const meta = {
     onThumbsUp: () => console.log("Thumbs up clicked!"),
     onThumbsDown: () => console.log("Thumbs down clicked!"),
     onReadAloud: () => console.log("Read aloud clicked!"),
+    onRegenerate: () => console.log("Regenerate clicked!"),
   },
 } satisfies Meta<typeof CopilotAssistantMessage>;
 
@@ -171,6 +172,7 @@ export const WithToolbarButtons: Story = {
     onThumbsUp: () => alert("Thumbs up clicked!"),
     onThumbsDown: () => alert("Thumbs down clicked!"),
     onReadAloud: () => alert("Read aloud clicked!"),
+    onRegenerate: () => alert("Regenerate clicked!"),
   },
 };
 
@@ -180,6 +182,7 @@ export const WithAdditionalToolbarItems: Story = {
     onThumbsUp: () => console.log("Thumbs up clicked!"),
     onThumbsDown: () => console.log("Thumbs down clicked!"),
     onReadAloud: () => console.log("Read aloud clicked!"),
+    onRegenerate: () => console.log("Regenerate clicked!"),
     additionalToolbarItems: (
       <>
         <button
@@ -209,7 +212,7 @@ const codeBlocksTestMessage = {
     "This message demonstrates code syntax highlighting with various languages and inline code usage. " +
     "When you want to reference a variable like `userName` or a function like `getData()`, you can use inline code blocks.\n\n" +
     "## JavaScript Example\n" +
-    "Here's how you might handle user authentication in JavaScript, `so` that you can verify credentials:\n\n" +
+    "Here's how you might handle user authentication in JavaScript, so that you can verify credentials:\n\n" +
     "```javascript\n" +
     "const authenticateUser = async (email, password) => {\n" +
     "  try {\n" +

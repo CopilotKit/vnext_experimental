@@ -129,11 +129,11 @@
 
 figure[data-rehype-pretty-code-figure] {
   background-color: rgb(249, 249, 249);
-  @apply rounded-xl;
   margin-top: 8px;
   margin-bottom: 0px;
   margin-left: 0px;
   margin-right: 0px;
+  @apply rounded-2xl;
 }
 
 figure[data-rehype-pretty-code-figure] pre {

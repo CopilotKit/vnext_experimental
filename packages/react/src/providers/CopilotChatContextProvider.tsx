@@ -14,6 +14,7 @@ const defaultLabels = {
   assistantThumbsUpLabel: "Good response",
   assistantThumbsDownLabel: "Bad response",
   assistantReadAloudLabel: "Read aloud",
+  assistantRegenerateLabel: "Regenerate",
 };
 
 export type CopilotChatLabels = typeof defaultLabels;

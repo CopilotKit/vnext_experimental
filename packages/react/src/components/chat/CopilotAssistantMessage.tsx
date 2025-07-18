@@ -5,7 +5,14 @@ import remarkMath from "remark-math";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeKatex from "rehype-katex";
 import { useState } from "react";
-import { Copy, Check, ThumbsUp, ThumbsDown, Volume2 } from "lucide-react";
+import {
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Volume2,
+  RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
 import { twMerge } from "tailwind-merge";
@@ -29,6 +36,9 @@ export interface CopilotAssistantMessageProps {
   /** Called when user clicks read aloud button. If provided, button is shown. */
   onReadAloud?: () => void;
 
+  /** Called when user clicks regenerate button. If provided, button is shown. */
+  onRegenerate?: () => void;
+
   /** Additional custom toolbar items to render alongside the default buttons. */
   additionalToolbarItems?: React.ReactNode;
 
@@ -41,6 +51,7 @@ export interface CopilotAssistantMessageProps {
    * - ThumbsUpButton: thumbs up button
    * - ThumbsDownButton: thumbs down button
    * - ReadAloudButton: read aloud button
+   * - RegenerateButton: regenerate message button
    */
   components?: {
     Container?: React.ComponentType<
@@ -63,6 +74,9 @@ export interface CopilotAssistantMessageProps {
     ReadAloudButton?: React.ComponentType<
       React.ButtonHTMLAttributes<HTMLButtonElement>
     >;
+    RegenerateButton?: React.ComponentType<
+      React.ButtonHTMLAttributes<HTMLButtonElement>
+    >;
   };
 
   /**
@@ -77,6 +91,7 @@ export interface CopilotAssistantMessageProps {
     thumbsUpButton?: string;
     thumbsDownButton?: string;
     readAloudButton?: string;
+    regenerateButton?: string;
   };
 
   /**
@@ -90,6 +105,7 @@ export interface CopilotAssistantMessageProps {
     ThumbsUpButton: JSX.Element;
     ThumbsDownButton: JSX.Element;
     ReadAloudButton: JSX.Element;
+    RegenerateButton: JSX.Element;
   }) => React.ReactNode;
 }
 
@@ -98,6 +114,7 @@ export function CopilotAssistantMessage({
   onThumbsUp,
   onThumbsDown,
   onReadAloud,
+  onRegenerate,
   additionalToolbarItems,
   components = {},
   appearance = {},
@@ -112,6 +129,7 @@ export function CopilotAssistantMessage({
     ThumbsUpButton = CopilotAssistantMessage.ThumbsUpButton,
     ThumbsDownButton = CopilotAssistantMessage.ThumbsDownButton,
     ReadAloudButton = CopilotAssistantMessage.ReadAloudButton,
+    RegenerateButton = CopilotAssistantMessage.RegenerateButton,
   } = components;
 
   const BoundMarkdownRenderer = (
@@ -180,6 +198,17 @@ export function CopilotAssistantMessage({
     />
   );
 
+  const BoundRegenerateButton = (
+    <RegenerateButton
+      onClick={onRegenerate}
+      className={
+        RegenerateButton === CopilotAssistantMessage.RegenerateButton
+          ? appearance.regenerateButton
+          : undefined
+      }
+    />
+  );
+
   const BoundToolbar = (
     <Toolbar
       className={
@@ -193,6 +222,7 @@ export function CopilotAssistantMessage({
         {onThumbsUp && BoundThumbsUpButton}
         {onThumbsDown && BoundThumbsDownButton}
         {onReadAloud && BoundReadAloudButton}
+        {onRegenerate && BoundRegenerateButton}
         {additionalToolbarItems}
       </div>
     </Toolbar>
@@ -208,6 +238,7 @@ export function CopilotAssistantMessage({
           ThumbsUpButton: BoundThumbsUpButton,
           ThumbsDownButton: BoundThumbsDownButton,
           ReadAloudButton: BoundReadAloudButton,
+          RegenerateButton: BoundRegenerateButton,
         })}
       </>
     );
@@ -303,7 +334,10 @@ export namespace CopilotAssistantMessage {
         </div>
 
         <pre
-          className={cn(className, "rounded-t-none border-t-0 my-1!")}
+          className={cn(
+            className,
+            "rounded-2xl bg-transparent border-t-0 my-1!"
+          )}
           {...props}
         >
           {children}
@@ -472,6 +506,29 @@ export namespace CopilotAssistantMessage {
       </Tooltip>
     );
   };
+
+  export const RegenerateButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  > = ({ className, ...props }) => {
+    const { labels } = useCopilotChatContext();
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="assistantMessageButton"
+            className={twMerge(className)}
+            {...props}
+          >
+            <RefreshCw className="size-[18px]" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>{labels.assistantRegenerateLabel}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
 }
 
 CopilotAssistantMessage.Container.displayName =
@@ -487,5 +544,7 @@ CopilotAssistantMessage.ThumbsDownButton.displayName =
   "CopilotAssistantMessage.ThumbsDownButton";
 CopilotAssistantMessage.ReadAloudButton.displayName =
   "CopilotAssistantMessage.ReadAloudButton";
+CopilotAssistantMessage.RegenerateButton.displayName =
+  "CopilotAssistantMessage.RegenerateButton";
 
 export default CopilotAssistantMessage;
