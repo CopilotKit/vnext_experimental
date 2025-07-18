@@ -7,7 +7,11 @@ const config: StorybookConfig = {
     options: {},
   },
   stories: ["../stories/**/*.stories.@(tsx|mdx)"],
-  addons: ["@storybook/addon-essentials", "@storybook/addon-interactions"],
+  addons: [
+    "@storybook/addon-essentials",
+    "@storybook/addon-interactions",
+    "@storybook/addon-themes"
+  ],
   webpackFinal: async (cfg) => {
     // Configure module resolution to resolve monorepo packages
     cfg.resolve!.alias = {
