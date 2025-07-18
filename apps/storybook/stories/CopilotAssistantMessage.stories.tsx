@@ -234,7 +234,7 @@ const codeBlocksTestMessage = {
     "};\n" +
     "```\n\n" +
     "## Python Data Processing\n" +
-    "Python is great for data manipulation, `so` here's an example with pandas:\n\n" +
+    "Python is great for data manipulation, so here's an example with pandas:\n\n" +
     "```python\n" +
     "import pandas as pd\n" +
     "import numpy as np\n\n" +
@@ -277,7 +277,7 @@ const codeBlocksTestMessage = {
     "LIMIT 50;\n" +
     "```\n\n" +
     "## Shell/Bash Commands\n" +
-    "For deployment scripts, you might use bash commands. The `chmod` command changes permissions, `so` you can make files executable:\n\n" +
+    "For deployment scripts, you might use bash commands. The `chmod` command changes permissions, so you can make files executable:\n\n" +
     "```bash\n" +
     "#!/bin/bash\n\n" +
     "# Deploy script\n" +
@@ -300,7 +300,7 @@ const codeBlocksTestMessage = {
     "EOF\n" +
     "```\n\n" +
     "## TypeScript Interface\n" +
-    "TypeScript helps with type safety, `so` you can define interfaces like:\n\n" +
+    "TypeScript helps with type safety, so you can define interfaces like:\n\n" +
     "```typescript\n" +
     "interface UserProfile {\n" +
     "  id: string;\n" +
