@@ -303,7 +303,7 @@ export namespace CopilotAssistantMessage {
         <div className="flex items-center justify-between px-4 pr-3 py-3 text-xs">
           {/* Language label */}
           {language && (
-            <span className="font-regular text-muted-foreground">
+            <span className="font-regular text-muted-foreground dark:text-white">
               {language}
             </span>
           )}
@@ -311,7 +311,7 @@ export namespace CopilotAssistantMessage {
           {/* Copy button */}
           <button
             className={cn(
-              "px-2 gap-0.5 text-xs flex items-center cursor-pointer text-gray-500"
+              "px-2 gap-0.5 text-xs flex items-center cursor-pointer text-muted-foreground dark:text-white"
             )}
             onClick={copyToClipboard}
             title={
@@ -372,7 +372,11 @@ export namespace CopilotAssistantMessage {
           rehypePrettyCode,
           {
             keepBackground: false,
-            theme: "one-light",
+            theme: {
+              dark: "one-dark-pro",
+              light: "one-light",
+            },
+            bypassInlineCode: true,
           },
         ],
         rehypeKatex,
