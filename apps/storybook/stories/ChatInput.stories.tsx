@@ -10,9 +10,23 @@ const meta = {
   component: CopilotChatInput,
   decorators: [
     (Story) => (
-      <CopilotChatContextProvider>
-        <Story />
-      </CopilotChatContextProvider>
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          padding: "16px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "640px" }}>
+          <CopilotChatContextProvider>
+            <Story />
+          </CopilotChatContextProvider>
+        </div>
+      </div>
     ),
   ],
   args: {
