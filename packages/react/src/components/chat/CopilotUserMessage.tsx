@@ -174,7 +174,10 @@ export namespace CopilotUserMessage {
   export const Container: React.FC<
     React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
   > = ({ children, className, ...props }) => (
-    <div className={twMerge("flex flex-col items-end", className)} {...props}>
+    <div
+      className={twMerge("flex flex-col items-end group", className)}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -199,7 +202,7 @@ export namespace CopilotUserMessage {
   }) => (
     <div
       className={twMerge(
-        "w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[4px]",
+        "w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[4px] invisible group-hover:visible",
         className
       )}
       {...props}
