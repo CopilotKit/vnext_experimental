@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, Edit } from "lucide-react";
+import { Copy, Check, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,15 @@ export interface CopilotUserMessageProps {
   /** Called when user clicks edit button. If provided, button is shown. */
   onEdit?: () => void;
 
+  /** Current branch number (0-indexed). If provided, enables branch functionality. */
+  branchIndex?: number;
+
+  /** Total number of branches available. */
+  numberOfBranches?: number;
+
+  /** Called when user wants to switch to a different branch. */
+  onSwitchToBranch?: (branchIndex: number) => void;
+
   /** Additional custom toolbar items to render alongside the default buttons. */
   additionalToolbarItems?: React.ReactNode;
 
@@ -26,6 +35,7 @@ export interface CopilotUserMessageProps {
    * - Toolbar: bottom toolbar area (default is <div>)
    * - CopyButton: copy message button
    * - EditButton: edit message button
+   * - BranchNavigation: branch navigation component
    */
   components?: {
     Container?: React.ComponentType<
@@ -42,6 +52,9 @@ export interface CopilotUserMessageProps {
     EditButton?: React.ComponentType<
       React.ButtonHTMLAttributes<HTMLButtonElement>
     >;
+    BranchNavigation?: React.ComponentType<
+      React.HTMLAttributes<HTMLDivElement>
+    >;
   };
 
   /**
@@ -54,6 +67,7 @@ export interface CopilotUserMessageProps {
     toolbar?: string;
     copyButton?: string;
     editButton?: string;
+    branchNavigation?: string;
   };
 
   /**
@@ -65,12 +79,16 @@ export interface CopilotUserMessageProps {
     Toolbar: JSX.Element;
     CopyButton: JSX.Element;
     EditButton: JSX.Element;
+    BranchNavigation: JSX.Element;
   }) => React.ReactNode;
 }
 
 export function CopilotUserMessage({
   message,
   onEdit,
+  branchIndex: currentBranch,
+  numberOfBranches,
+  onSwitchToBranch,
   additionalToolbarItems,
   components = {},
   appearance = {},
@@ -83,6 +101,7 @@ export function CopilotUserMessage({
     Toolbar = CopilotUserMessage.Toolbar,
     CopyButton = CopilotUserMessage.CopyButton,
     EditButton = CopilotUserMessage.EditButton,
+    BranchNavigation = CopilotUserMessage.BranchNavigation,
   } = components;
 
   const BoundMessageRenderer = (
@@ -129,6 +148,22 @@ export function CopilotUserMessage({
     />
   );
 
+  const BoundBranchNavigation = (
+    <BranchNavigation
+      currentBranch={currentBranch}
+      numberOfBranches={numberOfBranches}
+      onSwitchToBranch={onSwitchToBranch}
+      className={
+        BranchNavigation === CopilotUserMessage.BranchNavigation
+          ? appearance.branchNavigation
+          : undefined
+      }
+    />
+  );
+
+  const showBranchNavigation =
+    numberOfBranches && numberOfBranches > 1 && onSwitchToBranch;
+
   const BoundToolbar = (
     <Toolbar
       className={
@@ -139,6 +174,7 @@ export function CopilotUserMessage({
         {additionalToolbarItems}
         {BoundCopyButton}
         {onEdit && BoundEditButton}
+        {showBranchNavigation && BoundBranchNavigation}
       </div>
     </Toolbar>
   );
@@ -151,6 +187,7 @@ export function CopilotUserMessage({
           Toolbar: BoundToolbar,
           CopyButton: BoundCopyButton,
           EditButton: BoundEditButton,
+          BranchNavigation: BoundBranchNavigation,
         })}
       </>
     );
@@ -258,6 +295,53 @@ export namespace CopilotUserMessage {
       </Tooltip>
     );
   };
+
+  export const BranchNavigation: React.FC<
+    React.HTMLAttributes<HTMLDivElement> & {
+      currentBranch?: number;
+      numberOfBranches?: number;
+      onSwitchToBranch?: (branchIndex: number) => void;
+    }
+  > = ({
+    className,
+    currentBranch = 0,
+    numberOfBranches = 1,
+    onSwitchToBranch,
+    ...props
+  }) => {
+    if (!numberOfBranches || numberOfBranches <= 1 || !onSwitchToBranch) {
+      return null;
+    }
+
+    const canGoPrev = currentBranch > 0;
+    const canGoNext = currentBranch < numberOfBranches - 1;
+
+    return (
+      <div className={twMerge("flex items-center gap-1", className)} {...props}>
+        <Button
+          type="button"
+          variant="assistantMessageButton"
+          onClick={() => onSwitchToBranch(currentBranch - 1)}
+          disabled={!canGoPrev}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronLeft className="size-[20px]" />
+        </Button>
+        <span className="text-sm text-muted-foreground px-0 font-medium">
+          {currentBranch + 1}/{numberOfBranches}
+        </span>
+        <Button
+          type="button"
+          variant="assistantMessageButton"
+          onClick={() => onSwitchToBranch(currentBranch + 1)}
+          disabled={!canGoNext}
+          className="h-6 w-6 p-0"
+        >
+          <ChevronRight className="size-[20px]" />
+        </Button>
+      </div>
+    );
+  };
 }
 
 CopilotUserMessage.Container.displayName = "CopilotUserMessage.Container";
@@ -266,5 +350,7 @@ CopilotUserMessage.MessageRenderer.displayName =
 CopilotUserMessage.Toolbar.displayName = "CopilotUserMessage.Toolbar";
 CopilotUserMessage.CopyButton.displayName = "CopilotUserMessage.CopyButton";
 CopilotUserMessage.EditButton.displayName = "CopilotUserMessage.EditButton";
+CopilotUserMessage.BranchNavigation.displayName =
+  "CopilotUserMessage.BranchNavigation";
 
 export default CopilotUserMessage;

@@ -210,3 +210,35 @@ export const UsingChildrenRenderProp: Story = {
     ),
   },
 };
+
+export const WithBranchNavigation: Story = {
+  args: {
+    message: {
+      id: "branch-message",
+      content:
+        "This message has multiple branches. You can navigate between them using the branch controls.",
+      role: "user" as const,
+    },
+    onEdit: () => console.log("Edit clicked!"),
+    branchIndex: 2,
+    numberOfBranches: 3,
+    onSwitchToBranch: (branchIndex: number) =>
+      console.log(`Switching to branch ${branchIndex + 1}`),
+  },
+};
+
+export const WithManyBranches: Story = {
+  args: {
+    message: {
+      id: "many-branches-message",
+      content:
+        "This is branch 5 of 10. Use the navigation arrows to explore different variations of this message.",
+      role: "user" as const,
+    },
+    onEdit: () => console.log("Edit clicked!"),
+    branchIndex: 4,
+    numberOfBranches: 10,
+    onSwitchToBranch: (branchIndex: number) =>
+      alert(`Would switch to branch ${branchIndex + 1} of 10`),
+  },
+};
