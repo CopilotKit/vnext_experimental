@@ -1,27 +1,17 @@
 import { useState } from "react";
 import { Copy, Check, Edit } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
+import { UserMessage } from "@ag-ui/core";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export interface UserMessage {
-  id?: string;
-  content: string;
-  timestamp?: Date;
-  role?: "user";
-}
-
 export interface CopilotUserMessageProps {
   message: UserMessage;
-
-  /** Called when user clicks copy button. Always shown. */
-  onCopy?: () => void;
 
   /** Called when user clicks edit button. If provided, button is shown. */
   onEdit?: () => void;
@@ -80,7 +70,6 @@ export interface CopilotUserMessageProps {
 
 export function CopilotUserMessage({
   message,
-  onCopy,
   onEdit,
   additionalToolbarItems,
   components = {},
@@ -115,7 +104,6 @@ export function CopilotUserMessage({
             await navigator.clipboard.writeText(message.content);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-            onCopy?.();
           } catch (err) {
             console.error("Failed to copy message:", err);
           }
@@ -147,10 +135,10 @@ export function CopilotUserMessage({
         Toolbar === CopilotUserMessage.Toolbar ? appearance.toolbar : undefined
       }
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 justify-end">
+        {additionalToolbarItems}
         {BoundCopyButton}
         {onEdit && BoundEditButton}
-        {additionalToolbarItems}
       </div>
     </Toolbar>
   );
@@ -186,10 +174,7 @@ export namespace CopilotUserMessage {
   export const Container: React.FC<
     React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
   > = ({ children, className, ...props }) => (
-    <div
-      className={twMerge("max-w-full w-full break-words", className)}
-      {...props}
-    >
+    <div className={twMerge("flex flex-col items-end", className)} {...props}>
       {children}
     </div>
   );
@@ -198,7 +183,12 @@ export namespace CopilotUserMessage {
     content: string;
     className?: string;
   }> = ({ content, className }) => (
-    <div className={twMerge("whitespace-pre-wrap text-foreground", className)}>
+    <div
+      className={twMerge(
+        "prose dark:prose-invert bg-muted relative max-w-[80%] rounded-[18px] px-4 py-1.5 data-[multiline]:py-3 inline-block whitespace-pre-wrap",
+        className
+      )}
+    >
       {content}
     </div>
   );
@@ -209,7 +199,7 @@ export namespace CopilotUserMessage {
   }) => (
     <div
       className={twMerge(
-        "w-full bg-transparent flex items-center -ml-[5px] -mt-[0px]",
+        "w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[4px]",
         className
       )}
       {...props}
