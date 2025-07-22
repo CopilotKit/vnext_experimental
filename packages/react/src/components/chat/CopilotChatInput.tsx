@@ -65,6 +65,21 @@ export type CopilotChatInputSlots = {
   AudioRecorder: AudioRecorderComponent;
 };
 
+export type CopilotChatInputCallbacks = {
+  onSend: (text: string) => void;
+  onStartTranscribe?: () => void;
+  onCancelTranscribe?: () => void;
+  onFinishTranscribe?: () => void;
+  onAddFile?: () => void;
+};
+
+export type CopilotChatInputOptions = {
+  mode?: "input" | "transcribe" | "processing";
+  toolsMenu?: (ToolsMenuItem | "-")[];
+  autoFocus?: boolean;
+  additionalToolbarItems?: React.ReactNode;
+};
+
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
 export type ToolsMenuItem = {
@@ -80,33 +95,10 @@ export type ToolsMenuItem = {
     }
 );
 
-export interface CopilotChatInputProps extends Slots<CopilotChatInputSlots> {
-  mode?: CopilotChatInputMode;
-
-  /** Called with trimmed text when user submits. Clears input. */
-  onSend: (text: string) => void;
-
-  /** Called when user wants to add photos or files. Optional. */
-  onAddFile?: () => void;
-
-  /** Called when user wants to start transcribing. Optional. */
-  onStartTranscribe?: () => void;
-
-  /** Called when user wants to cancel transcribing. Optional. */
-  onCancelTranscribe?: () => void;
-
-  /** Called when user wants to finish transcribing. Optional. */
-  onFinishTranscribe?: () => void;
-
-  /** Menu items for the tools dropdown. If provided, replaces the default tools button with a dropdown. Use "-" string for separators. */
-  toolsMenu?: (ToolsMenuItem | "-")[];
-
-  /** Whether to automatically focus the textarea on mount. Default: true */
-  autoFocus?: boolean;
-
-  /** Additional custom toolbar items to render alongside the default buttons. */
-  additionalToolbarItems?: React.ReactNode;
-}
+export type CopilotChatInputProps = Slots<
+  CopilotChatInputSlots,
+  CopilotChatInputOptions & CopilotChatInputCallbacks
+>;
 
 export function CopilotChatInput({
   mode = "input",
@@ -114,7 +106,7 @@ export function CopilotChatInput({
   onStartTranscribe,
   onCancelTranscribe,
   onFinishTranscribe,
-  onAddFile: onAdd,
+  onAddFile,
   toolsMenu,
   autoFocus = true,
   additionalToolbarItems,
@@ -218,7 +210,7 @@ export function CopilotChatInput({
   );
 
   const BoundAddButton = renderSlot(AddButton, CopilotChatInput.AddButton, {
-    onClick: onAdd,
+    onClick: onAddFile,
     disabled: mode === "transcribe",
   });
 
@@ -243,7 +235,7 @@ export function CopilotChatInput({
       children: (
         <>
           <div className="flex items-center">
-            {onAdd && BoundAddButton}
+            {onAddFile && BoundAddButton}
             {BoundToolsButton}
             {additionalToolbarItems}
           </div>
@@ -288,6 +280,15 @@ export function CopilotChatInput({
           ToolsButton: BoundToolsButton,
           Toolbar: BoundToolbar,
           Container: BoundContainer,
+          onSend,
+          onStartTranscribe,
+          onCancelTranscribe,
+          onFinishTranscribe,
+          onAddFile,
+          mode,
+          toolsMenu,
+          autoFocus,
+          additionalToolbarItems,
         })}
       </>
     );

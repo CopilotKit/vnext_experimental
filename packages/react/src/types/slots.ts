@@ -1,7 +1,12 @@
 export type SlotComponentOrClassName<ComponentType> = ComponentType | string;
 
-export type Slots<S extends Record<string, SlotComponentOrClassName<any>>> = {
+export type Slots<
+  S extends Record<string, SlotComponentOrClassName<any>>,
+  P = {},
+> = {
   [Name in keyof S]?: SlotComponentOrClassName<S[Name]>;
-} & {
-  children?: (slots: { [K in keyof S]: React.ReactElement }) => React.ReactNode;
-};
+} & P & {
+    children?: (
+      props: { [K in keyof S]: React.ReactElement } & P
+    ) => React.ReactNode;
+  };

@@ -55,15 +55,22 @@ export type CopilotAssistantMessageSlots = {
   >;
 };
 
-export interface CopilotAssistantMessageProps
-  extends Slots<CopilotAssistantMessageSlots> {
-  message: AssistantMessage;
+export type CopilotAssistantMessageCallbacks = {
   onThumbsUp?: () => void;
   onThumbsDown?: () => void;
   onReadAloud?: () => void;
   onRegenerate?: () => void;
+};
+
+export type CopilotAssistantMessageOptions = {
+  message: AssistantMessage;
   additionalToolbarItems?: React.ReactNode;
-}
+};
+
+export type CopilotAssistantMessageProps = Slots<
+  CopilotAssistantMessageSlots,
+  CopilotAssistantMessageOptions & CopilotAssistantMessageCallbacks
+>;
 
 export function CopilotAssistantMessage({
   message,
@@ -176,6 +183,12 @@ export function CopilotAssistantMessage({
           ReadAloudButton: BoundReadAloudButton,
           RegenerateButton: BoundRegenerateButton,
           Container: BoundContainer,
+          message,
+          onThumbsUp,
+          onThumbsDown,
+          onReadAloud,
+          onRegenerate,
+          additionalToolbarItems,
         })}
       </>
     );
