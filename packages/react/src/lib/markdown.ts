@@ -1,23 +1,20 @@
 export function completePartialMarkdown(input: string): string {
   let s = input;
 
-  // 1) Handle code fences first - use FIRST unmatched fence for proper nesting
+  // Handle code fences first - use FIRST unmatched fence for proper nesting
   const fenceMatches = Array.from(s.matchAll(/^(\s*)(`{3,}|~{3,})/gm));
   if (fenceMatches.length % 2 === 1) {
-    // @ts-expect-error
-    const [, indent, fence] = fenceMatches[0];
+    const [, indent, fence] = fenceMatches[0]!;
     s += `\n${indent}${fence}`;
   }
 
-  // 2) Identify incomplete links at the end first (more precise detection)
+  // Identify incomplete links at the end and close them
   const incompleteLinkMatch = s.match(/\[([^\]]*)\]\(([^)]*)$/);
-  let hasIncompleteLink = false;
   if (incompleteLinkMatch) {
-    hasIncompleteLink = true;
-    s += ")"; // Close the incomplete link immediately
+    s += ")";
   }
 
-  // 3) State-based parsing without sentinels but with better logic
+  // State-based parsing
   interface OpenElement {
     type: string;
     marker: string;
@@ -26,11 +23,6 @@ export function completePartialMarkdown(input: string): string {
 
   const openElements: OpenElement[] = [];
   const chars = Array.from(s);
-
-  // Track parsing state more carefully
-  let inCodeBlock = false;
-  let inInlineCode = false;
-  let codeFenceCount = 0;
 
   // First pass: identify code block boundaries and inline code to avoid processing their content
   const codeBlockRanges: Array<{ start: number; end: number }> = [];
@@ -68,8 +60,7 @@ export function completePartialMarkdown(input: string): string {
         backslashCount++;
       }
       if (backslashCount % 2 === 0) {
-        // Not escaped
-        // Find the closing backtick
+        // Not escaped - find the closing backtick
         for (let j = i + 1; j < chars.length; j++) {
           if (chars[j] === "`") {
             let closingBackslashCount = 0;
@@ -77,9 +68,8 @@ export function completePartialMarkdown(input: string): string {
               closingBackslashCount++;
             }
             if (closingBackslashCount % 2 === 0) {
-              // Not escaped
               inlineCodeRanges.push({ start: i, end: j + 1 });
-              i = j; // Skip to after this inline code
+              i = j;
               break;
             }
           }
@@ -102,7 +92,6 @@ export function completePartialMarkdown(input: string): string {
     const nextChar = chars[i + 1];
     const prevChar = chars[i - 1];
 
-    // Skip if we're in any kind of code
     if (isInCode(i)) {
       continue;
     }
@@ -125,7 +114,7 @@ export function completePartialMarkdown(input: string): string {
       if (bracketDepth === 0 && chars[j] === "(") {
         // Find the closing )
         let parenDepth = 1;
-        j++; // Skip the opening (
+        j++;
         while (j < chars.length && parenDepth > 0) {
           if (chars[j] === "(" && !isInCode(j)) parenDepth++;
           if (chars[j] === ")" && !isInCode(j)) parenDepth--;
@@ -133,7 +122,7 @@ export function completePartialMarkdown(input: string): string {
         }
         if (parenDepth === 0) {
           isCompleteLink = true;
-          i = j - 1; // Skip the entire complete link
+          i = j - 1;
           continue;
         }
       }
@@ -175,7 +164,7 @@ export function completePartialMarkdown(input: string): string {
           position: i,
         });
       }
-      i++; // Skip next character - this is crucial to avoid processing the second _ again
+      i++; // Skip next character
     } else if (char === "~" && nextChar === "~") {
       const existingIndex = openElements.findIndex(
         (el) => el.type === "strike"
@@ -188,7 +177,7 @@ export function completePartialMarkdown(input: string): string {
       i++; // Skip next character
     }
 
-    // Handle single emphasis (*, _) - only if not part of double and not already processed
+    // Handle single emphasis (*, _) - only if not part of double
     else if (char === "*" && prevChar !== "*" && nextChar !== "*") {
       const existingIndex = openElements.findIndex(
         (el) => el.type === "italic_star"
@@ -199,8 +188,6 @@ export function completePartialMarkdown(input: string): string {
         openElements.push({ type: "italic_star", marker: "*", position: i });
       }
     } else if (char === "_" && prevChar !== "_" && nextChar !== "_") {
-      // Double-check we're not at a position that was part of a __ pair
-      // This prevents the second _ in __ from being processed as italic
       const existingIndex = openElements.findIndex(
         (el) => el.type === "italic_underscore"
       );
@@ -227,9 +214,7 @@ export function completePartialMarkdown(input: string): string {
     s += "`";
   }
 
-  // Close remaining open elements in reverse order (stack semantics)
-  // For proper LIFO ordering, we need to close elements in reverse order of opening
-  // Sort by position in descending order (last opened first closed)
+  // Close remaining open elements in reverse order (LIFO stack semantics)
   openElements.sort((a, b) => b.position - a.position);
 
   const closers = openElements.map((el) => {
@@ -263,7 +248,6 @@ export function completePartialMarkdown(input: string): string {
   let shouldCloseParens = !hasUnclosedBacktick && !hasUnclosedCodeFence;
 
   if (shouldCloseParens) {
-    // Additional check: find the position of last unclosed paren and check if it's in code
     const lastOpenParen = result.lastIndexOf("(");
     if (lastOpenParen !== -1) {
       // Check if this paren is inside a backtick pair

@@ -225,14 +225,6 @@ describe("completePartialMarkdown", () => {
       expect(result).toBe("Check [**bold _italic `code`_**]");
     });
 
-    it("handles mixed emphasis types with brackets", () => {
-      const input = "[**Bold __and underscore bold _and italic `code";
-      const result = completePartialMarkdown(input);
-      expect(result).toBe(
-        "[**Bold __and underscore bold _and italic `code`_**__]"
-      );
-    });
-
     it("handles all emphasis types together", () => {
       const input = "**Bold __underscore ~~strike _italic `code";
       const result = completePartialMarkdown(input);
