@@ -100,15 +100,13 @@ describe("CopilotChatInput", () => {
     expect(button).toBeDisabled();
   });
 
-  it("accepts custom appearance classes", () => {
+  it("accepts custom slot classes", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         onSend={mockOnSend}
-        appearance={{
-          container: "custom-container",
-          textarea: "custom-textarea",
-          sendButton: "custom-button",
-        }}
+        Container="custom-container"
+        TextArea="custom-textarea"
+        SendButton="custom-button"
       />
     );
 
@@ -131,10 +129,7 @@ describe("CopilotChatInput", () => {
     );
 
     renderWithProvider(
-      <CopilotChatInput
-        onSend={mockOnSend}
-        components={{ SendButton: CustomButton }}
-      />
+      <CopilotChatInput onSend={mockOnSend} SendButton={CustomButton} />
     );
 
     const customButton = screen.getByTestId("custom-button");
