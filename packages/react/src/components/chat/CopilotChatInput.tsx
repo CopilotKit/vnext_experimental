@@ -32,6 +32,38 @@ import {
   AudioRecorderControls,
 } from "@/types/audio-recorder";
 import { WebAudioRecorder } from "./WebAudioRecorder";
+import { renderSlot } from "@/lib/slots";
+import { Slots } from "@/types/slots";
+
+export type CopilotChatInputSlots = {
+  TextArea: React.ComponentType<
+    React.TextareaHTMLAttributes<HTMLTextAreaElement> &
+      React.RefAttributes<HTMLTextAreaElement>
+  >;
+  SendButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  StartTranscribeButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  CancelTranscribeButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  FinishTranscribeButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  AddButton: React.ComponentType<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+  ToolsButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      toolsMenu?: (ToolsMenuItem | "-")[];
+    }
+  >;
+  Container: React.ComponentType<
+    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
+  >;
+  Toolbar: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
+  AudioRecorder: AudioRecorderComponent;
+};
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -48,7 +80,7 @@ export type ToolsMenuItem = {
     }
 );
 
-export type CopilotChatInputProps = {
+interface CopilotChatInputProps extends Slots<CopilotChatInputSlots> {
   mode?: CopilotChatInputMode;
 
   /** Called with trimmed text when user submits. Clears input. */
@@ -56,6 +88,15 @@ export type CopilotChatInputProps = {
 
   /** Called when user wants to add photos or files. Optional. */
   onAddFile?: () => void;
+
+  /** Called when user wants to start transcribing. Optional. */
+  onStartTranscribe?: () => void;
+
+  /** Called when user wants to cancel transcribing. Optional. */
+  onCancelTranscribe?: () => void;
+
+  /** Called when user wants to finish transcribing. Optional. */
+  onFinishTranscribe?: () => void;
 
   /** Menu items for the tools dropdown. If provided, replaces the default tools button with a dropdown. Use "-" string for separators. */
   toolsMenu?: (ToolsMenuItem | "-")[];
@@ -65,99 +106,7 @@ export type CopilotChatInputProps = {
 
   /** Additional custom toolbar items to render alongside the default buttons. */
   additionalToolbarItems?: React.ReactNode;
-
-  /**
-   * Component slots — override one or many:
-   * - TextArea: must render <textarea …>
-   * - RecordingIndicator: shown instead of TextArea when mode is "transcribe"
-   * - SendButton:  must render <button …>
-   * - StartTranscribeButton: must render <button …> with built-in tooltip
-   * - CancelTranscribeButton: must render <button …> with built-in tooltip
-   * - FinishTranscribeButton: must render <button …> with built-in tooltip
-   * - AddButton: must render <button …> with built-in tooltip
-   * - ToolsButton: must render <button …> with built-in tooltip and text
-   * - Container: wrapper around everything (default is <div>)
-   * - Toolbar: bottom toolbar area (default is <div>)
-   * - AudioRecorder: see audio-recorder.ts
-   */
-  components?: {
-    TextArea?: React.ComponentType<
-      React.TextareaHTMLAttributes<HTMLTextAreaElement>
-    >;
-    RecordingIndicator?: React.ComponentType<
-      React.HTMLAttributes<HTMLDivElement>
-    >;
-    SendButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    StartTranscribeButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    CancelTranscribeButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    FinishTranscribeButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    AddButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    ToolsButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    Container?: React.ComponentType<
-      React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-    >;
-    Toolbar?: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
-    AudioRecorder?: AudioRecorderComponent;
-  };
-
-  /**
-   * Style-only overrides (merged onto defaults).
-   * Ignore if user also swaps that component.
-   */
-  appearance?: {
-    container?: string;
-    textarea?: string;
-    recordingIndicator?: string;
-    sendButton?: string;
-    startTranscribeButton?: string;
-    cancelTranscribeButton?: string;
-    finishTranscribeButton?: string;
-    addButton?: string;
-    toolsButton?: string;
-    toolbar?: string;
-    audioRecorder?: string;
-  };
-
-  /**
-   * Full-layout override (highest priority).
-   * Receives the *pre-wired* sub-components so users never touch handlers.
-   */
-  children?: (parts: {
-    TextArea: JSX.Element;
-    SendButton: JSX.Element;
-    StartTranscribeButton: JSX.Element;
-    CancelTranscribeButton: JSX.Element;
-    FinishTranscribeButton: JSX.Element;
-    AddButton: JSX.Element;
-    ToolsButton: JSX.Element;
-    Toolbar: JSX.Element;
-    AudioRecorder: JSX.Element;
-  }) => React.ReactNode;
-} &
-  // Either all or none of the transcribe callbacks are provided
-  (| {
-        onStartTranscribe: () => void;
-        onCancelTranscribe: () => void;
-        onFinishTranscribe: () => void;
-      }
-    | {
-        onStartTranscribe?: never;
-        onCancelTranscribe?: never;
-        onFinishTranscribe?: never;
-      }
-  );
+}
 
 export function CopilotChatInput({
   mode = "input",
@@ -169,8 +118,16 @@ export function CopilotChatInput({
   toolsMenu,
   autoFocus = true,
   additionalToolbarItems,
-  components = {},
-  appearance = {},
+  TextArea,
+  SendButton,
+  StartTranscribeButton,
+  CancelTranscribeButton,
+  FinishTranscribeButton,
+  AddButton,
+  ToolsButton,
+  Container,
+  Toolbar,
+  AudioRecorder,
   children,
 }: CopilotChatInputProps) {
   const { text, setText } = useCopilotChatContext();
@@ -179,45 +136,21 @@ export function CopilotChatInput({
 
   // Handle recording based on mode changes
   useEffect(() => {
-    console.log("[CopilotChatInput] Mode changed to:", mode);
     const recorder = audioRecorderRef.current;
     if (!recorder) {
-      console.log("[CopilotChatInput] No recorder ref available");
       return;
     }
 
     if (mode === "transcribe") {
       // Start recording when entering transcribe mode
-      console.log(
-        "[CopilotChatInput] Starting recording due to transcribe mode"
-      );
       recorder.start().catch(console.error);
     } else {
       // Stop recording when leaving transcribe mode
-      console.log(
-        "[CopilotChatInput] Mode is not transcribe, checking if need to stop. Current recorder state:",
-        recorder.state
-      );
       if (recorder.state === "recording") {
-        console.log("[CopilotChatInput] Stopping recording due to mode change");
         recorder.stop().catch(console.error);
       }
     }
   }, [mode]);
-
-  // Extract component overrides with defaults
-  const {
-    TextArea = CopilotChatInput.TextArea,
-    SendButton = CopilotChatInput.SendButton,
-    StartTranscribeButton = CopilotChatInput.StartTranscribeButton,
-    CancelTranscribeButton = CopilotChatInput.CancelTranscribeButton,
-    FinishTranscribeButton = CopilotChatInput.FinishTranscribeButton,
-    AddButton = CopilotChatInput.AddButton,
-    ToolsButton = CopilotChatInput.ToolsButton,
-    Container = CopilotChatInput.Container,
-    Toolbar = CopilotChatInput.Toolbar,
-    AudioRecorder = WebAudioRecorder,
-  } = components;
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -243,132 +176,105 @@ export function CopilotChatInput({
     }
   };
 
-  // Build bound components with handlers
-  const BoundTextArea = (
-    <TextArea
-      ref={inputRef}
-      value={text}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      autoFocus={autoFocus}
-      className={
-        TextArea === CopilotChatInput.TextArea ? appearance.textarea : undefined
-      }
-    />
+  const BoundTextArea = renderSlot(TextArea, CopilotChatInput.TextArea, {
+    ref: inputRef,
+    value: text,
+    onChange: handleChange,
+    onKeyDown: handleKeyDown,
+    autoFocus: autoFocus,
+  });
+
+  const BoundAudioRecorder = renderSlot(AudioRecorder, WebAudioRecorder, {
+    ref: audioRecorderRef,
+  });
+
+  const BoundSendButton = renderSlot(SendButton, CopilotChatInput.SendButton, {
+    onClick: send,
+    disabled: !text.trim(),
+  });
+
+  const BoundStartTranscribeButton = renderSlot(
+    StartTranscribeButton,
+    CopilotChatInput.StartTranscribeButton,
+    {
+      onClick: onStartTranscribe,
+    }
   );
 
-  const BoundAudioRecorder = (
-    <AudioRecorder
-      ref={audioRecorderRef}
-      className={
-        AudioRecorder === WebAudioRecorder
-          ? appearance.audioRecorder
-          : undefined
-      }
-    />
+  const BoundCancelTranscribeButton = renderSlot(
+    CancelTranscribeButton,
+    CopilotChatInput.CancelTranscribeButton,
+    {
+      onClick: onCancelTranscribe,
+    }
   );
 
-  const BoundSendButton = (
-    <SendButton
-      onClick={send}
-      disabled={!text.trim()}
-      className={
-        SendButton === CopilotChatInput.SendButton
-          ? appearance.sendButton
-          : undefined
-      }
-    />
+  const BoundFinishTranscribeButton = renderSlot(
+    FinishTranscribeButton,
+    CopilotChatInput.FinishTranscribeButton,
+    {
+      onClick: onFinishTranscribe,
+    }
   );
 
-  const BoundStartTranscribeButton = (
-    <StartTranscribeButton
-      onClick={onStartTranscribe}
-      className={
-        StartTranscribeButton === CopilotChatInput.StartTranscribeButton
-          ? appearance.startTranscribeButton
-          : undefined
-      }
-    />
+  const BoundAddButton = renderSlot(AddButton, CopilotChatInput.AddButton, {
+    onClick: onAdd,
+    disabled: mode === "transcribe",
+  });
+
+  const BoundToolsButton = renderSlot(
+    ToolsButton,
+    CopilotChatInput.ToolsButton,
+    {
+      disabled: mode === "transcribe",
+      toolsMenu: toolsMenu,
+    }
   );
 
-  const BoundCancelTranscribeButton = (
-    <CancelTranscribeButton
-      onClick={onCancelTranscribe}
-      className={
-        CancelTranscribeButton === CopilotChatInput.CancelTranscribeButton
-          ? appearance.cancelTranscribeButton
-          : undefined
-      }
-    />
+  const BoundToolbar = renderSlot(
+    typeof Toolbar === "string" || Toolbar === undefined
+      ? twMerge(
+          Toolbar,
+          "w-full h-[60px] bg-transparent flex items-center justify-between"
+        )
+      : Toolbar,
+    CopilotChatInput.Toolbar,
+    {
+      children: (
+        <>
+          <div className="flex items-center">
+            {onAdd && BoundAddButton}
+            {BoundToolsButton}
+            {additionalToolbarItems}
+          </div>
+          <div className="flex items-center">
+            {mode === "transcribe" ? (
+              <>
+                {onCancelTranscribe && BoundCancelTranscribeButton}
+                {onFinishTranscribe && BoundFinishTranscribeButton}
+              </>
+            ) : (
+              <>
+                {onStartTranscribe && BoundStartTranscribeButton}
+                {BoundSendButton}
+              </>
+            )}
+          </div>
+        </>
+      ),
+    }
   );
 
-  const BoundFinishTranscribeButton = (
-    <FinishTranscribeButton
-      onClick={onFinishTranscribe}
-      className={
-        FinishTranscribeButton === CopilotChatInput.FinishTranscribeButton
-          ? appearance.finishTranscribeButton
-          : undefined
-      }
-    />
-  );
+  const BoundContainer = renderSlot(Container, CopilotChatInput.Container, {
+    children: (
+      <>
+        {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
+        {BoundToolbar}
+      </>
+    ),
+  });
 
-  const BoundAddButton = (
-    <AddButton
-      onClick={onAdd}
-      disabled={mode === "transcribe"}
-      className={
-        AddButton === CopilotChatInput.AddButton
-          ? appearance.addButton
-          : undefined
-      }
-    />
-  );
-
-  const BoundToolsButton = (
-    <ToolsButton
-      disabled={mode === "transcribe"}
-      className={
-        ToolsButton === CopilotChatInput.ToolsButton
-          ? appearance.toolsButton
-          : undefined
-      }
-      // Pass toolsMenu as a prop for the default component
-      {...(ToolsButton === CopilotChatInput.ToolsButton && { toolsMenu })}
-    />
-  );
-
-  const BoundToolbar = (
-    <Toolbar
-      className={twMerge(
-        "w-full h-[60px] bg-transparent flex items-center justify-between",
-        Toolbar === CopilotChatInput.Toolbar ? appearance.toolbar : undefined
-      )}
-    >
-      <div className="flex items-center">
-        {onAdd && BoundAddButton}
-        {BoundToolsButton}
-        {additionalToolbarItems}
-      </div>
-      <div className="flex items-center">
-        {mode === "transcribe" ? (
-          <>
-            {onCancelTranscribe && BoundCancelTranscribeButton}
-            {onFinishTranscribe && BoundFinishTranscribeButton}
-          </>
-        ) : (
-          <>
-            {onStartTranscribe && BoundStartTranscribeButton}
-            {BoundSendButton}
-          </>
-        )}
-      </div>
-    </Toolbar>
-  );
-
-  // Render algorithm
   if (children) {
-    // Custom layout via render prop
     return (
       <>
         {children({
@@ -381,24 +287,13 @@ export function CopilotChatInput({
           AddButton: BoundAddButton,
           ToolsButton: BoundToolsButton,
           Toolbar: BoundToolbar,
+          Container: BoundContainer,
         })}
       </>
     );
   }
 
-  // Default layout
-  return (
-    <Container
-      className={
-        Container === CopilotChatInput.Container
-          ? appearance.container
-          : undefined
-      }
-    >
-      {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
-      {BoundToolbar}
-    </Container>
-  );
+  return BoundContainer;
 }
 
 export namespace CopilotChatInput {
