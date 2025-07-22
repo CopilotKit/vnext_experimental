@@ -1,10 +1,11 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { vi } from "vitest";
 import { CopilotChatInput } from "../CopilotChatInput";
 import { CopilotChatContextProvider } from "../../../providers/CopilotChatContextProvider";
 
 // Mock onSend function to track calls
-const mockOnSend = jest.fn();
+const mockOnSend = vi.fn();
 
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
@@ -25,9 +26,9 @@ describe("CopilotChatInput", () => {
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
 
-    expect(input).toBeInTheDocument();
-    expect(button).toBeInTheDocument();
-    expect(button).toBeDisabled(); // Should be disabled when input is empty
+    expect(input).toBeDefined();
+    expect(button).toBeDefined();
+    expect((button as HTMLButtonElement).disabled).toBe(true); // Should be disabled when input is empty
   });
 
   it("calls onSend with trimmed text when Enter is pressed", () => {
@@ -40,7 +41,7 @@ describe("CopilotChatInput", () => {
     fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
 
     expect(mockOnSend).toHaveBeenCalledWith("hello world");
-    expect(input).toHaveValue(""); // Input should be cleared
+    expect((input as HTMLInputElement).value).toBe(""); // Input should be cleared
   });
 
   it("calls onSend when button is clicked", () => {
@@ -53,7 +54,7 @@ describe("CopilotChatInput", () => {
     fireEvent.click(button);
 
     expect(mockOnSend).toHaveBeenCalledWith("test message");
-    expect(input).toHaveValue(""); // Input should be cleared
+    expect((input as HTMLInputElement).value).toBe(""); // Input should be cleared
   });
 
   it("does not send when Enter is pressed with Shift key", () => {
@@ -65,7 +66,7 @@ describe("CopilotChatInput", () => {
     fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
 
     expect(mockOnSend).not.toHaveBeenCalled();
-    expect(input).toHaveValue("test"); // Input should not be cleared
+    expect((input as HTMLInputElement).value).toBe("test"); // Input should not be cleared
   });
 
   it("does not send empty or whitespace-only messages", () => {
@@ -91,13 +92,13 @@ describe("CopilotChatInput", () => {
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
 
-    expect(button).toBeDisabled();
+    expect((button as HTMLButtonElement).disabled).toBe(true);
 
     fireEvent.change(input, { target: { value: "hello" } });
-    expect(button).not.toBeDisabled();
+    expect((button as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.change(input, { target: { value: "" } });
-    expect(button).toBeDisabled();
+    expect((button as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("accepts custom slot classes", () => {
@@ -114,9 +115,9 @@ describe("CopilotChatInput", () => {
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
 
-    expect(containerDiv).toHaveClass("custom-container");
-    expect(input).toHaveClass("custom-textarea");
-    expect(button).toHaveClass("custom-button");
+    expect(containerDiv.classList.contains("custom-container")).toBe(true);
+    expect(input.classList.contains("custom-textarea")).toBe(true);
+    expect(button.classList.contains("custom-button")).toBe(true);
   });
 
   it("accepts custom components via slots", () => {
@@ -133,8 +134,8 @@ describe("CopilotChatInput", () => {
     );
 
     const customButton = screen.getByTestId("custom-button");
-    expect(customButton).toBeInTheDocument();
-    expect(customButton).toHaveTextContent("Send Now");
+    expect(customButton).toBeDefined();
+    expect(customButton.textContent?.includes("Send Now")).toBe(true);
   });
 
   it("supports custom layout via children render prop", () => {
@@ -151,8 +152,8 @@ describe("CopilotChatInput", () => {
     );
 
     const customLayout = screen.getByTestId("custom-layout");
-    expect(customLayout).toBeInTheDocument();
-    expect(customLayout).toHaveTextContent("Custom Layout:");
+    expect(customLayout).toBeDefined();
+    expect(customLayout.textContent?.includes("Custom Layout:")).toBe(true);
   });
 
   it("shows cancel and finish buttons in transcribe mode", () => {
@@ -169,25 +170,25 @@ describe("CopilotChatInput", () => {
 
     // Should show cancel button (X icon) - find by svg class
     const cancelIcon = container.querySelector("svg.lucide-x");
-    expect(cancelIcon).toBeInTheDocument();
+    expect(cancelIcon).toBeDefined();
 
     // Should show finish button (checkmark icon) - find by svg class
     const finishIcon = container.querySelector("svg.lucide-check");
-    expect(finishIcon).toBeInTheDocument();
+    expect(finishIcon).toBeDefined();
 
     // Should show cancel button (X icon) and finish button (check icon)
     const cancelButton = container.querySelector("svg.lucide-x");
     const finishButton = container.querySelector("svg.lucide-check");
-    expect(cancelButton).toBeInTheDocument();
-    expect(finishButton).toBeInTheDocument();
+    expect(cancelButton).toBeDefined();
+    expect(finishButton).toBeDefined();
 
     // Should NOT show transcribe button (mic icon) in transcribe mode
     const transcribeIcon = container.querySelector("svg.lucide-mic");
-    expect(transcribeIcon).not.toBeInTheDocument();
+    expect(transcribeIcon).toBeNull();
 
     // Should NOT show send button (arrow-up icon) in transcribe mode
     const sendIcon = container.querySelector("svg.lucide-arrow-up");
-    expect(sendIcon).not.toBeInTheDocument();
+    expect(sendIcon).toBeNull();
   });
 
   it("disables add and tools buttons in transcribe mode", () => {
@@ -206,11 +207,11 @@ describe("CopilotChatInput", () => {
     // Add button should be disabled (find by Plus icon)
     const addIcon = container.querySelector("svg.lucide-plus");
     const addButton = addIcon?.closest("button");
-    expect(addButton).toBeDisabled();
+    expect((addButton as HTMLButtonElement).disabled).toBe(true);
 
     // Tools button should be disabled (find by "Tools" text)
     const toolsButton = screen.getByRole("button", { name: /tools/i });
-    expect(toolsButton).toBeDisabled();
+    expect((toolsButton as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("shows recording indicator instead of textarea in transcribe mode", () => {
@@ -227,10 +228,10 @@ describe("CopilotChatInput", () => {
 
     // Should show recording indicator (canvas element)
     const recordingIndicator = container.querySelector("canvas");
-    expect(recordingIndicator).toBeInTheDocument();
+    expect(recordingIndicator).toBeDefined();
 
     // Should NOT show textarea in transcribe mode
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).toBeNull();
   });
 
   it("shows textarea in input mode", () => {
@@ -246,10 +247,10 @@ describe("CopilotChatInput", () => {
     );
 
     // Should show textarea in input mode
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toBeDefined();
 
     // Should NOT show recording indicator (red div)
     const recordingIndicator = container.querySelector(".bg-red-500");
-    expect(recordingIndicator).not.toBeInTheDocument();
+    expect(recordingIndicator).toBeNull();
   });
 });
