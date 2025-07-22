@@ -297,7 +297,7 @@ export namespace CopilotAssistantMessage {
     </div>
   );
 
-  function fixMarkdown(input: string): string {
+  export function completePartialMarkdown(input: string): string {
     const file = unified()
       .use(remarkParse)
       .use(remarkStringify)
@@ -344,7 +344,7 @@ export namespace CopilotAssistantMessage {
           },
         }}
       >
-        {fixMarkdown(content)}
+        {completePartialMarkdown(content)}
       </MarkdownHooks>
     </div>
   );
