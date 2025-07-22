@@ -80,7 +80,7 @@ export type ToolsMenuItem = {
     }
 );
 
-interface CopilotChatInputProps extends Slots<CopilotChatInputSlots> {
+export interface CopilotChatInputProps extends Slots<CopilotChatInputSlots> {
   mode?: CopilotChatInputMode;
 
   /** Called with trimmed text when user submits. Clears input. */

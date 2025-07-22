@@ -25,6 +25,9 @@ import {
 import "katex/dist/katex.min.css";
 import { Slots } from "@/types/slots";
 import { renderSlot } from "@/lib/slots";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkStringify from "remark-stringify";
 
 export type CopilotAssistantMessageSlots = {
   Container: React.ComponentType<
@@ -281,46 +284,56 @@ export namespace CopilotAssistantMessage {
     </div>
   );
 
+  function fixMarkdown(input: string): string {
+    const file = unified()
+      .use(remarkParse)
+      .use(remarkStringify)
+      .processSync(input); // ← sync version
+    return String(file);
+  }
+
   export const MarkdownRenderer: React.FC<{
     content: string;
     className?: string;
   }> = ({ content, className }) => (
-    <MarkdownHooks
-      /* async plugins are now fine ✨ */
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[
-        [
-          rehypePrettyCode,
-          {
-            keepBackground: false,
-            theme: {
-              dark: "one-dark-pro",
-              light: "one-light",
+    <div className={className}>
+      <MarkdownHooks
+        /* async plugins are now fine ✨ */
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[
+          [
+            rehypePrettyCode,
+            {
+              keepBackground: false,
+              theme: {
+                dark: "one-dark-pro",
+                light: "one-light",
+              },
+              bypassInlineCode: true,
             },
-            bypassInlineCode: true,
-          },
-        ],
-        rehypeKatex,
-      ]}
-      components={{
-        pre: CodeBlock,
-        code: ({ className, children, ...props }: any) => {
-          // For inline code, use custom styling
-          if (typeof children === "string") {
-            return <InlineCode {...props}>{children}</InlineCode>;
-          }
+          ],
+          rehypeKatex,
+        ]}
+        components={{
+          pre: CodeBlock,
+          code: ({ className, children, ...props }: any) => {
+            // For inline code, use custom styling
+            if (typeof children === "string") {
+              return <InlineCode {...props}>{children}</InlineCode>;
+            }
 
-          // For code blocks, just return the code element as-is
-          return (
-            <code className={className} {...props}>
-              {children}
-            </code>
-          );
-        },
-      }}
-    >
-      {content}
-    </MarkdownHooks>
+            // For code blocks, just return the code element as-is
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          },
+        }}
+      >
+        {fixMarkdown(content)}
+      </MarkdownHooks>
+    </div>
   );
 
   export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
