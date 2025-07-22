@@ -297,6 +297,7 @@ export function CopilotChatInput({
   return BoundContainer;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotChatInput {
   export const SendButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
@@ -516,7 +517,7 @@ export namespace CopilotChatInput {
   }
 
   export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
-    ({ maxRows = 5, style, className, ...props }, ref) => {
+    function TextArea({ maxRows = 5, style, className, ...props }, ref) {
       const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
       const [maxHeight, setMaxHeight] = useState<number>(0);
 

@@ -195,8 +195,12 @@ export function CopilotAssistantMessage({
   return BoundContainer;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotAssistantMessage {
-  const InlineCode = ({ children, ...props }: any) => {
+  const InlineCode = ({
+    children,
+    ...props
+  }: React.HTMLAttributes<HTMLElement>) => {
     return (
       <code
         className="px-[4.8px] py-[2.5px] bg-[rgb(236,236,236)] dark:bg-gray-800 rounded text-sm font-mono font-medium! text-foreground!"
@@ -207,10 +211,12 @@ export namespace CopilotAssistantMessage {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CodeBlock = ({ children, className, onClick, ...props }: any) => {
     const { labels } = useCopilotChatContext();
     const [copied, setCopied] = useState(false);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getCodeContent = (node: any): string => {
       if (typeof node === "string") return node;
       if (Array.isArray(node)) return node.map(getCodeContent).join("");
@@ -319,6 +325,7 @@ export namespace CopilotAssistantMessage {
         ]}
         components={{
           pre: CodeBlock,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           code: ({ className, children, ...props }: any) => {
             // For inline code, use custom styling
             if (typeof children === "string") {

@@ -207,6 +207,7 @@ export function CopilotUserMessage({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotUserMessage {
   export const Container: React.FC<
     React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
@@ -276,7 +277,6 @@ export namespace CopilotUserMessage {
   export const EditButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, ...props }) => {
-    const { labels } = useCopilotChatContext();
     return (
       <Tooltip>
         <TooltipTrigger asChild>

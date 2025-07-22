@@ -196,6 +196,7 @@ describe("CopilotAssistantMessage", () => {
 
   describe("Slot functionality - Custom Components", () => {
     it("accepts custom Container component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomContainer = ({ children, ...props }: any) => (
         <div data-testid="custom-container" {...props}>
           {children}
@@ -233,6 +234,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom Toolbar component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomToolbar = ({ children, ...props }: any) => (
         <div data-testid="custom-toolbar" {...props}>
           Custom Toolbar: {children}
@@ -255,6 +257,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom CopyButton component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomCopyButton = (props: any) => (
         <button data-testid="custom-copy-button" {...props}>
           Custom Copy
@@ -277,6 +280,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom ThumbsUpButton component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomThumbsUpButton = (props: any) => (
         <button data-testid="custom-thumbs-up" {...props}>
           Custom Like
@@ -300,6 +304,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom ThumbsDownButton component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomThumbsDownButton = (props: any) => (
         <button data-testid="custom-thumbs-down" {...props}>
           Custom Dislike
@@ -323,6 +328,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom ReadAloudButton component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomReadAloudButton = (props: any) => (
         <button data-testid="custom-read-aloud" {...props}>
           Custom Speak
@@ -346,6 +352,7 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("accepts custom RegenerateButton component", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const CustomRegenerateButton = (props: any) => (
         <button data-testid="custom-regenerate" {...props}>
           Custom Retry
@@ -556,6 +563,7 @@ describe("CopilotAssistantMessage", () => {
     it("handles null message content gracefully", () => {
       const nullContentMessage: AssistantMessage = {
         role: "assistant",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         content: null as any,
         id: "null-content",
       };

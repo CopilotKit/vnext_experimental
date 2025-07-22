@@ -1,10 +1,4 @@
-import {
-  useRef,
-  useState,
-  useEffect,
-  useImperativeHandle,
-  forwardRef,
-} from "react";
+import { useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 
 import type {
   AudioRecorderControls,
@@ -129,14 +123,10 @@ export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
         return "idle" as AudioRecorderState;
       },
       start: async () => {
-        try {
-          // Stub implementation - no actual recording
-        } catch (error) {
-          throw error;
-        }
+        // Stub implementation - no actual recording
       },
       stop: () =>
-        new Promise<Blob>((resolve, reject) => {
+        new Promise<Blob>((resolve) => {
           // Stub implementation - return empty blob
           const emptyBlob = new Blob([], { type: "audio/webm" });
           resolve(emptyBlob);
