@@ -25,9 +25,7 @@ import {
 import "katex/dist/katex.min.css";
 import { Slots } from "@/types/slots";
 import { renderSlot } from "@/lib/slots";
-import { unified } from "unified";
-import remarkParse from "remark-parse";
-import remarkStringify from "remark-stringify";
+import { completePartialMarkdown } from "@/lib/markdown";
 
 export type CopilotAssistantMessageSlots = {
   Container: React.ComponentType<
@@ -296,14 +294,6 @@ export namespace CopilotAssistantMessage {
       {children}
     </div>
   );
-
-  export function completePartialMarkdown(input: string): string {
-    const file = unified()
-      .use(remarkParse)
-      .use(remarkStringify)
-      .processSync(input); // ← sync version
-    return String(file);
-  }
 
   export const MarkdownRenderer: React.FC<{
     content: string;
