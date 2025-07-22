@@ -23,90 +23,43 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
+import { Slots } from "@/types/slots";
+import { renderSlot } from "@/lib/slots";
 
-export interface CopilotAssistantMessageProps {
+export type CopilotAssistantMessageSlots = {
+  Container: React.ComponentType<
+    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
+  >;
+  MarkdownRenderer: React.ComponentType<{
+    content: string;
+    className?: string;
+  }>;
+  Toolbar: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
+  CopyButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  ThumbsUpButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  ThumbsDownButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  ReadAloudButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+  RegenerateButton: React.ComponentType<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
+};
+
+export interface CopilotAssistantMessageProps
+  extends Slots<CopilotAssistantMessageSlots> {
   message: AssistantMessage;
-
-  /** Called when user clicks thumbs up button. If provided, button is shown. */
   onThumbsUp?: () => void;
-
-  /** Called when user clicks thumbs down button. If provided, button is shown. */
   onThumbsDown?: () => void;
-
-  /** Called when user clicks read aloud button. If provided, button is shown. */
   onReadAloud?: () => void;
-
-  /** Called when user clicks regenerate button. If provided, button is shown. */
   onRegenerate?: () => void;
-
-  /** Additional custom toolbar items to render alongside the default buttons. */
   additionalToolbarItems?: React.ReactNode;
-
-  /**
-   * Component slots — override one or many:
-   * - Container: wrapper around everything (default is <div>)
-   * - MarkdownRenderer: the markdown rendering component
-   * - Toolbar: bottom toolbar area (default is <div>)
-   * - CopyButton: copy message button
-   * - ThumbsUpButton: thumbs up button
-   * - ThumbsDownButton: thumbs down button
-   * - ReadAloudButton: read aloud button
-   * - RegenerateButton: regenerate message button
-   */
-  components?: {
-    Container?: React.ComponentType<
-      React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-    >;
-    MarkdownRenderer?: React.ComponentType<{
-      content: string;
-      className?: string;
-    }>;
-    Toolbar?: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
-    CopyButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    ThumbsUpButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    ThumbsDownButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    ReadAloudButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    RegenerateButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-  };
-
-  /**
-   * Style-only overrides (merged onto defaults).
-   * Ignore if user also swaps that component.
-   */
-  appearance?: {
-    container?: string;
-    markdownRenderer?: string;
-    toolbar?: string;
-    copyButton?: string;
-    thumbsUpButton?: string;
-    thumbsDownButton?: string;
-    readAloudButton?: string;
-    regenerateButton?: string;
-  };
-
-  /**
-   * Full-layout override (highest priority).
-   * Receives the *pre-wired* sub-components so users never touch handlers.
-   */
-  children?: (parts: {
-    MarkdownRenderer: JSX.Element;
-    Toolbar: JSX.Element;
-    CopyButton: JSX.Element;
-    ThumbsUpButton: JSX.Element;
-    ThumbsDownButton: JSX.Element;
-    ReadAloudButton: JSX.Element;
-    RegenerateButton: JSX.Element;
-  }) => React.ReactNode;
 }
 
 export function CopilotAssistantMessage({
@@ -116,107 +69,74 @@ export function CopilotAssistantMessage({
   onReadAloud,
   onRegenerate,
   additionalToolbarItems,
-  components = {},
-  appearance = {},
+  Container,
+  MarkdownRenderer,
+  Toolbar,
+  CopyButton,
+  ThumbsUpButton,
+  ThumbsDownButton,
+  ReadAloudButton,
+  RegenerateButton,
   children,
 }: CopilotAssistantMessageProps) {
-  const [copied, setCopied] = useState(false);
-  const {
-    Container = CopilotAssistantMessage.Container,
-    MarkdownRenderer = CopilotAssistantMessage.MarkdownRenderer,
-    Toolbar = CopilotAssistantMessage.Toolbar,
-    CopyButton = CopilotAssistantMessage.CopyButton,
-    ThumbsUpButton = CopilotAssistantMessage.ThumbsUpButton,
-    ThumbsDownButton = CopilotAssistantMessage.ThumbsDownButton,
-    ReadAloudButton = CopilotAssistantMessage.ReadAloudButton,
-    RegenerateButton = CopilotAssistantMessage.RegenerateButton,
-  } = components;
-
-  const BoundMarkdownRenderer = (
-    <MarkdownRenderer
-      content={message.content || ""}
-      className={
-        MarkdownRenderer === CopilotAssistantMessage.MarkdownRenderer
-          ? appearance.markdownRenderer
-          : undefined
-      }
-    />
+  const BoundMarkdownRenderer = renderSlot(
+    MarkdownRenderer,
+    CopilotAssistantMessage.MarkdownRenderer,
+    {
+      content: message.content || "",
+    }
   );
 
-  const BoundCopyButton = (
-    <CopyButton
-      onClick={async () => {
+  const BoundCopyButton = renderSlot(
+    CopyButton,
+    CopilotAssistantMessage.CopyButton,
+    {
+      onClick: async () => {
         if (message.content) {
           try {
             await navigator.clipboard.writeText(message.content);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
           } catch (err) {
             console.error("Failed to copy message:", err);
           }
         }
-      }}
-      copied={copied}
-      className={
-        CopyButton === CopilotAssistantMessage.CopyButton
-          ? appearance.copyButton
-          : undefined
-      }
-    />
+      },
+    }
   );
 
-  const BoundThumbsUpButton = (
-    <ThumbsUpButton
-      onClick={onThumbsUp}
-      className={
-        ThumbsUpButton === CopilotAssistantMessage.ThumbsUpButton
-          ? appearance.thumbsUpButton
-          : undefined
-      }
-    />
+  const BoundThumbsUpButton = renderSlot(
+    ThumbsUpButton,
+    CopilotAssistantMessage.ThumbsUpButton,
+    {
+      onClick: onThumbsUp,
+    }
   );
 
-  const BoundThumbsDownButton = (
-    <ThumbsDownButton
-      onClick={onThumbsDown}
-      className={
-        ThumbsDownButton === CopilotAssistantMessage.ThumbsDownButton
-          ? appearance.thumbsDownButton
-          : undefined
-      }
-    />
+  const BoundThumbsDownButton = renderSlot(
+    ThumbsDownButton,
+    CopilotAssistantMessage.ThumbsDownButton,
+    {
+      onClick: onThumbsDown,
+    }
   );
 
-  const BoundReadAloudButton = (
-    <ReadAloudButton
-      onClick={onReadAloud}
-      className={
-        ReadAloudButton === CopilotAssistantMessage.ReadAloudButton
-          ? appearance.readAloudButton
-          : undefined
-      }
-    />
+  const BoundReadAloudButton = renderSlot(
+    ReadAloudButton,
+    CopilotAssistantMessage.ReadAloudButton,
+    {
+      onClick: onReadAloud,
+    }
   );
 
-  const BoundRegenerateButton = (
-    <RegenerateButton
-      onClick={onRegenerate}
-      className={
-        RegenerateButton === CopilotAssistantMessage.RegenerateButton
-          ? appearance.regenerateButton
-          : undefined
-      }
-    />
+  const BoundRegenerateButton = renderSlot(
+    RegenerateButton,
+    CopilotAssistantMessage.RegenerateButton,
+    {
+      onClick: onRegenerate,
+    }
   );
 
-  const BoundToolbar = (
-    <Toolbar
-      className={
-        Toolbar === CopilotAssistantMessage.Toolbar
-          ? appearance.toolbar
-          : undefined
-      }
-    >
+  const BoundToolbar = renderSlot(Toolbar, CopilotAssistantMessage.Toolbar, {
+    children: (
       <div className="flex items-center gap-1">
         {BoundCopyButton}
         {onThumbsUp && BoundThumbsUpButton}
@@ -225,7 +145,20 @@ export function CopilotAssistantMessage({
         {onRegenerate && BoundRegenerateButton}
         {additionalToolbarItems}
       </div>
-    </Toolbar>
+    ),
+  });
+
+  const BoundContainer = renderSlot(
+    Container,
+    CopilotAssistantMessage.Container,
+    {
+      children: (
+        <>
+          {BoundMarkdownRenderer}
+          {BoundToolbar}
+        </>
+      ),
+    }
   );
 
   if (children) {
@@ -239,23 +172,13 @@ export function CopilotAssistantMessage({
           ThumbsDownButton: BoundThumbsDownButton,
           ReadAloudButton: BoundReadAloudButton,
           RegenerateButton: BoundRegenerateButton,
+          Container: BoundContainer,
         })}
       </>
     );
   }
 
-  return (
-    <Container
-      className={
-        Container === CopilotAssistantMessage.Container
-          ? appearance.container
-          : undefined
-      }
-    >
-      {BoundMarkdownRenderer}
-      {BoundToolbar}
-    </Container>
-  );
+  return BoundContainer;
 }
 
 export namespace CopilotAssistantMessage {
@@ -270,9 +193,9 @@ export namespace CopilotAssistantMessage {
     );
   };
 
-  const CodeBlock = ({ children, className, ...props }: any) => {
-    const [copied, setCopied] = useState(false);
+  const CodeBlock = ({ children, className, onClick, ...props }: any) => {
     const { labels } = useCopilotChatContext();
+    const [copied, setCopied] = useState(false);
 
     const getCodeContent = (node: any): string => {
       if (typeof node === "string") return node;
@@ -288,27 +211,25 @@ export namespace CopilotAssistantMessage {
       if (!codeContent.trim()) return;
 
       try {
-        await navigator.clipboard.writeText(codeContent);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+        if (onClick) {
+          onClick();
+        }
       } catch (err) {
         console.error("Failed to copy code:", err);
       }
     };
 
-    // For code blocks, add header with language label and copy button
     return (
       <div className="relative">
-        {/* Header bar */}
         <div className="flex items-center justify-between px-4 pr-3 py-3 text-xs">
-          {/* Language label */}
           {language && (
             <span className="font-regular text-muted-foreground dark:text-white">
               {language}
             </span>
           )}
 
-          {/* Copy button */}
           <button
             className={cn(
               "px-2 gap-0.5 text-xs flex items-center cursor-pointer text-muted-foreground dark:text-white"
@@ -316,8 +237,8 @@ export namespace CopilotAssistantMessage {
             onClick={copyToClipboard}
             title={
               copied
-                ? labels.assistantCopyCodeCopiedLabel
-                : `${labels.assistantCopyCodeLabel} code`
+                ? labels.assistantMessageToolbarCopyCodeCopiedLabel
+                : `${labels.assistantMessageToolbarCopyCodeLabel} code`
             }
           >
             {copied ? (
@@ -327,8 +248,8 @@ export namespace CopilotAssistantMessage {
             )}
             <span className="text-[11px]">
               {copied
-                ? labels.assistantCopyCodeCopiedLabel
-                : labels.assistantCopyCodeLabel}
+                ? labels.assistantMessageToolbarCopyCodeCopiedLabel
+                : labels.assistantMessageToolbarCopyCodeLabel}
             </span>
           </button>
         </div>
@@ -415,122 +336,113 @@ export namespace CopilotAssistantMessage {
     />
   );
 
-  export const CopyButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
-  > = ({ className, copied = false, ...props }) => {
-    const { labels } = useCopilotChatContext();
+  export const AssistantMessageToolbarButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      title: string;
+      children: React.ReactNode;
+    }
+  > = ({ title, children, ...props }) => {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="assistantMessageButton"
-            className={twMerge(className)}
+            variant="assistantMessageToolbarButton"
             {...props}
           >
-            {copied ? (
-              <Check className="size-[18px]" />
-            ) : (
-              <Copy className="size-[18px]" />
-            )}
+            {children}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.assistantCopyMessageLabel}</p>
+          <p>{title}</p>
         </TooltipContent>
       </Tooltip>
+    );
+  };
+
+  export const CopyButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  > = ({ className, onClick, ...props }) => {
+    const { labels } = useCopilotChatContext();
+    const [copied, setCopied] = useState(false);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+
+      if (onClick) {
+        onClick(event);
+      }
+    };
+
+    return (
+      <AssistantMessageToolbarButton
+        title={labels.assistantMessageToolbarCopyMessageLabel}
+        onClick={handleClick}
+        {...props}
+      >
+        {copied ? (
+          <Check className="size-[18px]" />
+        ) : (
+          <Copy className="size-[18px]" />
+        )}
+      </AssistantMessageToolbarButton>
     );
   };
 
   export const ThumbsUpButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="assistantMessageButton"
-            className={twMerge(className)}
-            {...props}
-          >
-            <ThumbsUp className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.assistantThumbsUpLabel}</p>
-        </TooltipContent>
-      </Tooltip>
+      <AssistantMessageToolbarButton
+        title={labels.assistantMessageToolbarThumbsUpLabel}
+        {...props}
+      >
+        <ThumbsUp className="size-[18px]" />
+      </AssistantMessageToolbarButton>
     );
   };
 
   export const ThumbsDownButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="assistantMessageButton"
-            className={twMerge(className)}
-            {...props}
-          >
-            <ThumbsDown className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.assistantThumbsDownLabel}</p>
-        </TooltipContent>
-      </Tooltip>
+      <AssistantMessageToolbarButton
+        title={labels.assistantMessageToolbarThumbsDownLabel}
+        {...props}
+      >
+        <ThumbsDown className="size-[18px]" />
+      </AssistantMessageToolbarButton>
     );
   };
 
   export const ReadAloudButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="assistantMessageButton"
-            className={twMerge(className)}
-            {...props}
-          >
-            <Volume2 className="size-[20px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.assistantReadAloudLabel}</p>
-        </TooltipContent>
-      </Tooltip>
+      <AssistantMessageToolbarButton
+        title={labels.assistantMessageToolbarReadAloudLabel}
+        {...props}
+      >
+        <Volume2 className="size-[20px]" />
+      </AssistantMessageToolbarButton>
     );
   };
 
   export const RegenerateButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="assistantMessageButton"
-            className={twMerge(className)}
-            {...props}
-          >
-            <RefreshCw className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.assistantRegenerateLabel}</p>
-        </TooltipContent>
-      </Tooltip>
+      <AssistantMessageToolbarButton
+        title={labels.assistantMessageToolbarRegenerateLabel}
+        {...props}
+      >
+        <RefreshCw className="size-[18px]" />
+      </AssistantMessageToolbarButton>
     );
   };
 }

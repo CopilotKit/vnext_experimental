@@ -2,19 +2,19 @@ import React, { createContext, useContext, ReactNode, useState } from "react";
 
 // Default labels
 const defaultLabels = {
-  inputPlaceholder: "Type a message...",
-  inputStartTranscribeButtonLabel: "Transcribe",
-  inputCancelTranscribeButtonLabel: "Cancel",
-  inputFinishTranscribeButtonLabel: "Finish",
-  inputAddButtonLabel: "Add photos or files",
-  inputToolsButtonLabel: "Tools",
-  assistantCopyCodeLabel: "Copy",
-  assistantCopyCodeCopiedLabel: "Copied",
-  assistantCopyMessageLabel: "Copy",
-  assistantThumbsUpLabel: "Good response",
-  assistantThumbsDownLabel: "Bad response",
-  assistantReadAloudLabel: "Read aloud",
-  assistantRegenerateLabel: "Regenerate",
+  chatInputPlaceholder: "Type a message...",
+  chatInputToolbarStartTranscribeButtonLabel: "Transcribe",
+  chatInputToolbarCancelTranscribeButtonLabel: "Cancel",
+  chatInputToolbarFinishTranscribeButtonLabel: "Finish",
+  chatInputToolbarAddButtonLabel: "Add photos or files",
+  chatInputToolbarToolsButtonLabel: "Tools",
+  assistantMessageToolbarCopyCodeLabel: "Copy",
+  assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
+  assistantMessageToolbarCopyMessageLabel: "Copy",
+  assistantMessageToolbarThumbsUpLabel: "Good response",
+  assistantMessageToolbarThumbsDownLabel: "Bad response",
+  assistantMessageToolbarReadAloudLabel: "Read aloud",
+  assistantMessageToolbarRegenerateLabel: "Regenerate",
 };
 
 export type CopilotChatLabels = typeof defaultLabels;

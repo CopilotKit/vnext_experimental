@@ -20,7 +20,7 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer",
         link: "text-primary underline-offset-4 hover:underline",
-        assistantMessageButton: [
+        assistantMessageToolbarButton: [
           "cursor-pointer",
           // Background and text
           "p-0 text-[rgb(93,93,93)] hover:bg-[#E8E8E8]",

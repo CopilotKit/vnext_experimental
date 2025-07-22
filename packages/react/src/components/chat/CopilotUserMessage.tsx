@@ -255,7 +255,7 @@ export namespace CopilotUserMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="assistantMessageButton"
+            variant="assistantMessageToolbarButton"
             className={twMerge(className)}
             {...props}
           >
@@ -267,7 +267,7 @@ export namespace CopilotUserMessage {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.assistantCopyMessageLabel}</p>
+          <p>{labels.assistantMessageToolbarCopyMessageLabel}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -282,7 +282,7 @@ export namespace CopilotUserMessage {
         <TooltipTrigger asChild>
           <Button
             type="button"
-            variant="assistantMessageButton"
+            variant="assistantMessageToolbarButton"
             className={twMerge(className)}
             {...props}
           >
@@ -320,7 +320,7 @@ export namespace CopilotUserMessage {
       <div className={twMerge("flex items-center gap-1", className)} {...props}>
         <Button
           type="button"
-          variant="assistantMessageButton"
+          variant="assistantMessageToolbarButton"
           onClick={() => onSwitchToBranch(currentBranch - 1)}
           disabled={!canGoPrev}
           className="h-6 w-6 p-0"
@@ -332,7 +332,7 @@ export namespace CopilotUserMessage {
         </span>
         <Button
           type="button"
-          variant="assistantMessageButton"
+          variant="assistantMessageToolbarButton"
           onClick={() => onSwitchToBranch(currentBranch + 1)}
           disabled={!canGoNext}
           className="h-6 w-6 p-0"

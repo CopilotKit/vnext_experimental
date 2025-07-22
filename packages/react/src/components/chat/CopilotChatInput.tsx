@@ -436,7 +436,7 @@ export namespace CopilotChatInput {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.inputStartTranscribeButtonLabel}</p>
+          <p>{labels.chatInputToolbarStartTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -460,7 +460,7 @@ export namespace CopilotChatInput {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.inputCancelTranscribeButtonLabel}</p>
+          <p>{labels.chatInputToolbarCancelTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -484,7 +484,7 @@ export namespace CopilotChatInput {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.inputFinishTranscribeButtonLabel}</p>
+          <p>{labels.chatInputToolbarFinishTranscribeButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -508,7 +508,7 @@ export namespace CopilotChatInput {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.inputAddButtonLabel}</p>
+          <p>{labels.chatInputToolbarAddButtonLabel}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -567,7 +567,7 @@ export namespace CopilotChatInput {
           >
             <Settings2 className="size-[18px]" />
             <span className="text-sm font-normal">
-              {labels.inputToolsButtonLabel}
+              {labels.chatInputToolbarToolsButtonLabel}
             </span>
           </Button>
         </DropdownMenuTrigger>
@@ -683,7 +683,7 @@ export namespace CopilotChatInput {
             maxHeight: `${maxHeight}px`,
             ...style,
           }}
-          placeholder={labels.inputPlaceholder}
+          placeholder={labels.chatInputPlaceholder}
           className={twMerge(
             // Layout and sizing
             "w-full p-5 pb-0",
