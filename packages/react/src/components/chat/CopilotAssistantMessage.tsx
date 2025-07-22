@@ -374,6 +374,7 @@ export namespace CopilotAssistantMessage {
           <Button
             type="button"
             variant="assistantMessageToolbarButton"
+            aria-label={title}
             {...props}
           >
             {children}
@@ -405,6 +406,7 @@ export namespace CopilotAssistantMessage {
       <AssistantMessageToolbarButton
         title={labels.assistantMessageToolbarCopyMessageLabel}
         onClick={handleClick}
+        className={className}
         {...props}
       >
         {copied ? (

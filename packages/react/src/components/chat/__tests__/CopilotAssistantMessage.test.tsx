@@ -117,10 +117,10 @@ describe("CopilotAssistantMessage", () => {
 
       expect(screen.getByRole("button", { name: /copy/i })).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /thumbs up/i })
+        screen.getByRole("button", { name: /good response/i })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /thumbs down/i })
+        screen.getByRole("button", { name: /bad response/i })
       ).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /read aloud/i })
@@ -149,7 +149,9 @@ describe("CopilotAssistantMessage", () => {
         />
       );
 
-      const thumbsUpButton = screen.getByRole("button", { name: /thumbs up/i });
+      const thumbsUpButton = screen.getByRole("button", {
+        name: /good response/i,
+      });
       fireEvent.click(thumbsUpButton);
 
       expect(mockOnThumbsUp).toHaveBeenCalledTimes(1);
@@ -164,7 +166,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       const thumbsDownButton = screen.getByRole("button", {
-        name: /thumbs down/i,
+        name: /bad response/i,
       });
       fireEvent.click(thumbsDownButton);
 
