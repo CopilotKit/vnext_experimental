@@ -27,7 +27,7 @@ import { Slots } from "@/types/slots";
 import { renderSlot } from "@/lib/slots";
 import { completePartialMarkdown } from "@/lib/markdown";
 
-export type CopilotAssistantMessageSlots = {
+export type CopilotChatAssistantMessageSlots = {
   Container: React.ComponentType<
     React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
   >;
@@ -53,24 +53,24 @@ export type CopilotAssistantMessageSlots = {
   >;
 };
 
-export type CopilotAssistantMessageCallbacks = {
+export type CopilotChatAssistantMessageCallbacks = {
   onThumbsUp?: () => void;
   onThumbsDown?: () => void;
   onReadAloud?: () => void;
   onRegenerate?: () => void;
 };
 
-export type CopilotAssistantMessageOptions = {
+export type CopilotChatAssistantMessageOptions = {
   message: AssistantMessage;
   additionalToolbarItems?: React.ReactNode;
 };
 
-export type CopilotAssistantMessageProps = Slots<
-  CopilotAssistantMessageSlots,
-  CopilotAssistantMessageOptions & CopilotAssistantMessageCallbacks
+export type CopilotChatAssistantMessageProps = Slots<
+  CopilotChatAssistantMessageSlots,
+  CopilotChatAssistantMessageOptions & CopilotChatAssistantMessageCallbacks
 >;
 
-export function CopilotAssistantMessage({
+export function CopilotChatAssistantMessage({
   message,
   onThumbsUp,
   onThumbsDown,
@@ -86,10 +86,10 @@ export function CopilotAssistantMessage({
   ReadAloudButton,
   RegenerateButton,
   children,
-}: CopilotAssistantMessageProps) {
+}: CopilotChatAssistantMessageProps) {
   const BoundMarkdownRenderer = renderSlot(
     MarkdownRenderer,
-    CopilotAssistantMessage.MarkdownRenderer,
+    CopilotChatAssistantMessage.MarkdownRenderer,
     {
       content: message.content || "",
     }
@@ -97,7 +97,7 @@ export function CopilotAssistantMessage({
 
   const BoundCopyButton = renderSlot(
     CopyButton,
-    CopilotAssistantMessage.CopyButton,
+    CopilotChatAssistantMessage.CopyButton,
     {
       onClick: async () => {
         if (message.content) {
@@ -113,7 +113,7 @@ export function CopilotAssistantMessage({
 
   const BoundThumbsUpButton = renderSlot(
     ThumbsUpButton,
-    CopilotAssistantMessage.ThumbsUpButton,
+    CopilotChatAssistantMessage.ThumbsUpButton,
     {
       onClick: onThumbsUp,
     }
@@ -121,7 +121,7 @@ export function CopilotAssistantMessage({
 
   const BoundThumbsDownButton = renderSlot(
     ThumbsDownButton,
-    CopilotAssistantMessage.ThumbsDownButton,
+    CopilotChatAssistantMessage.ThumbsDownButton,
     {
       onClick: onThumbsDown,
     }
@@ -129,7 +129,7 @@ export function CopilotAssistantMessage({
 
   const BoundReadAloudButton = renderSlot(
     ReadAloudButton,
-    CopilotAssistantMessage.ReadAloudButton,
+    CopilotChatAssistantMessage.ReadAloudButton,
     {
       onClick: onReadAloud,
     }
@@ -137,28 +137,32 @@ export function CopilotAssistantMessage({
 
   const BoundRegenerateButton = renderSlot(
     RegenerateButton,
-    CopilotAssistantMessage.RegenerateButton,
+    CopilotChatAssistantMessage.RegenerateButton,
     {
       onClick: onRegenerate,
     }
   );
 
-  const BoundToolbar = renderSlot(Toolbar, CopilotAssistantMessage.Toolbar, {
-    children: (
-      <div className="flex items-center gap-1">
-        {BoundCopyButton}
-        {onThumbsUp && BoundThumbsUpButton}
-        {onThumbsDown && BoundThumbsDownButton}
-        {onReadAloud && BoundReadAloudButton}
-        {onRegenerate && BoundRegenerateButton}
-        {additionalToolbarItems}
-      </div>
-    ),
-  });
+  const BoundToolbar = renderSlot(
+    Toolbar,
+    CopilotChatAssistantMessage.Toolbar,
+    {
+      children: (
+        <div className="flex items-center gap-1">
+          {BoundCopyButton}
+          {onThumbsUp && BoundThumbsUpButton}
+          {onThumbsDown && BoundThumbsDownButton}
+          {onReadAloud && BoundReadAloudButton}
+          {onRegenerate && BoundRegenerateButton}
+          {additionalToolbarItems}
+        </div>
+      ),
+    }
+  );
 
   const BoundContainer = renderSlot(
     Container,
-    CopilotAssistantMessage.Container,
+    CopilotChatAssistantMessage.Container,
     {
       children: (
         <>
@@ -196,7 +200,7 @@ export function CopilotAssistantMessage({
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace CopilotAssistantMessage {
+export namespace CopilotChatAssistantMessage {
   const InlineCode = ({
     children,
     ...props
@@ -359,7 +363,7 @@ export namespace CopilotAssistantMessage {
     />
   );
 
-  export const AssistantMessageToolbarButton: React.FC<
+  export const ToolbarButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement> & {
       title: string;
       children: React.ReactNode;
@@ -400,7 +404,7 @@ export namespace CopilotAssistantMessage {
     };
 
     return (
-      <AssistantMessageToolbarButton
+      <ToolbarButton
         title={labels.assistantMessageToolbarCopyMessageLabel}
         onClick={handleClick}
         className={className}
@@ -411,7 +415,7 @@ export namespace CopilotAssistantMessage {
         ) : (
           <Copy className="size-[18px]" />
         )}
-      </AssistantMessageToolbarButton>
+      </ToolbarButton>
     );
   };
 
@@ -420,12 +424,12 @@ export namespace CopilotAssistantMessage {
   > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <AssistantMessageToolbarButton
+      <ToolbarButton
         title={labels.assistantMessageToolbarThumbsUpLabel}
         {...props}
       >
         <ThumbsUp className="size-[18px]" />
-      </AssistantMessageToolbarButton>
+      </ToolbarButton>
     );
   };
 
@@ -434,12 +438,12 @@ export namespace CopilotAssistantMessage {
   > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <AssistantMessageToolbarButton
+      <ToolbarButton
         title={labels.assistantMessageToolbarThumbsDownLabel}
         {...props}
       >
         <ThumbsDown className="size-[18px]" />
-      </AssistantMessageToolbarButton>
+      </ToolbarButton>
     );
   };
 
@@ -448,12 +452,12 @@ export namespace CopilotAssistantMessage {
   > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <AssistantMessageToolbarButton
+      <ToolbarButton
         title={labels.assistantMessageToolbarReadAloudLabel}
         {...props}
       >
         <Volume2 className="size-[20px]" />
-      </AssistantMessageToolbarButton>
+      </ToolbarButton>
     );
   };
 
@@ -462,30 +466,31 @@ export namespace CopilotAssistantMessage {
   > = (props) => {
     const { labels } = useCopilotChatContext();
     return (
-      <AssistantMessageToolbarButton
+      <ToolbarButton
         title={labels.assistantMessageToolbarRegenerateLabel}
         {...props}
       >
         <RefreshCw className="size-[18px]" />
-      </AssistantMessageToolbarButton>
+      </ToolbarButton>
     );
   };
 }
 
-CopilotAssistantMessage.Container.displayName =
+CopilotChatAssistantMessage.Container.displayName =
   "CopilotAssistantMessage.Container";
-CopilotAssistantMessage.MarkdownRenderer.displayName =
+CopilotChatAssistantMessage.MarkdownRenderer.displayName =
   "CopilotAssistantMessage.MarkdownRenderer";
-CopilotAssistantMessage.Toolbar.displayName = "CopilotAssistantMessage.Toolbar";
-CopilotAssistantMessage.CopyButton.displayName =
+CopilotChatAssistantMessage.Toolbar.displayName =
+  "CopilotAssistantMessage.Toolbar";
+CopilotChatAssistantMessage.CopyButton.displayName =
   "CopilotAssistantMessage.CopyButton";
-CopilotAssistantMessage.ThumbsUpButton.displayName =
+CopilotChatAssistantMessage.ThumbsUpButton.displayName =
   "CopilotAssistantMessage.ThumbsUpButton";
-CopilotAssistantMessage.ThumbsDownButton.displayName =
+CopilotChatAssistantMessage.ThumbsDownButton.displayName =
   "CopilotAssistantMessage.ThumbsDownButton";
-CopilotAssistantMessage.ReadAloudButton.displayName =
+CopilotChatAssistantMessage.ReadAloudButton.displayName =
   "CopilotAssistantMessage.ReadAloudButton";
-CopilotAssistantMessage.RegenerateButton.displayName =
+CopilotChatAssistantMessage.RegenerateButton.displayName =
   "CopilotAssistantMessage.RegenerateButton";
 
-export default CopilotAssistantMessage;
+export default CopilotChatAssistantMessage;

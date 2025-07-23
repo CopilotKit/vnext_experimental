@@ -5,11 +5,11 @@ export {
 } from "./CopilotChatInput";
 
 export {
-  default as CopilotAssistantMessage,
-  type CopilotAssistantMessageProps,
-} from "./CopilotAssistantMessage";
+  default as CopilotChatAssistantMessage,
+  type CopilotChatAssistantMessageProps,
+} from "./CopilotChatAssistantMessage";
 
 export {
-  default as CopilotUserMessage,
-  type CopilotUserMessageProps,
-} from "./CopilotUserMessage";
+  default as CopilotChatUserMessage,
+  type CopilotChatUserMessageProps,
+} from "./CopilotChatUserMessage";

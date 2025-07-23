@@ -7,7 +7,7 @@ import type {
 } from "../../types/audio-recorder";
 import { twMerge } from "tailwind-merge";
 
-export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
+export const CopilotChatAudioRecorder: AudioRecorderComponent = forwardRef<
   AudioRecorderControls,
   React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
@@ -149,4 +149,4 @@ export const WebAudioRecorder: AudioRecorderComponent = forwardRef<
   );
 });
 
-WebAudioRecorder.displayName = "WebAudioRecorder";
+CopilotChatAudioRecorder.displayName = "WebAudioRecorder";

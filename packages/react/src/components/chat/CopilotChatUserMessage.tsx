@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export interface CopilotUserMessageProps {
+export interface CopilotChatUserMessageProps {
   message: UserMessage;
 
   /** Called when user clicks edit button. If provided, button is shown. */
@@ -83,7 +83,7 @@ export interface CopilotUserMessageProps {
   }) => React.ReactNode;
 }
 
-export function CopilotUserMessage({
+export function CopilotChatUserMessage({
   message,
   onEdit,
   branchIndex: currentBranch,
@@ -93,22 +93,22 @@ export function CopilotUserMessage({
   components = {},
   appearance = {},
   children,
-}: CopilotUserMessageProps) {
+}: CopilotChatUserMessageProps) {
   const [copied, setCopied] = useState(false);
   const {
-    Container = CopilotUserMessage.Container,
-    MessageRenderer = CopilotUserMessage.MessageRenderer,
-    Toolbar = CopilotUserMessage.Toolbar,
-    CopyButton = CopilotUserMessage.CopyButton,
-    EditButton = CopilotUserMessage.EditButton,
-    BranchNavigation = CopilotUserMessage.BranchNavigation,
+    Container = CopilotChatUserMessage.Container,
+    MessageRenderer = CopilotChatUserMessage.MessageRenderer,
+    Toolbar = CopilotChatUserMessage.Toolbar,
+    CopyButton = CopilotChatUserMessage.CopyButton,
+    EditButton = CopilotChatUserMessage.EditButton,
+    BranchNavigation = CopilotChatUserMessage.BranchNavigation,
   } = components;
 
   const BoundMessageRenderer = (
     <MessageRenderer
       content={message.content || ""}
       className={
-        MessageRenderer === CopilotUserMessage.MessageRenderer
+        MessageRenderer === CopilotChatUserMessage.MessageRenderer
           ? appearance.messageRenderer
           : undefined
       }
@@ -130,7 +130,7 @@ export function CopilotUserMessage({
       }}
       copied={copied}
       className={
-        CopyButton === CopilotUserMessage.CopyButton
+        CopyButton === CopilotChatUserMessage.CopyButton
           ? appearance.copyButton
           : undefined
       }
@@ -141,7 +141,7 @@ export function CopilotUserMessage({
     <EditButton
       onClick={onEdit}
       className={
-        EditButton === CopilotUserMessage.EditButton
+        EditButton === CopilotChatUserMessage.EditButton
           ? appearance.editButton
           : undefined
       }
@@ -154,7 +154,7 @@ export function CopilotUserMessage({
       numberOfBranches={numberOfBranches}
       onSwitchToBranch={onSwitchToBranch}
       className={
-        BranchNavigation === CopilotUserMessage.BranchNavigation
+        BranchNavigation === CopilotChatUserMessage.BranchNavigation
           ? appearance.branchNavigation
           : undefined
       }
@@ -167,7 +167,9 @@ export function CopilotUserMessage({
   const BoundToolbar = (
     <Toolbar
       className={
-        Toolbar === CopilotUserMessage.Toolbar ? appearance.toolbar : undefined
+        Toolbar === CopilotChatUserMessage.Toolbar
+          ? appearance.toolbar
+          : undefined
       }
     >
       <div className="flex items-center gap-1 justify-end">
@@ -196,7 +198,7 @@ export function CopilotUserMessage({
   return (
     <Container
       className={
-        Container === CopilotUserMessage.Container
+        Container === CopilotChatUserMessage.Container
           ? appearance.container
           : undefined
       }
@@ -208,7 +210,7 @@ export function CopilotUserMessage({
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace CopilotUserMessage {
+export namespace CopilotChatUserMessage {
   export const Container: React.FC<
     React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
   > = ({ children, className, ...props }) => (
@@ -344,13 +346,13 @@ export namespace CopilotUserMessage {
   };
 }
 
-CopilotUserMessage.Container.displayName = "CopilotUserMessage.Container";
-CopilotUserMessage.MessageRenderer.displayName =
+CopilotChatUserMessage.Container.displayName = "CopilotUserMessage.Container";
+CopilotChatUserMessage.MessageRenderer.displayName =
   "CopilotUserMessage.MessageRenderer";
-CopilotUserMessage.Toolbar.displayName = "CopilotUserMessage.Toolbar";
-CopilotUserMessage.CopyButton.displayName = "CopilotUserMessage.CopyButton";
-CopilotUserMessage.EditButton.displayName = "CopilotUserMessage.EditButton";
-CopilotUserMessage.BranchNavigation.displayName =
+CopilotChatUserMessage.Toolbar.displayName = "CopilotUserMessage.Toolbar";
+CopilotChatUserMessage.CopyButton.displayName = "CopilotUserMessage.CopyButton";
+CopilotChatUserMessage.EditButton.displayName = "CopilotUserMessage.EditButton";
+CopilotChatUserMessage.BranchNavigation.displayName =
   "CopilotUserMessage.BranchNavigation";
 
-export default CopilotUserMessage;
+export default CopilotChatUserMessage;

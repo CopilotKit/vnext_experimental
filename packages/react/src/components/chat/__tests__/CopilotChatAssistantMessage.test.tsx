@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
-import { CopilotAssistantMessage } from "../CopilotAssistantMessage";
+import { CopilotChatAssistantMessage } from "../CopilotChatAssistantMessage";
 import { CopilotChatContextProvider } from "../../../providers/CopilotChatContextProvider";
 import { AssistantMessage } from "@ag-ui/core";
 
@@ -46,7 +46,9 @@ describe("CopilotAssistantMessage", () => {
 
   describe("Basic rendering", () => {
     it("renders with default components and styling", () => {
-      renderWithProvider(<CopilotAssistantMessage message={basicMessage} />);
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage} />
+      );
 
       // Check if elements exist (getBy throws if not found, so this is sufficient)
       // Note: Since markdown may not render in test environment, let's check the component structure
@@ -61,7 +63,9 @@ describe("CopilotAssistantMessage", () => {
         id: "empty-message",
       };
 
-      renderWithProvider(<CopilotAssistantMessage message={emptyMessage} />);
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={emptyMessage} />
+      );
 
       // Should still render the component structure
       screen.getByRole("button", { name: /copy/i });
@@ -70,7 +74,9 @@ describe("CopilotAssistantMessage", () => {
 
   describe("Callback functionality", () => {
     it("renders only copy button when no callbacks provided", () => {
-      renderWithProvider(<CopilotAssistantMessage message={basicMessage} />);
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage} />
+      );
 
       expect(screen.getByRole("button", { name: /copy/i })).toBeDefined();
       expect(screen.queryByRole("button", { name: /thumbs up/i })).toBeNull();
@@ -81,7 +87,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("renders all buttons when all callbacks provided", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
           onThumbsDown={mockOnThumbsDown}
@@ -102,7 +108,9 @@ describe("CopilotAssistantMessage", () => {
     });
 
     it("calls copy functionality when copy button clicked", async () => {
-      renderWithProvider(<CopilotAssistantMessage message={basicMessage} />);
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage} />
+      );
 
       const copyButton = screen.getByRole("button", { name: /copy/i });
       fireEvent.click(copyButton);
@@ -114,7 +122,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("calls thumbs up callback when thumbs up button clicked", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
         />
@@ -130,7 +138,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("calls thumbs down callback when thumbs down button clicked", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsDown={mockOnThumbsDown}
         />
@@ -146,7 +154,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("calls read aloud callback when read aloud button clicked", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onReadAloud={mockOnReadAloud}
         />
@@ -162,7 +170,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("calls regenerate callback when regenerate button clicked", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onRegenerate={mockOnRegenerate}
         />
@@ -184,7 +192,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           additionalToolbarItems={additionalItems}
         />
@@ -204,7 +212,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           Container={CustomContainer}
         />
@@ -219,7 +227,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           MarkdownRenderer={CustomMarkdownRenderer}
         />
@@ -242,7 +250,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           Toolbar={CustomToolbar}
         />
@@ -265,7 +273,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           CopyButton={CustomCopyButton}
         />
@@ -288,7 +296,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
           ThumbsUpButton={CustomThumbsUpButton}
@@ -312,7 +320,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsDown={mockOnThumbsDown}
           ThumbsDownButton={CustomThumbsDownButton}
@@ -336,7 +344,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onReadAloud={mockOnReadAloud}
           ReadAloudButton={CustomReadAloudButton}
@@ -360,7 +368,7 @@ describe("CopilotAssistantMessage", () => {
       );
 
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onRegenerate={mockOnRegenerate}
           RegenerateButton={CustomRegenerateButton}
@@ -379,7 +387,7 @@ describe("CopilotAssistantMessage", () => {
   describe("Slot functionality - Custom Classes", () => {
     it("applies custom className to Container slot", () => {
       const { container } = renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           Container="custom-container-class"
         />
@@ -393,7 +401,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("applies custom className to MarkdownRenderer slot", () => {
       const { container } = renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           MarkdownRenderer="custom-markdown-class"
         />
@@ -405,7 +413,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("applies custom className to Toolbar slot", () => {
       const { container } = renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           Toolbar="custom-toolbar-class"
         />
@@ -417,7 +425,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("applies custom className to CopyButton slot", () => {
       const { container } = renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           CopyButton="custom-copy-button-class"
         />
@@ -433,7 +441,7 @@ describe("CopilotAssistantMessage", () => {
   describe("Children render prop functionality", () => {
     it("supports custom layout via children render prop", () => {
       renderWithProvider(
-        <CopilotAssistantMessage message={basicMessage}>
+        <CopilotChatAssistantMessage message={basicMessage}>
           {({ MarkdownRenderer, Toolbar, message }) => (
             <div data-testid="custom-layout">
               <h2>Custom Layout for: {message.id}</h2>
@@ -441,7 +449,7 @@ describe("CopilotAssistantMessage", () => {
               <div data-testid="custom-toolbar-wrapper">{Toolbar}</div>
             </div>
           )}
-        </CopilotAssistantMessage>
+        </CopilotChatAssistantMessage>
       );
 
       expect(screen.getByTestId("custom-layout")).toBeDefined();
@@ -455,7 +463,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("provides all slot components to children render prop", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
           onThumbsDown={mockOnThumbsDown}
@@ -485,7 +493,7 @@ describe("CopilotAssistantMessage", () => {
               </div>
             </div>
           )}
-        </CopilotAssistantMessage>
+        </CopilotChatAssistantMessage>
       );
 
       expect(screen.getByTestId("all-slots-layout")).toBeDefined();
@@ -498,7 +506,7 @@ describe("CopilotAssistantMessage", () => {
 
     it("provides callback props to children render prop", () => {
       renderWithProvider(
-        <CopilotAssistantMessage
+        <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
           onThumbsDown={mockOnThumbsDown}
@@ -521,7 +529,7 @@ describe("CopilotAssistantMessage", () => {
               </button>
             </div>
           )}
-        </CopilotAssistantMessage>
+        </CopilotChatAssistantMessage>
       );
 
       fireEvent.click(screen.getByTestId("custom-thumbs-up"));
@@ -545,7 +553,9 @@ describe("CopilotAssistantMessage", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      renderWithProvider(<CopilotAssistantMessage message={basicMessage} />);
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage} />
+      );
 
       const copyButton = screen.getByRole("button", { name: /copy/i });
       fireEvent.click(copyButton);
@@ -569,7 +579,7 @@ describe("CopilotAssistantMessage", () => {
       };
 
       renderWithProvider(
-        <CopilotAssistantMessage message={nullContentMessage} />
+        <CopilotChatAssistantMessage message={nullContentMessage} />
       );
 
       // Should still render the component structure

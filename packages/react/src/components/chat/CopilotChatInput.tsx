@@ -31,7 +31,7 @@ import {
   AudioRecorderComponent,
   AudioRecorderControls,
 } from "@/types/audio-recorder";
-import { WebAudioRecorder } from "./WebAudioRecorder";
+import { CopilotChatAudioRecorder } from "./CopilotChatAudioRecorder";
 import { renderSlot } from "@/lib/slots";
 import { Slots } from "@/types/slots";
 
@@ -176,9 +176,13 @@ export function CopilotChatInput({
     autoFocus: autoFocus,
   });
 
-  const BoundAudioRecorder = renderSlot(AudioRecorder, WebAudioRecorder, {
-    ref: audioRecorderRef,
-  });
+  const BoundAudioRecorder = renderSlot(
+    AudioRecorder,
+    CopilotChatAudioRecorder,
+    {
+      ref: audioRecorderRef,
+    }
+  );
 
   const BoundSendButton = renderSlot(SendButton, CopilotChatInput.SendButton, {
     onClick: send,
@@ -600,7 +604,7 @@ export namespace CopilotChatInput {
     }
   );
 
-  export const AudioRecorder = WebAudioRecorder;
+  export const AudioRecorder = CopilotChatAudioRecorder;
 }
 
 CopilotChatInput.TextArea.displayName = "CopilotChatInput.TextArea";
