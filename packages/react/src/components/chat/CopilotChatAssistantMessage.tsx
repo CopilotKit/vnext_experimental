@@ -23,8 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
-import { Slots } from "@/types/slots";
-import { renderSlot } from "@/lib/slots";
+import { Slots, renderSlot } from "@/lib/slots";
 import { completePartialMarkdown } from "@/lib/markdown";
 
 export type CopilotChatAssistantMessageSlots = {

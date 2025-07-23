@@ -32,8 +32,7 @@ import {
   AudioRecorderControls,
 } from "@/types/audio-recorder";
 import { CopilotChatAudioRecorder } from "./CopilotChatAudioRecorder";
-import { renderSlot } from "@/lib/slots";
-import { Slots } from "@/types/slots";
+import { renderSlot, Slots } from "@/lib/slots";
 
 export type CopilotChatInputSlots = {
   TextArea: React.ComponentType<
