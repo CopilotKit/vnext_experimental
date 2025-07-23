@@ -25,31 +25,31 @@ export type WithSlots<
   children?: (props: SlotElements<S> & Rest) => React.ReactNode;
 } & Rest;
 
-export function renderSlot<C extends React.ComponentType<any>>(
+export function renderSlot<
+  C extends React.ComponentType<any>,
+  P = React.ComponentProps<C>,
+>(
   slot: SlotValue<C> | undefined,
   DefaultComponent: C,
-  props: Omit<React.ComponentProps<C>, "className">
+  props: P
 ): React.ReactElement {
   if (typeof slot === "string") {
-    return (
-      // @ts-expect-error
-      <DefaultComponent
-        {...(props as React.ComponentProps<C>)}
-        className={slot}
-      />
-    );
+    return React.createElement(DefaultComponent, {
+      ...(props as P),
+      className: slot,
+    });
   }
   if (typeof slot === "function") {
     const Comp = slot as C;
-    return <Comp {...(props as React.ComponentProps<C>)} />;
+    return React.createElement(Comp, props as P);
   }
 
   if (slot && typeof slot === "object" && !React.isValidElement(slot)) {
-    return (
-      // @ts-expect-error
-      <DefaultComponent {...(props as React.ComponentProps<C>)} {...slot} />
-    );
+    return React.createElement(DefaultComponent, {
+      ...(props as P),
+      ...slot,
+    });
   }
 
-  return <DefaultComponent {...(props as React.ComponentProps<C>)} />;
+  return React.createElement(DefaultComponent, props as P);
 }
