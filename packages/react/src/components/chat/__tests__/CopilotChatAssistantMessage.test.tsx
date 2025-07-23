@@ -214,7 +214,7 @@ describe("CopilotAssistantMessage", () => {
       renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          Container={CustomContainer}
+          container={CustomContainer}
         />
       );
 
@@ -229,7 +229,7 @@ describe("CopilotAssistantMessage", () => {
       renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          MarkdownRenderer={CustomMarkdownRenderer}
+          markdownRenderer={CustomMarkdownRenderer}
         />
       );
 
@@ -252,7 +252,7 @@ describe("CopilotAssistantMessage", () => {
       renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          Toolbar={CustomToolbar}
+          toolbar={CustomToolbar}
         />
       );
 
@@ -275,7 +275,7 @@ describe("CopilotAssistantMessage", () => {
       renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          CopyButton={CustomCopyButton}
+          copyButton={CustomCopyButton}
         />
       );
 
@@ -299,7 +299,7 @@ describe("CopilotAssistantMessage", () => {
         <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsUp={mockOnThumbsUp}
-          ThumbsUpButton={CustomThumbsUpButton}
+          thumbsUpButton={CustomThumbsUpButton}
         />
       );
 
@@ -323,7 +323,7 @@ describe("CopilotAssistantMessage", () => {
         <CopilotChatAssistantMessage
           message={basicMessage}
           onThumbsDown={mockOnThumbsDown}
-          ThumbsDownButton={CustomThumbsDownButton}
+          thumbsDownButton={CustomThumbsDownButton}
         />
       );
 
@@ -347,7 +347,7 @@ describe("CopilotAssistantMessage", () => {
         <CopilotChatAssistantMessage
           message={basicMessage}
           onReadAloud={mockOnReadAloud}
-          ReadAloudButton={CustomReadAloudButton}
+          readAloudButton={CustomReadAloudButton}
         />
       );
 
@@ -371,7 +371,7 @@ describe("CopilotAssistantMessage", () => {
         <CopilotChatAssistantMessage
           message={basicMessage}
           onRegenerate={mockOnRegenerate}
-          RegenerateButton={CustomRegenerateButton}
+          regenerateButton={CustomRegenerateButton}
         />
       );
 
@@ -389,7 +389,7 @@ describe("CopilotAssistantMessage", () => {
       const { container } = renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          Container="custom-container-class"
+          container="custom-container-class"
         />
       );
 
@@ -403,7 +403,7 @@ describe("CopilotAssistantMessage", () => {
       const { container } = renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          MarkdownRenderer="custom-markdown-class"
+          markdownRenderer="custom-markdown-class"
         />
       );
 
@@ -415,7 +415,7 @@ describe("CopilotAssistantMessage", () => {
       const { container } = renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          Toolbar="custom-toolbar-class"
+          toolbar="custom-toolbar-class"
         />
       );
 
@@ -427,7 +427,7 @@ describe("CopilotAssistantMessage", () => {
       const { container } = renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          CopyButton="custom-copy-button-class"
+          copyButton="custom-copy-button-class"
         />
       );
 
@@ -442,7 +442,11 @@ describe("CopilotAssistantMessage", () => {
     it("supports custom layout via children render prop", () => {
       renderWithProvider(
         <CopilotChatAssistantMessage message={basicMessage}>
-          {({ MarkdownRenderer, Toolbar, message }) => (
+          {({
+            markdownRenderer: MarkdownRenderer,
+            toolbar: Toolbar,
+            message,
+          }) => (
             <div data-testid="custom-layout">
               <h2>Custom Layout for: {message.id}</h2>
               {MarkdownRenderer}
@@ -471,14 +475,14 @@ describe("CopilotAssistantMessage", () => {
           onRegenerate={mockOnRegenerate}
         >
           {({
-            MarkdownRenderer,
-            Toolbar,
-            CopyButton,
-            ThumbsUpButton,
-            ThumbsDownButton,
-            ReadAloudButton,
-            RegenerateButton,
-            Container,
+            markdownRenderer: MarkdownRenderer,
+            toolbar: Toolbar,
+            copyButton: CopyButton,
+            thumbsUpButton: ThumbsUpButton,
+            thumbsDownButton: ThumbsDownButton,
+            readAloudButton: ReadAloudButton,
+            regenerateButton: RegenerateButton,
+            container: Container,
           }) => (
             <div data-testid="all-slots-layout">
               {Container}

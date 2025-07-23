@@ -23,50 +23,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
-import { Slots, renderSlot } from "@/lib/slots";
+import { WithSlots, renderSlot } from "@/lib/slots";
 import { completePartialMarkdown } from "@/lib/markdown";
 
-export type CopilotChatAssistantMessageSlots = {
-  Container: React.ComponentType<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  >;
-  MarkdownRenderer: React.ComponentType<{
-    content: string;
-    className?: string;
-  }>;
-  Toolbar: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
-  CopyButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  ThumbsUpButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  ThumbsDownButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  ReadAloudButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  RegenerateButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-};
-
-export type CopilotChatAssistantMessageCallbacks = {
-  onThumbsUp?: () => void;
-  onThumbsDown?: () => void;
-  onReadAloud?: () => void;
-  onRegenerate?: () => void;
-};
-
-export type CopilotChatAssistantMessageOptions = {
-  message: AssistantMessage;
-  additionalToolbarItems?: React.ReactNode;
-};
-
-export type CopilotChatAssistantMessageProps = Slots<
-  CopilotChatAssistantMessageSlots,
-  CopilotChatAssistantMessageOptions & CopilotChatAssistantMessageCallbacks
+export type CopilotChatAssistantMessageProps = WithSlots<
+  {
+    container: typeof CopilotChatAssistantMessage.Container;
+    markdownRenderer: typeof CopilotChatAssistantMessage.MarkdownRenderer;
+    toolbar: typeof CopilotChatAssistantMessage.Toolbar;
+    copyButton: typeof CopilotChatAssistantMessage.CopyButton;
+    thumbsUpButton: typeof CopilotChatAssistantMessage.ThumbsUpButton;
+    thumbsDownButton: typeof CopilotChatAssistantMessage.ThumbsDownButton;
+    readAloudButton: typeof CopilotChatAssistantMessage.ReadAloudButton;
+    regenerateButton: typeof CopilotChatAssistantMessage.RegenerateButton;
+  },
+  {
+    onThumbsUp?: () => void;
+    onThumbsDown?: () => void;
+    onReadAloud?: () => void;
+    onRegenerate?: () => void;
+    message: AssistantMessage;
+    additionalToolbarItems?: React.ReactNode;
+  }
 >;
 
 export function CopilotChatAssistantMessage({
@@ -76,26 +54,26 @@ export function CopilotChatAssistantMessage({
   onReadAloud,
   onRegenerate,
   additionalToolbarItems,
-  Container,
-  MarkdownRenderer,
-  Toolbar,
-  CopyButton,
-  ThumbsUpButton,
-  ThumbsDownButton,
-  ReadAloudButton,
-  RegenerateButton,
+  container,
+  markdownRenderer,
+  toolbar,
+  copyButton,
+  thumbsUpButton,
+  thumbsDownButton,
+  readAloudButton,
+  regenerateButton,
   children,
 }: CopilotChatAssistantMessageProps) {
-  const BoundMarkdownRenderer = renderSlot(
-    MarkdownRenderer,
+  const boundMarkdownRenderer = renderSlot(
+    markdownRenderer,
     CopilotChatAssistantMessage.MarkdownRenderer,
     {
       content: message.content || "",
     }
   );
 
-  const BoundCopyButton = renderSlot(
-    CopyButton,
+  const boundCopyButton = renderSlot(
+    copyButton,
     CopilotChatAssistantMessage.CopyButton,
     {
       onClick: async () => {
@@ -110,49 +88,49 @@ export function CopilotChatAssistantMessage({
     }
   );
 
-  const BoundThumbsUpButton = renderSlot(
-    ThumbsUpButton,
+  const boundThumbsUpButton = renderSlot(
+    thumbsUpButton,
     CopilotChatAssistantMessage.ThumbsUpButton,
     {
       onClick: onThumbsUp,
     }
   );
 
-  const BoundThumbsDownButton = renderSlot(
-    ThumbsDownButton,
+  const boundThumbsDownButton = renderSlot(
+    thumbsDownButton,
     CopilotChatAssistantMessage.ThumbsDownButton,
     {
       onClick: onThumbsDown,
     }
   );
 
-  const BoundReadAloudButton = renderSlot(
-    ReadAloudButton,
+  const boundReadAloudButton = renderSlot(
+    readAloudButton,
     CopilotChatAssistantMessage.ReadAloudButton,
     {
       onClick: onReadAloud,
     }
   );
 
-  const BoundRegenerateButton = renderSlot(
-    RegenerateButton,
+  const boundRegenerateButton = renderSlot(
+    regenerateButton,
     CopilotChatAssistantMessage.RegenerateButton,
     {
       onClick: onRegenerate,
     }
   );
 
-  const BoundToolbar = renderSlot(
-    Toolbar,
+  const boundToolbar = renderSlot(
+    toolbar,
     CopilotChatAssistantMessage.Toolbar,
     {
       children: (
         <div className="flex items-center gap-1">
-          {BoundCopyButton}
-          {onThumbsUp && BoundThumbsUpButton}
-          {onThumbsDown && BoundThumbsDownButton}
-          {onReadAloud && BoundReadAloudButton}
-          {onRegenerate && BoundRegenerateButton}
+          {boundCopyButton}
+          {(onThumbsUp || thumbsUpButton) && boundThumbsUpButton}
+          {(onThumbsDown || thumbsDownButton) && boundThumbsDownButton}
+          {(onReadAloud || readAloudButton) && boundReadAloudButton}
+          {(onRegenerate || regenerateButton) && boundRegenerateButton}
           {additionalToolbarItems}
         </div>
       ),
@@ -160,13 +138,13 @@ export function CopilotChatAssistantMessage({
   );
 
   const BoundContainer = renderSlot(
-    Container,
+    container,
     CopilotChatAssistantMessage.Container,
     {
       children: (
         <>
-          {BoundMarkdownRenderer}
-          {BoundToolbar}
+          {boundMarkdownRenderer}
+          {boundToolbar}
         </>
       ),
     }
@@ -176,14 +154,14 @@ export function CopilotChatAssistantMessage({
     return (
       <>
         {children({
-          MarkdownRenderer: BoundMarkdownRenderer,
-          Toolbar: BoundToolbar,
-          CopyButton: BoundCopyButton,
-          ThumbsUpButton: BoundThumbsUpButton,
-          ThumbsDownButton: BoundThumbsDownButton,
-          ReadAloudButton: BoundReadAloudButton,
-          RegenerateButton: BoundRegenerateButton,
-          Container: BoundContainer,
+          markdownRenderer: boundMarkdownRenderer,
+          toolbar: boundToolbar,
+          copyButton: boundCopyButton,
+          thumbsUpButton: boundThumbsUpButton,
+          thumbsDownButton: boundThumbsDownButton,
+          readAloudButton: boundReadAloudButton,
+          regenerateButton: boundRegenerateButton,
+          container: BoundContainer,
           message,
           onThumbsUp,
           onThumbsDown,
@@ -304,10 +282,9 @@ export namespace CopilotChatAssistantMessage {
     </div>
   );
 
-  export const MarkdownRenderer: React.FC<{
-    content: string;
-    className?: string;
-  }> = ({ content, className }) => (
+  export const MarkdownRenderer: React.FC<
+    React.HTMLAttributes<HTMLDivElement> & { content: string }
+  > = ({ content, className }) => (
     <div className={className}>
       <MarkdownHooks
         /* async plugins are now fine ✨ */
@@ -344,7 +321,7 @@ export namespace CopilotChatAssistantMessage {
           },
         }}
       >
-        {completePartialMarkdown(content)}
+        {completePartialMarkdown(content || "")}
       </MarkdownHooks>
     </div>
   );

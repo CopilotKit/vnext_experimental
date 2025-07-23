@@ -32,52 +32,7 @@ import {
   AudioRecorderControls,
 } from "@/types/audio-recorder";
 import { CopilotChatAudioRecorder } from "./CopilotChatAudioRecorder";
-import { renderSlot, Slots } from "@/lib/slots";
-
-export type CopilotChatInputSlots = {
-  TextArea: React.ComponentType<
-    React.TextareaHTMLAttributes<HTMLTextAreaElement> &
-      React.RefAttributes<HTMLTextAreaElement>
-  >;
-  SendButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  StartTranscribeButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  CancelTranscribeButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  FinishTranscribeButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  >;
-  AddButton: React.ComponentType<React.ButtonHTMLAttributes<HTMLButtonElement>>;
-  ToolsButton: React.ComponentType<
-    React.ButtonHTMLAttributes<HTMLButtonElement> & {
-      toolsMenu?: (ToolsMenuItem | "-")[];
-    }
-  >;
-  Container: React.ComponentType<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  >;
-  Toolbar: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
-  AudioRecorder: AudioRecorderComponent;
-};
-
-export type CopilotChatInputCallbacks = {
-  onSend: (text: string) => void;
-  onStartTranscribe?: () => void;
-  onCancelTranscribe?: () => void;
-  onFinishTranscribe?: () => void;
-  onAddFile?: () => void;
-};
-
-export type CopilotChatInputOptions = {
-  mode?: "input" | "transcribe" | "processing";
-  toolsMenu?: (ToolsMenuItem | "-")[];
-  autoFocus?: boolean;
-  additionalToolbarItems?: React.ReactNode;
-};
+import { renderSlot, WithSlots } from "@/lib/slots";
 
 export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
@@ -94,9 +49,30 @@ export type ToolsMenuItem = {
     }
 );
 
-export type CopilotChatInputProps = Slots<
-  CopilotChatInputSlots,
-  CopilotChatInputOptions & CopilotChatInputCallbacks
+export type CopilotChatInputProps = WithSlots<
+  {
+    TextArea: typeof CopilotChatInput.TextArea;
+    SendButton: typeof CopilotChatInput.SendButton;
+    StartTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
+    CancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
+    FinishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
+    AddButton: typeof CopilotChatInput.AddButton;
+    ToolsButton: typeof CopilotChatInput.ToolsButton;
+    Container: typeof CopilotChatInput.Container;
+    Toolbar: typeof CopilotChatInput.Toolbar;
+    AudioRecorder: AudioRecorderComponent;
+  },
+  {
+    mode?: CopilotChatInputMode;
+    toolsMenu?: (ToolsMenuItem | "-")[];
+    autoFocus?: boolean;
+    additionalToolbarItems?: React.ReactNode;
+    onSend: (text: string) => void;
+    onStartTranscribe?: () => void;
+    onCancelTranscribe?: () => void;
+    onFinishTranscribe?: () => void;
+    onAddFile?: () => void;
+  }
 >;
 
 export function CopilotChatInput({

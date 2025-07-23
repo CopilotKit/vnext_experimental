@@ -1,31 +1,55 @@
 import React from "react";
 
-export type SlotComponentOrClassName<ComponentType> = ComponentType | string;
+/** Utility: Create a component type with specific props omitted */
+export type OmitSlotProps<
+  C extends React.ComponentType<any>,
+  K extends keyof React.ComponentProps<C>,
+> = React.ComponentType<Omit<React.ComponentProps<C>, K>>;
 
-export type SlotValue<P> = React.ComponentType<P> | string | Partial<P>;
+/** Existing union (unchanged) */
+export type SlotValue<C extends React.ComponentType<any>> =
+  | C
+  | string
+  | Partial<React.ComponentProps<C>>;
 
-export type Slots<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  S extends Record<string, SlotComponentOrClassName<any>>,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  P = {},
+/** Utility: concrete React elements for every slot */
+type SlotElements<S> = { [K in keyof S]: React.ReactElement };
+
+export type WithSlots<
+  S extends Record<string, React.ComponentType<any>>,
+  Rest = {},
 > = {
-  [Name in keyof S]?: SlotComponentOrClassName<S[Name]>;
-} & P & {
-    children?: (
-      props: { [K in keyof S]: React.ReactElement } & P
-    ) => React.ReactNode;
-  };
+  /** Per‑slot overrides */
+  [K in keyof S]?: SlotValue<S[K]>;
+} & {
+  children?: (props: SlotElements<S> & Rest) => React.ReactNode;
+} & Rest;
 
-export function renderSlot<P extends { className?: string }>(
-  slot: SlotComponentOrClassName<React.ComponentType<P>> | undefined,
-  DefaultComponent: React.ComponentType<P>,
-  props: Omit<P, "className">
+export function renderSlot<C extends React.ComponentType<any>>(
+  slot: SlotValue<C> | undefined,
+  DefaultComponent: C,
+  props: Omit<React.ComponentProps<C>, "className">
 ): React.ReactElement {
-  const [Component, className] =
-    typeof slot === "string"
-      ? [DefaultComponent, slot]
-      : [slot ?? DefaultComponent, undefined];
+  if (typeof slot === "string") {
+    return (
+      // @ts-expect-error
+      <DefaultComponent
+        {...(props as React.ComponentProps<C>)}
+        className={slot}
+      />
+    );
+  }
+  if (typeof slot === "function") {
+    const Comp = slot as C;
+    return <Comp {...(props as React.ComponentProps<C>)} />;
+  }
 
-  return <Component {...(props as P)} className={className} />;
+  if (slot && typeof slot === "object" && !React.isValidElement(slot)) {
+    return (
+      // @ts-expect-error
+      <DefaultComponent {...(props as React.ComponentProps<C>)} {...slot} />
+    );
+  }
+
+  return <DefaultComponent {...(props as React.ComponentProps<C>)} />;
 }
