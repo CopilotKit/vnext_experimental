@@ -20,8 +20,11 @@
   },
   "devDependencies": {
     "@copilotkit/react": "workspace:*",
+    "@copilotkit/typescript-config": "workspace:*",
     "@storybook/addon-themes": "^8",
     "@types/node": "^22",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "concurrently": "^9.1.0",
     "typescript": "5.8.2"
   }

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useState } from "react";
 
 // Default labels
-const defaultLabels = {
+export const CopilotChatDefaultLabels = {
   chatInputPlaceholder: "Type a message...",
   chatInputToolbarStartTranscribeButtonLabel: "Transcribe",
   chatInputToolbarCancelTranscribeButtonLabel: "Cancel",
@@ -17,7 +17,7 @@ const defaultLabels = {
   assistantMessageToolbarRegenerateLabel: "Regenerate",
 };
 
-export type CopilotChatLabels = typeof defaultLabels;
+export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
 
 // Define the full context interface
 export interface CopilotChatContextValue {
@@ -44,7 +44,7 @@ export const CopilotChatContextProvider: React.FC<
 
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
-    ...defaultLabels,
+    ...CopilotChatDefaultLabels,
     ...labels,
   };
 

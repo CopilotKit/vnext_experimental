@@ -10,7 +10,10 @@ import React, {
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 
-import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
+import {
+  CopilotChatLabels,
+  useCopilotChatContext,
+} from "@/providers/CopilotChatContextProvider";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -304,9 +307,13 @@ export namespace CopilotChatInput {
     </div>
   );
 
-  export const StartTranscribeButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  export const ToolbarButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      icon: React.ReactNode;
+      labelKey: keyof CopilotChatLabels;
+      defaultClassName?: string;
+    }
+  > = ({ icon, labelKey, defaultClassName, className, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <Tooltip>
@@ -315,90 +322,62 @@ export namespace CopilotChatInput {
             type="button"
             variant="chatInputToolbarSecondary"
             size="chatInputToolbarIcon"
-            className={twMerge("mr-2", className)}
+            className={twMerge(defaultClassName, className)}
             {...props}
           >
-            <Mic className="size-[18px]" />
+            {icon}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.chatInputToolbarStartTranscribeButtonLabel}</p>
+          <p>{labels[labelKey]}</p>
         </TooltipContent>
       </Tooltip>
     );
   };
+
+  export const StartTranscribeButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  > = (props) => (
+    <ToolbarButton
+      icon={<Mic className="size-[18px]" />}
+      labelKey="chatInputToolbarStartTranscribeButtonLabel"
+      defaultClassName="mr-2"
+      {...props}
+    />
+  );
 
   export const CancelTranscribeButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
-    const { labels } = useCopilotChatContext();
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="chatInputToolbarSecondary"
-            size="chatInputToolbarIcon"
-            className={twMerge("mr-2", className)}
-            {...props}
-          >
-            <X className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.chatInputToolbarCancelTranscribeButtonLabel}</p>
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
+  > = (props) => (
+    <ToolbarButton
+      icon={<X className="size-[18px]" />}
+      labelKey="chatInputToolbarCancelTranscribeButtonLabel"
+      defaultClassName="mr-2"
+      {...props}
+    />
+  );
 
   export const FinishTranscribeButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
-    const { labels } = useCopilotChatContext();
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="chatInputToolbarSecondary"
-            size="chatInputToolbarIcon"
-            className={twMerge("mr-[10px]", className)}
-            {...props}
-          >
-            <Check className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.chatInputToolbarFinishTranscribeButtonLabel}</p>
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
+  > = (props) => (
+    <ToolbarButton
+      icon={<Check className="size-[18px]" />}
+      labelKey="chatInputToolbarFinishTranscribeButtonLabel"
+      defaultClassName="mr-[10px]"
+      {...props}
+    />
+  );
 
   export const AddButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
-    const { labels } = useCopilotChatContext();
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="chatInputToolbarSecondary"
-            size="chatInputToolbarIcon"
-            className={twMerge("ml-2", className)}
-            {...props}
-          >
-            <Plus className="size-[20px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{labels.chatInputToolbarAddButtonLabel}</p>
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
+  > = (props) => (
+    <ToolbarButton
+      icon={<Plus className="size-[20px]" />}
+      labelKey="chatInputToolbarAddButtonLabel"
+      defaultClassName="ml-2"
+      {...props}
+    />
+  );
 
   export const ToolsButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -571,6 +550,7 @@ export namespace CopilotChatInput {
 
 CopilotChatInput.TextArea.displayName = "CopilotChatInput.TextArea";
 CopilotChatInput.SendButton.displayName = "CopilotChatInput.SendButton";
+CopilotChatInput.ToolbarButton.displayName = "CopilotChatInput.ToolbarButton";
 CopilotChatInput.StartTranscribeButton.displayName =
   "CopilotChatInput.StartTranscribeButton";
 CopilotChatInput.CancelTranscribeButton.displayName =

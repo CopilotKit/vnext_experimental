@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
-  CopilotUserMessage,
+  CopilotChatUserMessage,
   CopilotChatContextProvider,
-  type CopilotUserMessageProps,
+  type CopilotChatUserMessageProps,
 } from "@copilotkit/react";
 
 // Simple default message
@@ -64,7 +64,7 @@ const shortMessage = {
 
 const meta = {
   title: "UI/CopilotUserMessage",
-  component: CopilotUserMessage,
+  component: CopilotChatUserMessage,
   decorators: [
     (Story) => (
       <div
@@ -88,7 +88,7 @@ const meta = {
     message: simpleMessage,
     onEdit: () => console.log("Edit clicked!"),
   },
-} satisfies Meta<typeof CopilotUserMessage>;
+} satisfies Meta<typeof CopilotChatUserMessage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
