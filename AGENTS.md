@@ -30,7 +30,7 @@ Use `pnpm format` before committing.
 
 ## ✅ Testing
 
-- Jest + ts-jest. Tests live under `__tests__/` with `.test.ts` suffix.
+- Vitest. Tests live under `__tests__/` with `.test.ts` suffix.
 - Run all tests with `pnpm test`.
 
 ## 🔀 Pull-request etiquette

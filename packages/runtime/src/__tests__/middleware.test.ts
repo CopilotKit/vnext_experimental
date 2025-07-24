@@ -1,9 +1,11 @@
+import { vi, type MockedFunction } from "vitest";
 import { runHandlerWithMiddlewareAndLogging } from "../endpoint";
 import { CopilotKitRuntime } from "../runtime";
 import { CopilotKitRequestType } from "../handler";
 import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
 import { WebhookStage } from "../middleware";
+import { afterEach, describe, expect, it } from "vitest";
 
 const dummyRuntime = (opts: Partial<CopilotKitRuntime> = {}) => {
   const runtime = new CopilotKitRuntime({
@@ -15,7 +17,7 @@ const dummyRuntime = (opts: Partial<CopilotKitRuntime> = {}) => {
 
 describe("runHandlerWithMiddlewareAndLogging", () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     // restore global fetch if it was mocked
     if (fetchMock) {
       global.fetch = originalFetch;
@@ -23,11 +25,11 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   });
 
   let originalFetch: typeof fetch;
-  let fetchMock: jest.Mock | null = null;
+  let fetchMock: MockedFunction<typeof fetch> | null = null;
 
   const setupFetchMock = (beforeUrl: string, afterUrl: string) => {
     originalFetch = global.fetch;
-    fetchMock = jest.fn(async (url: string) => {
+    fetchMock = vi.fn(async (url: string) => {
       if (url === beforeUrl) {
         const body = {
           headers: { "x-modified": "yes" },
@@ -53,9 +55,9 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const originalRequest = new Request("https://example.com/test");
     const modifiedRequest = new Request("https://example.com/modified");
 
-    const before = jest.fn().mockResolvedValue(modifiedRequest);
-    const after = jest.fn().mockResolvedValue(undefined);
-    const handler = jest.fn(async ({ request }) => new Response(request.url));
+    const before = vi.fn().mockResolvedValue(modifiedRequest);
+    const after = vi.fn().mockResolvedValue(undefined);
+    const handler = vi.fn(async ({ request }) => new Response(request.url));
 
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
@@ -85,14 +87,14 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
 
   it("logs and rethrows error from beforeRequestMiddleware", async () => {
     const error = new Error("before");
-    const before = jest.fn().mockRejectedValue(error);
-    const handler = jest.fn();
-    const after = jest.fn();
+    const before = vi.fn().mockRejectedValue(error);
+    const handler = vi.fn();
+    const after = vi.fn();
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
       afterRequestMiddleware: after,
     });
-    const logSpy = jest
+    const logSpy = vi
       .spyOn(logger, "error")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
@@ -120,14 +122,14 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
 
   it("logs and rethrows error from handler", async () => {
     const error = new Error("handler");
-    const before = jest.fn();
-    const handler = jest.fn().mockRejectedValue(error);
-    const after = jest.fn();
+    const before = vi.fn();
+    const handler = vi.fn().mockRejectedValue(error);
+    const after = vi.fn();
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
       afterRequestMiddleware: after,
     });
-    const logSpy = jest
+    const logSpy = vi
       .spyOn(logger, "error")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
@@ -154,14 +156,14 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
 
   it("logs but does not rethrow error from afterRequestMiddleware", async () => {
     const error = new Error("after");
-    const before = jest.fn();
-    const handler = jest.fn().mockResolvedValue(new Response("ok"));
-    const after = jest.fn().mockRejectedValue(error);
+    const before = vi.fn();
+    const handler = vi.fn().mockResolvedValue(new Response("ok"));
+    const after = vi.fn().mockRejectedValue(error);
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
       afterRequestMiddleware: after,
     });
-    const logSpy = jest
+    const logSpy = vi
       .spyOn(logger, "error")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
@@ -231,8 +233,11 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     // Assert payload for before-hook
     const beforeCall = fetchMock!.mock.calls[0];
     expect(beforeCall[0]).toBe(beforeURL);
-    const beforePayload = JSON.parse(beforeCall[1].body);
-    expect(beforeCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
+    expect(beforeCall[1]).toBeDefined();
+    expect(beforeCall[1]!.body).toBeDefined();
+    const beforePayload = JSON.parse(beforeCall[1]!.body as string);
+    expect(beforeCall[1]!.headers).toBeDefined();
+    expect(beforeCall[1]!.headers!["X-CopilotKit-Webhook-Stage"]).toBe(
       WebhookStage.BeforeRequest
     );
     expect(beforePayload.method).toBe("POST");
@@ -242,8 +247,11 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     // Assert payload for after-hook
     const afterCall = fetchMock!.mock.calls[1];
     expect(afterCall[0]).toBe(afterURL);
-    const afterPayload = JSON.parse(afterCall[1].body);
-    expect(afterCall[1].headers["X-CopilotKit-Webhook-Stage"]).toBe(
+    expect(afterCall[1]).toBeDefined();
+    expect(afterCall[1]!.body).toBeDefined();
+    const afterPayload = JSON.parse(afterCall[1]!.body as string);
+    expect(afterCall[1]!.headers).toBeDefined();
+    expect(afterCall[1]!.headers!["X-CopilotKit-Webhook-Stage"]).toBe(
       WebhookStage.AfterRequest
     );
     expect(afterPayload.status).toBe(200);
@@ -256,7 +264,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     const beforeURL = "https://hooks.example.com/before-204";
     const afterURL = "https://hooks.example.com/after";
     originalFetch = global.fetch;
-    fetchMock = jest.fn(async (url: string) => {
+    fetchMock = vi.fn(async (url: string) => {
       if (url === beforeURL) {
         return new Response(null, { status: 204 });
       }
@@ -274,7 +282,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       afterRequestMiddleware: afterURL,
     });
 
-    const handler = jest.fn(async ({ request }) => new Response(request.url));
+    const handler = vi.fn(async ({ request }) => new Response(request.url));
 
     const request = new Request("https://example.com/test");
     const response = await runHandlerWithMiddlewareAndLogging({
@@ -296,7 +304,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   it("returns 4xx response from before webhook to client", async () => {
     const beforeURL = "https://hooks.example.com/before-4xx";
     originalFetch = global.fetch;
-    fetchMock = jest.fn(async (url: string) => {
+    fetchMock = vi.fn(async (url: string) => {
       if (url === beforeURL) {
         return new Response(JSON.stringify({ error: "nope" }), {
           status: 403,
@@ -313,7 +321,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const handler = jest.fn();
+    const handler = vi.fn();
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/deny"),
@@ -329,7 +337,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   it("returns 502 when before webhook fails", async () => {
     const beforeURL = "https://hooks.example.com/before-fail";
     originalFetch = global.fetch;
-    fetchMock = jest.fn(async (url: string) => {
+    fetchMock = vi.fn(async (url: string) => {
       if (url === beforeURL) {
         return new Response(null, { status: 500 });
       }
@@ -347,21 +355,21 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       runtime,
       request: new Request("https://example.com/fail"),
       requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler: jest.fn(),
+      handler: vi.fn(),
     });
 
     expect(response.status).toBe(502);
   });
 
   it("supports Response throwing from function middleware", async () => {
-    const before = jest.fn(() => {
+    const before = vi.fn(() => {
       throw new Response("blocked", { status: 401 });
     });
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
     });
 
-    const handler = jest.fn();
+    const handler = vi.fn();
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,
       request: new Request("https://example.com/func-block"),
@@ -375,10 +383,10 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   });
 
   it("keeps request unchanged when function middleware returns void", async () => {
-    const before = jest.fn().mockResolvedValue(undefined);
+    const before = vi.fn().mockResolvedValue(undefined);
     const runtime = dummyRuntime({ beforeRequestMiddleware: before });
 
-    const handler = jest.fn(async ({ request }) => new Response(request.url));
+    const handler = vi.fn(async ({ request }) => new Response(request.url));
     const request = new Request("https://example.com/original");
     const response = await runHandlerWithMiddlewareAndLogging({
       runtime,

@@ -63,7 +63,7 @@ describe("handleGetRuntimeInfo", () => {
 
     const runtime = new CopilotKitRuntime({
       agents: {
-        testAgent: mockAgent as any,
+        testAgent: mockAgent as AbstractAgent,
       },
       transcriptionService: new MockTranscriptionService(),
     });
@@ -95,7 +95,7 @@ describe("handleGetRuntimeInfo", () => {
         throw new Error("Failed to get agents");
       },
       transcriptionService: null,
-    } as any;
+    } as Partial<CopilotKitRuntime>;
 
     const response = await handleGetRuntimeInfo({
       runtime,

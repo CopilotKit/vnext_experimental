@@ -90,17 +90,21 @@ To depend on another package in the workspace:
 
 ## Testing Strategy
 
-### Jest Configuration
+### Vitest Configuration
 
-Each package has its own Jest configuration that extends from shared presets:
+Each package has its own Vitest configuration:
 
 ```javascript
-// jest.config.js
-module.exports = {
-  preset: "@copilotkit/jest-config",
-  testEnvironment: "node",
-  // package-specific overrides
-};
+// vitest.config.mjs
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node", // or "jsdom" for React components
+    globals: true,
+    // package-specific settings
+  },
+});
 ```
 
 ### Running Tests
@@ -210,7 +214,7 @@ Recommended VS Code extensions:
 - TypeScript and JavaScript Language Features
 - ESLint
 - Prettier
-- Jest Runner
+- Vitest Extension
 
 ### Debug Configuration
 
@@ -222,8 +226,8 @@ Recommended VS Code extensions:
       "type": "node",
       "request": "launch",
       "name": "Debug Tests",
-      "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["--runInBand"],
+      "program": "${workspaceFolder}/node_modules/.bin/vitest",
+      "args": ["run"],
       "console": "integratedTerminal"
     }
   ]
