@@ -9,203 +9,124 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { renderSlot, WithSlots } from "@/lib/slots";
 
-export interface CopilotChatUserMessageProps {
-  message: UserMessage;
-
-  /** Called when user clicks edit button. If provided, button is shown. */
-  onEdit?: () => void;
-
-  /** Current branch number (0-indexed). If provided, enables branch functionality. */
-  branchIndex?: number;
-
-  /** Total number of branches available. */
-  numberOfBranches?: number;
-
-  /** Called when user wants to switch to a different branch. */
-  onSwitchToBranch?: (branchIndex: number) => void;
-
-  /** Additional custom toolbar items to render alongside the default buttons. */
-  additionalToolbarItems?: React.ReactNode;
-
-  /**
-   * Component slots — override one or many:
-   * - Container: wrapper around everything (default is <div>)
-   * - MessageRenderer: the message rendering component
-   * - Toolbar: bottom toolbar area (default is <div>)
-   * - CopyButton: copy message button
-   * - EditButton: edit message button
-   * - BranchNavigation: branch navigation component
-   */
-  components?: {
-    Container?: React.ComponentType<
-      React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-    >;
-    MessageRenderer?: React.ComponentType<{
-      content: string;
-      className?: string;
-    }>;
-    Toolbar?: React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
-    CopyButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    EditButton?: React.ComponentType<
-      React.ButtonHTMLAttributes<HTMLButtonElement>
-    >;
-    BranchNavigation?: React.ComponentType<
-      React.HTMLAttributes<HTMLDivElement>
-    >;
-  };
-
-  /**
-   * Style-only overrides (merged onto defaults).
-   * Ignore if user also swaps that component.
-   */
-  appearance?: {
-    container?: string;
-    messageRenderer?: string;
-    toolbar?: string;
-    copyButton?: string;
-    editButton?: string;
-    branchNavigation?: string;
-  };
-
-  /**
-   * Full-layout override (highest priority).
-   * Receives the *pre-wired* sub-components so users never touch handlers.
-   */
-  children?: (parts: {
-    MessageRenderer: JSX.Element;
-    Toolbar: JSX.Element;
-    CopyButton: JSX.Element;
-    EditButton: JSX.Element;
-    BranchNavigation: JSX.Element;
-  }) => React.ReactNode;
-}
+export type CopilotChatUserMessageProps = WithSlots<
+  {
+    messageRenderer: typeof CopilotChatUserMessage.MessageRenderer;
+    toolbar: typeof CopilotChatUserMessage.Toolbar;
+    copyButton: typeof CopilotChatUserMessage.CopyButton;
+    editButton: typeof CopilotChatUserMessage.EditButton;
+    branchNavigation: typeof CopilotChatUserMessage.BranchNavigation;
+  },
+  {
+    onEditMessage?: () => void;
+    onSwitchToBranch?: (branchIndex: number) => void;
+    message: UserMessage;
+    branchIndex?: number;
+    numberOfBranches?: number;
+    additionalToolbarItems?: React.ReactNode;
+  } & React.HTMLAttributes<HTMLDivElement>
+>;
 
 export function CopilotChatUserMessage({
   message,
-  onEdit,
-  branchIndex: currentBranch,
+  onEditMessage,
+  branchIndex,
   numberOfBranches,
   onSwitchToBranch,
   additionalToolbarItems,
-  components = {},
-  appearance = {},
+  messageRenderer,
+  toolbar,
+  copyButton,
+  editButton,
+  branchNavigation,
   children,
+  className,
+  ...props
 }: CopilotChatUserMessageProps) {
-  const [copied, setCopied] = useState(false);
-  const {
-    Container = CopilotChatUserMessage.Container,
-    MessageRenderer = CopilotChatUserMessage.MessageRenderer,
-    Toolbar = CopilotChatUserMessage.Toolbar,
-    CopyButton = CopilotChatUserMessage.CopyButton,
-    EditButton = CopilotChatUserMessage.EditButton,
-    BranchNavigation = CopilotChatUserMessage.BranchNavigation,
-  } = components;
-
-  const BoundMessageRenderer = (
-    <MessageRenderer
-      content={message.content || ""}
-      className={
-        MessageRenderer === CopilotChatUserMessage.MessageRenderer
-          ? appearance.messageRenderer
-          : undefined
-      }
-    />
+  const BoundMessageRenderer = renderSlot(
+    messageRenderer,
+    CopilotChatUserMessage.MessageRenderer,
+    {
+      content: message.content || "",
+    }
   );
 
-  const BoundCopyButton = (
-    <CopyButton
-      onClick={async () => {
+  const BoundCopyButton = renderSlot(
+    copyButton,
+    CopilotChatUserMessage.CopyButton,
+    {
+      onClick: async () => {
         if (message.content) {
           try {
             await navigator.clipboard.writeText(message.content);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
           } catch (err) {
             console.error("Failed to copy message:", err);
           }
         }
-      }}
-      copied={copied}
-      className={
-        CopyButton === CopilotChatUserMessage.CopyButton
-          ? appearance.copyButton
-          : undefined
-      }
-    />
+      },
+    }
   );
 
-  const BoundEditButton = (
-    <EditButton
-      onClick={onEdit}
-      className={
-        EditButton === CopilotChatUserMessage.EditButton
-          ? appearance.editButton
-          : undefined
-      }
-    />
+  const BoundEditButton = renderSlot(
+    editButton,
+    CopilotChatUserMessage.EditButton,
+    {
+      onClick: onEditMessage,
+    }
   );
 
-  const BoundBranchNavigation = (
-    <BranchNavigation
-      currentBranch={currentBranch}
-      numberOfBranches={numberOfBranches}
-      onSwitchToBranch={onSwitchToBranch}
-      className={
-        BranchNavigation === CopilotChatUserMessage.BranchNavigation
-          ? appearance.branchNavigation
-          : undefined
-      }
-    />
+  const BoundBranchNavigation = renderSlot(
+    branchNavigation,
+    CopilotChatUserMessage.BranchNavigation,
+    {
+      currentBranch: branchIndex,
+      numberOfBranches,
+      onSwitchToBranch,
+    }
   );
 
   const showBranchNavigation =
     numberOfBranches && numberOfBranches > 1 && onSwitchToBranch;
 
-  const BoundToolbar = (
-    <Toolbar
-      className={
-        Toolbar === CopilotChatUserMessage.Toolbar
-          ? appearance.toolbar
-          : undefined
-      }
-    >
+  const BoundToolbar = renderSlot(toolbar, CopilotChatUserMessage.Toolbar, {
+    children: () => (
       <div className="flex items-center gap-1 justify-end">
         {additionalToolbarItems}
         {BoundCopyButton}
-        {onEdit && BoundEditButton}
+        {onEditMessage && BoundEditButton}
         {showBranchNavigation && BoundBranchNavigation}
       </div>
-    </Toolbar>
-  );
+    ),
+  });
 
   if (children) {
     return (
       <>
         {children({
-          MessageRenderer: BoundMessageRenderer,
-          Toolbar: BoundToolbar,
-          CopyButton: BoundCopyButton,
-          EditButton: BoundEditButton,
-          BranchNavigation: BoundBranchNavigation,
+          messageRenderer: BoundMessageRenderer,
+          toolbar: BoundToolbar,
+          copyButton: BoundCopyButton,
+          editButton: BoundEditButton,
+          branchNavigation: BoundBranchNavigation,
+          message,
+          branchIndex,
+          numberOfBranches,
+          additionalToolbarItems,
         })}
       </>
     );
   }
 
   return (
-    <Container
-      className={
-        Container === CopilotChatUserMessage.Container
-          ? appearance.container
-          : undefined
-      }
+    <div
+      className={twMerge("flex flex-col items-end group", className)}
+      {...props}
     >
       {BoundMessageRenderer}
       {BoundToolbar}
-    </Container>
+    </div>
   );
 }
 
@@ -249,30 +170,60 @@ export namespace CopilotChatUserMessage {
     />
   );
 
-  export const CopyButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
-  > = ({ className, copied = false, ...props }) => {
-    const { labels } = useCopilotChatContext();
+  export const ToolbarButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      title: string;
+      children: React.ReactNode;
+    }
+  > = ({ title, children, className, ...props }) => {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             type="button"
             variant="assistantMessageToolbarButton"
+            aria-label={title}
             className={twMerge(className)}
             {...props}
           >
-            {copied ? (
-              <Check className="size-[18px]" />
-            ) : (
-              <Copy className="size-[18px]" />
-            )}
+            {children}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p>{labels.assistantMessageToolbarCopyMessageLabel}</p>
+          <p>{title}</p>
         </TooltipContent>
       </Tooltip>
+    );
+  };
+
+  export const CopyButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
+  > = ({ className, onClick, ...props }) => {
+    const { labels } = useCopilotChatContext();
+    const [copied, setCopied] = useState(false);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+
+      if (onClick) {
+        onClick(event);
+      }
+    };
+
+    return (
+      <ToolbarButton
+        title={labels.assistantMessageToolbarCopyMessageLabel}
+        onClick={handleClick}
+        className={className}
+        {...props}
+      >
+        {copied ? (
+          <Check className="size-[18px]" />
+        ) : (
+          <Copy className="size-[18px]" />
+        )}
+      </ToolbarButton>
     );
   };
 
@@ -280,21 +231,9 @@ export namespace CopilotChatUserMessage {
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, ...props }) => {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="assistantMessageToolbarButton"
-            className={twMerge(className)}
-            {...props}
-          >
-            <Edit className="size-[18px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>Edit message</p>
-        </TooltipContent>
-      </Tooltip>
+      <ToolbarButton title="Edit message" className={className} {...props}>
+        <Edit className="size-[18px]" />
+      </ToolbarButton>
     );
   };
 
@@ -350,6 +289,8 @@ CopilotChatUserMessage.Container.displayName = "CopilotUserMessage.Container";
 CopilotChatUserMessage.MessageRenderer.displayName =
   "CopilotUserMessage.MessageRenderer";
 CopilotChatUserMessage.Toolbar.displayName = "CopilotUserMessage.Toolbar";
+CopilotChatUserMessage.ToolbarButton.displayName =
+  "CopilotUserMessage.ToolbarButton";
 CopilotChatUserMessage.CopyButton.displayName = "CopilotUserMessage.CopyButton";
 CopilotChatUserMessage.EditButton.displayName = "CopilotUserMessage.EditButton";
 CopilotChatUserMessage.BranchNavigation.displayName =

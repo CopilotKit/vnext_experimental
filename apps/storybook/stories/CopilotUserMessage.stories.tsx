@@ -86,7 +86,7 @@ const meta = {
   ],
   args: {
     message: simpleMessage,
-    onEdit: () => console.log("Edit clicked!"),
+    onEditMessage: () => console.log("Edit clicked!"),
   },
 } satisfies Meta<typeof CopilotChatUserMessage>;
 
@@ -104,35 +104,35 @@ export const LongMessage: Story = {
 export const WithEditButton: Story = {
   args: {
     message: simpleMessage,
-    onEdit: () => alert("Edit message clicked!"),
+    onEditMessage: () => alert("Edit message clicked!"),
   },
 };
 
 export const WithoutEditButton: Story = {
   args: {
     message: simpleMessage,
-    onEdit: undefined, // No edit callback means no edit button
+    onEditMessage: undefined, // No edit callback means no edit button
   },
 };
 
 export const CodeRelatedMessage: Story = {
   args: {
     message: codeMessage,
-    onEdit: () => alert("Edit code message clicked!"),
+    onEditMessage: () => alert("Edit code message clicked!"),
   },
 };
 
 export const ShortQuestion: Story = {
   args: {
     message: shortMessage,
-    onEdit: () => console.log("Edit short message clicked!"),
+    onEditMessage: () => console.log("Edit short message clicked!"),
   },
 };
 
 export const WithAdditionalToolbarItems: Story = {
   args: {
     message: simpleMessage,
-    onEdit: () => console.log("Edit clicked!"),
+    onEditMessage: () => console.log("Edit clicked!"),
     additionalToolbarItems: (
       <>
         <button
@@ -157,50 +157,92 @@ export const WithAdditionalToolbarItems: Story = {
 export const CustomAppearance: Story = {
   args: {
     message: simpleMessage,
-    onEdit: () => console.log("Edit clicked!"),
-    appearance: {
-      container: "bg-blue-50 border border-blue-200 rounded-lg p-4",
-      messageRenderer: "text-blue-900 font-medium",
-      toolbar: "mt-3 justify-end",
-      copyButton: "text-blue-600 hover:bg-blue-100",
-      editButton: "text-blue-600 hover:bg-blue-100",
-    },
+    onEditMessage: () => console.log("Edit clicked!"),
+    className: "bg-blue-50 border border-blue-200 rounded-lg p-4",
+    messageRenderer: ({ content }) => (
+      <div className="prose dark:prose-invert bg-muted relative max-w-[80%] rounded-[18px] px-4 py-1.5 data-[multiline]:py-3 inline-block whitespace-pre-wrap text-blue-900 font-medium">
+        {content}
+      </div>
+    ),
+    toolbar: ({
+      children,
+      className,
+      ...props
+    }: React.HTMLAttributes<HTMLDivElement>) => (
+      <div
+        className="w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[8px] invisible group-hover:visible"
+        {...props}
+      >
+        {children}
+      </div>
+    ),
+    copyButton: ({
+      children,
+      className,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+      <button
+        className="h-8 w-8 p-0 rounded-md text-blue-600 hover:bg-blue-100 flex items-center justify-center"
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+    editButton: ({
+      children,
+      className,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+      <button
+        className="h-8 w-8 p-0 rounded-md text-blue-600 hover:bg-blue-100 flex items-center justify-center"
+        {...props}
+      >
+        {children}
+      </button>
+    ),
   },
 };
 
 export const CustomComponents: Story = {
   args: {
     message: simpleMessage,
-    onEdit: () => console.log("Edit clicked!"),
-    components: {
-      Container: ({ children, className, ...props }) => (
-        <div
-          className={`bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 shadow-sm ${className}`}
-          {...props}
-        >
-          {children}
-        </div>
-      ),
-      MessageRenderer: ({ content, className }) => (
-        <div className={`font-mono text-purple-800 ${className}`}>
-          💬 {content}
-        </div>
-      ),
-    },
+    onEditMessage: () => console.log("Edit clicked!"),
+    className:
+      "bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 shadow-sm",
+    messageRenderer: ({ content }: { content: string; className?: string }) => (
+      <div className="font-mono text-purple-800 bg-white/50 rounded-lg px-3 py-2 inline-block">
+        💬 {content}
+      </div>
+    ),
   },
 };
 
 export const UsingChildrenRenderProp: Story = {
   args: {
     message: longMessage,
-    onEdit: () => console.log("Edit clicked!"),
-    children: ({ MessageRenderer, Toolbar, CopyButton, EditButton }) => (
+    onEditMessage: () => console.log("Edit clicked!"),
+    children: ({
+      messageRenderer,
+      toolbar,
+      copyButton,
+      editButton,
+    }: {
+      messageRenderer: React.ReactElement;
+      toolbar: React.ReactElement;
+      copyButton: React.ReactElement;
+      editButton: React.ReactElement;
+      branchNavigation: React.ReactElement;
+      message: any;
+      branchIndex?: number;
+      numberOfBranches?: number;
+      additionalToolbarItems?: React.ReactNode;
+    }) => (
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
         <div className="flex items-start justify-between">
-          <div className="flex-1 mr-4">{MessageRenderer}</div>
+          <div className="flex-1 mr-4">{messageRenderer}</div>
           <div className="flex items-center gap-1">
-            {CopyButton}
-            {EditButton}
+            {copyButton}
+            {editButton}
           </div>
         </div>
         <div className="mt-2 text-xs text-yellow-700">
@@ -219,7 +261,7 @@ export const WithBranchNavigation: Story = {
         "This message has multiple branches. You can navigate between them using the branch controls.",
       role: "user" as const,
     },
-    onEdit: () => console.log("Edit clicked!"),
+    onEditMessage: () => console.log("Edit clicked!"),
     branchIndex: 2,
     numberOfBranches: 3,
     onSwitchToBranch: (branchIndex: number) =>
@@ -235,7 +277,7 @@ export const WithManyBranches: Story = {
         "This is branch 5 of 10. Use the navigation arrows to explore different variations of this message.",
       role: "user" as const,
     },
-    onEdit: () => console.log("Edit clicked!"),
+    onEditMessage: () => console.log("Edit clicked!"),
     branchIndex: 4,
     numberOfBranches: 10,
     onSwitchToBranch: (branchIndex: number) =>
