@@ -1,6 +1,8 @@
 import { handleGetRuntimeInfo } from "../handlers/get-runtime-info";
 import { CopilotKitRuntime } from "../runtime";
 import { TranscriptionService } from "../transcription-service/transcription-service";
+import { describe, it, expect } from "vitest";
+import type { AbstractAgent } from "@ag-ui/client";
 
 // Mock transcription service
 class MockTranscriptionService extends TranscriptionService {
@@ -91,11 +93,13 @@ describe("handleGetRuntimeInfo", () => {
 
   it("should return 500 error when runtime.agents throws an error", async () => {
     const runtime = {
-      get agents() {
+      get agents(): Record<string, AbstractAgent> {
         throw new Error("Failed to get agents");
       },
-      transcriptionService: null,
-    } as Partial<CopilotKitRuntime>;
+      transcriptionService: undefined,
+      beforeRequestMiddleware: undefined,
+      afterRequestMiddleware: undefined,
+    } as CopilotKitRuntime;
 
     const response = await handleGetRuntimeInfo({
       runtime,

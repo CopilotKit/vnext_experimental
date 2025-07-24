@@ -1,5 +1,6 @@
 import { handleRunAgent } from "../handlers/handle-run";
 import { CopilotKitRuntime } from "../runtime";
+import { describe, it, expect } from "vitest";
 
 describe("handleRunAgent", () => {
   const createMockRuntime = (

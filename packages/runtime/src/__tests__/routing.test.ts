@@ -1,5 +1,6 @@
 import { routeRequest } from "../endpoint";
 import { CopilotKitRequestType } from "../handler";
+import { describe, it, expect } from "vitest";
 
 describe("routeRequest", () => {
   // Helper function to create a Request object with a given URL

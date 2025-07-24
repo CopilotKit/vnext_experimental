@@ -4,6 +4,7 @@ import {
   TranscriptionService,
   TranscribeFileOptions,
 } from "../transcription-service/transcription-service";
+import { describe, it, expect } from "vitest";
 
 // Mock TranscriptionService
 class MockTranscriptionService extends TranscriptionService {
