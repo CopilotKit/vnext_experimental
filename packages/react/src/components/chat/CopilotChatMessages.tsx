@@ -22,14 +22,17 @@ export function CopilotChatMessages({
   return <div>hello world</div>;
 }
 
+function Y() {
+  return <CopilotChatMessages assistantMessage={"bg-red-500"} />;
+}
+
 function Z() {
   // ✅ Now only subslots are accessible, onReadAloud is excluded
   return (
     <CopilotChatMessages
       assistantMessage={{
         copyButton: () => <button>copy</button>,
-        onReadAloud: () => {}, // ❌ No longer accessible - callbacks excluded!
-        // message: null
+        children: () => <div>hello world</div>,
       }}
     />
   );

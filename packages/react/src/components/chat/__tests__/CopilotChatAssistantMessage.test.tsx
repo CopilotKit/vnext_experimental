@@ -203,24 +203,6 @@ describe("CopilotAssistantMessage", () => {
   });
 
   describe("Slot functionality - Custom Components", () => {
-    it("accepts custom Container component", () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const CustomContainer = ({ children, ...props }: any) => (
-        <div data-testid="custom-container" {...props}>
-          {children}
-        </div>
-      );
-
-      renderWithProvider(
-        <CopilotChatAssistantMessage
-          message={basicMessage}
-          container={CustomContainer}
-        />
-      );
-
-      expect(screen.getByTestId("custom-container")).toBeDefined();
-    });
-
     it("accepts custom MarkdownRenderer component", () => {
       const CustomMarkdownRenderer = ({ content }: { content: string }) => (
         <div data-testid="custom-markdown">{content.toUpperCase()}</div>
@@ -385,11 +367,11 @@ describe("CopilotAssistantMessage", () => {
   });
 
   describe("Slot functionality - Custom Classes", () => {
-    it("applies custom className to Container slot", () => {
+    it("applies custom className to component", () => {
       const { container } = renderWithProvider(
         <CopilotChatAssistantMessage
           message={basicMessage}
-          container="custom-container-class"
+          className="custom-container-class"
         />
       );
 
@@ -482,10 +464,8 @@ describe("CopilotAssistantMessage", () => {
             thumbsDownButton: ThumbsDownButton,
             readAloudButton: ReadAloudButton,
             regenerateButton: RegenerateButton,
-            container: Container,
           }) => (
             <div data-testid="all-slots-layout">
-              {Container}
               {MarkdownRenderer}
               {Toolbar}
               <div data-testid="individual-buttons">

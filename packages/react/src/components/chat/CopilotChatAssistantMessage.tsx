@@ -28,7 +28,6 @@ import { completePartialMarkdown } from "@/lib/markdown";
 
 export type CopilotChatAssistantMessageProps = WithSlots<
   {
-    container: typeof CopilotChatAssistantMessage.Container;
     markdownRenderer: typeof CopilotChatAssistantMessage.MarkdownRenderer;
     toolbar: typeof CopilotChatAssistantMessage.Toolbar;
     copyButton: typeof CopilotChatAssistantMessage.CopyButton;
@@ -44,7 +43,7 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     onRegenerate?: (message: AssistantMessage) => void;
     message: AssistantMessage;
     additionalToolbarItems?: React.ReactNode;
-  }
+  } & React.HTMLAttributes<HTMLDivElement>
 >;
 
 export function CopilotChatAssistantMessage({
@@ -54,7 +53,6 @@ export function CopilotChatAssistantMessage({
   onReadAloud,
   onRegenerate,
   additionalToolbarItems,
-  container,
   markdownRenderer,
   toolbar,
   copyButton,
@@ -63,6 +61,8 @@ export function CopilotChatAssistantMessage({
   readAloudButton,
   regenerateButton,
   children,
+  className,
+  ...props
 }: CopilotChatAssistantMessageProps) {
   const boundMarkdownRenderer = renderSlot(
     markdownRenderer,
@@ -137,19 +137,6 @@ export function CopilotChatAssistantMessage({
     }
   );
 
-  const BoundContainer = renderSlot(
-    container,
-    CopilotChatAssistantMessage.Container,
-    {
-      children: (
-        <>
-          {boundMarkdownRenderer}
-          {boundToolbar}
-        </>
-      ),
-    }
-  );
-
   if (children) {
     return (
       <>
@@ -161,7 +148,6 @@ export function CopilotChatAssistantMessage({
           thumbsDownButton: boundThumbsDownButton,
           readAloudButton: boundReadAloudButton,
           regenerateButton: boundRegenerateButton,
-          container: BoundContainer,
           message,
           onThumbsUp,
           onThumbsDown,
@@ -173,7 +159,18 @@ export function CopilotChatAssistantMessage({
     );
   }
 
-  return BoundContainer;
+  return (
+    <div
+      className={twMerge(
+        "prose max-w-full w-full break-words dark:prose-invert",
+        className
+      )}
+      {...props}
+    >
+      {boundMarkdownRenderer}
+      {boundToolbar}
+    </div>
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -267,20 +264,6 @@ export namespace CopilotChatAssistantMessage {
       </div>
     );
   };
-
-  export const Container: React.FC<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  > = ({ children, className, ...props }) => (
-    <div
-      className={twMerge(
-        "prose max-w-full w-full break-words dark:prose-invert",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
 
   export const MarkdownRenderer: React.FC<
     React.HTMLAttributes<HTMLDivElement> & { content: string }
@@ -452,8 +435,6 @@ export namespace CopilotChatAssistantMessage {
   };
 }
 
-CopilotChatAssistantMessage.Container.displayName =
-  "CopilotAssistantMessage.Container";
 CopilotChatAssistantMessage.MarkdownRenderer.displayName =
   "CopilotAssistantMessage.MarkdownRenderer";
 CopilotChatAssistantMessage.Toolbar.displayName =

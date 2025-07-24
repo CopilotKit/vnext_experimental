@@ -51,16 +51,15 @@ export type ToolsMenuItem = {
 
 export type CopilotChatInputProps = WithSlots<
   {
-    TextArea: typeof CopilotChatInput.TextArea;
-    SendButton: typeof CopilotChatInput.SendButton;
-    StartTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
-    CancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
-    FinishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
-    AddButton: typeof CopilotChatInput.AddButton;
-    ToolsButton: typeof CopilotChatInput.ToolsButton;
-    Container: typeof CopilotChatInput.Container;
-    Toolbar: typeof CopilotChatInput.Toolbar;
-    AudioRecorder: AudioRecorderComponent;
+    textArea: typeof CopilotChatInput.TextArea;
+    sendButton: typeof CopilotChatInput.SendButton;
+    startTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
+    cancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
+    finishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
+    addButton: typeof CopilotChatInput.AddButton;
+    toolsButton: typeof CopilotChatInput.ToolsButton;
+    toolbar: typeof CopilotChatInput.Toolbar;
+    audioRecorder: AudioRecorderComponent;
   },
   {
     mode?: CopilotChatInputMode;
@@ -72,7 +71,7 @@ export type CopilotChatInputProps = WithSlots<
     onCancelTranscribe?: () => void;
     onFinishTranscribe?: () => void;
     onAddFile?: () => void;
-  }
+  } & React.HTMLAttributes<HTMLDivElement>
 >;
 
 export function CopilotChatInput({
@@ -85,17 +84,18 @@ export function CopilotChatInput({
   toolsMenu,
   autoFocus = true,
   additionalToolbarItems,
-  TextArea,
-  SendButton,
-  StartTranscribeButton,
-  CancelTranscribeButton,
-  FinishTranscribeButton,
-  AddButton,
-  ToolsButton,
-  Container,
-  Toolbar,
-  AudioRecorder,
+  textArea,
+  sendButton,
+  startTranscribeButton,
+  cancelTranscribeButton,
+  finishTranscribeButton,
+  addButton,
+  toolsButton,
+  toolbar,
+  audioRecorder,
   children,
+  className,
+  ...props
 }: CopilotChatInputProps) {
   const { text, setText } = useCopilotChatContext();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -143,7 +143,7 @@ export function CopilotChatInput({
     }
   };
 
-  const BoundTextArea = renderSlot(TextArea, CopilotChatInput.TextArea, {
+  const BoundTextArea = renderSlot(textArea, CopilotChatInput.TextArea, {
     ref: inputRef,
     value: text,
     onChange: handleChange,
@@ -152,20 +152,20 @@ export function CopilotChatInput({
   });
 
   const BoundAudioRecorder = renderSlot(
-    AudioRecorder,
+    audioRecorder,
     CopilotChatAudioRecorder,
     {
       ref: audioRecorderRef,
     }
   );
 
-  const BoundSendButton = renderSlot(SendButton, CopilotChatInput.SendButton, {
+  const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
     onClick: send,
     disabled: !text.trim(),
   });
 
   const BoundStartTranscribeButton = renderSlot(
-    StartTranscribeButton,
+    startTranscribeButton,
     CopilotChatInput.StartTranscribeButton,
     {
       onClick: onStartTranscribe,
@@ -173,7 +173,7 @@ export function CopilotChatInput({
   );
 
   const BoundCancelTranscribeButton = renderSlot(
-    CancelTranscribeButton,
+    cancelTranscribeButton,
     CopilotChatInput.CancelTranscribeButton,
     {
       onClick: onCancelTranscribe,
@@ -181,20 +181,20 @@ export function CopilotChatInput({
   );
 
   const BoundFinishTranscribeButton = renderSlot(
-    FinishTranscribeButton,
+    finishTranscribeButton,
     CopilotChatInput.FinishTranscribeButton,
     {
       onClick: onFinishTranscribe,
     }
   );
 
-  const BoundAddButton = renderSlot(AddButton, CopilotChatInput.AddButton, {
+  const BoundAddButton = renderSlot(addButton, CopilotChatInput.AddButton, {
     onClick: onAddFile,
     disabled: mode === "transcribe",
   });
 
   const BoundToolsButton = renderSlot(
-    ToolsButton,
+    toolsButton,
     CopilotChatInput.ToolsButton,
     {
       disabled: mode === "transcribe",
@@ -203,12 +203,12 @@ export function CopilotChatInput({
   );
 
   const BoundToolbar = renderSlot(
-    typeof Toolbar === "string" || Toolbar === undefined
+    typeof toolbar === "string" || toolbar === undefined
       ? twMerge(
-          Toolbar,
+          toolbar,
           "w-full h-[60px] bg-transparent flex items-center justify-between"
         )
-      : Toolbar,
+      : toolbar,
     CopilotChatInput.Toolbar,
     {
       children: (
@@ -236,29 +236,19 @@ export function CopilotChatInput({
     }
   );
 
-  const BoundContainer = renderSlot(Container, CopilotChatInput.Container, {
-    children: (
-      <>
-        {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
-        {BoundToolbar}
-      </>
-    ),
-  });
-
   if (children) {
     return (
       <>
         {children({
-          TextArea: BoundTextArea,
-          AudioRecorder: BoundAudioRecorder,
-          SendButton: BoundSendButton,
-          StartTranscribeButton: BoundStartTranscribeButton,
-          CancelTranscribeButton: BoundCancelTranscribeButton,
-          FinishTranscribeButton: BoundFinishTranscribeButton,
-          AddButton: BoundAddButton,
-          ToolsButton: BoundToolsButton,
-          Toolbar: BoundToolbar,
-          Container: BoundContainer,
+          textArea: BoundTextArea,
+          audioRecorder: BoundAudioRecorder,
+          sendButton: BoundSendButton,
+          startTranscribeButton: BoundStartTranscribeButton,
+          cancelTranscribeButton: BoundCancelTranscribeButton,
+          finishTranscribeButton: BoundFinishTranscribeButton,
+          addButton: BoundAddButton,
+          toolsButton: BoundToolsButton,
+          toolbar: BoundToolbar,
           onSend,
           onStartTranscribe,
           onCancelTranscribe,
@@ -273,7 +263,27 @@ export function CopilotChatInput({
     );
   }
 
-  return BoundContainer;
+  return (
+    <div
+      className={twMerge(
+        // Layout
+        "flex w-full flex-col items-center justify-center",
+        // Interaction
+        "cursor-text",
+        // Overflow and clipping
+        "overflow-visible bg-clip-padding contain-inline-size",
+        // Background
+        "bg-white dark:bg-[#303030]",
+        // Visual effects
+        "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
+        className
+      )}
+      {...props}
+    >
+      {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
+      {BoundToolbar}
+    </div>
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -454,29 +464,6 @@ export namespace CopilotChatInput {
     );
   };
 
-  export const Container: React.FC<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  > = ({ children, className, ...props }) => (
-    <div
-      className={twMerge(
-        // Layout
-        "flex w-full flex-col items-center justify-center",
-        // Interaction
-        "cursor-text",
-        // Overflow and clipping
-        "overflow-visible bg-clip-padding contain-inline-size",
-        // Background
-        "bg-white dark:bg-[#303030]",
-        // Visual effects
-        "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-
   export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     className,
     ...props
@@ -592,7 +579,6 @@ CopilotChatInput.FinishTranscribeButton.displayName =
   "CopilotChatInput.FinishTranscribeButton";
 CopilotChatInput.AddButton.displayName = "CopilotChatInput.AddButton";
 CopilotChatInput.ToolsButton.displayName = "CopilotChatInput.ToolsButton";
-CopilotChatInput.Container.displayName = "CopilotChatInput.Container";
 CopilotChatInput.Toolbar.displayName = "CopilotChatInput.Toolbar";
 
 export default CopilotChatInput;

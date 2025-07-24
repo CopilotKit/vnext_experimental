@@ -105,9 +105,9 @@ describe("CopilotChatInput", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         onSend={mockOnSend}
-        Container="custom-container"
-        TextArea="custom-textarea"
-        SendButton="custom-button"
+        className="custom-container"
+        textArea="custom-textarea"
+        sendButton="custom-button"
       />
     );
 
@@ -130,7 +130,7 @@ describe("CopilotChatInput", () => {
     );
 
     renderWithProvider(
-      <CopilotChatInput onSend={mockOnSend} SendButton={CustomButton} />
+      <CopilotChatInput onSend={mockOnSend} sendButton={CustomButton} />
     );
 
     const customButton = screen.getByTestId("custom-button");
@@ -141,7 +141,7 @@ describe("CopilotChatInput", () => {
   it("supports custom layout via children render prop", () => {
     renderWithProvider(
       <CopilotChatInput onSend={mockOnSend}>
-        {({ TextArea, SendButton }) => (
+        {({ textArea: TextArea, sendButton: SendButton }) => (
           <div data-testid="custom-layout">
             Custom Layout:
             {SendButton}

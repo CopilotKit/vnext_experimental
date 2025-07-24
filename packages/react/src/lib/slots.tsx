@@ -23,7 +23,7 @@ export type WithSlots<
   [K in keyof S]?: SlotValue<S[K]>;
 } & {
   children?: (props: SlotElements<S> & Rest) => React.ReactNode;
-} & Rest;
+} & Omit<Rest, "children">;
 
 export function renderSlot<
   C extends React.ComponentType<any>,
