@@ -38,10 +38,10 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     regenerateButton: typeof CopilotChatAssistantMessage.RegenerateButton;
   },
   {
-    onThumbsUp?: () => void;
-    onThumbsDown?: () => void;
-    onReadAloud?: () => void;
-    onRegenerate?: () => void;
+    onThumbsUp?: (message: AssistantMessage) => void;
+    onThumbsDown?: (message: AssistantMessage) => void;
+    onReadAloud?: (message: AssistantMessage) => void;
+    onRegenerate?: (message: AssistantMessage) => void;
     message: AssistantMessage;
     additionalToolbarItems?: React.ReactNode;
   }

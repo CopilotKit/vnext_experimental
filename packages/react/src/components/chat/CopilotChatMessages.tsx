@@ -5,7 +5,7 @@ export type CopilotChatMessagesProps = WithSlots<
   {
     assistantMessage: OmitSlotProps<
       typeof CopilotChatAssistantMessage,
-      "onReadAloud" | "onThumbsUp" | "onThumbsDown" | "onRegenerate" | "message"
+      "message"
     >;
   },
   {
@@ -28,7 +28,8 @@ function Z() {
     <CopilotChatMessages
       assistantMessage={{
         copyButton: () => <button>copy</button>,
-        // onReadAloud: () => {}, // ❌ No longer accessible - callbacks excluded!
+        onReadAloud: () => {}, // ❌ No longer accessible - callbacks excluded!
+        // message: null
       }}
     />
   );

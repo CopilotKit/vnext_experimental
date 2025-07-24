@@ -519,16 +519,28 @@ describe("CopilotAssistantMessage", () => {
         >
           {({ onThumbsUp, onThumbsDown, onReadAloud, onRegenerate }) => (
             <div data-testid="callback-test">
-              <button onClick={onThumbsUp} data-testid="custom-thumbs-up">
+              <button
+                onClick={() => onThumbsUp?.(basicMessage)}
+                data-testid="custom-thumbs-up"
+              >
                 Custom Thumbs Up
               </button>
-              <button onClick={onThumbsDown} data-testid="custom-thumbs-down">
+              <button
+                onClick={() => onThumbsDown?.(basicMessage)}
+                data-testid="custom-thumbs-down"
+              >
                 Custom Thumbs Down
               </button>
-              <button onClick={onReadAloud} data-testid="custom-read-aloud">
+              <button
+                onClick={() => onReadAloud?.(basicMessage)}
+                data-testid="custom-read-aloud"
+              >
                 Custom Read Aloud
               </button>
-              <button onClick={onRegenerate} data-testid="custom-regenerate">
+              <button
+                onClick={() => onRegenerate?.(basicMessage)}
+                data-testid="custom-regenerate"
+              >
                 Custom Regenerate
               </button>
             </div>
