@@ -1,14 +1,19 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef } from "react";
-
-import type {
-  AudioRecorderControls,
-  AudioRecorderState,
-  AudioRecorderComponent,
-} from "../../types/audio-recorder";
 import { twMerge } from "tailwind-merge";
 
-export const CopilotChatAudioRecorder: AudioRecorderComponent = forwardRef<
-  AudioRecorderControls,
+/** Finite-state machine for every recorder implementation */
+export type AudioRecorderState = "idle" | "recording" | "processing";
+
+/** Error subclass so callers can `instanceof`-guard recorder failures */
+export class AudioRecorderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AudioRecorderError";
+  }
+}
+
+export const CopilotChatAudioRecorder = forwardRef<
+  any,
   React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
   const { className, ...divProps } = props;

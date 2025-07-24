@@ -30,10 +30,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  AudioRecorderComponent,
-  AudioRecorderControls,
-} from "@/types/audio-recorder";
+
 import { CopilotChatAudioRecorder } from "./CopilotChatAudioRecorder";
 import { renderSlot, WithSlots } from "@/lib/slots";
 
@@ -62,7 +59,7 @@ export type CopilotChatInputProps = WithSlots<
     addButton: typeof CopilotChatInput.AddButton;
     toolsButton: typeof CopilotChatInput.ToolsButton;
     toolbar: typeof CopilotChatInput.Toolbar;
-    audioRecorder: AudioRecorderComponent;
+    audioRecorder: typeof CopilotChatAudioRecorder;
   },
   {
     mode?: CopilotChatInputMode;
@@ -102,7 +99,8 @@ export function CopilotChatInput({
 }: CopilotChatInputProps) {
   const { text, setText } = useCopilotChatContext();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const audioRecorderRef = useRef<AudioRecorderControls>(null);
+  const audioRecorderRef =
+    useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
 
   // Handle recording based on mode changes
   useEffect(() => {
