@@ -9,6 +9,7 @@ import ScrollToBottom, {
 } from "react-scroll-to-bottom";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type CopilotChatMessagesProps = Omit<
   WithSlots<
@@ -69,7 +70,12 @@ export function CopilotChatMessages({
   return (
     <ScrollToBottom
       scroller={scroller}
-      className="h-full max-h-full flex flex-col overflow-hidden relative flex-1 min-h-0 px-2"
+      className={cn(
+        "h-full max-h-full",
+        "flex flex-col flex-1 min-h-0",
+        "overflow-hidden relative",
+        "px-2"
+      )}
       followButtonClassName="hidden"
     >
       <FunctionContext.Consumer>
@@ -94,7 +100,13 @@ export function CopilotChatMessages({
                       variant="outline"
                       size="sm"
                       onClick={() => scrollToBottom()}
-                      className="rounded-full w-10 h-10 p-0 bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center cursor-pointer"
+                      className={cn(
+                        "rounded-full w-10 h-10 p-0",
+                        "bg-white dark:bg-gray-900",
+                        "shadow-lg border border-gray-200 dark:border-gray-700",
+                        "hover:bg-gray-50 dark:hover:bg-gray-800",
+                        "flex items-center justify-center cursor-pointer"
+                      )}
                     >
                       <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
                     </Button>
