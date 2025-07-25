@@ -4,7 +4,7 @@ import type { CopilotContext, CopilotTool } from "./types";
 import { CopilotAgent } from "./agent";
 
 export interface CopilotKitCoreConfig {
-  runtimeUrl: string;
+  runtimeUrl?: string;
   headers: Record<string, string>;
   properties: Record<string, unknown>;
 }
@@ -25,12 +25,20 @@ export class CopilotKitCore {
 
   constructor({ headers, runtimeUrl, properties }: CopilotKitCoreConfig) {
     this.headers = headers;
-    this.runtimeUrl = runtimeUrl.replace(/\/$/, "");
+    this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
     this.properties = properties;
-    this.getRuntimeInfo().then(({ agents, version }) => {
-      this.agents = { ...this.agents, ...agents };
-      this.didLoadRuntime = true;
-    });
+
+    // Only load runtime info if we have a valid runtime URL
+    if (this.runtimeUrl) {
+      this.getRuntimeInfo()
+        .then(({ agents, version }) => {
+          this.agents = { ...this.agents, ...agents };
+          this.didLoadRuntime = true;
+        })
+        .catch((error) => {
+          logger.warn(`Failed to load runtime info: ${error.message}`);
+        });
+    }
   }
 
   private async getRuntimeInfo() {
