@@ -16,6 +16,9 @@ export type CopilotChatMessagesProps = Omit<
     {
       assistantMessage: typeof CopilotChatAssistantMessage;
       userMessage: typeof CopilotChatUserMessage;
+      scrollToBottomButton: React.FC<
+        React.ButtonHTMLAttributes<HTMLButtonElement>
+      >;
     },
     {
       messages?: Message[];
@@ -33,8 +36,9 @@ export type CopilotChatMessagesProps = Omit<
 export function CopilotChatMessages({
   messages = [],
   autoScroll = true,
-  assistantMessage: assistantMessageComponent,
-  userMessage: userMessageComponent,
+  assistantMessage,
+  userMessage,
+  scrollToBottomButton,
   children,
   className,
   ...props
@@ -42,15 +46,11 @@ export function CopilotChatMessages({
   const messageElements: React.ReactElement[] = messages
     .map((message) => {
       if (message.role === "assistant") {
-        return renderSlot(
-          assistantMessageComponent,
-          CopilotChatAssistantMessage,
-          {
-            message,
-          }
-        );
+        return renderSlot(assistantMessage, CopilotChatAssistantMessage, {
+          message,
+        });
       } else if (message.role === "user") {
-        return renderSlot(userMessageComponent, CopilotChatUserMessage, {
+        return renderSlot(userMessage, CopilotChatUserMessage, {
           message,
         });
       }
@@ -96,20 +96,13 @@ export function CopilotChatMessages({
                 {/* Scroll to bottom button */}
                 {!atBottom && (
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => scrollToBottom()}
-                      className={cn(
-                        "rounded-full w-10 h-10 p-0",
-                        "bg-white dark:bg-gray-900",
-                        "shadow-lg border border-gray-200 dark:border-gray-700",
-                        "hover:bg-gray-50 dark:hover:bg-gray-800",
-                        "flex items-center justify-center cursor-pointer"
-                      )}
-                    >
-                      <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-                    </Button>
+                    {renderSlot(
+                      scrollToBottomButton,
+                      CopilotChatMessages.ScrollToBottomButton,
+                      {
+                        onClick: () => scrollToBottom(),
+                      }
+                    )}
                   </div>
                 )}
               </>
@@ -121,6 +114,26 @@ export function CopilotChatMessages({
   );
 }
 
-export namespace CopilotChatMessages {}
+export namespace CopilotChatMessages {
+  export const ScrollToBottomButton: React.FC<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  > = ({ className, ...props }) => (
+    <Button
+      variant="outline"
+      size="sm"
+      className={twMerge(
+        "rounded-full w-10 h-10 p-0",
+        "bg-white dark:bg-gray-900",
+        "shadow-lg border border-gray-200 dark:border-gray-700",
+        "hover:bg-gray-50 dark:hover:bg-gray-800",
+        "flex items-center justify-center cursor-pointer",
+        className
+      )}
+      {...props}
+    >
+      <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+    </Button>
+  );
+}
 
 export default CopilotChatMessages;
