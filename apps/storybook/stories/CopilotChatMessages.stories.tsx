@@ -81,17 +81,25 @@ In this example:
 
     return (
       <CopilotChatConfigurationProvider>
-        <CopilotChatMessages
-          messages={messages}
-          assistantMessage={{
-            onThumbsUp: () => {
-              alert("thumbsUp");
-            },
-            onThumbsDown: () => {
-              alert("thumbsDown");
-            },
+        <div
+          style={{
+            height: "100vh",
+            border: "2px solid #e5e7eb",
+            borderRadius: "8px",
           }}
-        />
+        >
+          <CopilotChatMessages
+            messages={messages}
+            assistantMessage={{
+              onThumbsUp: () => {
+                alert("thumbsUp");
+              },
+              onThumbsDown: () => {
+                alert("thumbsDown");
+              },
+            }}
+          />
+        </div>
       </CopilotChatConfigurationProvider>
     );
   },

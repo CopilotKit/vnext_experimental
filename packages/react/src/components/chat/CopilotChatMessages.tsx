@@ -62,17 +62,19 @@ export function CopilotChatMessages({
   }
 
   return (
-    <ScrollToBottom scroller={scroller}>
-      <div
-        className={twMerge(
-          "flex flex-col max-w-3xl mx-auto px-2 w-full",
-          className
-        )}
-        {...props}
-      >
-        {messageElements}
-      </div>
-    </ScrollToBottom>
+    <div className="h-full max-h-full flex flex-col overflow-hidden">
+      <ScrollToBottom scroller={scroller} className="flex-1 min-h-0">
+        <div
+          className={twMerge(
+            "flex flex-col max-w-3xl mx-auto px-2 w-full",
+            className
+          )}
+          {...props}
+        >
+          {messageElements}
+        </div>
+      </ScrollToBottom>
+    </div>
   );
 }
 
