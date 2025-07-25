@@ -3,6 +3,7 @@ import CopilotChatAssistantMessage from "./CopilotChatAssistantMessage";
 import CopilotChatUserMessage from "./CopilotChatUserMessage";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
+import ScrollToBottom from "react-scroll-to-bottom";
 
 export type CopilotChatMessagesProps = Omit<
   WithSlots<
@@ -12,6 +13,7 @@ export type CopilotChatMessagesProps = Omit<
     },
     {
       messages?: Message[];
+      autoScroll?: boolean;
     } & React.HTMLAttributes<HTMLDivElement>
   >,
   "children"
@@ -24,6 +26,7 @@ export type CopilotChatMessagesProps = Omit<
 
 export function CopilotChatMessages({
   messages = [],
+  autoScroll = true,
   assistantMessage: assistantMessageComponent,
   userMessage: userMessageComponent,
   children,
@@ -49,17 +52,27 @@ export function CopilotChatMessages({
     })
     .filter(Boolean) as React.ReactElement[];
 
+  // Scroller function to control auto-scroll behavior
+  const scroller = () => {
+    return autoScroll ? Infinity : 0;
+  };
+
   if (children) {
     return children({ messageElements, messages });
   }
 
   return (
-    <div
-      className={twMerge("flex flex-col max-w-3xl mx-auto px-2", className)}
-      {...props}
-    >
-      {messageElements}
-    </div>
+    <ScrollToBottom scroller={scroller}>
+      <div
+        className={twMerge(
+          "flex flex-col max-w-3xl mx-auto px-2 w-full",
+          className
+        )}
+        {...props}
+      >
+        {messageElements}
+      </div>
+    </ScrollToBottom>
   );
 }
 
