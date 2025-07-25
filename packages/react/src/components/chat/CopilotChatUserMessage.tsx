@@ -212,7 +212,7 @@ export namespace CopilotChatUserMessage {
 
   export const CopyButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
-  > = ({ className, onClick, ...props }) => {
+  > = ({ className, title, onClick, ...props }) => {
     const { labels } = useCopilotChatContext();
     const [copied, setCopied] = useState(false);
 
@@ -227,7 +227,7 @@ export namespace CopilotChatUserMessage {
 
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarCopyMessageLabel}
+        title={title || labels.userMessageToolbarCopyMessageLabel}
         onClick={handleClick}
         className={className}
         {...props}
@@ -243,9 +243,14 @@ export namespace CopilotChatUserMessage {
 
   export const EditButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => {
+  > = ({ className, title, ...props }) => {
+    const { labels } = useCopilotChatContext();
     return (
-      <ToolbarButton title="Edit message" className={className} {...props}>
+      <ToolbarButton
+        title={title || labels.userMessageToolbarEditMessageLabel}
+        className={className}
+        {...props}
+      >
         <Edit className="size-[18px]" />
       </ToolbarButton>
     );

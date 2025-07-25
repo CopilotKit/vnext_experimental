@@ -15,6 +15,8 @@ export const CopilotChatDefaultLabels = {
   assistantMessageToolbarThumbsDownLabel: "Bad response",
   assistantMessageToolbarReadAloudLabel: "Read aloud",
   assistantMessageToolbarRegenerateLabel: "Regenerate",
+  userMessageToolbarCopyMessageLabel: "Copy",
+  userMessageToolbarEditMessageLabel: "Edit",
 };
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
