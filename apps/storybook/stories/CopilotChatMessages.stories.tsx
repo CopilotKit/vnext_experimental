@@ -19,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const SimpleConversation: Story = {
+export const Default: Story = {
   render: () => {
     const messages = [
       {
@@ -81,7 +81,17 @@ In this example:
 
     return (
       <CopilotChatContextProvider>
-        <CopilotChatMessages messages={messages} />
+        <CopilotChatMessages
+          messages={messages}
+          assistantMessage={{
+            onThumbsUp: () => {
+              alert("thumbsUp");
+            },
+            onThumbsDown: () => {
+              alert("thumbsDown");
+            },
+          }}
+        />
       </CopilotChatContextProvider>
     );
   },

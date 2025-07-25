@@ -7,8 +7,8 @@ import { twMerge } from "tailwind-merge";
 export type CopilotChatMessagesProps = Omit<
   WithSlots<
     {
-      assistantMessageComponent: typeof CopilotChatAssistantMessage;
-      userMessageComponent: typeof CopilotChatUserMessage;
+      assistantMessage: typeof CopilotChatAssistantMessage;
+      userMessage: typeof CopilotChatUserMessage;
     },
     {
       messages?: Message[];
@@ -24,8 +24,8 @@ export type CopilotChatMessagesProps = Omit<
 
 export function CopilotChatMessages({
   messages = [],
-  assistantMessageComponent,
-  userMessageComponent,
+  assistantMessage: assistantMessageComponent,
+  userMessage: userMessageComponent,
   children,
   className,
   ...props

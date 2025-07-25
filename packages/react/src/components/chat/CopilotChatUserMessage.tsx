@@ -91,7 +91,7 @@ export function CopilotChatUserMessage({
     numberOfBranches && numberOfBranches > 1 && onSwitchToBranch;
 
   const BoundToolbar = renderSlot(toolbar, CopilotChatUserMessage.Toolbar, {
-    children: () => (
+    children: (
       <div className="flex items-center gap-1 justify-end">
         {additionalToolbarItems}
         {BoundCopyButton}
@@ -121,7 +121,7 @@ export function CopilotChatUserMessage({
 
   return (
     <div
-      className={twMerge("flex flex-col items-end group py-10", className)}
+      className={twMerge("flex flex-col items-end group pt-10", className)}
       {...props}
     >
       {BoundMessageRenderer}
