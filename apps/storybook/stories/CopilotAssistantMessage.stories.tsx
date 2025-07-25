@@ -125,7 +125,7 @@ $$
 };
 
 const meta = {
-  title: "UI/CopilotAssistantMessage",
+  title: "UI/CopilotChatAssistantMessage",
   component: CopilotChatAssistantMessage,
   decorators: [
     (Story) => (

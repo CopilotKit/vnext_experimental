@@ -320,15 +320,18 @@ export namespace CopilotChatUserMessage {
   };
 }
 
-CopilotChatUserMessage.Container.displayName = "CopilotUserMessage.Container";
+CopilotChatUserMessage.Container.displayName =
+  "CopilotChatUserMessage.Container";
 CopilotChatUserMessage.MessageRenderer.displayName =
-  "CopilotUserMessage.MessageRenderer";
-CopilotChatUserMessage.Toolbar.displayName = "CopilotUserMessage.Toolbar";
+  "CopilotChatUserMessage.MessageRenderer";
+CopilotChatUserMessage.Toolbar.displayName = "CopilotChatUserMessage.Toolbar";
 CopilotChatUserMessage.ToolbarButton.displayName =
-  "CopilotUserMessage.ToolbarButton";
-CopilotChatUserMessage.CopyButton.displayName = "CopilotUserMessage.CopyButton";
-CopilotChatUserMessage.EditButton.displayName = "CopilotUserMessage.EditButton";
+  "CopilotChatUserMessage.ToolbarButton";
+CopilotChatUserMessage.CopyButton.displayName =
+  "CopilotChatUserMessage.CopyButton";
+CopilotChatUserMessage.EditButton.displayName =
+  "CopilotChatUserMessage.EditButton";
 CopilotChatUserMessage.BranchNavigation.displayName =
-  "CopilotUserMessage.BranchNavigation";
+  "CopilotChatUserMessage.BranchNavigation";
 
 export default CopilotChatUserMessage;

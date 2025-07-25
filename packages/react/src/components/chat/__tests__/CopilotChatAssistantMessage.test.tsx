@@ -24,7 +24,9 @@ const mockOnRegenerate = vi.fn();
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatConfigurationProvider>{component}</CopilotChatConfigurationProvider>
+    <CopilotChatConfigurationProvider>
+      {component}
+    </CopilotChatConfigurationProvider>
   );
 };
 
@@ -37,7 +39,7 @@ beforeEach(() => {
   mockOnRegenerate.mockClear();
 });
 
-describe("CopilotAssistantMessage", () => {
+describe("CopilotChatAssistantMessage", () => {
   const basicMessage: AssistantMessage = {
     role: "assistant",
     content: "Hello, this is a test message from the assistant.",

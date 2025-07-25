@@ -63,7 +63,7 @@ const shortMessage = {
 };
 
 const meta = {
-  title: "UI/CopilotUserMessage",
+  title: "UI/CopilotChatUserMessage",
   component: CopilotChatUserMessage,
   decorators: [
     (Story) => (

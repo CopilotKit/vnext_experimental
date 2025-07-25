@@ -437,18 +437,18 @@ export namespace CopilotChatAssistantMessage {
 }
 
 CopilotChatAssistantMessage.MarkdownRenderer.displayName =
-  "CopilotAssistantMessage.MarkdownRenderer";
+  "CopilotChatAssistantMessage.MarkdownRenderer";
 CopilotChatAssistantMessage.Toolbar.displayName =
-  "CopilotAssistantMessage.Toolbar";
+  "CopilotChatAssistantMessage.Toolbar";
 CopilotChatAssistantMessage.CopyButton.displayName =
-  "CopilotAssistantMessage.CopyButton";
+  "CopilotChatAssistantMessage.CopyButton";
 CopilotChatAssistantMessage.ThumbsUpButton.displayName =
-  "CopilotAssistantMessage.ThumbsUpButton";
+  "CopilotChatAssistantMessage.ThumbsUpButton";
 CopilotChatAssistantMessage.ThumbsDownButton.displayName =
-  "CopilotAssistantMessage.ThumbsDownButton";
+  "CopilotChatAssistantMessage.ThumbsDownButton";
 CopilotChatAssistantMessage.ReadAloudButton.displayName =
-  "CopilotAssistantMessage.ReadAloudButton";
+  "CopilotChatAssistantMessage.ReadAloudButton";
 CopilotChatAssistantMessage.RegenerateButton.displayName =
-  "CopilotAssistantMessage.RegenerateButton";
+  "CopilotChatAssistantMessage.RegenerateButton";
 
 export default CopilotChatAssistantMessage;
