@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useMemo } from "react";
 import { CopilotKitCore, CopilotKitCoreConfig } from "@copilotkit/core";
+import { AbstractAgent } from "@ag-ui/client";
 
 // Create the CopilotKit context
 const CopilotKitContext = createContext<CopilotKitCore | null>(null);
@@ -10,6 +11,7 @@ export interface CopilotKitProviderProps {
   runtimeUrl?: string;
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
+  agents?: Record<string, AbstractAgent>;
 }
 
 // Provider component
@@ -18,6 +20,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   runtimeUrl,
   headers = {},
   properties = {},
+  agents = {},
 }) => {
   // Create the CopilotKitCore instance with memoization to prevent recreation on re-renders
   const copilotKit = useMemo(() => {
@@ -25,9 +28,10 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       runtimeUrl,
       headers,
       properties,
+      agents,
     };
     return new CopilotKitCore(config);
-  }, [runtimeUrl, headers, properties]);
+  }, [runtimeUrl, headers, properties, agents]);
 
   return (
     <CopilotKitContext.Provider value={copilotKit}>

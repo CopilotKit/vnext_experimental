@@ -2,11 +2,13 @@ import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
 import type { CopilotContext, CopilotTool } from "./types";
 import { CopilotAgent } from "./agent";
+import { AbstractAgent } from "@ag-ui/client";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
-  headers: Record<string, string>;
-  properties: Record<string, unknown>;
+  agents?: Record<string, AbstractAgent>;
+  headers?: Record<string, string>;
+  properties?: Record<string, unknown>;
 }
 
 export interface CopilotKitCoreAddAgentParams {
@@ -15,18 +17,26 @@ export interface CopilotKitCoreAddAgentParams {
 }
 
 export class CopilotKitCore {
-  context: Record<string, CopilotContext> = {};
-  tools: Record<string, CopilotTool<unknown>> = {};
-  headers: Record<string, string>;
   runtimeUrl?: string;
-  properties: Record<string, unknown>;
-  agents: Record<string, CopilotAgent> = {};
   didLoadRuntime: boolean = false;
 
-  constructor({ headers, runtimeUrl, properties }: CopilotKitCoreConfig) {
+  context: Record<string, CopilotContext> = {};
+  tools: Record<string, CopilotTool<unknown>> = {};
+  agents: Record<string, AbstractAgent> = {};
+
+  headers: Record<string, string>;
+  properties: Record<string, unknown>;
+
+  constructor({
+    runtimeUrl,
+    headers = {},
+    properties = {},
+    agents = {},
+  }: CopilotKitCoreConfig) {
     this.headers = headers;
     this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
     this.properties = properties;
+    this.agents = agents;
 
     // Only load runtime info if we have a valid runtime URL
     if (this.runtimeUrl) {

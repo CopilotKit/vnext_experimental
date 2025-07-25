@@ -158,6 +158,9 @@ importers:
 
   packages/react:
     dependencies:
+      '@ag-ui/client':
+        specifier: ^0.0.30
+        version: 0.0.30
       '@ag-ui/core':
         specifier: ^0.0.30
         version: 0.0.30
