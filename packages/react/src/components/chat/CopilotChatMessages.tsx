@@ -67,47 +67,45 @@ export function CopilotChatMessages({
   }
 
   return (
-    <div className="h-full max-h-full flex flex-col overflow-hidden relative">
-      <ScrollToBottom
-        scroller={scroller}
-        className="flex-1 min-h-0"
-        followButtonClassName="hidden"
-      >
-        <FunctionContext.Consumer>
-          {({ scrollToBottom }) => (
-            <StateContext.Consumer>
-              {({ atBottom }) => (
-                <>
-                  <div
-                    className={twMerge(
-                      "flex flex-col max-w-3xl mx-auto px-2 w-full",
-                      className
-                    )}
-                    {...props}
-                  >
-                    {messageElements}
-                  </div>
-
-                  {/* Scroll to bottom button */}
-                  {!atBottom && (
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => scrollToBottom()}
-                        className="rounded-full w-10 h-10 p-0 bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center cursor-pointer"
-                      >
-                        <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-                      </Button>
-                    </div>
+    <ScrollToBottom
+      scroller={scroller}
+      className="h-full max-h-full flex flex-col overflow-hidden relative flex-1 min-h-0 px-2"
+      followButtonClassName="hidden"
+    >
+      <FunctionContext.Consumer>
+        {({ scrollToBottom }) => (
+          <StateContext.Consumer>
+            {({ atBottom }) => (
+              <>
+                <div
+                  className={twMerge(
+                    "flex flex-col max-w-3xl mx-auto px-2 w-full",
+                    className
                   )}
-                </>
-              )}
-            </StateContext.Consumer>
-          )}
-        </FunctionContext.Consumer>
-      </ScrollToBottom>
-    </div>
+                  {...props}
+                >
+                  {messageElements}
+                </div>
+
+                {/* Scroll to bottom button */}
+                {!atBottom && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => scrollToBottom()}
+                      className="rounded-full w-10 h-10 p-0 bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center justify-center cursor-pointer"
+                    >
+                      <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </StateContext.Consumer>
+        )}
+      </FunctionContext.Consumer>
+    </ScrollToBottom>
   );
 }
 
