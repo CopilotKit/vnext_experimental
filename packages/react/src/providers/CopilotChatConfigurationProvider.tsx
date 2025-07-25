@@ -21,26 +21,27 @@ export const CopilotChatDefaultLabels = {
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
 
-// Define the full context interface
-export interface CopilotChatContextValue {
+// Define the full configuration interface
+export interface CopilotChatConfigurationValue {
   labels: CopilotChatLabels;
   text: string;
   setText: (text: string) => void;
-  // Room for other context properties in the future
+  // Room for other configuration properties in the future
 }
 
-// Create the context
-const CopilotChatContext = createContext<CopilotChatContextValue | null>(null);
+// Create the configuration context
+const CopilotChatConfiguration =
+  createContext<CopilotChatConfigurationValue | null>(null);
 
 // Provider props interface
-export interface CopilotChatContextProviderProps {
+export interface CopilotChatConfigurationProviderProps {
   children: ReactNode;
   labels?: Partial<CopilotChatLabels>;
 }
 
 // Provider component
-export const CopilotChatContextProvider: React.FC<
-  CopilotChatContextProviderProps
+export const CopilotChatConfigurationProvider: React.FC<
+  CopilotChatConfigurationProviderProps
 > = ({ children, labels = {} }) => {
   const [text, setText] = useState<string>("");
 
@@ -50,26 +51,27 @@ export const CopilotChatContextProvider: React.FC<
     ...labels,
   };
 
-  const contextValue: CopilotChatContextValue = {
+  const configurationValue: CopilotChatConfigurationValue = {
     labels: mergedLabels,
     text,
     setText,
   };
 
   return (
-    <CopilotChatContext.Provider value={contextValue}>
+    <CopilotChatConfiguration.Provider value={configurationValue}>
       {children}
-    </CopilotChatContext.Provider>
+    </CopilotChatConfiguration.Provider>
   );
 };
 
-// Hook to use the full context
-export const useCopilotChatContext = (): CopilotChatContextValue => {
-  const context = useContext(CopilotChatContext);
-  if (!context) {
-    throw new Error(
-      "useCopilotChatContext must be used within CopilotChatContextProvider"
-    );
-  }
-  return context;
-};
+// Hook to use the full configuration
+export const useCopilotChatConfiguration =
+  (): CopilotChatConfigurationValue => {
+    const configuration = useContext(CopilotChatConfiguration);
+    if (!configuration) {
+      throw new Error(
+        "useCopilotChatConfiguration must be used within CopilotChatConfigurationProvider"
+      );
+    }
+    return configuration;
+  };

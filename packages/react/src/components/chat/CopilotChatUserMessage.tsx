@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Copy, Check, Edit, ChevronLeft, ChevronRight } from "lucide-react";
-import { useCopilotChatContext } from "@/providers/CopilotChatContextProvider";
+import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
 import { UserMessage } from "@ag-ui/core";
@@ -213,7 +213,7 @@ export namespace CopilotChatUserMessage {
   export const CopyButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement> & { copied?: boolean }
   > = ({ className, title, onClick, ...props }) => {
-    const { labels } = useCopilotChatContext();
+    const { labels } = useCopilotChatConfiguration();
     const [copied, setCopied] = useState(false);
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -244,7 +244,7 @@ export namespace CopilotChatUserMessage {
   export const EditButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, title, ...props }) => {
-    const { labels } = useCopilotChatContext();
+    const { labels } = useCopilotChatConfiguration();
     return (
       <ToolbarButton
         title={title || labels.userMessageToolbarEditMessageLabel}

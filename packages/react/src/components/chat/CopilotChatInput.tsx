@@ -12,8 +12,8 @@ import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 
 import {
   CopilotChatLabels,
-  useCopilotChatContext,
-} from "@/providers/CopilotChatContextProvider";
+  useCopilotChatConfiguration,
+} from "@/providers/CopilotChatConfigurationProvider";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -97,7 +97,7 @@ export function CopilotChatInput({
   className,
   ...props
 }: CopilotChatInputProps) {
-  const { text, setText } = useCopilotChatContext();
+  const { text, setText } = useCopilotChatConfiguration();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef =
     useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
@@ -312,7 +312,7 @@ export namespace CopilotChatInput {
       defaultClassName?: string;
     }
   > = ({ icon, labelKey, defaultClassName, className, ...props }) => {
-    const { labels } = useCopilotChatContext();
+    const { labels } = useCopilotChatConfiguration();
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -382,7 +382,7 @@ export namespace CopilotChatInput {
       toolsMenu?: (ToolsMenuItem | "-")[];
     }
   > = ({ className, toolsMenu, ...props }) => {
-    const { labels } = useCopilotChatContext();
+    const { labels } = useCopilotChatConfiguration();
 
     const renderMenuItems = (
       items: (ToolsMenuItem | "-")[]
@@ -464,7 +464,7 @@ export namespace CopilotChatInput {
       const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
       const [maxHeight, setMaxHeight] = useState<number>(0);
 
-      const { labels } = useCopilotChatContext();
+      const { labels } = useCopilotChatConfiguration();
 
       useImperativeHandle(
         ref,

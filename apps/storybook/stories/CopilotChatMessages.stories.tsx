@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
-  CopilotChatContextProvider,
+  CopilotChatConfigurationProvider,
   CopilotChatMessages,
 } from "@copilotkit/react";
 
@@ -80,7 +80,7 @@ In this example:
     ];
 
     return (
-      <CopilotChatContextProvider>
+      <CopilotChatConfigurationProvider>
         <CopilotChatMessages
           messages={messages}
           assistantMessage={{
@@ -92,7 +92,7 @@ In this example:
             },
           }}
         />
-      </CopilotChatContextProvider>
+      </CopilotChatConfigurationProvider>
     );
   },
 };

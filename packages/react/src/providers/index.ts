@@ -1,7 +1,7 @@
 export {
-  CopilotChatContextProvider,
-  useCopilotChatContext,
+  CopilotChatConfigurationProvider,
+  useCopilotChatConfiguration,
   type CopilotChatLabels,
-  type CopilotChatContextValue,
-  type CopilotChatContextProviderProps,
-} from "./CopilotChatContextProvider";
+  type CopilotChatConfigurationValue,
+  type CopilotChatConfigurationProviderProps,
+} from "./CopilotChatConfigurationProvider";

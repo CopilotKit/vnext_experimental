@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatAssistantMessage,
-  CopilotChatContextProvider,
+  CopilotChatConfigurationProvider,
   type CopilotChatAssistantMessageProps,
 } from "@copilotkit/react";
 
@@ -139,9 +139,9 @@ const meta = {
         }}
       >
         <div style={{ width: "100%", maxWidth: "640px" }}>
-          <CopilotChatContextProvider>
+          <CopilotChatConfigurationProvider>
             <Story />
-          </CopilotChatContextProvider>
+          </CopilotChatConfigurationProvider>
         </div>
       </div>
     ),

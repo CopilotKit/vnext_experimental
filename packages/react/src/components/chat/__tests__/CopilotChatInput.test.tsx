@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
 import { CopilotChatInput } from "../CopilotChatInput";
-import { CopilotChatContextProvider } from "../../../providers/CopilotChatContextProvider";
+import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChatConfigurationProvider";
 
 // Mock onSend function to track calls
 const mockOnSend = vi.fn();
@@ -10,7 +10,7 @@ const mockOnSend = vi.fn();
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatContextProvider>{component}</CopilotChatContextProvider>
+    <CopilotChatConfigurationProvider>{component}</CopilotChatConfigurationProvider>
   );
 };
 

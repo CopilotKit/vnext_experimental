@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import { CopilotChatAssistantMessage } from "../CopilotChatAssistantMessage";
-import { CopilotChatContextProvider } from "../../../providers/CopilotChatContextProvider";
+import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChatConfigurationProvider";
 import { AssistantMessage } from "@ag-ui/core";
 
 // No mocks needed - Vitest handles ES modules natively!
@@ -24,7 +24,7 @@ const mockOnRegenerate = vi.fn();
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatContextProvider>{component}</CopilotChatContextProvider>
+    <CopilotChatConfigurationProvider>{component}</CopilotChatConfigurationProvider>
   );
 };
 
