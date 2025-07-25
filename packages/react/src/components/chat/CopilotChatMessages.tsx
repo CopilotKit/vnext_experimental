@@ -16,7 +16,7 @@ export type CopilotChatMessagesProps = Omit<
   >,
   "children"
 > & {
-  children: (props: {
+  children?: (props: {
     messages: Message[];
     messageElements: React.ReactElement[];
   }) => React.ReactElement;
@@ -27,6 +27,8 @@ export function CopilotChatMessages({
   assistantMessageComponent,
   userMessageComponent,
   children,
+  className,
+  ...props
 }: CopilotChatMessagesProps) {
   const messageElements: React.ReactElement[] = messages
     .map((message) => {
@@ -51,31 +53,16 @@ export function CopilotChatMessages({
     return children({ messageElements, messages });
   }
 
-  return <div>{messageElements}</div>;
-}
-
-export namespace CopilotChatMessages {
-  export const AssistantMessageContainer: React.FC<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  > = ({ children, className, ...props }) => (
+  return (
     <div
-      className={twMerge("flex flex-col items-end group", className)}
+      className={twMerge("flex flex-col max-w-3xl mx-auto px-2", className)}
       {...props}
     >
-      {children}
-    </div>
-  );
-
-  export const UserMessageContainer: React.FC<
-    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
-  > = ({ children, className, ...props }) => (
-    <div
-      className={twMerge("flex flex-col items-start group", className)}
-      {...props}
-    >
-      {children}
+      {messageElements}
     </div>
   );
 }
+
+export namespace CopilotChatMessages {}
 
 export default CopilotChatMessages;

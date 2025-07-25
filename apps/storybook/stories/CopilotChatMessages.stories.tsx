@@ -81,9 +81,7 @@ In this example:
 
     return (
       <CopilotChatContextProvider>
-        <CopilotChatMessages messages={messages}>
-          {({ messageElements }) => <div>{messageElements}</div>}
-        </CopilotChatMessages>
+        <CopilotChatMessages messages={messages} />
       </CopilotChatContextProvider>
     );
   },
