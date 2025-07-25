@@ -11,6 +11,16 @@ import {
 } from "@/components/ui/tooltip";
 import { renderSlot, WithSlots } from "@/lib/slots";
 
+export interface CopilotChatUserMessageOnEditMessageProps {
+  message: UserMessage;
+}
+
+export interface CopilotChatUserMessageOnSwitchToBranchProps {
+  message: UserMessage;
+  branchIndex: number;
+  numberOfBranches: number;
+}
+
 export type CopilotChatUserMessageProps = WithSlots<
   {
     messageRenderer: typeof CopilotChatUserMessage.MessageRenderer;
@@ -20,8 +30,10 @@ export type CopilotChatUserMessageProps = WithSlots<
     branchNavigation: typeof CopilotChatUserMessage.BranchNavigation;
   },
   {
-    onEditMessage?: () => void;
-    onSwitchToBranch?: (branchIndex: number) => void;
+    onEditMessage?: (props: CopilotChatUserMessageOnEditMessageProps) => void;
+    onSwitchToBranch?: (
+      props: CopilotChatUserMessageOnSwitchToBranchProps
+    ) => void;
     message: UserMessage;
     branchIndex?: number;
     numberOfBranches?: number;
@@ -73,7 +85,7 @@ export function CopilotChatUserMessage({
     editButton,
     CopilotChatUserMessage.EditButton,
     {
-      onClick: onEditMessage,
+      onClick: () => onEditMessage?.({ message }),
     }
   );
 
@@ -84,6 +96,7 @@ export function CopilotChatUserMessage({
       currentBranch: branchIndex,
       numberOfBranches,
       onSwitchToBranch,
+      message,
     }
   );
 
@@ -122,6 +135,7 @@ export function CopilotChatUserMessage({
   return (
     <div
       className={twMerge("flex flex-col items-end group pt-10", className)}
+      data-message-id={message.id}
       {...props}
     >
       {BoundMessageRenderer}
@@ -241,13 +255,17 @@ export namespace CopilotChatUserMessage {
     React.HTMLAttributes<HTMLDivElement> & {
       currentBranch?: number;
       numberOfBranches?: number;
-      onSwitchToBranch?: (branchIndex: number) => void;
+      onSwitchToBranch?: (
+        props: CopilotChatUserMessageOnSwitchToBranchProps
+      ) => void;
+      message: UserMessage;
     }
   > = ({
     className,
     currentBranch = 0,
     numberOfBranches = 1,
     onSwitchToBranch,
+    message,
     ...props
   }) => {
     if (!numberOfBranches || numberOfBranches <= 1 || !onSwitchToBranch) {
@@ -262,7 +280,13 @@ export namespace CopilotChatUserMessage {
         <Button
           type="button"
           variant="assistantMessageToolbarButton"
-          onClick={() => onSwitchToBranch(currentBranch - 1)}
+          onClick={() =>
+            onSwitchToBranch?.({
+              branchIndex: currentBranch - 1,
+              numberOfBranches,
+              message,
+            })
+          }
           disabled={!canGoPrev}
           className="h-6 w-6 p-0"
         >
@@ -274,7 +298,13 @@ export namespace CopilotChatUserMessage {
         <Button
           type="button"
           variant="assistantMessageToolbarButton"
-          onClick={() => onSwitchToBranch(currentBranch + 1)}
+          onClick={() =>
+            onSwitchToBranch?.({
+              branchIndex: currentBranch + 1,
+              numberOfBranches,
+              message,
+            })
+          }
           disabled={!canGoNext}
           className="h-6 w-6 p-0"
         >

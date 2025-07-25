@@ -264,7 +264,7 @@ export const WithBranchNavigation: Story = {
     onEditMessage: () => console.log("Edit clicked!"),
     branchIndex: 2,
     numberOfBranches: 3,
-    onSwitchToBranch: (branchIndex: number) =>
+    onSwitchToBranch: ({ branchIndex }) =>
       console.log(`Switching to branch ${branchIndex + 1}`),
   },
 };
@@ -280,7 +280,7 @@ export const WithManyBranches: Story = {
     onEditMessage: () => console.log("Edit clicked!"),
     branchIndex: 4,
     numberOfBranches: 10,
-    onSwitchToBranch: (branchIndex: number) =>
+    onSwitchToBranch: ({ branchIndex }) =>
       alert(`Would switch to branch ${branchIndex + 1} of 10`),
   },
 };
