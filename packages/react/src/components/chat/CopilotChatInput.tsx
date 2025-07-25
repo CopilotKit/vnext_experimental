@@ -66,21 +66,25 @@ export type CopilotChatInputProps = WithSlots<
     toolsMenu?: (ToolsMenuItem | "-")[];
     autoFocus?: boolean;
     additionalToolbarItems?: React.ReactNode;
-    onSend: (text: string) => void;
+    onSubmitMessage?: (value: string) => void;
     onStartTranscribe?: () => void;
     onCancelTranscribe?: () => void;
     onFinishTranscribe?: () => void;
     onAddFile?: () => void;
+    value?: string;
+    onChange?: (value: string) => void;
   } & React.HTMLAttributes<HTMLDivElement>
 >;
 
 export function CopilotChatInput({
   mode = "input",
-  onSend,
+  onSubmitMessage,
   onStartTranscribe,
   onCancelTranscribe,
   onFinishTranscribe,
   onAddFile,
+  onChange,
+  value,
   toolsMenu,
   autoFocus = true,
   additionalToolbarItems,
@@ -97,7 +101,6 @@ export function CopilotChatInput({
   className,
   ...props
 }: CopilotChatInputProps) {
-  const { text, setText } = useCopilotChatConfiguration();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef =
     useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
@@ -122,7 +125,7 @@ export function CopilotChatInput({
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
+    onChange?.(e.target.value);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -133,10 +136,9 @@ export function CopilotChatInput({
   };
 
   const send = () => {
-    const trimmed = text.trim();
+    const trimmed = value?.trim();
     if (trimmed) {
-      onSend(trimmed);
-      setText("");
+      onSubmitMessage?.(trimmed);
       // Refocus input after sending
       if (inputRef.current) {
         inputRef.current.focus();
@@ -146,7 +148,7 @@ export function CopilotChatInput({
 
   const BoundTextArea = renderSlot(textArea, CopilotChatInput.TextArea, {
     ref: inputRef,
-    value: text,
+    value,
     onChange: handleChange,
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
@@ -162,7 +164,7 @@ export function CopilotChatInput({
 
   const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
     onClick: send,
-    disabled: !text.trim(),
+    disabled: !value?.trim() || !onSubmitMessage,
   });
 
   const BoundStartTranscribeButton = renderSlot(
@@ -250,7 +252,7 @@ export function CopilotChatInput({
           addButton: BoundAddButton,
           toolsButton: BoundToolsButton,
           toolbar: BoundToolbar,
-          onSend,
+          onSubmitMessage,
           onStartTranscribe,
           onCancelTranscribe,
           onFinishTranscribe,
@@ -454,7 +456,7 @@ export namespace CopilotChatInput {
     />
   );
 
-  interface TextAreaProps
+  export interface TextAreaProps
     extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     maxRows?: number;
   }

@@ -4,24 +4,33 @@ import { vi } from "vitest";
 import { CopilotChatInput } from "../CopilotChatInput";
 import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChatConfigurationProvider";
 
-// Mock onSend function to track calls
-const mockOnSend = vi.fn();
+// Mock onSubmitMessage function to track calls
+const mockOnSubmitMessage = vi.fn();
 
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatConfigurationProvider>{component}</CopilotChatConfigurationProvider>
+    <CopilotChatConfigurationProvider>
+      {component}
+    </CopilotChatConfigurationProvider>
   );
 };
 
 // Clear mocks before each test
 beforeEach(() => {
-  mockOnSend.mockClear();
+  mockOnSubmitMessage.mockClear();
 });
 
 describe("CopilotChatInput", () => {
   it("renders with default components and styling", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
+    const mockOnChange = vi.fn();
+    renderWithProvider(
+      <CopilotChatInput
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
 
     const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
@@ -31,80 +40,131 @@ describe("CopilotChatInput", () => {
     expect((button as HTMLButtonElement).disabled).toBe(true); // Should be disabled when input is empty
   });
 
-  it("calls onSend with trimmed text when Enter is pressed", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
+  it("calls onSubmitMessage with trimmed text when Enter is pressed", () => {
+    const mockOnChange = vi.fn();
+    renderWithProvider(
+      <CopilotChatInput
+        value="  hello world  "
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
 
     const input = screen.getByPlaceholderText("Type a message...");
-
-    // Type message with whitespace
-    fireEvent.change(input, { target: { value: "  hello world  " } });
     fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
 
-    expect(mockOnSend).toHaveBeenCalledWith("hello world");
-    expect((input as HTMLInputElement).value).toBe(""); // Input should be cleared
+    expect(mockOnSubmitMessage).toHaveBeenCalledWith("hello world");
   });
 
-  it("calls onSend when button is clicked", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
+  it("calls onSubmitMessage when button is clicked", () => {
+    const mockOnChange = vi.fn();
+    renderWithProvider(
+      <CopilotChatInput
+        value="test message"
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
 
-    const input = screen.getByPlaceholderText("Type a message...");
     const button = screen.getByRole("button");
-
-    fireEvent.change(input, { target: { value: "test message" } });
     fireEvent.click(button);
 
-    expect(mockOnSend).toHaveBeenCalledWith("test message");
-    expect((input as HTMLInputElement).value).toBe(""); // Input should be cleared
+    expect(mockOnSubmitMessage).toHaveBeenCalledWith("test message");
   });
 
   it("does not send when Enter is pressed with Shift key", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
+    const mockOnChange = vi.fn();
+    renderWithProvider(
+      <CopilotChatInput
+        value="test"
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
 
     const input = screen.getByPlaceholderText("Type a message...");
-
-    fireEvent.change(input, { target: { value: "test" } });
     fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
 
-    expect(mockOnSend).not.toHaveBeenCalled();
-    expect((input as HTMLInputElement).value).toBe("test"); // Input should not be cleared
+    expect(mockOnSubmitMessage).not.toHaveBeenCalled();
   });
 
   it("does not send empty or whitespace-only messages", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
-
-    const input = screen.getByPlaceholderText("Type a message...");
-    const button = screen.getByRole("button");
+    const mockOnChange = vi.fn();
 
     // Test empty string
-    fireEvent.change(input, { target: { value: "" } });
+    const { rerender } = renderWithProvider(
+      <CopilotChatInput
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
+
+    const button = screen.getByRole("button");
     fireEvent.click(button);
-    expect(mockOnSend).not.toHaveBeenCalled();
+    expect(mockOnSubmitMessage).not.toHaveBeenCalled();
 
     // Test whitespace only
-    fireEvent.change(input, { target: { value: "   " } });
+    rerender(
+      <CopilotChatConfigurationProvider>
+        <CopilotChatInput
+          value="   "
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      </CopilotChatConfigurationProvider>
+    );
     fireEvent.click(button);
-    expect(mockOnSend).not.toHaveBeenCalled();
+    expect(mockOnSubmitMessage).not.toHaveBeenCalled();
   });
 
-  it("enables button when text is entered", () => {
-    renderWithProvider(<CopilotChatInput onSend={mockOnSend} />);
+  it("enables button based on value prop", () => {
+    const mockOnChange = vi.fn();
 
-    const input = screen.getByPlaceholderText("Type a message...");
+    // Test with empty value
+    const { rerender } = renderWithProvider(
+      <CopilotChatInput
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      />
+    );
+
     const button = screen.getByRole("button");
-
     expect((button as HTMLButtonElement).disabled).toBe(true);
 
-    fireEvent.change(input, { target: { value: "hello" } });
+    // Test with non-empty value
+    rerender(
+      <CopilotChatConfigurationProvider>
+        <CopilotChatInput
+          value="hello"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      </CopilotChatConfigurationProvider>
+    );
     expect((button as HTMLButtonElement).disabled).toBe(false);
 
-    fireEvent.change(input, { target: { value: "" } });
+    // Test with empty value again
+    rerender(
+      <CopilotChatConfigurationProvider>
+        <CopilotChatInput
+          value=""
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      </CopilotChatConfigurationProvider>
+    );
     expect((button as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("accepts custom slot classes", () => {
+    const mockOnChange = vi.fn();
     const { container } = renderWithProvider(
       <CopilotChatInput
-        onSend={mockOnSend}
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
         className="custom-container"
         textArea="custom-textarea"
         sendButton="custom-button"
@@ -121,6 +181,7 @@ describe("CopilotChatInput", () => {
   });
 
   it("accepts custom components via slots", () => {
+    const mockOnChange = vi.fn();
     const CustomButton = (
       props: React.ButtonHTMLAttributes<HTMLButtonElement>
     ) => (
@@ -130,7 +191,12 @@ describe("CopilotChatInput", () => {
     );
 
     renderWithProvider(
-      <CopilotChatInput onSend={mockOnSend} sendButton={CustomButton} />
+      <CopilotChatInput
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+        sendButton={CustomButton}
+      />
     );
 
     const customButton = screen.getByTestId("custom-button");
@@ -139,8 +205,13 @@ describe("CopilotChatInput", () => {
   });
 
   it("supports custom layout via children render prop", () => {
+    const mockOnChange = vi.fn();
     renderWithProvider(
-      <CopilotChatInput onSend={mockOnSend}>
+      <CopilotChatInput
+        value=""
+        onChange={mockOnChange}
+        onSubmitMessage={mockOnSubmitMessage}
+      >
         {({ textArea: TextArea, sendButton: SendButton }) => (
           <div data-testid="custom-layout">
             Custom Layout:
@@ -160,7 +231,7 @@ describe("CopilotChatInput", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         mode="transcribe"
-        onSend={mockOnSend}
+        onSubmitMessage={mockOnSubmitMessage}
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
@@ -195,7 +266,7 @@ describe("CopilotChatInput", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         mode="transcribe"
-        onSend={mockOnSend}
+        onSubmitMessage={mockOnSubmitMessage}
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
@@ -218,7 +289,7 @@ describe("CopilotChatInput", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         mode="transcribe"
-        onSend={mockOnSend}
+        onSubmitMessage={mockOnSubmitMessage}
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
@@ -238,7 +309,7 @@ describe("CopilotChatInput", () => {
     const { container } = renderWithProvider(
       <CopilotChatInput
         mode="input"
-        onSend={mockOnSend}
+        onSubmitMessage={mockOnSubmitMessage}
         onStartTranscribe={() => {}}
         onCancelTranscribe={() => {}}
         onFinishTranscribe={() => {}}
@@ -252,5 +323,209 @@ describe("CopilotChatInput", () => {
     // Should NOT show recording indicator (red div)
     const recordingIndicator = container.querySelector(".bg-red-500");
     expect(recordingIndicator).toBeNull();
+  });
+
+  // Controlled component tests
+  describe("Controlled component behavior", () => {
+    it("displays the provided value prop", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="test value"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      expect((input as HTMLTextAreaElement).value).toBe("test value");
+    });
+
+    it("calls onChange when user types", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value=""
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      fireEvent.change(input, { target: { value: "new text" } });
+
+      expect(mockOnChange).toHaveBeenCalledWith("new text");
+    });
+
+    it("calls onSubmitMessage when form is submitted", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="hello world"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
+
+      expect(mockOnSubmitMessage).toHaveBeenCalledWith("hello world");
+    });
+
+    it("calls onSubmitMessage when send button is clicked", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="test message"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const button = screen.getByRole("button");
+      fireEvent.click(button);
+
+      expect(mockOnSubmitMessage).toHaveBeenCalledWith("test message");
+    });
+
+    it("trims whitespace when submitting", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="  hello world  "
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
+
+      expect(mockOnSubmitMessage).toHaveBeenCalledWith("hello world");
+    });
+
+    it("does not submit empty or whitespace-only messages", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="   "
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const button = screen.getByRole("button");
+      fireEvent.click(button);
+
+      expect(mockOnSubmitMessage).not.toHaveBeenCalled();
+    });
+
+    it("disables send button when onSubmitMessage is not provided", () => {
+      const mockOnChange = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput value="some text" onChange={mockOnChange} />
+      );
+
+      const button = screen.getByRole("button");
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("disables send button when value is empty", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value=""
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const button = screen.getByRole("button");
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("enables send button when value has content and onSubmitMessage is provided", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="hello"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const button = screen.getByRole("button");
+      expect((button as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it("works as a fully controlled component", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      const { rerender } = renderWithProvider(
+        <CopilotChatInput
+          value="initial"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      expect((input as HTMLTextAreaElement).value).toBe("initial");
+
+      // Simulate parent component updating the value
+      rerender(
+        <CopilotChatConfigurationProvider>
+          <CopilotChatInput
+            value="updated"
+            onChange={mockOnChange}
+            onSubmitMessage={mockOnSubmitMessage}
+          />
+        </CopilotChatConfigurationProvider>
+      );
+
+      expect((input as HTMLTextAreaElement).value).toBe("updated");
+    });
+
+    it("does not clear input after submission when controlled", () => {
+      const mockOnChange = vi.fn();
+      const mockOnSubmitMessage = vi.fn();
+
+      renderWithProvider(
+        <CopilotChatInput
+          value="test message"
+          onChange={mockOnChange}
+          onSubmitMessage={mockOnSubmitMessage}
+        />
+      );
+
+      const input = screen.getByRole("textbox");
+      const button = screen.getByRole("button");
+
+      fireEvent.click(button);
+
+      // In controlled mode, the component should not clear the input
+      // It's up to the parent to manage the value
+      expect((input as HTMLTextAreaElement).value).toBe("test message");
+      expect(mockOnSubmitMessage).toHaveBeenCalledWith("test message");
+    });
   });
 });

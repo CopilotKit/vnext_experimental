@@ -24,9 +24,6 @@ export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
 // Define the full configuration interface
 export interface CopilotChatConfigurationValue {
   labels: CopilotChatLabels;
-  text: string;
-  setText: (text: string) => void;
-  // Room for other configuration properties in the future
 }
 
 // Create the configuration context
@@ -53,8 +50,6 @@ export const CopilotChatConfigurationProvider: React.FC<
 
   const configurationValue: CopilotChatConfigurationValue = {
     labels: mergedLabels,
-    text,
-    setText,
   };
 
   return (

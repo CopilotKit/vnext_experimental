@@ -30,7 +30,7 @@ const meta = {
     ),
   ],
   args: {
-    onSend: (t: string) => console.log(`Message sent: ${t}`),
+    onSubmitMessage: (t: string) => console.log(`Message sent: ${t}`),
     onStartTranscribe: () => console.log("Transcribe started"),
     onCancelTranscribe: () => console.log("Transcribe cancelled"),
     onFinishTranscribe: () => console.log("Transcribe completed"),
@@ -74,16 +74,17 @@ export const WithToolsMenu: Story = {
 
 export const CustomSendButton: Story = {
   args: {
-    components: {
-      SendButton: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-        <button
-          {...props}
-          className="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2"
-        >
-          ✈️
-        </button>
-      ),
+    textArea: {
+      maxRows: 10,
     },
+    sendButton: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+      <button
+        {...props}
+        className="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2"
+      >
+        ✈️
+      </button>
+    ),
   },
 };
 
