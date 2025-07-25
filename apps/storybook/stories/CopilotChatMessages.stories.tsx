@@ -20,6 +20,18 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [
+    (Story) => (
+      <div
+        style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
   render: () => {
     const messages = [
       {
@@ -81,13 +93,7 @@ In this example:
 
     return (
       <CopilotChatConfigurationProvider>
-        <div
-          style={{
-            height: "100vh",
-            border: "2px solid #e5e7eb",
-            borderRadius: "8px",
-          }}
-        >
+        <div style={{ height: "100%" }}>
           <CopilotChatMessages
             messages={messages}
             assistantMessage={{
