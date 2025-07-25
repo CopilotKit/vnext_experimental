@@ -166,6 +166,7 @@ export function CopilotChatAssistantMessage({
         className
       )}
       {...props}
+      data-message-id={message.id}
     >
       {boundMarkdownRenderer}
       {boundToolbar}
