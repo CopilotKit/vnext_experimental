@@ -15,24 +15,13 @@ export interface CopilotKitCoreAddAgentParams {
 }
 
 export class CopilotKitCore {
-  static instance: CopilotKitCore;
-
-  static getInstance(config: CopilotKitCoreConfig) {
-    if (!CopilotKitCore.instance) {
-      CopilotKitCore.instance = new CopilotKitCore(config);
-    }
-    CopilotKitCore.instance.setHeaders(config.headers);
-    CopilotKitCore.instance.setProperties(config.properties);
-    return CopilotKitCore.instance;
-  }
-
   context: Record<string, CopilotContext> = {};
   tools: Record<string, CopilotTool<unknown>> = {};
   headers: Record<string, string>;
-  runtimeUrl: string;
+  runtimeUrl?: string;
   properties: Record<string, unknown>;
   agents: Record<string, CopilotAgent> = {};
-  didLoadAgents: boolean = false;
+  didLoadRuntime: boolean = false;
 
   constructor({ headers, runtimeUrl, properties }: CopilotKitCoreConfig) {
     this.headers = headers;
@@ -40,7 +29,7 @@ export class CopilotKitCore {
     this.properties = properties;
     this.getRuntimeInfo().then(({ agents, version }) => {
       this.agents = { ...this.agents, ...agents };
-      this.didLoadAgents = true;
+      this.didLoadRuntime = true;
     });
   }
 
