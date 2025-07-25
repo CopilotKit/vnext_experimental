@@ -56,7 +56,7 @@ export type CopilotChatInputProps = WithSlots<
     startTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
     cancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
     finishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
-    addButton: typeof CopilotChatInput.AddButton;
+    addFileButton: typeof CopilotChatInput.AddFileButton;
     toolsButton: typeof CopilotChatInput.ToolsButton;
     toolbar: typeof CopilotChatInput.Toolbar;
     audioRecorder: typeof CopilotChatAudioRecorder;
@@ -93,7 +93,7 @@ export function CopilotChatInput({
   startTranscribeButton,
   cancelTranscribeButton,
   finishTranscribeButton,
-  addButton,
+  addFileButton,
   toolsButton,
   toolbar,
   audioRecorder,
@@ -191,10 +191,14 @@ export function CopilotChatInput({
     }
   );
 
-  const BoundAddButton = renderSlot(addButton, CopilotChatInput.AddButton, {
-    onClick: onAddFile,
-    disabled: mode === "transcribe",
-  });
+  const BoundAddFileButton = renderSlot(
+    addFileButton,
+    CopilotChatInput.AddFileButton,
+    {
+      onClick: onAddFile,
+      disabled: mode === "transcribe",
+    }
+  );
 
   const BoundToolsButton = renderSlot(
     toolsButton,
@@ -217,7 +221,7 @@ export function CopilotChatInput({
       children: (
         <>
           <div className="flex items-center">
-            {onAddFile && BoundAddButton}
+            {onAddFile && BoundAddFileButton}
             {BoundToolsButton}
             {additionalToolbarItems}
           </div>
@@ -249,7 +253,7 @@ export function CopilotChatInput({
           startTranscribeButton: BoundStartTranscribeButton,
           cancelTranscribeButton: BoundCancelTranscribeButton,
           finishTranscribeButton: BoundFinishTranscribeButton,
-          addButton: BoundAddButton,
+          addFileButton: BoundAddFileButton,
           toolsButton: BoundToolsButton,
           toolbar: BoundToolbar,
           onSubmitMessage,
@@ -368,7 +372,7 @@ export namespace CopilotChatInput {
     />
   );
 
-  export const AddButton: React.FC<
+  export const AddFileButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = (props) => (
     <ToolbarButton
@@ -557,7 +561,7 @@ CopilotChatInput.CancelTranscribeButton.displayName =
   "CopilotChatInput.CancelTranscribeButton";
 CopilotChatInput.FinishTranscribeButton.displayName =
   "CopilotChatInput.FinishTranscribeButton";
-CopilotChatInput.AddButton.displayName = "CopilotChatInput.AddButton";
+CopilotChatInput.AddFileButton.displayName = "CopilotChatInput.AddButton";
 CopilotChatInput.ToolsButton.displayName = "CopilotChatInput.ToolsButton";
 CopilotChatInput.Toolbar.displayName = "CopilotChatInput.Toolbar";
 
