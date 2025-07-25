@@ -350,7 +350,7 @@ export namespace CopilotChatAssistantMessage {
 
   export const CopyButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, onClick, ...props }) => {
+  > = ({ className, title, onClick, ...props }) => {
     const { labels } = useCopilotChatContext();
     const [copied, setCopied] = useState(false);
 
@@ -365,7 +365,7 @@ export namespace CopilotChatAssistantMessage {
 
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarCopyMessageLabel}
+        title={title || labels.assistantMessageToolbarCopyMessageLabel}
         onClick={handleClick}
         className={className}
         {...props}
@@ -381,11 +381,11 @@ export namespace CopilotChatAssistantMessage {
 
   export const ThumbsUpButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => {
+  > = ({ title, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarThumbsUpLabel}
+        title={title || labels.assistantMessageToolbarThumbsUpLabel}
         {...props}
       >
         <ThumbsUp className="size-[18px]" />
@@ -395,11 +395,11 @@ export namespace CopilotChatAssistantMessage {
 
   export const ThumbsDownButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => {
+  > = ({ title, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarThumbsDownLabel}
+        title={title || labels.assistantMessageToolbarThumbsDownLabel}
         {...props}
       >
         <ThumbsDown className="size-[18px]" />
@@ -409,11 +409,11 @@ export namespace CopilotChatAssistantMessage {
 
   export const ReadAloudButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => {
+  > = ({ title, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarReadAloudLabel}
+        title={title || labels.assistantMessageToolbarReadAloudLabel}
         {...props}
       >
         <Volume2 className="size-[20px]" />
@@ -423,11 +423,11 @@ export namespace CopilotChatAssistantMessage {
 
   export const RegenerateButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => {
+  > = ({ title, ...props }) => {
     const { labels } = useCopilotChatContext();
     return (
       <ToolbarButton
-        title={labels.assistantMessageToolbarRegenerateLabel}
+        title={title || labels.assistantMessageToolbarRegenerateLabel}
         {...props}
       >
         <RefreshCw className="size-[18px]" />
