@@ -121,7 +121,7 @@ export function CopilotChatUserMessage({
 
   return (
     <div
-      className={twMerge("flex flex-col items-end group", className)}
+      className={twMerge("flex flex-col items-end group py-10", className)}
       {...props}
     >
       {BoundMessageRenderer}
