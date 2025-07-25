@@ -1,10 +1,10 @@
 import React from "react";
 
-/** Utility: Create a component type with specific props omitted */
-export type OmitSlotProps<
-  C extends React.ComponentType<any>,
-  K extends keyof React.ComponentProps<C>,
-> = React.ComponentType<Omit<React.ComponentProps<C>, K>>;
+// /** Utility: Create a component type with specific props omitted */
+// export type OmitSlotProps<
+//   C extends React.ComponentType<any>,
+//   K extends keyof React.ComponentProps<C>,
+// > = React.ComponentType<Omit<React.ComponentProps<C>, K>>;
 
 /** Existing union (unchanged) */
 export type SlotValue<C extends React.ComponentType<any>> =

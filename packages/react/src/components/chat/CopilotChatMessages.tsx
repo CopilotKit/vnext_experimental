@@ -1,69 +1,81 @@
-import { WithSlots, OmitSlotProps } from "@/lib/slots";
+import { WithSlots, renderSlot } from "@/lib/slots";
 import CopilotChatAssistantMessage from "./CopilotChatAssistantMessage";
+import CopilotChatUserMessage from "./CopilotChatUserMessage";
+import { Message } from "@ag-ui/core";
+import { twMerge } from "tailwind-merge";
 
-export type CopilotChatMessagesProps = WithSlots<
-  {
-    assistantMessage: OmitSlotProps<
-      typeof CopilotChatAssistantMessage,
-      "message"
-    >;
-  },
-  {
-    messages?: any[];
-  }
->;
+export type CopilotChatMessagesProps = Omit<
+  WithSlots<
+    {
+      assistantMessageComponent: typeof CopilotChatAssistantMessage;
+      userMessageComponent: typeof CopilotChatUserMessage;
+    },
+    {
+      messages?: Message[];
+    } & React.HTMLAttributes<HTMLDivElement>
+  >,
+  "children"
+> & {
+  children: (props: {
+    messages: Message[];
+    messageElements: React.ReactElement[];
+  }) => React.ReactElement;
+};
 
 export function CopilotChatMessages({
   messages = [],
-  assistantMessage,
+  assistantMessageComponent,
+  userMessageComponent,
   children,
 }: CopilotChatMessagesProps) {
-  // Dummy implementation for now
-  return <div>hello world</div>;
+  const messageElements: React.ReactElement[] = messages
+    .map((message) => {
+      if (message.role === "assistant") {
+        return renderSlot(
+          assistantMessageComponent,
+          CopilotChatAssistantMessage,
+          {
+            message,
+          }
+        );
+      } else if (message.role === "user") {
+        return renderSlot(userMessageComponent, CopilotChatUserMessage, {
+          message,
+        });
+      }
+      return;
+    })
+    .filter(Boolean) as React.ReactElement[];
+
+  if (children) {
+    return children({ messageElements, messages });
+  }
+
+  return <div>{messageElements}</div>;
 }
 
-function Y() {
-  return <CopilotChatMessages assistantMessage={"bg-red-500"} />;
-}
+export namespace CopilotChatMessages {
+  export const AssistantMessageContainer: React.FC<
+    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
+  > = ({ children, className, ...props }) => (
+    <div
+      className={twMerge("flex flex-col items-end group", className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 
-function Z() {
-  // ✅ Now only subslots are accessible, onReadAloud is excluded
-  return (
-    <CopilotChatMessages
-      assistantMessage={{
-        copyButton: () => <button>copy</button>,
-        children: () => <div>hello world</div>,
-      }}
-    />
+  export const UserMessageContainer: React.FC<
+    React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>
+  > = ({ children, className, ...props }) => (
+    <div
+      className={twMerge("flex flex-col items-start group", className)}
+      {...props}
+    >
+      {children}
+    </div>
   );
 }
 
-function ExampleUsages() {
-  return (
-    <>
-      {/* ✅ All subslots are accessible */}
-      <CopilotChatMessages
-        assistantMessage={"bg-red-500"}
-        // assistantMessage={{
-        //   Container: ({ children }) => <div className="custom">{children}</div>,
-        //   CopyButton: () => <button>copy</button>,
-        //   ThumbsUpButton: "bg-blue-500", // string className
-        //   // ✅ Non-callback props are still accessible
-        //   additionalToolbarItems: <button>Custom</button>,
-        // }}
-      />
-
-      {/* ❌ Callback properties are omitted */}
-      {/*
-      <CopilotChatMessages
-        AssistantMessage={{
-          onReadAloud: () => {},   // TypeScript error!
-          onThumbsUp: () => {},    // TypeScript error!
-          onThumbsDown: () => {},  // TypeScript error!
-          onRegenerate: () => {},  // TypeScript error!
-        }}
-      />
-      */}
-    </>
-  );
-}
+export default CopilotChatMessages;
