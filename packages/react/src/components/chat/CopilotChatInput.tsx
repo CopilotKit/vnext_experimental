@@ -477,6 +477,14 @@ export namespace CopilotChatInput {
         () => internalTextareaRef.current as HTMLTextAreaElement
       );
 
+      const adjustHeight = () => {
+        const textarea = internalTextareaRef.current;
+        if (textarea && maxHeight > 0) {
+          textarea.style.height = "auto";
+          textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+        }
+      };
+
       useEffect(() => {
         const calculateMaxHeight = () => {
           const textarea = internalTextareaRef.current;
@@ -502,6 +510,12 @@ export namespace CopilotChatInput {
             // Restore original value
             textarea.value = currentValue;
 
+            // Adjust height after calculating maxHeight
+            if (currentValue) {
+              textarea.style.height = "auto";
+              textarea.style.height = `${Math.min(textarea.scrollHeight, contentHeight * maxRows + paddingTop + paddingBottom)}px`;
+            }
+
             if (props.autoFocus) {
               textarea.focus();
             }
@@ -511,18 +525,25 @@ export namespace CopilotChatInput {
         calculateMaxHeight();
       }, [maxRows, props.autoFocus]);
 
+      // Adjust height when controlled value changes
       useEffect(() => {
-        const textarea = internalTextareaRef.current;
-        if (textarea) {
-          textarea.style.height = "auto";
-          textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
-        }
+        adjustHeight();
       }, [props.value, maxHeight]);
+
+      // Handle input events for uncontrolled usage
+      const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+        adjustHeight();
+        // Call the original onChange if provided
+        if (props.onChange) {
+          props.onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+        }
+      };
 
       return (
         <textarea
           ref={internalTextareaRef}
           {...props}
+          onChange={handleInput}
           style={{
             overflow: "auto",
             resize: "none",
