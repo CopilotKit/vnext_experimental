@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatConfigurationProvider,
-  CopilotChatMessages,
+  CopilotChatMessageFeed,
 } from "@copilotkit/react";
 
 const meta = {
-  title: "UI/CopilotChatMessages",
+  title: "UI/CopilotChatMessageFeed",
   parameters: {
     docs: {
       description: {
         component:
-          "A simple conversation between user and AI using CopilotChat components.",
+          "A simple conversation between user and AI using CopilotChatMessageFeed component.",
       },
     },
   },
@@ -94,7 +94,7 @@ In this example:
     return (
       <CopilotChatConfigurationProvider>
         <div style={{ height: "100%" }}>
-          <CopilotChatMessages
+          <CopilotChatMessageFeed
             messages={messages}
             assistantMessage={{
               onThumbsUp: () => {

@@ -11,7 +11,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type CopilotChatMessagesProps = Omit<
+export type CopilotChatMessageFeedProps = Omit<
   WithSlots<
     {
       assistantMessage: typeof CopilotChatAssistantMessage;
@@ -33,7 +33,7 @@ export type CopilotChatMessagesProps = Omit<
   }) => React.ReactElement;
 };
 
-export function CopilotChatMessages({
+export function CopilotChatMessageFeed({
   messages = [],
   autoScroll = true,
   assistantMessage,
@@ -42,7 +42,7 @@ export function CopilotChatMessages({
   children,
   className,
   ...props
-}: CopilotChatMessagesProps) {
+}: CopilotChatMessageFeedProps) {
   const messageElements: React.ReactElement[] = messages
     .map((message) => {
       if (message.role === "assistant") {
@@ -98,7 +98,7 @@ export function CopilotChatMessages({
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
                     {renderSlot(
                       scrollToBottomButton,
-                      CopilotChatMessages.ScrollToBottomButton,
+                      CopilotChatMessageFeed.ScrollToBottomButton,
                       {
                         onClick: () => scrollToBottom(),
                       }
@@ -114,7 +114,7 @@ export function CopilotChatMessages({
   );
 }
 
-export namespace CopilotChatMessages {
+export namespace CopilotChatMessageFeed {
   export const ScrollToBottomButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, ...props }) => (
@@ -136,4 +136,4 @@ export namespace CopilotChatMessages {
   );
 }
 
-export default CopilotChatMessages;
+export default CopilotChatMessageFeed;

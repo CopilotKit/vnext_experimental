@@ -21,6 +21,6 @@ export {
 } from "./CopilotChatAudioRecorder";
 
 export {
-  default as CopilotChatMessages,
-  type CopilotChatMessagesProps,
-} from "./CopilotChatMessages";
+  default as CopilotChatMessageFeed,
+  type CopilotChatMessageFeedProps,
+} from "./CopilotChatMessageFeed";

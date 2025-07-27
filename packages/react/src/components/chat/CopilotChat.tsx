@@ -1,13 +1,13 @@
 import React from "react";
 import { WithSlots, renderSlot } from "@/lib/slots";
-import CopilotChatMessages from "./CopilotChatMessages";
+import CopilotChatMessageFeed from "./CopilotChatMessageFeed";
 import CopilotChatInput from "./CopilotChatInput";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
 
 export type CopilotChatProps = WithSlots<
   {
-    messages: typeof CopilotChatMessages;
+    messageFeed: typeof CopilotChatMessageFeed;
     input: typeof CopilotChatInput;
   },
   {
@@ -17,24 +17,24 @@ export type CopilotChatProps = WithSlots<
 >;
 
 export function CopilotChat({
-  messages: messagesSlot,
-  input: inputSlot,
+  messageFeed,
+  input,
   messagesList = [],
   autoScroll,
   children,
   className,
   ...props
 }: CopilotChatProps) {
-  const BoundMessages = renderSlot(messagesSlot, CopilotChatMessages, {
+  const BoundMessageFeed = renderSlot(messageFeed, CopilotChatMessageFeed, {
     messages: messagesList,
     autoScroll,
   });
 
-  const BoundInput = renderSlot(inputSlot, CopilotChatInput, {});
+  const BoundInput = renderSlot(input, CopilotChatInput, {});
 
   if (children) {
     return children({
-      messages: BoundMessages,
+      messageFeed: BoundMessageFeed,
       input: BoundInput,
     });
   }
@@ -44,7 +44,7 @@ export function CopilotChat({
       className={twMerge("flex flex-col h-full w-full", className)}
       {...props}
     >
-      <div className="flex-1 min-h-0">{BoundMessages}</div>
+      <div className="flex-1 min-h-0">{BoundMessageFeed}</div>
       <div className="flex-shrink-0 p-4">{BoundInput}</div>
     </div>
   );
