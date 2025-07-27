@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { WithSlots, renderSlot } from "@/lib/slots";
 import CopilotChatMessageFeed from "./CopilotChatMessageFeed";
 import CopilotChatInput from "./CopilotChatInput";
@@ -47,6 +47,30 @@ export function CopilotChat({
   className,
   ...props
 }: CopilotChatProps) {
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [inputContainerHeight, setInputContainerHeight] = useState(0);
+
+  // Track input container height changes
+  useEffect(() => {
+    const element = inputContainerRef.current;
+    if (!element) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setInputContainerHeight(entry.contentRect.height);
+      }
+    });
+
+    resizeObserver.observe(element);
+
+    // Set initial height
+    setInputContainerHeight(element.offsetHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   const BoundMessageFeed = renderSlot(messageFeed, CopilotChatMessageFeed, {
     messages,
   });
@@ -56,8 +80,9 @@ export function CopilotChat({
   const BoundScrollView = renderSlot(scrollView, CopilotChat.ScrollView, {
     autoScroll,
     scrollToBottomButton,
+    inputContainerHeight,
     children: (
-      <div className="pb-48">
+      <div style={{ paddingBottom: `${inputContainerHeight + 32}px` }}>
         <div className="max-w-3xl mx-auto">{BoundMessageFeed}</div>
       </div>
     ),
@@ -75,6 +100,7 @@ export function CopilotChat({
     inputContainer,
     CopilotChat.InputContainer,
     {
+      ref: inputContainerRef,
       children: (
         <>
           <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0">
@@ -116,11 +142,13 @@ export namespace CopilotChat {
       scrollToBottomButton?: React.FC<
         React.ButtonHTMLAttributes<HTMLButtonElement>
       >;
+      inputContainerHeight?: number;
     }
   > = ({
     children,
     autoScroll = true,
     scrollToBottomButton,
+    inputContainerHeight = 0,
     className,
     ...props
   }) => {
@@ -146,7 +174,12 @@ export namespace CopilotChat {
 
                   {/* Scroll to bottom button */}
                   {!atBottom && (
-                    <div className="absolute bottom-36 inset-x-0 flex justify-center z-10">
+                    <div
+                      className="absolute inset-x-0 flex justify-center z-10"
+                      style={{
+                        bottom: `${inputContainerHeight + 16}px`,
+                      }}
+                    >
                       {renderSlot(
                         scrollToBottomButton,
                         CopilotChat.ScrollToBottomButton,
@@ -202,16 +235,20 @@ export namespace CopilotChat {
     />
   );
 
-  export const InputContainer: React.FC<
+  export const InputContainer = React.forwardRef<
+    HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
-  > = ({ children, className, ...props }) => (
+  >(({ children, className, ...props }, ref) => (
     <div
+      ref={ref}
       className={cn("absolute bottom-0 left-0 right-0 z-20", className)}
       {...props}
     >
       {children}
     </div>
-  );
+  ));
+
+  InputContainer.displayName = "CopilotChat.InputContainer";
 
   export const Disclaimer: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     className,
