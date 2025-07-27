@@ -17,6 +17,7 @@ export const CopilotChatDefaultLabels = {
   assistantMessageToolbarRegenerateLabel: "Regenerate",
   userMessageToolbarCopyMessageLabel: "Copy",
   userMessageToolbarEditMessageLabel: "Edit",
+  chatDisclaimerText: "Powered by CopilotKit 🪁",
 };
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;

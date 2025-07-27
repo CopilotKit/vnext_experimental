@@ -11,6 +11,7 @@ import ScrollToBottom, {
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 
 export type CopilotChatProps = WithSlots<
   {
@@ -24,6 +25,7 @@ export type CopilotChatProps = WithSlots<
       React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
     >;
     feather: React.FC<React.HTMLAttributes<HTMLDivElement>>;
+    disclaimer: React.FC<React.HTMLAttributes<HTMLDivElement>>;
   },
   {
     messages?: Message[];
@@ -38,6 +40,7 @@ export function CopilotChat({
   scrollToBottomButton,
   feather,
   inputContainer,
+  disclaimer,
   messages = [],
   autoScroll = true,
   children,
@@ -66,12 +69,19 @@ export function CopilotChat({
     {}
   );
 
+  const BoundDisclaimer = renderSlot(disclaimer, CopilotChat.Disclaimer, {});
+
   const BoundInputContainer = renderSlot(
     inputContainer,
     CopilotChat.InputContainer,
     {
       children: (
-        <div className="max-w-3xl mx-auto py-4 px-4 sm:px-0">{BoundInput}</div>
+        <>
+          <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0">
+            {BoundInput}
+          </div>
+          {BoundDisclaimer}
+        </>
       ),
     }
   );
@@ -84,6 +94,7 @@ export function CopilotChat({
       scrollToBottomButton: BoundScrollToBottomButton,
       feather: BoundFeather,
       inputContainer: BoundInputContainer,
+      disclaimer: BoundDisclaimer,
     });
   }
 
@@ -182,8 +193,8 @@ export namespace CopilotChat {
     <div
       className={cn(
         "absolute bottom-0 left-0 right-4 h-24 pointer-events-none z-10 bg-gradient-to-t",
-        "from-white via-white/80 to-transparent",
-        "dark:from-[rgb(33,33,33)] dark:via-[rgb(33,33,33)]/80",
+        "from-white via-white to-transparent",
+        "dark:from-[rgb(33,33,33)] dark:via-[rgb(33,33,33)]",
         className
       )}
       style={style}
@@ -201,6 +212,25 @@ export namespace CopilotChat {
       {children}
     </div>
   );
+
+  export const Disclaimer: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+    className,
+    ...props
+  }) => {
+    const { labels } = useCopilotChatConfiguration();
+
+    return (
+      <div
+        className={cn(
+          "text-center text-xs text-muted-foreground py-3 px-4 max-w-3xl mx-auto",
+          className
+        )}
+        {...props}
+      >
+        {labels.chatDisclaimerText}
+      </div>
+    );
+  };
 }
 
 export default CopilotChat;
