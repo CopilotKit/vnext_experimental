@@ -7,17 +7,17 @@ import React, {
   useState,
   useRef,
 } from "react";
-import { RenderToolCall } from "../types/render-tool-call";
+import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { CopilotKitCore, CopilotKitCoreConfig } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: Record<string, RenderToolCall<unknown>>;
-  currentRenderToolCalls: Record<string, RenderToolCall<unknown>>;
+  renderToolCalls: Record<string, ReactToolCallRender<unknown>>;
+  currentRenderToolCalls: Record<string, ReactToolCallRender<unknown>>;
   setCurrentRenderToolCalls: (
-    renderToolCalls: Record<string, RenderToolCall<unknown>>
+    renderToolCalls: Record<string, ReactToolCallRender<unknown>>
   ) => void;
 }
 
@@ -36,7 +36,7 @@ export interface CopilotKitProviderProps {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: Record<string, RenderToolCall<unknown>>;
+  renderToolCalls?: Record<string, ReactToolCallRender<unknown>>;
 }
 
 // Provider component
@@ -50,7 +50,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 }) => {
   const initialRenderToolCalls = useMemo(() => renderToolCalls, []);
   const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<
-    Record<string, RenderToolCall<unknown>>
+    Record<string, ReactToolCallRender<unknown>>
   >(initialRenderToolCalls);
 
   useEffect(() => {

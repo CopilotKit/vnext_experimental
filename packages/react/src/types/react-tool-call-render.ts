@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export type RenderToolCallStatus = "inProgress" | "executing" | "complete";
+export type ReactToolCallRenderStatus = "inProgress" | "executing" | "complete";
 
-export interface RenderToolCall<T> {
+export interface ReactToolCallRender<T> {
   args: z.ZodSchema<T>;
-  component: React.ComponentType<
+  render: React.ComponentType<
     | {
         name: string;
         description: string;

@@ -1,1 +1,1 @@
-export * from "./render-tool-call";
+export * from "./react-tool-call-render";

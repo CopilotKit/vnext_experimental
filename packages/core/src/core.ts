@@ -113,7 +113,7 @@ export class CopilotKitCore {
     this.fetchRemoteAgents();
   }
 
-  addTool<T = unknown>(tool: FrontendTool<T>) {
+  addTool<T extends Record<string, any> = {}>(tool: FrontendTool<T>) {
     if (tool.name in this.tools) {
       logger.warn(`Tool already exists: '${tool.name}', skipping.`);
       return;

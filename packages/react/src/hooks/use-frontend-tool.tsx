@@ -1,28 +1,31 @@
 import { FrontendTool } from "@copilotkit/core";
 import { useEffect } from "react";
 import { useCopilotKit } from "../providers/CopilotKitProvider";
-import { RenderToolCall } from "../types/render-tool-call";
+import { ReactToolCallRender } from "../types/react-tool-call-render";
 
-export type ReactFrontendTool<T> = FrontendTool<T> & {
-  render: RenderToolCall<T>["component"];
-};
+export type ReactFrontendTool<T extends Record<string, any> = {}> =
+  FrontendTool<T> & {
+    render?: ReactToolCallRender<T>["render"];
+  };
 
-export function useFrontendTool<T>(tool: ReactFrontendTool<T>) {
+export function useFrontendTool<T extends Record<string, any> = {}>(
+  tool: ReactFrontendTool<T>
+) {
   const { renderToolCalls, copilotkit, setCurrentRenderToolCalls } =
     useCopilotKit();
 
   useEffect(() => {
     copilotkit.addTool(tool);
 
-    if (tool.name in renderToolCalls) {
+    if (tool.render && tool.name in renderToolCalls) {
       console.error(`Tool with name '${tool.name}' already exists. Skipping.`);
-    } else {
+    } else if (tool.render) {
       setCurrentRenderToolCalls({
         ...renderToolCalls,
         [tool.name]: {
           args: tool.parameters,
-          component: tool.render,
-        } as RenderToolCall<unknown>,
+          render: tool.render,
+        } as ReactToolCallRender<unknown>,
       });
     }
 
