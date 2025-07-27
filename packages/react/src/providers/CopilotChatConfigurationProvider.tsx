@@ -40,8 +40,6 @@ export interface CopilotChatConfigurationProviderProps {
 export const CopilotChatConfigurationProvider: React.FC<
   CopilotChatConfigurationProviderProps
 > = ({ children, labels = {} }) => {
-  const [text, setText] = useState<string>("");
-
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
     ...CopilotChatDefaultLabels,

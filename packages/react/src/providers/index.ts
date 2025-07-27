@@ -10,4 +10,5 @@ export {
   CopilotKitProvider,
   useCopilotKit,
   type CopilotKitProviderProps,
+  type CopilotKitContextValue,
 } from "./CopilotKitProvider";

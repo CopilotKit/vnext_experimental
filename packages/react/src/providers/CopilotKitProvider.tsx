@@ -1,9 +1,33 @@
-import React, { createContext, useContext, ReactNode, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useMemo,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
+import { RenderToolCall } from "../types/render-tool-call";
 import { CopilotKitCore, CopilotKitCoreConfig } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 
+// Define the context value interface - idiomatic React naming
+export interface CopilotKitContextValue {
+  copilotkit: CopilotKitCore;
+  renderToolCalls: Record<string, RenderToolCall<unknown>>;
+  currentRenderToolCalls: Record<string, RenderToolCall<unknown>>;
+  setCurrentRenderToolCalls: (
+    renderToolCalls: Record<string, RenderToolCall<unknown>>
+  ) => void;
+}
+
 // Create the CopilotKit context
-const CopilotKitContext = createContext<CopilotKitCore | null>(null);
+const CopilotKitContext = createContext<CopilotKitContextValue>({
+  copilotkit: null!,
+  renderToolCalls: {},
+  currentRenderToolCalls: {},
+  setCurrentRenderToolCalls: () => {},
+});
 
 // Provider props interface
 export interface CopilotKitProviderProps {
@@ -12,6 +36,7 @@ export interface CopilotKitProviderProps {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
+  renderToolCalls?: Record<string, RenderToolCall<unknown>>;
 }
 
 // Provider component
@@ -21,9 +46,24 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   headers = {},
   properties = {},
   agents = {},
+  renderToolCalls = {},
 }) => {
-  // Create the CopilotKitCore instance with memoization to prevent recreation on re-renders
-  const copilotKit = useMemo(() => {
+  const initialRenderToolCalls = useMemo(() => renderToolCalls, []);
+  const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<
+    Record<string, RenderToolCall<unknown>>
+  >(initialRenderToolCalls);
+
+  useEffect(() => {
+    if (
+      JSON.stringify(renderToolCalls) !== JSON.stringify(initialRenderToolCalls)
+    ) {
+      console.error(
+        "renderToolCalls must be a stable object. If you want to dynamically add or remove tools, use `useFrontendTool` instead."
+      );
+    }
+  }, [renderToolCalls]);
+
+  const copilotkit = useMemo(() => {
     const config: CopilotKitCoreConfig = {
       runtimeUrl,
       headers,
@@ -31,20 +71,34 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       agents,
     };
     return new CopilotKitCore(config);
+  }, []);
+
+  useEffect(() => {
+    copilotkit.setRuntimeUrl(runtimeUrl);
+    copilotkit.setHeaders(headers);
+    copilotkit.setProperties(properties);
+    copilotkit.setAgents(agents);
   }, [runtimeUrl, headers, properties, agents]);
 
   return (
-    <CopilotKitContext.Provider value={copilotKit}>
+    <CopilotKitContext.Provider
+      value={{
+        copilotkit,
+        renderToolCalls,
+        currentRenderToolCalls,
+        setCurrentRenderToolCalls,
+      }}
+    >
       {children}
     </CopilotKitContext.Provider>
   );
 };
 
-// Hook to use the CopilotKit instance
-export const useCopilotKit = (): CopilotKitCore => {
-  const copilotKit = useContext(CopilotKitContext);
-  if (!copilotKit) {
+// Hook to use the CopilotKit instance - returns the full context value
+export const useCopilotKit = (): CopilotKitContextValue => {
+  const context = useContext(CopilotKitContext);
+  if (!context) {
     throw new Error("useCopilotKit must be used within CopilotKitProvider");
   }
-  return copilotKit;
+  return context;
 };

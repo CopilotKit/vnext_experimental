@@ -1,8 +1,8 @@
 import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
-import type { CopilotContext, CopilotTool } from "./types";
 import { CopilotAgent } from "./agent";
-import { AbstractAgent } from "@ag-ui/client";
+import { AbstractAgent, Context } from "@ag-ui/client";
+import { FrontendTool } from "./types";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
@@ -20,12 +20,15 @@ export class CopilotKitCore {
   runtimeUrl?: string;
   didLoadRuntime: boolean = false;
 
-  context: Record<string, CopilotContext> = {};
-  tools: Record<string, CopilotTool<unknown>> = {};
+  context: Record<string, Context> = {};
+  tools: Record<string, FrontendTool<unknown>> = {};
   agents: Record<string, AbstractAgent> = {};
 
   headers: Record<string, string>;
   properties: Record<string, unknown>;
+
+  private localAgents: Record<string, AbstractAgent> = {};
+  private remoteAgents: Record<string, AbstractAgent> = {};
 
   constructor({
     runtimeUrl,
@@ -34,21 +37,10 @@ export class CopilotKitCore {
     agents = {},
   }: CopilotKitCoreConfig) {
     this.headers = headers;
-    this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
     this.properties = properties;
-    this.agents = agents;
-
-    // Only load runtime info if we have a valid runtime URL
-    if (this.runtimeUrl) {
-      this.getRuntimeInfo()
-        .then(({ agents, version }) => {
-          this.agents = { ...this.agents, ...agents };
-          this.didLoadRuntime = true;
-        })
-        .catch((error) => {
-          logger.warn(`Failed to load runtime info: ${error.message}`);
-        });
-    }
+    this.localAgents = agents;
+    this.agents = this.localAgents;
+    this.setRuntimeUrl(runtimeUrl);
   }
 
   private async getRuntimeInfo() {
@@ -77,15 +69,36 @@ export class CopilotKitCore {
     return { agents, version };
   }
 
+  private async fetchRemoteAgents() {
+    if (this.runtimeUrl) {
+      this.getRuntimeInfo()
+        .then(({ agents, version }) => {
+          this.remoteAgents = agents;
+          this.agents = { ...this.localAgents, ...this.remoteAgents };
+          this.didLoadRuntime = true;
+        })
+        .catch((error) => {
+          logger.warn(`Failed to load runtime info: ${error.message}`);
+        });
+    }
+  }
+
+  setAgents(agents: Record<string, AbstractAgent>) {
+    this.localAgents = agents;
+    this.agents = { ...this.localAgents, ...this.remoteAgents };
+  }
+
   addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
-    this.agents[id] = agent;
+    this.localAgents[id] = agent;
+    this.agents = { ...this.localAgents, ...this.remoteAgents };
   }
 
   removeAgent(id: string) {
-    delete this.agents[id];
+    delete this.localAgents[id];
+    this.agents = { ...this.localAgents, ...this.remoteAgents };
   }
 
-  addContext({ description, value }: CopilotContext): string {
+  addContext({ description, value }: Context): string {
     const id = randomUUID();
     this.context[id] = { description, value };
     return id;
@@ -95,17 +108,18 @@ export class CopilotKitCore {
     delete this.context[id];
   }
 
-  addTool<T = unknown>(tool: CopilotTool<T>) {
-    const id = randomUUID();
-    for (const t of Object.values(this.tools)) {
-      if (t.name === tool.name) {
-        logger.warn(`Tool already exists: '${tool.name}', skipping...`);
-        return id;
-      }
+  setRuntimeUrl(runtimeUrl?: string) {
+    this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
+    this.fetchRemoteAgents();
+  }
+
+  addTool<T = unknown>(tool: FrontendTool<T>) {
+    if (tool.name in this.tools) {
+      logger.warn(`Tool already exists: '${tool.name}', skipping.`);
+      return;
     }
 
-    this.tools[id] = tool as CopilotTool<unknown>;
-    return id;
+    this.tools[tool.name] = tool;
   }
 
   removeTool(id: string) {
