@@ -82,7 +82,7 @@ export function CopilotChat({
       />
 
       <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className="max-w-3xl mx-auto py-4">{BoundInput}</div>
+        <div className="max-w-3xl mx-auto py-4 px-4 sm:px-0">{BoundInput}</div>
       </div>
     </div>
   );
@@ -121,7 +121,7 @@ export namespace CopilotChat {
             <StateContext.Consumer>
               {({ atBottom }) => (
                 <>
-                  {children}
+                  <div className="px-4 sm:px-0">{children}</div>
 
                   {/* Scroll to bottom button */}
                   {!atBottom && (
