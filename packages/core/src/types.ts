@@ -5,4 +5,5 @@ export type FrontendTool<T extends Record<string, any> = {}> = {
   description?: string;
   parameters?: z.ZodType<T>;
   handler?: (args: T) => Promise<unknown>;
+  followUp?: boolean;
 };
