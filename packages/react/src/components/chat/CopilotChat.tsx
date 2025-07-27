@@ -15,11 +15,15 @@ import { cn } from "@/lib/utils";
 export type CopilotChatProps = WithSlots<
   {
     messageFeed: typeof CopilotChatMessageFeed;
-    input: typeof CopilotChatInput;
     scrollView: React.FC<React.HTMLAttributes<HTMLDivElement>>;
     scrollToBottomButton: React.FC<
       React.ButtonHTMLAttributes<HTMLButtonElement>
     >;
+    input: typeof CopilotChatInput;
+    inputContainer: React.FC<
+      React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
+    >;
+    feather: React.FC<React.HTMLAttributes<HTMLDivElement>>;
   },
   {
     messages?: Message[];
@@ -32,6 +36,8 @@ export function CopilotChat({
   input,
   scrollView,
   scrollToBottomButton,
+  feather,
+  inputContainer,
   messages = [],
   autoScroll = true,
   children,
@@ -43,47 +49,51 @@ export function CopilotChat({
   });
 
   const BoundInput = renderSlot(input, CopilotChatInput, {});
+  const BoundFeather = renderSlot(feather, CopilotChat.Feather, {});
+  const BoundScrollView = renderSlot(scrollView, CopilotChat.ScrollView, {
+    autoScroll,
+    scrollToBottomButton,
+    children: (
+      <div className="pb-48">
+        <div className="max-w-3xl mx-auto">{BoundMessageFeed}</div>
+      </div>
+    ),
+  });
+
+  const BoundScrollToBottomButton = renderSlot(
+    scrollToBottomButton,
+    CopilotChat.ScrollToBottomButton,
+    {}
+  );
+
+  const BoundInputContainer = renderSlot(
+    inputContainer,
+    CopilotChat.InputContainer,
+    {
+      children: (
+        <div className="max-w-3xl mx-auto py-4 px-4 sm:px-0">{BoundInput}</div>
+      ),
+    }
+  );
 
   if (children) {
     return children({
       messageFeed: BoundMessageFeed,
       input: BoundInput,
-      scrollView: renderSlot(scrollView, CopilotChat.ScrollView, {
-        autoScroll,
-        scrollToBottomButton,
-        children: BoundMessageFeed,
-      }),
-      scrollToBottomButton: renderSlot(
-        scrollToBottomButton,
-        CopilotChat.ScrollToBottomButton,
-        {}
-      ),
+      scrollView: BoundScrollView,
+      scrollToBottomButton: BoundScrollToBottomButton,
+      feather: BoundFeather,
+      inputContainer: BoundInputContainer,
     });
   }
 
   return (
     <div className={twMerge("relative h-full", className)} {...props}>
-      {renderSlot(scrollView, CopilotChat.ScrollView, {
-        autoScroll,
-        scrollToBottomButton,
-        children: (
-          <div className="pb-48">
-            <div className="max-w-3xl mx-auto">{BoundMessageFeed}</div>
-          </div>
-        ),
-      })}
+      {BoundScrollView}
 
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 right-4 h-24 bg-gradient-to-t from-white via-white/80 to-transparent",
-          "dark:from-gray-900 dark:via-gray-900/80 pointer-events-none z-10",
-          className
-        )}
-      />
+      {BoundFeather}
 
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className="max-w-3xl mx-auto py-4 px-4 sm:px-0">{BoundInput}</div>
-      </div>
+      {BoundInputContainer}
     </div>
   );
 }
@@ -162,6 +172,36 @@ export namespace CopilotChat {
     >
       <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
     </Button>
+  );
+
+  export const Feather: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+    className,
+    style,
+    ...props
+  }) => (
+    <div
+      className={cn(
+        "absolute bottom-0 left-0 right-4 h-24 pointer-events-none z-10",
+        className
+      )}
+      style={{
+        background:
+          "linear-gradient(to top, hsl(var(--background, 0 0% 100%) / 1) 0%, hsl(var(--background, 0 0% 100%) / 0.8) 40%, transparent 100%)",
+        ...style,
+      }}
+      {...props}
+    />
+  );
+
+  export const InputContainer: React.FC<
+    React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
+  > = ({ children, className, ...props }) => (
+    <div
+      className={cn("absolute bottom-0 left-0 right-0 z-20", className)}
+      {...props}
+    >
+      {children}
+    </div>
   );
 }
 
