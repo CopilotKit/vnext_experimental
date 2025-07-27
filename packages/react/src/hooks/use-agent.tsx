@@ -1,5 +1,5 @@
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { useMemo, useEffect, useReducer } from "react";
+import { useMemo, useEffect, useReducer, useState } from "react";
 import { DEFAULT_AGENT_NAME } from "@copilotkit/shared";
 
 export interface UseAgentProps {
@@ -11,6 +11,7 @@ export function useAgent({ agentName }: UseAgentProps = {}) {
 
   const { copilotkit } = useCopilotKit();
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [running, setRunning] = useState(false);
 
   const agent = useMemo(() => {
     return copilotkit.getAgent(agentName);
@@ -24,6 +25,15 @@ export function useAgent({ agentName }: UseAgentProps = {}) {
       onStateChanged(params) {
         forceUpdate();
       },
+      onRunInitialized(params) {
+        setRunning(true);
+      },
+      onRunFinalized(params) {
+        setRunning(false);
+      },
+      onRunFailed(params) {
+        setRunning(false);
+      },
     });
 
     return () => subscription.unsubscribe();
@@ -31,5 +41,6 @@ export function useAgent({ agentName }: UseAgentProps = {}) {
 
   return {
     agent,
+    running,
   };
 }
