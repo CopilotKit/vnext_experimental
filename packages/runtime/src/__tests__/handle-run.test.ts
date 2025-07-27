@@ -23,12 +23,12 @@ describe("handleRunAgent", () => {
   it("should return 404 when agent does not exist", async () => {
     const runtime = createMockRuntime({}); // Empty agents
     const request = createMockRequest();
-    const agentName = "nonexistent-agent";
+    const agentId = "nonexistent-agent";
 
     const response = await handleRunAgent({
       runtime,
       request,
-      agentName,
+      agentId,
     });
 
     expect(response.status).toBe(404);
@@ -48,12 +48,12 @@ describe("handleRunAgent", () => {
     };
     const runtime = createMockRuntime({ "test-agent": mockAgent });
     const request = createMockRequest();
-    const agentName = "test-agent";
+    const agentId = "test-agent";
 
     const response = await handleRunAgent({
       runtime,
       request,
-      agentName,
+      agentId,
     });
 
     expect(response.status).toBe(200);
@@ -73,12 +73,12 @@ describe("handleRunAgent", () => {
       afterRequestMiddleware: undefined,
     } as CopilotKitRuntime;
     const request = createMockRequest();
-    const agentName = "test-agent";
+    const agentId = "test-agent";
 
     const response = await handleRunAgent({
       runtime,
       request,
-      agentName,
+      agentId,
     });
 
     expect(response.status).toBe(500);

@@ -3,24 +3,24 @@ import { CopilotKitRuntime } from "../runtime";
 interface RunAgentParameters {
   request: Request;
   runtime: CopilotKitRuntime;
-  agentName: string;
+  agentId: string;
 }
 
 export async function handleRunAgent({
   runtime,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   request,
-  agentName,
+  agentId,
 }: RunAgentParameters) {
   try {
     const agents = await runtime.agents;
 
     // Check if the requested agent exists
-    if (!agents[agentName]) {
+    if (!agents[agentId]) {
       return new Response(
         JSON.stringify({
           error: "Agent not found",
-          message: `Agent '${agentName}' does not exist`,
+          message: `Agent '${agentId}' does not exist`,
         }),
         {
           status: 404,

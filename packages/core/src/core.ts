@@ -1,6 +1,6 @@
 import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
-import { AbstractAgent, Context, HttpAgent } from "@ag-ui/client";
+import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 
 export interface CopilotKitCoreConfig {
@@ -13,6 +13,11 @@ export interface CopilotKitCoreConfig {
 export interface CopilotKitCoreAddAgentParams {
   id: string;
   agent: AbstractAgent;
+}
+
+export interface RunAgentParams {
+  agent: AbstractAgent;
+  withMessages?: Message[];
 }
 
 export class CopilotKitCore {
@@ -139,5 +144,73 @@ export class CopilotKitCore {
 
   setProperties(properties: Record<string, unknown>) {
     this.properties = properties;
+  }
+
+  // TODO: AG-UI needs to expose the runAgent result type
+  async runAgent({
+    agent,
+    withMessages,
+  }: RunAgentParams): Promise<Awaited<ReturnType<typeof agent.runAgent>>> {
+    if (withMessages) {
+      agent.addMessages(withMessages);
+    }
+
+    const runAgentResult = await agent.runAgent({
+      forwardedProps: this.properties,
+    });
+
+    const { newMessages } = runAgentResult;
+
+    let needsFollowUp = false;
+
+    for (const message of newMessages) {
+      if (message.role === "assistant") {
+        for (const toolCall of message.toolCalls || []) {
+          if (
+            newMessages.findIndex(
+              (m) => m.role === "tool" && m.toolCallId === toolCall.id
+            ) === -1
+          ) {
+            if (toolCall.function.name in this.tools) {
+              const tool = this.tools[toolCall.function.name];
+              let toolCallResult = "";
+              if (tool?.handler) {
+                const args = JSON.parse(toolCall.function.arguments);
+                try {
+                  const result = await tool.handler(args);
+                  toolCallResult =
+                    typeof result === "string"
+                      ? result
+                      : JSON.stringify(result);
+                } catch (error) {
+                  toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+                }
+              }
+
+              const messageIndex = agent.messages.findIndex(
+                (m) => m.id === message.id
+              );
+              const toolMessage = {
+                id: randomUUID(),
+                role: "tool" as const,
+                toolCallId: toolCall.id,
+                content: toolCallResult,
+              };
+              agent.messages.splice(messageIndex + 1, 0, toolMessage);
+
+              if (tool?.followUp !== false) {
+                needsFollowUp = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (needsFollowUp) {
+      return await this.runAgent({ agent });
+    }
+
+    return runAgentResult;
   }
 }

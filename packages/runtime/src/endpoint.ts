@@ -31,7 +31,7 @@ export default (runtime: CopilotKitRuntime) =>
             await handleRunAgent({
               runtime,
               request,
-              agentName: info!.agentName as string,
+              agentId: info!.agentId as string,
             }),
         });
       case CopilotKitRequestType.GetRuntimeInfo:
@@ -65,13 +65,13 @@ export function routeRequest(request: Request): {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // Check if path ends with agent/<agentName>/run
+  // Check if path ends with agent/<agentId>/run
   const runMatch = path.match(/\/agent\/([^/]+)\/run$/);
   if (runMatch && runMatch[1]) {
-    const agentName = runMatch[1];
+    const agentId = runMatch[1];
     return {
       requestType: CopilotKitRequestType.RunAgent,
-      info: { agentName },
+      info: { agentId },
     };
   }
 

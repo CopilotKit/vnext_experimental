@@ -43,11 +43,11 @@ const copilotKitEndpoint = createEndpoint(runtime);
 
 The runtime automatically provides these endpoints:
 
-| Endpoint                 | Method | Description                          |
-| ------------------------ | ------ | ------------------------------------ |
-| `/`                      | GET    | Runtime information and health check |
-| `/agents`                | GET    | List available agents                |
-| `/agent/{agentName}/run` | POST   | Execute a specific agent             |
+| Endpoint               | Method | Description                          |
+| ---------------------- | ------ | ------------------------------------ |
+| `/`                    | GET    | Runtime information and health check |
+| `/agents`              | GET    | List available agents                |
+| `/agent/{agentId}/run` | POST   | Execute a specific agent             |
 
 ## Framework Integrations
 
@@ -363,8 +363,8 @@ switch (requestType) {
     // GET /agents - List agents
     break;
   case CopilotKitRequestType.RunAgent:
-    // POST /agent/{agentName}/run - Run agent
-    const agentName = info.agentName;
+    // POST /agent/{agentId}/run - Run agent
+    const agentId = info.agentId;
     break;
 }
 ```

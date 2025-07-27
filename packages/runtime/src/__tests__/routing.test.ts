@@ -14,7 +14,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "myAgent" });
+      expect(result.info).toEqual({ agentId: "myAgent" });
     });
 
     it("should match agent run URL with alphanumeric agent name", () => {
@@ -22,7 +22,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "agent123" });
+      expect(result.info).toEqual({ agentId: "agent123" });
     });
 
     it("should match agent run URL with hyphenated agent name", () => {
@@ -30,7 +30,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "my-agent" });
+      expect(result.info).toEqual({ agentId: "my-agent" });
     });
 
     it("should match agent run URL with underscored agent name", () => {
@@ -38,7 +38,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "my_agent" });
+      expect(result.info).toEqual({ agentId: "my_agent" });
     });
 
     it("should match agent run URL with complex path prefix", () => {
@@ -48,7 +48,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "testAgent" });
+      expect(result.info).toEqual({ agentId: "testAgent" });
     });
 
     it("should not match agent run URL with empty agent name", () => {
@@ -190,7 +190,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "test" });
+      expect(result.info).toEqual({ agentId: "test" });
     });
 
     it("should handle URLs with ports for info endpoint", () => {
@@ -216,7 +216,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "myAgent" });
+      expect(result.info).toEqual({ agentId: "myAgent" });
     });
 
     it("should handle URLs with special characters in agent names", () => {
@@ -226,7 +226,7 @@ describe("routeRequest", () => {
       const result = routeRequest(request);
 
       expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentName: "test%20agent" });
+      expect(result.info).toEqual({ agentId: "test%20agent" });
     });
   });
 });
