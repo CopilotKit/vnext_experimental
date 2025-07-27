@@ -181,14 +181,12 @@ export namespace CopilotChat {
   }) => (
     <div
       className={cn(
-        "absolute bottom-0 left-0 right-4 h-24 pointer-events-none z-10",
+        "absolute bottom-0 left-0 right-4 h-24 pointer-events-none z-10 bg-gradient-to-t",
+        "from-white via-white/80 to-transparent",
+        "dark:from-[rgb(33,33,33)] dark:via-[rgb(33,33,33)]/80",
         className
       )}
-      style={{
-        background:
-          "linear-gradient(to top, hsl(var(--background, 0 0% 100%) / 1) 0%, hsl(var(--background, 0 0% 100%) / 0.8) 40%, transparent 100%)",
-        ...style,
-      }}
+      style={style}
       {...props}
     />
   );
