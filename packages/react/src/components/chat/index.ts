@@ -24,3 +24,5 @@ export {
   default as CopilotChatMessageFeed,
   type CopilotChatMessageFeedProps,
 } from "./CopilotChatMessageFeed";
+
+export { default as CopilotChat, type CopilotChatProps } from "./CopilotChat";
