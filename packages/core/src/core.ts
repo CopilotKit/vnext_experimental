@@ -21,7 +21,7 @@ export class CopilotKitCore {
   didLoadRuntime: boolean = false;
 
   context: Record<string, Context> = {};
-  tools: Record<string, FrontendTool<unknown>> = {};
+  tools: Record<string, FrontendTool<any>> = {};
   agents: Record<string, AbstractAgent> = {};
 
   headers: Record<string, string>;
