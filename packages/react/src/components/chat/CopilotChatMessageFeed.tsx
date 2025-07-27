@@ -3,26 +3,15 @@ import CopilotChatAssistantMessage from "./CopilotChatAssistantMessage";
 import CopilotChatUserMessage from "./CopilotChatUserMessage";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
-import ScrollToBottom, {
-  FunctionContext,
-  StateContext,
-} from "react-scroll-to-bottom";
-import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export type CopilotChatMessageFeedProps = Omit<
   WithSlots<
     {
       assistantMessage: typeof CopilotChatAssistantMessage;
       userMessage: typeof CopilotChatUserMessage;
-      scrollToBottomButton: React.FC<
-        React.ButtonHTMLAttributes<HTMLButtonElement>
-      >;
     },
     {
       messages?: Message[];
-      autoScroll?: boolean;
     } & React.HTMLAttributes<HTMLDivElement>
   >,
   "children"
@@ -35,10 +24,8 @@ export type CopilotChatMessageFeedProps = Omit<
 
 export function CopilotChatMessageFeed({
   messages = [],
-  autoScroll = true,
   assistantMessage,
   userMessage,
-  scrollToBottomButton,
   children,
   className,
   ...props
@@ -58,75 +45,14 @@ export function CopilotChatMessageFeed({
     })
     .filter(Boolean) as React.ReactElement[];
 
-  // Scroller function to control auto-scroll behavior
-  const scroller = () => {
-    return autoScroll ? Infinity : 0;
-  };
-
   if (children) {
     return children({ messageElements, messages });
   }
 
   return (
-    <ScrollToBottom
-      scroller={scroller}
-      className={cn(
-        "h-full max-h-full",
-        "flex flex-col min-h-0",
-        "overflow-y-auto overflow-x-hidden relative",
-        "[&>*]:overflow-x-hidden [&>*]:max-w-full"
-      )}
-      followButtonClassName="hidden"
-    >
-      <FunctionContext.Consumer>
-        {({ scrollToBottom }) => (
-          <StateContext.Consumer>
-            {({ atBottom }) => (
-              <>
-                <div className={twMerge("flex flex-col", className)} {...props}>
-                  {messageElements}
-                </div>
-
-                {/* Scroll to bottom button */}
-                {!atBottom && (
-                  <div className="absolute bottom-4 inset-x-0 flex justify-center z-10">
-                    {renderSlot(
-                      scrollToBottomButton,
-                      CopilotChatMessageFeed.ScrollToBottomButton,
-                      {
-                        onClick: () => scrollToBottom(),
-                      }
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </StateContext.Consumer>
-        )}
-      </FunctionContext.Consumer>
-    </ScrollToBottom>
-  );
-}
-
-export namespace CopilotChatMessageFeed {
-  export const ScrollToBottomButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      className={twMerge(
-        "rounded-full w-10 h-10 p-0",
-        "bg-white dark:bg-gray-900",
-        "shadow-lg border border-gray-200 dark:border-gray-700",
-        "hover:bg-gray-50 dark:hover:bg-gray-800",
-        "flex items-center justify-center cursor-pointer",
-        className
-      )}
-      {...props}
-    >
-      <ChevronDown className="w-4 h-4 text-gray-600 dark:text-white" />
-    </Button>
+    <div className={twMerge("flex flex-col", className)} {...props}>
+      {messageElements}
+    </div>
   );
 }
 

@@ -95,7 +95,7 @@ In this example:
       <CopilotChatConfigurationProvider>
         <div style={{ height: "100%" }}>
           <CopilotChat
-            messagesList={messages}
+            messages={messages}
             messageFeed={{
               assistantMessage: {
                 onThumbsUp: () => {
