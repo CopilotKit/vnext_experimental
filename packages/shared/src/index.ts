@@ -8,3 +8,4 @@ export {
 export * from "./utils";
 
 export { logger } from "./logger";
+export { DEFAULT_AGENT_NAME } from "./constants";

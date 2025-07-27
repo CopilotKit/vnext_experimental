@@ -98,6 +98,14 @@ export class CopilotKitCore {
     this.agents = { ...this.localAgents, ...this.remoteAgents };
   }
 
+  getAgent(id: string): CopilotAgent {
+    if (id in this.agents) {
+      return this.agents[id] as CopilotAgent;
+    } else {
+      throw new Error(`Agent ${id} not found`);
+    }
+  }
+
   addContext({ description, value }: Context): string {
     const id = randomUUID();
     this.context[id] = { description, value };

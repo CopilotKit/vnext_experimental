@@ -1,5 +1,4 @@
 import { ReactToolCallRender } from "@/types/react-tool-call-render";
-import { useCopilotKit } from "../providers/CopilotKitProvider";
 import { FrontendTool } from "@copilotkit/core";
 import { useFrontendTool, ReactFrontendTool } from "./use-frontend-tool";
 import { useState, useCallback, useRef } from "react";

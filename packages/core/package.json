@@ -26,7 +26,7 @@
     "typescript": "5.8.2"
   },
   "dependencies": {
-    "@ag-ui/client": "^0.0.30",
+    "@ag-ui/client": "0.0.35",
     "@copilotkit/shared": "workspace:*",
     "zod": "^3.25.75"
   },
