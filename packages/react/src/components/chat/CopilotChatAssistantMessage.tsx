@@ -162,7 +162,7 @@ export function CopilotChatAssistantMessage({
   return (
     <div
       className={twMerge(
-        "prose max-w-full w-full break-words dark:prose-invert",
+        "prose max-w-full break-words dark:prose-invert",
         className
       )}
       {...props}

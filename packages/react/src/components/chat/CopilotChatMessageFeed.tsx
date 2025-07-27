@@ -72,9 +72,9 @@ export function CopilotChatMessageFeed({
       scroller={scroller}
       className={cn(
         "h-full max-h-full",
-        "flex flex-col flex-1 min-h-0",
-        "overflow-hidden relative",
-        "px-2"
+        "flex flex-col min-h-0",
+        "overflow-y-auto overflow-x-hidden relative",
+        "[&>*]:overflow-x-hidden [&>*]:max-w-full"
       )}
       followButtonClassName="hidden"
     >
@@ -83,19 +83,13 @@ export function CopilotChatMessageFeed({
           <StateContext.Consumer>
             {({ atBottom }) => (
               <>
-                <div
-                  className={twMerge(
-                    "flex flex-col max-w-3xl mx-auto px-2 w-full",
-                    className
-                  )}
-                  {...props}
-                >
+                <div className={twMerge("flex flex-col", className)} {...props}>
                   {messageElements}
                 </div>
 
                 {/* Scroll to bottom button */}
                 {!atBottom && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <div className="absolute bottom-4 inset-x-0 flex justify-center z-10">
                     {renderSlot(
                       scrollToBottomButton,
                       CopilotChatMessageFeed.ScrollToBottomButton,

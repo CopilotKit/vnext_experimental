@@ -41,11 +41,11 @@ export function CopilotChat({
 
   return (
     <div
-      className={twMerge("flex flex-col h-full w-full", className)}
+      className={twMerge("flex flex-col h-full max-w-3xl mx-auto", className)}
       {...props}
     >
       <div className="flex-1 min-h-0">{BoundMessageFeed}</div>
-      <div className="flex-shrink-0 p-4">{BoundInput}</div>
+      <div className="flex-shrink-0 py-4">{BoundInput}</div>
     </div>
   );
 }
