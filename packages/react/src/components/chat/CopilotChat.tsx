@@ -49,6 +49,8 @@ export function CopilotChat({
 }: CopilotChatProps) {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputContainerHeight, setInputContainerHeight] = useState(0);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Track input container height changes
   useEffect(() => {
@@ -57,7 +59,27 @@ export function CopilotChat({
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setInputContainerHeight(entry.contentRect.height);
+        const newHeight = entry.contentRect.height;
+
+        // Update height and set resizing state
+        setInputContainerHeight((prevHeight) => {
+          if (newHeight !== prevHeight) {
+            setIsResizing(true);
+
+            // Clear existing timeout
+            if (resizeTimeoutRef.current) {
+              clearTimeout(resizeTimeoutRef.current);
+            }
+
+            // Set isResizing to false after a short delay
+            resizeTimeoutRef.current = setTimeout(() => {
+              setIsResizing(false);
+            }, 250);
+
+            return newHeight;
+          }
+          return prevHeight;
+        });
       }
     });
 
@@ -68,6 +90,9 @@ export function CopilotChat({
 
     return () => {
       resizeObserver.disconnect();
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -81,6 +106,7 @@ export function CopilotChat({
     autoScroll,
     scrollToBottomButton,
     inputContainerHeight,
+    isResizing,
     children: (
       <div style={{ paddingBottom: `${inputContainerHeight + 32}px` }}>
         <div className="max-w-3xl mx-auto">{BoundMessageFeed}</div>
@@ -143,12 +169,14 @@ export namespace CopilotChat {
         React.ButtonHTMLAttributes<HTMLButtonElement>
       >;
       inputContainerHeight?: number;
+      isResizing?: boolean;
     }
   > = ({
     children,
     autoScroll = true,
     scrollToBottomButton,
     inputContainerHeight = 0,
+    isResizing = false,
     className,
     ...props
   }) => {
@@ -172,8 +200,8 @@ export namespace CopilotChat {
                 <>
                   <div className="px-4 sm:px-0">{children}</div>
 
-                  {/* Scroll to bottom button */}
-                  {!atBottom && (
+                  {/* Scroll to bottom button - hidden during resize */}
+                  {!atBottom && !isResizing && (
                     <div
                       className="absolute inset-x-0 flex justify-center z-10"
                       style={{
