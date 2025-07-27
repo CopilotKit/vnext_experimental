@@ -1,7 +1,6 @@
 import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
-import { CopilotAgent } from "./agent";
-import { AbstractAgent, Context } from "@ag-ui/client";
+import { AbstractAgent, Context, HttpAgent } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 
 export interface CopilotKitCoreConfig {
@@ -13,7 +12,7 @@ export interface CopilotKitCoreConfig {
 
 export interface CopilotKitCoreAddAgentParams {
   id: string;
-  agent: CopilotAgent;
+  agent: AbstractAgent;
 }
 
 export class CopilotKitCore {
@@ -55,9 +54,9 @@ export class CopilotKitCore {
       version: string;
     } = (await response.json()) as RuntimeInfo;
 
-    const agents: Record<string, CopilotAgent> = Object.fromEntries(
+    const agents: Record<string, AbstractAgent> = Object.fromEntries(
       Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
-        const agent = new CopilotAgent({
+        const agent = new HttpAgent({
           url: `${this.runtimeUrl}/agent/${id}/run`,
           agentId: id,
           description: description,
@@ -98,9 +97,9 @@ export class CopilotKitCore {
     this.agents = { ...this.localAgents, ...this.remoteAgents };
   }
 
-  getAgent(id: string): CopilotAgent {
+  getAgent(id: string): AbstractAgent {
     if (id in this.agents) {
-      return this.agents[id] as CopilotAgent;
+      return this.agents[id] as AbstractAgent;
     } else {
       throw new Error(`Agent ${id} not found`);
     }
