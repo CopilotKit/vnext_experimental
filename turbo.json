@@ -51,6 +51,10 @@
       "cache": false,
       "dependsOn": ["^build"]
     },
+    "storybook": {
+      "cache": false,
+      "dependsOn": ["^build"]
+    },
     "storybook:build": {
       "outputs": ["apps/storybook/storybook-static/**"]
     }

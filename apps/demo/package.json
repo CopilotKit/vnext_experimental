@@ -13,7 +13,9 @@
     "react-dom": "19.1.0",
     "next": "15.4.4",
     "@copilotkit/react": "workspace:*",
-    "@copilotkit/runtime": "workspace:*"
+    "@copilotkit/runtime": "workspace:*",
+    "@copilotkit/core": "workspace:*",
+    "@copilotkit/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5",

@@ -8,15 +8,16 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css -m",
-    "dev": "concurrently \"npm:dev:css\" \"tsc --watch --preserveWatchOutput\"",
-    "build": "npm run build:css && tsc",
+    "dev": "concurrently \"npm:dev:css\" \"tsup --watch\"",
+    "build": "tsup && npm run build:css",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
@@ -44,6 +45,7 @@
     "eslint": "^9.30.0",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.0.8",
+    "tsup": "^8.5.0",
     "typescript": "5.8.2",
     "vitest": "^3.2.4"
   },

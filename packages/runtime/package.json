@@ -8,12 +8,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "clean": "rm -rf dist",
@@ -27,6 +28,7 @@
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
     "openai": "^5.9.0",
+    "tsup": "^8.5.0",
     "typescript": "5.8.2",
     "vitest": "^3.0.5"
   },

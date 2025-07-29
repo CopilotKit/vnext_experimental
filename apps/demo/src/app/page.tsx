@@ -5,6 +5,9 @@ import {
   CopilotChat,
 } from "@copilotkit/react";
 
+// Disable static optimization for this page
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const messages = [
     {
