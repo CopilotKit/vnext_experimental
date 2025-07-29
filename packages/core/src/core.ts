@@ -25,6 +25,7 @@ export class CopilotKitCore {
   didLoadRuntime: boolean = false;
 
   context: Record<string, Context> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tools: Record<string, FrontendTool<any>> = {};
   agents: Record<string, AbstractAgent> = {};
 
@@ -76,7 +77,7 @@ export class CopilotKitCore {
   private async fetchRemoteAgents() {
     if (this.runtimeUrl) {
       this.getRuntimeInfo()
-        .then(({ agents, version }) => {
+        .then(({ agents }) => {
           this.remoteAgents = agents;
           this.agents = { ...this.localAgents, ...this.remoteAgents };
           this.didLoadRuntime = true;
@@ -129,7 +130,7 @@ export class CopilotKitCore {
     this.fetchRemoteAgents();
   }
 
-  addTool<T extends Record<string, any> = {}>(tool: FrontendTool<T>) {
+  addTool<T extends Record<string, unknown> = Record<string, unknown>>(tool: FrontendTool<T>) {
     if (tool.name in this.tools) {
       logger.warn(`Tool already exists: '${tool.name}', skipping.`);
       return;

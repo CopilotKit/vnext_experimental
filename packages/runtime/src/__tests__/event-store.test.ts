@@ -85,7 +85,7 @@ describe("EventStore", () => {
   it("should work with complex event types", async () => {
     interface TestEvent {
       type: string;
-      payload: any;
+      payload: unknown;
       timestamp: number;
     }
     

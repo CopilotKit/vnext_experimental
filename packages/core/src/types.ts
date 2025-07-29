@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export type FrontendTool<T extends Record<string, any> = {}> = {
+export type FrontendTool<T extends Record<string, unknown> = Record<string, unknown>> = {
   name: string;
   description?: string;
   parameters?: z.ZodType<T>;

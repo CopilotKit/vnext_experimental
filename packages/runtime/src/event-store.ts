@@ -5,7 +5,7 @@
  * Event store for buffering and consuming events from AG-UI agents
  * @template T The type of events to store (defaults to any, but can be BaseEvent from AG-UI)
  */
-export class EventStore<T = any> {
+export class EventStore<T = unknown> {
   private events: T[] = [];
   private isDone = false;
   private newEventCallbacks: Array<() => void> = [];
