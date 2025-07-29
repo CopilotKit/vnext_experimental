@@ -70,12 +70,12 @@ describe("CopilotEndpoint middleware", () => {
     expect(before).toHaveBeenCalledWith({
       runtime,
       request: originalRequest,
-      requestType: expect.any(String),
+      path: expect.any(String),
     });
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: expect.any(String),
+      path: expect.any(String),
     });
     // The response should contain version info from the /info endpoint
     const body = await response.json();
@@ -105,6 +105,7 @@ describe("CopilotEndpoint middleware", () => {
       expect.objectContaining({
         err: errorResponse,
         url: "https://example.com/info",
+        path: expect.any(String),
       }),
       "Error running before request middleware"
     );
@@ -137,6 +138,7 @@ describe("CopilotEndpoint middleware", () => {
       expect.objectContaining({
         err: error,
         url: "https://example.com/info",
+        path: expect.any(String),
       }),
       "Error running before request middleware"
     );
@@ -205,7 +207,7 @@ describe("CopilotEndpoint middleware", () => {
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: expect.any(String),
+      path: expect.any(String),
     });
 
     await new Promise((r) => setImmediate(r));

@@ -13,7 +13,6 @@
  */
 
 import type { CopilotRuntime } from "./runtime";
-import type { CopilotKitRequestType } from "./handler";
 import type { MaybePromise } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
 
@@ -27,12 +26,12 @@ export type MiddlewareURL = `${"http" | "https"}://${string}`;
 export interface BeforeRequestMiddlewareParameters {
   runtime: CopilotRuntime;
   request: Request;
-  requestType: CopilotKitRequestType;
+  path: string;
 }
 export interface AfterRequestMiddlewareParameters {
   runtime: CopilotRuntime;
   response: Response;
-  requestType: CopilotKitRequestType;
+  path: string;
 }
 
 export type BeforeRequestMiddlewareFn = (
@@ -72,14 +71,14 @@ function isMiddlewareURL(value: unknown): value is MiddlewareURL {
 export async function callBeforeRequestMiddleware({
   runtime,
   request,
-  requestType,
+  path,
 }: BeforeRequestMiddlewareParameters): Promise<Request | void> {
   const mw = runtime.beforeRequestMiddleware;
   if (!mw) return;
 
   // Function-based middleware (in-process)
   if (typeof mw === "function") {
-    return (mw as BeforeRequestMiddlewareFn)({ runtime, request, requestType });
+    return (mw as BeforeRequestMiddlewareFn)({ runtime, request, path });
   }
 
   // Webhook middleware
@@ -176,13 +175,13 @@ export async function callBeforeRequestMiddleware({
 export async function callAfterRequestMiddleware({
   runtime,
   response,
-  requestType,
+  path,
 }: AfterRequestMiddlewareParameters): Promise<void> {
   const mw = runtime.afterRequestMiddleware;
   if (!mw) return;
 
   if (typeof mw === "function") {
-    return (mw as AfterRequestMiddlewareFn)({ runtime, response, requestType });
+    return (mw as AfterRequestMiddlewareFn)({ runtime, response, path });
   }
 
   if (isMiddlewareURL(mw)) {
