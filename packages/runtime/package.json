@@ -34,7 +34,7 @@
     "@ag-ui/client": "0.0.35",
     "@ag-ui/core": "0.0.35",
     "@copilotkit/shared": "workspace:*",
-    "@whatwg-node/server": "^0.10.10"
+    "@whatwg-node/server": "0.10.11"
   },
   "peerDependencies": {
     "openai": "^5.9.0"

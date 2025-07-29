@@ -10,9 +10,10 @@ import {
   callAfterRequestMiddleware,
 } from "./middleware";
 
-export default (runtime: CopilotKitRuntime) =>
-  createServerAdapter(async (request: Request) => {
+export function createEndpoint(runtime: CopilotKitRuntime) {
+  return createServerAdapter(async (request: Request) => {
     const { requestType, info } = routeRequest(request);
+    console.log("requestType", requestType, info);
 
     if (!requestType) {
       return new Response(JSON.stringify({ error: "Not found" }), {
@@ -57,6 +58,7 @@ export default (runtime: CopilotKitRuntime) =>
         });
     }
   });
+}
 
 export function routeRequest(request: Request): {
   requestType: CopilotKitRequestType | null;
