@@ -1,11 +1,23 @@
 import { CopilotKitRuntime, createEndpoint } from "@copilotkit/runtime";
+import { MastraAgent } from "./mastra";
+import { Agent } from "@mastra/core";
+import { openai } from "@ai-sdk/openai";
 
 const runtime = new CopilotKitRuntime({
-  agents: {},
+  agents: {
+    default: new MastraAgent({
+      agent: new Agent({
+        name: "default",
+        instructions: "You are a default agent",
+        model: openai("gpt-4o"),
+      }),
+    }),
+  },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
-export const GET = copilotKitEndpoint;
-
-export const POST = copilotKitEndpoint;
+export default {
+  GET: copilotkitEndpoint,
+  POST: copilotkitEndpoint,
+};
