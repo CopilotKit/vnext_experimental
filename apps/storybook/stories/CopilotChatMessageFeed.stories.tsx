@@ -26,7 +26,7 @@ export const Default: Story = {
   decorators: [
     (Story) => (
       <div
-        style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
+        style={{ height: "100vh", margin: 0, padding: 0, overflow: "auto" }}
       >
         <Story />
       </div>
