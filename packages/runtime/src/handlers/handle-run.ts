@@ -1,3 +1,9 @@
+import {
+  AbstractAgent,
+  RunAgentInput,
+  RunAgentInputSchema,
+} from "@ag-ui/client";
+import { EventEncoder } from "@ag-ui/encoder";
 import { CopilotKitRuntime } from "../runtime";
 
 interface RunAgentParameters {
@@ -29,10 +35,52 @@ export async function handleRunAgent({
       );
     }
 
-    // TODO: Implement actual agent execution logic here
-    return new Response(JSON.stringify({ message: "Hello, world!" }), {
+    const agent = agents[agentId].clone() as AbstractAgent;
+
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new EventEncoder();
+
+    // Process the request in the background
+    (async () => {
+      let input: RunAgentInput;
+      try {
+        input = RunAgentInputSchema.parse(await request.json());
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: "Invalid request body",
+          }),
+          { status: 400 }
+        );
+      }
+      agent.setMessages(input.messages);
+      agent.setState(input.state);
+      agent.threadId = input.threadId;
+
+      await agent.runAgent(
+        {
+          runId: input.runId,
+          tools: input.tools,
+          context: input.context,
+          forwardedProps: input.forwardedProps,
+        },
+        {
+          onEvent({ event }) {
+            writer.write(encoder.encode(event));
+          },
+        }
+      );
+    })();
+
+    // Return the SSE response
+    return new Response(stream.readable, {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
   } catch (error) {
     return new Response(

@@ -7,7 +7,6 @@ import React, {
   useMemo,
   useEffect,
   useState,
-  useRef,
 } from "react";
 import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { CopilotKitCore, CopilotKitCoreConfig } from "@copilotkit/core";
