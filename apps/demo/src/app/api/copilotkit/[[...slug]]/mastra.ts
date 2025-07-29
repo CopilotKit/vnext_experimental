@@ -31,9 +31,9 @@ interface MastraAgentStreamOptions {
   onToolCallPart?: (streamPart: {
     toolCallId: string;
     toolName: string;
-    args: any;
+    args: unknown;
   }) => void;
-  onToolResultPart?: (streamPart: { toolCallId: string; result: any }) => void;
+  onToolResultPart?: (streamPart: { toolCallId: string; result: unknown }) => void;
   onError?: (error: Error) => void;
   onRunFinished?: () => Promise<void>;
 }
@@ -170,7 +170,7 @@ export class MastraAgent extends AbstractAgent {
         };
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, { id: string; description: string; inputSchema: unknown }>
     );
     const resourceId = this.resourceId ?? threadId;
     const convertedMessages = convertAGUIMessagesToMastra(messages);
@@ -209,7 +209,7 @@ export class MastraAgent extends AbstractAgent {
         } else {
           // If it's already a readable stream, process it directly
           await processDataStream({
-            stream: response as any,
+            stream: response as unknown as ReadableStream<Uint8Array>,
             onTextPart,
             onToolCallPart,
             onToolResultPart,
@@ -233,7 +233,7 @@ export function convertAGUIMessagesToMastra(
 
   for (const message of messages) {
     if (message.role === "assistant") {
-      const parts: any[] = message.content
+      const parts: Array<{ type: string; text?: string; toolCallId?: string; toolName?: string; args?: unknown }> = message.content
         ? [{ type: "text", text: message.content }]
         : [];
       for (const toolCall of message.toolCalls ?? []) {
@@ -246,7 +246,8 @@ export function convertAGUIMessagesToMastra(
       }
       result.push({
         role: "assistant",
-        content: parts,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content: parts as any,
       });
     } else if (message.role === "user") {
       result.push({

@@ -17,7 +17,10 @@ const runtime = new CopilotKitRuntime({
 
 const copilotkitEndpoint = createEndpoint(runtime);
 
-export default {
-  GET: copilotkitEndpoint,
-  POST: copilotkitEndpoint,
-};
+export async function GET(request: Request) {
+  return copilotkitEndpoint(request);
+}
+
+export async function POST(request: Request) {
+  return copilotkitEndpoint(request);
+}
