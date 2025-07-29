@@ -18,6 +18,26 @@ export class OpenAIAgent extends AbstractAgent {
     this.openai = openai ?? new OpenAI();
   }
 
+  clone(): OpenAIAgent {
+    const cloned = Object.create(Object.getPrototypeOf(this));
+
+    // Clone all properties except the ones that should be shared
+    for (const key of Object.getOwnPropertyNames(this)) {
+      const value = (this as any)[key];
+      if (typeof value !== "function") {
+        if (key === "openai") {
+          // Share the same OpenAI instance instead of cloning
+          cloned[key] = value;
+        } else {
+          // Use structuredClone for other properties
+          cloned[key] = structuredClone(value);
+        }
+      }
+    }
+
+    return cloned;
+  }
+
   protected run(input: RunAgentInput): Observable<BaseEvent> {
     return new Observable<BaseEvent>((observer) => {
       // Same as before - emit RUN_STARTED to begin
