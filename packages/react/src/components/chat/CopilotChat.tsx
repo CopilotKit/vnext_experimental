@@ -50,7 +50,7 @@ export function CopilotChat({
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputContainerHeight, setInputContainerHeight] = useState(0);
   const [isResizing, setIsResizing] = useState(false);
-  const resizeTimeoutRef = useRef<NodeJS.Timeout>();
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track input container height changes
   useEffect(() => {
