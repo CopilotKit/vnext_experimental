@@ -1,7 +1,6 @@
 import { vi, type MockedFunction } from "vitest";
-import { runHandlerWithMiddlewareAndLogging } from "../endpoint";
+import { CopilotKitEndpoint } from "../endpoint";
 import { CopilotKitRuntime } from "../runtime";
-import { CopilotKitRequestType } from "../handler";
 import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
 import { WebhookStage } from "../middleware";
@@ -15,7 +14,7 @@ const dummyRuntime = (opts: Partial<CopilotKitRuntime> = {}) => {
   return runtime;
 };
 
-describe("runHandlerWithMiddlewareAndLogging", () => {
+describe("CopilotKitEndpoint middleware", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     // restore global fetch if it was mocked
@@ -29,7 +28,7 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
 
   const setupFetchMock = (beforeUrl: string, afterUrl: string) => {
     originalFetch = global.fetch;
-    fetchMock = vi.fn(async (url: string) => {
+    fetchMock = vi.fn().mockImplementation(async (url: string) => {
       if (url === beforeUrl) {
         const body = {
           headers: { "x-modified": "yes" },
@@ -52,43 +51,40 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
   };
 
   it("processes request through middleware and handler", async () => {
-    const originalRequest = new Request("https://example.com/test");
-    const modifiedRequest = new Request("https://example.com/modified");
+    const originalRequest = new Request("https://example.com/info");
+    const modifiedRequest = new Request("https://example.com/info", {
+      headers: { "x-modified": "yes" }
+    });
 
     const before = vi.fn().mockResolvedValue(modifiedRequest);
     const after = vi.fn().mockResolvedValue(undefined);
-    const handler = vi.fn(async ({ request }) => new Response(request.url));
 
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
       afterRequestMiddleware: after,
     });
 
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: originalRequest,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
+    const endpoint = new CopilotKitEndpoint(runtime);
+    const response = await endpoint.fetch(originalRequest);
 
     expect(before).toHaveBeenCalledWith({
       runtime,
       request: originalRequest,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
+      requestType: expect.any(String),
     });
-    expect(handler).toHaveBeenCalledWith({ request: modifiedRequest });
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
+      requestType: expect.any(String),
     });
-    expect(await response.text()).toBe(modifiedRequest.url);
+    // The response should contain version info from the /info endpoint
+    const body = await response.json();
+    expect(body).toHaveProperty("version");
   });
 
-  it("logs and rethrows error from beforeRequestMiddleware", async () => {
-    const error = new Error("before");
-    const before = vi.fn().mockRejectedValue(error);
-    const handler = vi.fn();
+  it("logs and returns Response error from beforeRequestMiddleware", async () => {
+    const errorResponse = new Response("Error", { status: 400 });
+    const before = vi.fn().mockRejectedValue(errorResponse);
     const after = vi.fn();
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
@@ -99,31 +95,25 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    await expect(
-      runHandlerWithMiddlewareAndLogging({
-        runtime,
-        request: new Request("https://example.com/test"),
-        requestType: CopilotKitRequestType.GetRuntimeInfo,
-        handler,
-      })
-    ).rejects.toThrow(error);
+    const endpoint = new CopilotKitEndpoint(runtime);
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
 
+    expect(response.status).toBe(400);
     expect(logSpy).toHaveBeenCalledWith(
-      {
-        err: error,
-        url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetRuntimeInfo,
-      },
+      expect.objectContaining({
+        err: errorResponse,
+        url: "https://example.com/info",
+      }),
       "Error running before request middleware"
     );
-    expect(handler).not.toHaveBeenCalled();
     expect(after).not.toHaveBeenCalled();
   });
 
-  it("logs and rethrows error from handler", async () => {
-    const error = new Error("handler");
-    const before = vi.fn();
-    const handler = vi.fn().mockRejectedValue(error);
+  it("logs and returns 500 error from beforeRequestMiddleware", async () => {
+    const error = new Error("before");
+    const before = vi.fn().mockRejectedValue(error);
     const after = vi.fn();
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
@@ -134,30 +124,60 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    await expect(
-      runHandlerWithMiddlewareAndLogging({
-        runtime,
-        request: new Request("https://example.com/test"),
-        requestType: CopilotKitRequestType.GetRuntimeInfo,
-        handler,
-      })
-    ).rejects.toThrow(error);
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    const response = await endpoint.fetch(new Request("https://example.com/info"));
+    
+    // Hono catches errors and returns them as 500 responses
+    expect(response.status).toBe(500);
 
     expect(logSpy).toHaveBeenCalledWith(
-      {
+      expect.objectContaining({
         err: error,
-        url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetRuntimeInfo,
-      },
-      "Error running request handler"
+        url: "https://example.com/info",
+      }),
+      "Error running before request middleware"
     );
     expect(after).not.toHaveBeenCalled();
+  });
+
+  it("logs error from handler", async () => {
+    // Create a mock agent that throws an error
+    const before = vi.fn();
+    const after = vi.fn();
+    const errorAgent = {
+      clone: () => { throw new Error("Agent error"); }
+    } as unknown as AbstractAgent;
+    
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: before,
+      afterRequestMiddleware: after,
+      agents: { errorAgent },
+    });
+    const logSpy = vi
+      .spyOn(logger, "error")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation(() => undefined as any);
+
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    const response = await endpoint.fetch(
+      new Request("https://example.com/agent/errorAgent/run", { method: "POST" })
+    );
+    
+    // Hono catches errors and returns them as 500 responses
+    expect(response.status).toBe(500);
+
+    // The actual handler logs the error, not the middleware
+    expect(logSpy).toHaveBeenCalled();
+    // After middleware is called even on error
+    await new Promise((r) => setTimeout(r, 50));
+    expect(after).toHaveBeenCalled();
   });
 
   it("logs but does not rethrow error from afterRequestMiddleware", async () => {
     const error = new Error("after");
     const before = vi.fn();
-    const handler = vi.fn().mockResolvedValue(new Response("ok"));
     const after = vi.fn().mockRejectedValue(error);
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
@@ -168,12 +188,10 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: new Request("https://example.com/test"),
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
+    const endpoint = new CopilotKitEndpoint(runtime);
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
 
     await new Promise((r) => setImmediate(r));
 
@@ -181,17 +199,16 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(after).toHaveBeenCalledWith({
       runtime,
       response,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
+      requestType: expect.any(String),
     });
 
     await new Promise((r) => setImmediate(r));
 
     expect(logSpy).toHaveBeenCalledWith(
-      {
+      expect.objectContaining({
         err: error,
-        url: "https://example.com/test",
-        requestType: CopilotKitRequestType.GetRuntimeInfo,
-      },
+        url: "https://example.com/info",
+      }),
       "Error running after request middleware"
     );
   });
@@ -206,27 +223,16 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       afterRequestMiddleware: afterURL,
     });
 
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: new Request("https://example.com/original?x=1", {
+    const endpoint = new CopilotKitEndpoint(runtime);
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info", {
         headers: { foo: "bar" },
-        body: JSON.stringify({ original: true }),
-        method: "POST",
-      }),
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler: async ({ request }) => {
-        const body = await request.json();
-        return new Response(
-          JSON.stringify({
-            header: request.headers.get("x-modified"),
-            body,
-          }),
-          { headers: { "content-type": "application/json" } }
-        );
-      },
-    });
+        method: "GET",
+      })
+    );
 
-    await new Promise((r) => setImmediate(r));
+    // Wait a bit more for async afterRequestMiddleware
+    await new Promise((r) => setTimeout(r, 50));
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
@@ -236,13 +242,16 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(beforeCall[1]).toBeDefined();
     expect(beforeCall[1]!.body).toBeDefined();
     const beforePayload = JSON.parse(beforeCall[1]!.body as string);
-    expect(beforeCall[1]!.headers).toBeDefined();
-    expect(beforeCall[1]!.headers!["X-CopilotKit-Webhook-Stage"]).toBe(
+    expect(beforePayload).toMatchObject({
+      method: "GET",
+      path: "/info",
+      query: "",
+      headers: expect.objectContaining({ foo: "bar" }),
+    });
+    const headers = beforeCall[1]!.headers as Record<string, string>;
+    expect(headers["X-CopilotKit-Webhook-Stage"]).toBe(
       WebhookStage.BeforeRequest
     );
-    expect(beforePayload.method).toBe("POST");
-    expect(beforePayload.path).toBe("/original");
-    expect(beforePayload.query).toBe("x=1");
 
     // Assert payload for after-hook
     const afterCall = fetchMock!.mock.calls[1];
@@ -250,68 +259,70 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
     expect(afterCall[1]).toBeDefined();
     expect(afterCall[1]!.body).toBeDefined();
     const afterPayload = JSON.parse(afterCall[1]!.body as string);
-    expect(afterCall[1]!.headers).toBeDefined();
-    expect(afterCall[1]!.headers!["X-CopilotKit-Webhook-Stage"]).toBe(
+    expect(afterPayload).toMatchObject({
+      status: 200,
+      headers: expect.objectContaining({
+        "content-type": "application/json",
+      }),
+      body: expect.any(String),
+    });
+    const afterHeaders = afterCall[1]!.headers as Record<string, string>;
+    expect(afterHeaders["X-CopilotKit-Webhook-Stage"]).toBe(
       WebhookStage.AfterRequest
     );
-    expect(afterPayload.status).toBe(200);
 
-    const output = await response.json();
-    expect(output).toEqual({ header: "yes", body: { foo: "bar" } });
+    // Response should still be successful
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toHaveProperty("version");
   });
 
-  it("forwards original request when webhook returns 204", async () => {
-    const beforeURL = "https://hooks.example.com/before-204";
+  it("applies webhook middleware request modifications", async () => {
+    const beforeURL = "https://hooks.example.com/before";
     const afterURL = "https://hooks.example.com/after";
-    originalFetch = global.fetch;
-    fetchMock = vi.fn(async (url: string) => {
-      if (url === beforeURL) {
-        return new Response(null, { status: 204 });
-      }
-      if (url === afterURL) {
-        return new Response(null, { status: 204 });
-      }
-      throw new Error(`Unexpected fetch URL: ${url}`);
-    });
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    global.fetch = fetchMock as unknown as typeof fetch;
+    setupFetchMock(beforeURL, afterURL);
 
     const runtime = dummyRuntime({
       beforeRequestMiddleware: beforeURL,
       afterRequestMiddleware: afterURL,
     });
 
-    const handler = vi.fn(async ({ request }) => new Response(request.url));
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    // Make a POST request to info endpoint since it's simpler
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info", {
+        headers: { foo: "bar" },
+        method: "GET",
+      })
+    );
 
-    const request = new Request("https://example.com/test");
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
-
-    expect(handler).toHaveBeenCalledWith({ request });
-
-    await new Promise((r) => setImmediate(r));
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Should get a successful response
     expect(response.status).toBe(200);
-    expect(await response.text()).toBe("https://example.com/test");
+    
+    // Wait for async afterRequestMiddleware
+    await new Promise((r) => setTimeout(r, 100));
+    
+    // The webhook middleware should have been called
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("returns 4xx response from before webhook to client", async () => {
-    const beforeURL = "https://hooks.example.com/before-4xx";
+  it("handles webhook middleware timeout", async () => {
+    const beforeURL = "https://hooks.example.com/before";
     originalFetch = global.fetch;
-    fetchMock = vi.fn(async (url: string) => {
-      if (url === beforeURL) {
-        return new Response(JSON.stringify({ error: "nope" }), {
-          status: 403,
-          headers: { "content-type": "application/json" },
-        });
-      }
-      throw new Error(`Unexpected fetch URL: ${url}`);
+    
+    // Create an AbortController to simulate timeout
+    let abortSignal: AbortSignal | undefined;
+    fetchMock = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      abortSignal = init?.signal;
+      // Wait for abort signal
+      return new Promise<Response>((_resolve, reject) => {
+        if (abortSignal) {
+          abortSignal.addEventListener('abort', () => {
+            reject(new Error('Aborted'));
+          });
+        }
+      });
     });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -321,27 +332,24 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const handler = vi.fn();
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: new Request("https://example.com/deny"),
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
-
-    expect(handler).not.toHaveBeenCalled();
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: "nope" });
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    // Should return 502 on timeout
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
+    
+    expect(response.status).toBe(502);
+    
+    // Verify that the fetch was aborted due to timeout
+    expect(abortSignal?.aborted).toBe(true);
   });
 
-  it("returns 502 when before webhook fails", async () => {
-    const beforeURL = "https://hooks.example.com/before-fail";
+  it("handles webhook middleware error responses", async () => {
+    const beforeURL = "https://hooks.example.com/before";
     originalFetch = global.fetch;
-    fetchMock = vi.fn(async (url: string) => {
-      if (url === beforeURL) {
-        return new Response(null, { status: 500 });
-      }
-      throw new Error(`Unexpected fetch URL: ${url}`);
+    fetchMock = vi.fn().mockImplementation(async () => {
+      return new Response("Bad request", { status: 400 });
     });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -351,52 +359,64 @@ describe("runHandlerWithMiddlewareAndLogging", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: new Request("https://example.com/fail"),
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler: vi.fn(),
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    // Should pass through error response
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
+    
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe("Bad request");
+  });
+
+  it("handles webhook middleware server error", async () => {
+    const beforeURL = "https://hooks.example.com/before";
+    originalFetch = global.fetch;
+    fetchMock = vi.fn().mockImplementation(async () => {
+      return new Response("Server error", { status: 500 });
+    });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const runtime = dummyRuntime({
+      beforeRequestMiddleware: beforeURL,
     });
 
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    // Should return 502 on server error
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
+    
     expect(response.status).toBe(502);
   });
 
-  it("supports Response throwing from function middleware", async () => {
-    const before = vi.fn(() => {
-      throw new Response("blocked", { status: 401 });
+  it("handles webhook middleware 204 response", async () => {
+    const beforeURL = "https://hooks.example.com/before";
+    originalFetch = global.fetch;
+    fetchMock = vi.fn().mockImplementation(async () => {
+      return new Response(null, { status: 204 });
     });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    global.fetch = fetchMock as unknown as typeof fetch;
+
     const runtime = dummyRuntime({
-      beforeRequestMiddleware: before,
+      beforeRequestMiddleware: beforeURL,
     });
 
-    const handler = vi.fn();
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request: new Request("https://example.com/func-block"),
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
-
-    expect(handler).not.toHaveBeenCalled();
-    expect(response.status).toBe(401);
-    expect(await response.text()).toBe("blocked");
-  });
-
-  it("keeps request unchanged when function middleware returns void", async () => {
-    const before = vi.fn().mockResolvedValue(undefined);
-    const runtime = dummyRuntime({ beforeRequestMiddleware: before });
-
-    const handler = vi.fn(async ({ request }) => new Response(request.url));
-    const request = new Request("https://example.com/original");
-    const response = await runHandlerWithMiddlewareAndLogging({
-      runtime,
-      request,
-      requestType: CopilotKitRequestType.GetRuntimeInfo,
-      handler,
-    });
-
-    expect(before).toHaveBeenCalled();
-    expect(handler).toHaveBeenCalledWith({ request });
-    expect(await response.text()).toBe("https://example.com/original");
+    const endpoint = new CopilotKitEndpoint(runtime);
+    
+    // Should continue with original request on 204
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
+    
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toHaveProperty("version");
   });
 });

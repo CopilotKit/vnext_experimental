@@ -1,18 +1,16 @@
-import { CopilotKitRuntime, createEndpoint } from "@copilotkit/runtime";
+import { CopilotKitRuntime, CopilotKitEndpoint } from "@copilotkit/runtime";
+import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 
-const runtime = new CopilotKitRuntime({
+export const runtime = "edge";
+
+const copilotKitRuntime = new CopilotKitRuntime({
   agents: {
     default: new OpenAIAgent(),
   },
 });
 
-const copilotkitEndpoint = createEndpoint(runtime);
+const app = new CopilotKitEndpoint(copilotKitRuntime).basePath("/api/copilotkit");
 
-export async function GET(request: Request) {
-  return copilotkitEndpoint(request);
-}
-
-export async function POST(request: Request) {
-  return copilotkitEndpoint(request);
-}
+export const GET = handle(app);
+export const POST = handle(app);

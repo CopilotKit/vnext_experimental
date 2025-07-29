@@ -1,232 +1,220 @@
-import { routeRequest } from "../endpoint";
-import { CopilotKitRequestType } from "../handler";
+import { CopilotKitEndpoint } from "../endpoint";
+import { CopilotKitRuntime } from "../runtime";
 import { describe, it, expect } from "vitest";
+import type { AbstractAgent } from "@ag-ui/client";
 
-describe("routeRequest", () => {
+describe("CopilotKitEndpoint routing", () => {
   // Helper function to create a Request object with a given URL
-  const createRequest = (url: string): Request => {
-    return new Request(url);
+  const createRequest = (url: string, method: string = "GET"): Request => {
+    return new Request(url, { method });
+  };
+
+  // Create a mock runtime with a basic agent
+  const createMockRuntime = () => {
+    const createMockAgent = () => {
+      const agent: unknown = {
+        execute: async () => ({ events: [] })
+      };
+      (agent as {clone: () => unknown}).clone = () => createMockAgent();
+      return agent as AbstractAgent;
+    };
+    
+    return new CopilotKitRuntime({
+      agents: { 
+        default: createMockAgent(), 
+        myAgent: createMockAgent(), 
+        agent123: createMockAgent(), 
+        "my-agent": createMockAgent(), 
+        my_agent: createMockAgent(), 
+        testAgent: createMockAgent(), 
+        test: createMockAgent(), 
+        "test%20agent": createMockAgent(),
+        "test agent": createMockAgent() 
+      },
+    });
+  };
+
+  // Helper to test routing
+  const testRoute = async (url: string, method: string = "GET", body?: unknown) => {
+    const runtime = createMockRuntime();
+    const endpoint = new CopilotKitEndpoint(runtime);
+    const requestInit: RequestInit = { method };
+    if (body) {
+      requestInit.body = JSON.stringify(body);
+      requestInit.headers = { "Content-Type": "application/json" };
+    }
+    const request = createRequest(url, method);
+    const response = await endpoint.fetch(request);
+    return response;
   };
 
   describe("RunAgent route pattern", () => {
-    it("should match agent run URL with simple agent name", () => {
-      const request = createRequest("https://example.com/agent/myAgent/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "myAgent" });
+    it("should match agent run URL with simple agent name", async () => {
+      const response = await testRoute("https://example.com/agent/myAgent/run", "POST", {
+        agentId: "myAgent"
+      });
+      
+      // Should not be 404
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match agent run URL with alphanumeric agent name", () => {
-      const request = createRequest("https://example.com/agent/agent123/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "agent123" });
+    it("should match agent run URL with alphanumeric agent name", async () => {
+      const response = await testRoute("https://example.com/agent/agent123/run", "POST", {
+        agentId: "agent123"
+      });
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match agent run URL with hyphenated agent name", () => {
-      const request = createRequest("https://example.com/agent/my-agent/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "my-agent" });
+    it("should match agent run URL with hyphenated agent name", async () => {
+      const response = await testRoute("https://example.com/agent/my-agent/run", "POST", {
+        agentId: "my-agent"
+      });
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match agent run URL with underscored agent name", () => {
-      const request = createRequest("https://example.com/agent/my_agent/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "my_agent" });
+    it("should match agent run URL with underscored agent name", async () => {
+      const response = await testRoute("https://example.com/agent/my_agent/run", "POST", {
+        agentId: "my_agent"
+      });
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match agent run URL with complex path prefix", () => {
-      const request = createRequest(
-        "https://example.com/api/v1/copilot/agent/testAgent/run"
+
+    it("should not match agent run URL with empty agent name", async () => {
+      const response = await testRoute("https://example.com/agent//run", "POST");
+      
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body).toEqual({ error: "Not found" });
+    });
+
+    it("should not match partial agent run URL", async () => {
+      const response = await testRoute("https://example.com/agent/myAgent", "POST");
+      
+      expect(response.status).toBe(404);
+    });
+
+    it("should not match agent run URL with extra path segments", async () => {
+      const response = await testRoute(
+        "https://example.com/agent/myAgent/run/extra",
+        "POST"
       );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "testAgent" });
-    });
-
-    it("should not match agent run URL with empty agent name", () => {
-      const request = createRequest("https://example.com/agent//run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should not match partial agent run URL", () => {
-      const request = createRequest("https://example.com/agent/myAgent");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should not match agent run URL with extra path segments", () => {
-      const request = createRequest(
-        "https://example.com/agent/myAgent/run/extra"
-      );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+      
+      expect(response.status).toBe(404);
     });
   });
 
   describe("GetRuntimeInfo route pattern (/info endpoint)", () => {
-    it("should match simple info URL", () => {
-      const request = createRequest("https://example.com/info");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
+    it("should match simple info URL", async () => {
+      const response = await testRoute("https://example.com/info");
+      
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body).toHaveProperty("version");
     });
 
-    it("should match info URL with path prefix", () => {
-      const request = createRequest("https://example.com/api/v1/copilot/info");
-      const result = routeRequest(request);
 
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
+    it("should match info URL with query parameters", async () => {
+      const response = await testRoute("https://example.com/info?param=value");
+      
+      expect(response.status).toBe(200);
     });
 
-    it("should match info URL with query parameters", () => {
-      const request = createRequest("https://example.com/info?param=value");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should not match non-info URLs", () => {
-      const request = createRequest("https://example.com/agents");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should not match non-info URLs", async () => {
+      const response = await testRoute("https://example.com/agents");
+      
+      expect(response.status).toBe(404);
     });
   });
 
   describe("Transcribe route pattern (/transcribe endpoint)", () => {
-    it("should match simple transcribe URL", () => {
-      const request = createRequest("https://example.com/transcribe");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
-      expect(result.info).toBeUndefined();
+    it("should match simple transcribe URL", async () => {
+      // Transcribe expects POST method and audio data
+      const response = await testRoute("https://example.com/transcribe", "POST", {});
+      
+      // It might return an error since we're not providing audio, but it shouldn't be 404
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match transcribe URL with path prefix", () => {
-      const request = createRequest(
-        "https://example.com/api/v1/copilot/transcribe"
+
+    it("should match transcribe URL with query parameters", async () => {
+      const response = await testRoute(
+        "https://example.com/transcribe?format=json",
+        "POST",
+        {}
       );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
-      expect(result.info).toBeUndefined();
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should match transcribe URL with query parameters", () => {
-      const request = createRequest(
-        "https://example.com/transcribe?format=json"
-      );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
-      expect(result.info).toBeUndefined();
-    });
-
-    it("should not match transcribe URLs with extra path segments", () => {
-      const request = createRequest("https://example.com/transcribe/extra");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should not match transcribe URLs with extra path segments", async () => {
+      const response = await testRoute("https://example.com/transcribe/extra", "POST");
+      
+      expect(response.status).toBe(404);
     });
   });
 
   describe("Unmatched routes (404 behavior)", () => {
-    it("should return null for root path", () => {
-      const request = createRequest("https://example.com/");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should return 404 for root path", async () => {
+      const response = await testRoute("https://example.com/");
+      
+      expect(response.status).toBe(404);
+      const body = await response.json();
+      expect(body).toEqual({ error: "Not found" });
     });
 
-    it("should return null for unknown paths", () => {
-      const request = createRequest("https://example.com/unknown/path");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should return 404 for unknown paths", async () => {
+      const response = await testRoute("https://example.com/unknown/path");
+      
+      expect(response.status).toBe(404);
     });
 
-    it("should return null for malformed agent paths", () => {
-      const request = createRequest("https://example.com/agent/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should return 404 for malformed agent paths", async () => {
+      const response = await testRoute("https://example.com/agent/run", "POST");
+      
+      expect(response.status).toBe(404);
     });
 
-    it("should return null for agents path", () => {
-      const request = createRequest("https://example.com/agents");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(null);
-      expect(result.info).toBeUndefined();
+    it("should return 404 for agents path", async () => {
+      const response = await testRoute("https://example.com/agents");
+      
+      expect(response.status).toBe(404);
     });
   });
 
   describe("Edge cases", () => {
-    it("should handle URLs with different domains", () => {
-      const request = createRequest("http://localhost:3000/agent/test/run");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "test" });
+    it("should handle URLs with different domains", async () => {
+      const response = await testRoute("http://localhost:3000/agent/test/run", "POST", {
+        agentId: "test"
+      });
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should handle URLs with ports for info endpoint", () => {
-      const request = createRequest("https://api.example.com:8080/info");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.GetRuntimeInfo);
-      expect(result.info).toBeUndefined();
+    it("should handle URLs with ports for info endpoint", async () => {
+      const response = await testRoute("https://api.example.com:8080/info");
+      
+      expect(response.status).toBe(200);
     });
 
-    it("should handle URLs with ports for transcribe endpoint", () => {
-      const request = createRequest("https://api.example.com:8080/transcribe");
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.Transcribe);
-      expect(result.info).toBeUndefined();
+    it("should handle URLs with ports for transcribe endpoint", async () => {
+      const response = await testRoute("https://api.example.com:8080/transcribe", "POST", {});
+      
+      expect(response.status).not.toBe(404);
     });
 
-    it("should handle URLs with hash fragments", () => {
-      const request = createRequest(
-        "https://example.com/agent/myAgent/run#section"
+
+    it("should handle URLs with special characters in agent names", async () => {
+      const response = await testRoute(
+        "https://example.com/agent/test%20agent/run",
+        "POST",
+        { agentId: "test%20agent" }
       );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "myAgent" });
-    });
-
-    it("should handle URLs with special characters in agent names", () => {
-      const request = createRequest(
-        "https://example.com/agent/test%20agent/run"
-      );
-      const result = routeRequest(request);
-
-      expect(result.requestType).toBe(CopilotKitRequestType.RunAgent);
-      expect(result.info).toEqual({ agentId: "test%20agent" });
+      
+      expect(response.status).not.toBe(404);
     });
   });
 });

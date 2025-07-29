@@ -46,7 +46,7 @@ export async function handleRunAgent({
       try {
         const requestBody = await request.json();
         input = RunAgentInputSchema.parse(requestBody);
-      } catch (error) {
+      } catch {
         return new Response(
           JSON.stringify({
             error: "Invalid request body",

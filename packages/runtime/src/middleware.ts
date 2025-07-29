@@ -150,14 +150,17 @@ export async function callBeforeRequestMiddleware({
         headers?: Record<string, string>;
         body?: unknown;
       };
-      const init: RequestInit = {};
+      const init: RequestInit = {
+        method: request.method,
+      };
       if (headers) {
         init.headers = headers;
       }
-      if (body !== undefined) {
+      // Only add body for non-GET/HEAD requests
+      if (body !== undefined && request.method !== "GET" && request.method !== "HEAD") {
         init.body = JSON.stringify(body);
       }
-      return new Request(request, init);
+      return new Request(request.url, init);
     }
     return;
   }

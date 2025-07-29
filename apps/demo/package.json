@@ -14,6 +14,7 @@
     "@copilotkit/react": "workspace:*",
     "@copilotkit/runtime": "workspace:*",
     "@copilotkit/shared": "workspace:*",
+    "hono": "^4.6.13",
     "next": "15.4.4",
     "openai": "^5.9.0",
     "react": "19.1.0",
