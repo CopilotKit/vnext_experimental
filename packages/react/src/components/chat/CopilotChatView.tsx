@@ -4,10 +4,7 @@ import CopilotChatMessageView from "./CopilotChatMessageView";
 import CopilotChatInput from "./CopilotChatInput";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
-import ScrollToBottom, {
-  FunctionContext,
-  StateContext,
-} from "react-scroll-to-bottom";
+import { StickToBottom, useStickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -166,6 +163,42 @@ export function CopilotChatView({
 }
 
 export namespace CopilotChatView {
+  // Inner component that has access to StickToBottom context
+  const ScrollContent: React.FC<{
+    children: React.ReactNode;
+    scrollToBottomButton?: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+    inputContainerHeight: number;
+    isResizing: boolean;
+  }> = ({ children, scrollToBottomButton, inputContainerHeight, isResizing }) => {
+    const { isAtBottom, scrollToBottom } = useStickToBottomContext();
+
+    return (
+      <>
+        <StickToBottom.Content className="overflow-y-scroll overflow-x-hidden">
+          <div className="px-4 sm:px-0">{children}</div>
+        </StickToBottom.Content>
+
+        {/* Scroll to bottom button - hidden during resize */}
+        {!isAtBottom && !isResizing && (
+          <div
+            className="absolute inset-x-0 flex justify-center z-10"
+            style={{
+              bottom: `${inputContainerHeight + 16}px`,
+            }}
+          >
+            {renderSlot(
+              scrollToBottomButton,
+              CopilotChatView.ScrollToBottomButton,
+              {
+                onClick: () => scrollToBottom(),
+              }
+            )}
+          </div>
+        )}
+      </>
+    );
+  };
+
   export const ScrollView: React.FC<
     React.HTMLAttributes<HTMLDivElement> & {
       autoScroll?: boolean;
@@ -185,15 +218,38 @@ export namespace CopilotChatView {
     ...props
   }) => {
     const [hasMounted, setHasMounted] = useState(false);
+    const { scrollRef, contentRef, scrollToBottom } = useStickToBottom();
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     useEffect(() => {
       setHasMounted(true);
     }, []);
 
-    // Scroller function to control auto-scroll behavior
-    const scroller = () => {
-      return autoScroll ? Infinity : 0;
-    };
+    // Monitor scroll position for non-autoscroll mode
+    useEffect(() => {
+      if (autoScroll) return; // Skip for autoscroll mode
+      
+      const scrollElement = scrollRef.current;
+      if (!scrollElement) return;
+
+      const checkScroll = () => {
+        const atBottom = 
+          (scrollElement.scrollHeight - scrollElement.scrollTop - scrollElement.clientHeight < 10);
+        setShowScrollButton(!atBottom);
+      };
+
+      checkScroll();
+      scrollElement.addEventListener('scroll', checkScroll);
+      
+      // Also check on resize
+      const resizeObserver = new ResizeObserver(checkScroll);
+      resizeObserver.observe(scrollElement);
+
+      return () => {
+        scrollElement.removeEventListener('scroll', checkScroll);
+        resizeObserver.disconnect();
+      };
+    }, [scrollRef, autoScroll]);
 
     if (!hasMounted) {
       return (
@@ -203,44 +259,54 @@ export namespace CopilotChatView {
       );
     }
 
+    // When autoScroll is false, we don't use StickToBottom
+    if (!autoScroll) {
+      return (
+        <div 
+          ref={scrollRef}
+          className={cn("h-full max-h-full flex flex-col min-h-0 overflow-y-scroll overflow-x-hidden relative", className)}
+          {...props}
+        >
+          <div ref={contentRef} className="px-4 sm:px-0">
+            {children}
+          </div>
+          
+          {/* Scroll to bottom button for manual mode */}
+          {showScrollButton && !isResizing && (
+            <div
+              className="absolute inset-x-0 flex justify-center z-10"
+              style={{
+                bottom: `${inputContainerHeight + 16}px`,
+              }}
+            >
+              {renderSlot(
+                scrollToBottomButton,
+                CopilotChatView.ScrollToBottomButton,
+                {
+                  onClick: () => scrollToBottom(),
+                }
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
-      <ScrollToBottom
-        scroller={scroller}
-        className="h-full max-h-full flex flex-col min-h-0"
-        scrollViewClassName="overflow-y-scroll overflow-x-hidden"
-        followButtonClassName="hidden"
+      <StickToBottom 
+        className={cn("h-full max-h-full flex flex-col min-h-0 relative", className)}
+        resize="smooth"
+        initial="smooth"
         {...props}
       >
-        <FunctionContext.Consumer>
-          {({ scrollToBottom }) => (
-            <StateContext.Consumer>
-              {({ atBottom }) => (
-                <>
-                  <div className="px-4 sm:px-0">{children}</div>
-
-                  {/* Scroll to bottom button - hidden during resize */}
-                  {!atBottom && !isResizing && (
-                    <div
-                      className="absolute inset-x-0 flex justify-center z-10"
-                      style={{
-                        bottom: `${inputContainerHeight + 16}px`,
-                      }}
-                    >
-                      {renderSlot(
-                        scrollToBottomButton,
-                        CopilotChatView.ScrollToBottomButton,
-                        {
-                          onClick: () => scrollToBottom(),
-                        }
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </StateContext.Consumer>
-          )}
-        </FunctionContext.Consumer>
-      </ScrollToBottom>
+        <ScrollContent
+          scrollToBottomButton={scrollToBottomButton}
+          inputContainerHeight={inputContainerHeight}
+          isResizing={isResizing}
+        >
+          {children}
+        </ScrollContent>
+      </StickToBottom>
     );
   };
 
