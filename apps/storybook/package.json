@@ -23,8 +23,8 @@
     "@copilotkit/typescript-config": "workspace:*",
     "@storybook/addon-themes": "^8",
     "@types/node": "^22",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.0.2",
     "concurrently": "^9.1.0",
     "typescript": "5.8.2"
   }

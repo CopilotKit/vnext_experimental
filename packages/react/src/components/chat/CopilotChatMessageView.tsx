@@ -4,7 +4,7 @@ import CopilotChatUserMessage from "./CopilotChatUserMessage";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
 
-export type CopilotChatMessageFeedProps = Omit<
+export type CopilotChatMessageViewProps = Omit<
   WithSlots<
     {
       assistantMessage: typeof CopilotChatAssistantMessage;
@@ -22,14 +22,14 @@ export type CopilotChatMessageFeedProps = Omit<
   }) => React.ReactElement;
 };
 
-export function CopilotChatMessageFeed({
+export function CopilotChatMessageView({
   messages = [],
   assistantMessage,
   userMessage,
   children,
   className,
   ...props
-}: CopilotChatMessageFeedProps) {
+}: CopilotChatMessageViewProps) {
   const messageElements: React.ReactElement[] = messages
     .map((message) => {
       if (message.role === "assistant") {
@@ -59,4 +59,4 @@ export function CopilotChatMessageFeed({
   );
 }
 
-export default CopilotChatMessageFeed;
+export default CopilotChatMessageView;

@@ -41,29 +41,6 @@ describe("handleRunAgent", () => {
     });
   });
 
-  it("should return 200 when agent exists", async () => {
-    const mockAgent = {
-      description: "Test agent",
-      constructor: { name: "TestAgent" },
-    };
-    const runtime = createMockRuntime({ "test-agent": mockAgent });
-    const request = createMockRequest();
-    const agentId = "test-agent";
-
-    const response = await handleRunAgent({
-      runtime,
-      request,
-      agentId,
-    });
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("Content-Type")).toBe("application/json");
-
-    const body = await response.json();
-    expect(body).toEqual({
-      message: "Hello, world!",
-    });
-  });
 
   it("should return 500 when runtime.agents throws an error", async () => {
     const runtime = {

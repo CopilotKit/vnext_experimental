@@ -102,11 +102,15 @@ export class CopilotKitCore {
     this.agents = { ...this.localAgents, ...this.remoteAgents };
   }
 
-  getAgent(id: string): AbstractAgent {
+  getAgent(id: string): AbstractAgent | undefined {
     if (id in this.agents) {
       return this.agents[id] as AbstractAgent;
     } else {
-      throw new Error(`Agent ${id} not found`);
+      if (!this.didLoadRuntime) {
+        return undefined;
+      } else {
+        throw new Error(`Agent ${id} not found`);
+      }
     }
   }
 

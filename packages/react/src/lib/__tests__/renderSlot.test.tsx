@@ -337,7 +337,7 @@ describe("renderSlot", () => {
     });
 
     test("simulates subcomponent property overrides", () => {
-      // This simulates the pattern from CopilotChatMessageFeed where subcomponent props are overridden
+      // This simulates the pattern from CopilotChatMessageView where subcomponent props are overridden
       const SubComponent: React.FC<{
         label: string;
         disabled?: boolean;

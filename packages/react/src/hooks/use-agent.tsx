@@ -1,6 +1,7 @@
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useMemo, useEffect, useReducer, useState } from "react";
 import { DEFAULT_AGENT_ID } from "@copilotkit/shared";
+import { AbstractAgent } from "@ag-ui/client";
 
 export interface UseAgentProps {
   agentId?: string;
@@ -13,12 +14,12 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [running, setRunning] = useState(false);
 
-  const agent = useMemo(() => {
+  const agent: AbstractAgent | undefined = useMemo(() => {
     return copilotkit.getAgent(agentId);
-  }, [agentId, copilotkit.agents]);
+  }, [agentId, copilotkit.agents, copilotkit.didLoadRuntime]);
 
   useEffect(() => {
-    const subscription = agent.subscribe({
+    const subscription = agent?.subscribe({
       onMessagesChanged(params) {
         forceUpdate();
       },
@@ -36,7 +37,7 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
       },
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [agent]);
 
   return {

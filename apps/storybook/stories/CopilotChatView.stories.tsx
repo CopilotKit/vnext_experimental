@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatConfigurationProvider,
-  CopilotChatMessageFeed,
+  CopilotChatView,
 } from "@copilotkit/react";
 
 const meta = {
-  title: "UI/CopilotChatMessageFeed",
+  title: "UI/CopilotChatView",
   parameters: {
     docs: {
       description: {
         component:
-          "A simple conversation between user and AI using CopilotChatMessageFeed component.",
+          "A complete chat interface with message feed and input components.",
       },
     },
   },
@@ -26,7 +26,7 @@ export const Default: Story = {
   decorators: [
     (Story) => (
       <div
-        style={{ height: "100vh", margin: 0, padding: 0, overflow: "auto" }}
+        style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
       >
         <Story />
       </div>
@@ -94,14 +94,16 @@ In this example:
     return (
       <CopilotChatConfigurationProvider>
         <div style={{ height: "100%" }}>
-          <CopilotChatMessageFeed
+          <CopilotChatView
             messages={messages}
-            assistantMessage={{
-              onThumbsUp: () => {
-                alert("thumbsUp");
-              },
-              onThumbsDown: () => {
-                alert("thumbsDown");
+            messageView={{
+              assistantMessage: {
+                onThumbsUp: () => {
+                  alert("thumbsUp");
+                },
+                onThumbsDown: () => {
+                  alert("thumbsDown");
+                },
               },
             }}
           />
