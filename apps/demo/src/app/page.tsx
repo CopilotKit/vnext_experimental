@@ -3,10 +3,11 @@
 import {
   CopilotChatConfigurationProvider,
   CopilotChat,
+  CopilotKitProvider,
 } from "@copilotkit/react";
 
 // Disable static optimization for this page
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   const messages = [
@@ -68,22 +69,26 @@ In this example:
   ];
 
   return (
-    <CopilotChatConfigurationProvider>
-      <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
-        <CopilotChat
-          messages={messages}
-          messageFeed={{
-            assistantMessage: {
-              onThumbsUp: () => {
-                alert("thumbsUp");
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <CopilotChatConfigurationProvider>
+        <div
+          style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
+        >
+          <CopilotChat
+            messages={messages}
+            messageFeed={{
+              assistantMessage: {
+                onThumbsUp: () => {
+                  alert("thumbsUp");
+                },
+                onThumbsDown: () => {
+                  alert("thumbsDown");
+                },
               },
-              onThumbsDown: () => {
-                alert("thumbsDown");
-              },
-            },
-          }}
-        />
-      </div>
-    </CopilotChatConfigurationProvider>
+            }}
+          />
+        </div>
+      </CopilotChatConfigurationProvider>
+    </CopilotKitProvider>
   );
 }

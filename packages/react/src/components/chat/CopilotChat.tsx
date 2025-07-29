@@ -180,10 +180,24 @@ export namespace CopilotChat {
     className,
     ...props
   }) => {
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+      setHasMounted(true);
+    }, []);
+
     // Scroller function to control auto-scroll behavior
     const scroller = () => {
       return autoScroll ? Infinity : 0;
     };
+
+    if (!hasMounted) {
+      return (
+        <div className="h-full max-h-full flex flex-col min-h-0 overflow-y-scroll overflow-x-hidden">
+          <div className="px-4 sm:px-0">{children}</div>
+        </div>
+      );
+    }
 
     return (
       <ScrollToBottom

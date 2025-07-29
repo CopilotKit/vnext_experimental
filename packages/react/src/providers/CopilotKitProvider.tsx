@@ -1,3 +1,5 @@
+"use client";
+
 import React, {
   createContext,
   useContext,
@@ -65,7 +67,8 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   const copilotkit = useMemo(() => {
     const config: CopilotKitCoreConfig = {
-      runtimeUrl,
+      // Don't set runtimeUrl during initialization to prevent server-side fetching
+      runtimeUrl: undefined,
       headers,
       properties,
       agents,
