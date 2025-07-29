@@ -10,126 +10,116 @@ import {
   callAfterRequestMiddleware,
 } from "./middleware";
 
-export class CopilotKitEndpoint extends Hono {
-  private runtime: CopilotKitRuntime;
+interface CopilotKitEndpointParams {
+  runtime: CopilotKitRuntime;
+  basePath: string;
+}
 
-  constructor(runtime: CopilotKitRuntime) {
-    super();
-    this.runtime = runtime;
-    
-    // Set up routes
-    this.setupRoutes();
-  }
-
-  private setupRoutes() {
-    // Agent run endpoint
-    this.post("/agent/:agentId/run", async (c) => {
+export function copilotkitEndpoint({
+  runtime,
+  basePath,
+}: CopilotKitEndpointParams) {
+  return new Hono()
+    .basePath(basePath)
+    .post("/agent/:agentId/run", async (c) => {
+      console.log("POST /agent/:agentId/run");
       const agentId = c.req.param("agentId");
-      return this.handleWithMiddleware(
+      return handleWithMiddleware(
         c,
+        runtime,
         CopilotKitRequestType.RunAgent,
         async (request) => {
           return handleRunAgent({
-            runtime: this.runtime,
+            runtime,
             request,
             agentId,
           });
         }
       );
-    });
-
-    // Runtime info endpoint
-    this.get("/info", async (c) => {
-      return this.handleWithMiddleware(
+    })
+    .get("/info", async (c) => {
+      return handleWithMiddleware(
         c,
+        runtime,
         CopilotKitRequestType.GetRuntimeInfo,
         async (request) => {
           return handleGetRuntimeInfo({
-            runtime: this.runtime,
+            runtime,
             request,
           });
         }
       );
-    });
-
-    // Transcribe endpoint
-    this.post("/transcribe", async (c) => {
-      return this.handleWithMiddleware(
+    })
+    .post("/transcribe", async (c) => {
+      return handleWithMiddleware(
         c,
+        runtime,
         CopilotKitRequestType.Transcribe,
         async (request) => {
           return handleTranscribe({
-            runtime: this.runtime,
+            runtime,
             request,
           });
         }
       );
-    });
-
-    // 404 handler for unmatched routes
-    this.notFound((c) => {
+    })
+    .notFound((c) => {
       return c.json({ error: "Not found" }, 404);
     });
-  }
-
-  private async handleWithMiddleware(
-    c: Context,
-    requestType: CopilotKitRequestType,
-    handler: (request: Request) => Promise<Response>
-  ): Promise<Response> {
-    let request = c.req.raw;
-
-    try {
-      // Call before middleware
-      const maybeModifiedRequest = await callBeforeRequestMiddleware({
-        runtime: this.runtime,
-        request,
-        requestType,
-      });
-      if (maybeModifiedRequest) {
-        request = maybeModifiedRequest;
-      }
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, requestType },
-        "Error running before request middleware"
-      );
-      if (error instanceof Response) {
-        return error;
-      }
-      throw error;
-    }
-
-    let response: Response;
-    try {
-      // Call the actual handler
-      response = await handler(request);
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, requestType },
-        "Error running request handler"
-      );
-      throw error;
-    }
-
-    // Call after middleware (don't await to avoid blocking response)
-    callAfterRequestMiddleware({ 
-      runtime: this.runtime, 
-      response, 
-      requestType 
-    }).catch((error) => {
-      logger.error(
-        { err: error, url: request.url, requestType },
-        "Error running after request middleware"
-      );
-    });
-
-    return response;
-  }
 }
 
-export function createEndpoint(runtime: CopilotKitRuntime) {
-  const endpoint = new CopilotKitEndpoint(runtime);
-  // Return the Hono app's fetch handler
-  return (request: Request, ...args: unknown[]) => endpoint.fetch(request, ...args);
+async function handleWithMiddleware(
+  c: Context,
+  runtime: CopilotKitRuntime,
+  requestType: CopilotKitRequestType,
+  handler: (request: Request) => Promise<Response>
+): Promise<Response> {
+  let request = c.req.raw;
+
+  try {
+    // Call before middleware
+    const maybeModifiedRequest = await callBeforeRequestMiddleware({
+      runtime,
+      request,
+      requestType,
+    });
+    if (maybeModifiedRequest) {
+      request = maybeModifiedRequest;
+    }
+  } catch (error) {
+    logger.error(
+      { err: error, url: request.url, requestType },
+      "Error running before request middleware"
+    );
+    if (error instanceof Response) {
+      return error;
+    }
+    throw error;
+  }
+
+  let response: Response;
+  try {
+    // Call the actual handler
+    response = await handler(request);
+  } catch (error) {
+    logger.error(
+      { err: error, url: request.url, requestType },
+      "Error running request handler"
+    );
+    throw error;
+  }
+
+  // Call after middleware (don't await to avoid blocking response)
+  callAfterRequestMiddleware({
+    runtime,
+    response,
+    requestType,
+  }).catch((error) => {
+    logger.error(
+      { err: error, url: request.url, requestType },
+      "Error running after request middleware"
+    );
+  });
+
+  return response;
 }

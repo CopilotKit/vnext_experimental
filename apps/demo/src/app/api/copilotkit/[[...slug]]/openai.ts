@@ -23,7 +23,7 @@ export class OpenAIAgent extends AbstractAgent {
 
     // Clone all properties except the ones that should be shared
     for (const key of Object.getOwnPropertyNames(this)) {
-      const value = (this as any)[key];
+      const value = (this as Record<string, unknown>)[key];
       if (typeof value !== "function") {
         if (key === "openai") {
           // Share the same OpenAI instance instead of cloning
@@ -45,7 +45,7 @@ export class OpenAIAgent extends AbstractAgent {
         type: EventType.RUN_STARTED,
         threadId: input.threadId,
         runId: input.runId,
-      } as any);
+      } as BaseEvent);
 
       // NEW: Instead of hardcoded response, call OpenAI's API
       this.openai.chat.completions
@@ -62,20 +62,26 @@ export class OpenAIAgent extends AbstractAgent {
             },
           })),
           // Transform AG-UI messages to OpenAI's message format
-          messages: input.messages.map((message) => ({
-            role: message.role as any,
-            content: message.content ?? "",
-            // Include tool calls if this is an assistant message with tools
-            ...(message.role === "assistant" && message.toolCalls
-              ? {
-                  tool_calls: message.toolCalls,
-                }
-              : {}),
-            // Include tool call ID if this is a tool result message
-            ...(message.role === "tool"
-              ? { tool_call_id: message.toolCallId }
-              : {}),
-          })),
+          messages: input.messages.map((message) => {
+            if (message.role === "tool") {
+              return {
+                role: "tool" as const,
+                content: message.content ?? "",
+                tool_call_id: message.toolCallId ?? "",
+              };
+            } else if (message.role === "assistant" && message.toolCalls) {
+              return {
+                role: "assistant" as const,
+                content: message.content ?? "",
+                tool_calls: message.toolCalls,
+              };
+            } else {
+              return {
+                role: message.role as "system" | "user" | "assistant",
+                content: message.content ?? "",
+              };
+            }
+          }),
         })
         .then(async (response) => {
           const messageId = Date.now().toString();
@@ -88,11 +94,11 @@ export class OpenAIAgent extends AbstractAgent {
                 type: EventType.TEXT_MESSAGE_CHUNK, // Chunk events open and close messages automatically
                 messageId,
                 delta: chunk.choices[0].delta.content,
-              } as any);
+              } as BaseEvent);
             }
             // Handle tool call chunks (when the model wants to use a function)
             else if (chunk.choices[0].delta.tool_calls) {
-              let toolCall = chunk.choices[0].delta.tool_calls[0];
+              const toolCall = chunk.choices[0].delta.tool_calls[0];
 
               observer.next({
                 type: EventType.TOOL_CALL_CHUNK,
@@ -100,7 +106,7 @@ export class OpenAIAgent extends AbstractAgent {
                 toolCallName: toolCall.function?.name,
                 parentMessageId: messageId,
                 delta: toolCall.function?.arguments,
-              } as any);
+              } as BaseEvent);
             }
           }
 
@@ -109,7 +115,7 @@ export class OpenAIAgent extends AbstractAgent {
             type: EventType.RUN_FINISHED,
             threadId: input.threadId,
             runId: input.runId,
-          } as any);
+          } as BaseEvent);
 
           observer.complete();
         })
@@ -118,7 +124,7 @@ export class OpenAIAgent extends AbstractAgent {
           observer.next({
             type: EventType.RUN_ERROR,
             message: error.message,
-          } as any);
+          } as BaseEvent);
 
           observer.error(error);
         });
