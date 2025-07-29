@@ -73,7 +73,7 @@ export type CopilotChatInputProps = WithSlots<
     onAddFile?: () => void;
     value?: string;
     onChange?: (value: string) => void;
-  } & React.HTMLAttributes<HTMLDivElement>
+  } & Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">
 >;
 
 export function CopilotChatInput({
@@ -101,6 +101,13 @@ export function CopilotChatInput({
   className,
   ...props
 }: CopilotChatInputProps) {
+  const { inputValue, onSubmitInput, onChangeInput } =
+    useCopilotChatConfiguration();
+
+  value ??= inputValue;
+  onSubmitMessage ??= onSubmitInput;
+  onChange ??= onChangeInput;
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef =
     useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
