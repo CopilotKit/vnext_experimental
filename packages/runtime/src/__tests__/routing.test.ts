@@ -1,9 +1,9 @@
-import { CopilotKitEndpoint } from "../endpoint";
+import { createCopilotEndpoint } from "../endpoint";
 import { CopilotRuntime } from "../runtime";
 import { describe, it, expect } from "vitest";
 import type { AbstractAgent } from "@ag-ui/client";
 
-describe("CopilotKitEndpoint routing", () => {
+describe("CopilotEndpoint routing", () => {
   // Helper function to create a Request object with a given URL
   const createRequest = (url: string, method: string = "GET"): Request => {
     return new Request(url, { method });
@@ -41,7 +41,7 @@ describe("CopilotKitEndpoint routing", () => {
     body?: unknown
   ) => {
     const runtime = createMockRuntime();
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
     const requestInit: RequestInit = { method };
     if (body) {
       requestInit.body = JSON.stringify(body);

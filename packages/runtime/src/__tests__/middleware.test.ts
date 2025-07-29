@@ -1,5 +1,5 @@
 import { vi, type MockedFunction } from "vitest";
-import { CopilotKitEndpoint } from "../endpoint";
+import { createCopilotEndpoint } from "../endpoint";
 import { CopilotRuntime } from "../runtime";
 import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
@@ -14,7 +14,7 @@ const dummyRuntime = (opts: Partial<CopilotRuntime> = {}) => {
   return runtime;
 };
 
-describe("CopilotKitEndpoint middleware", () => {
+describe("CopilotEndpoint middleware", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     // restore global fetch if it was mocked
@@ -64,7 +64,7 @@ describe("CopilotKitEndpoint middleware", () => {
       afterRequestMiddleware: after,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
     const response = await endpoint.fetch(originalRequest);
 
     expect(before).toHaveBeenCalledWith({
@@ -95,7 +95,7 @@ describe("CopilotKitEndpoint middleware", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
@@ -124,7 +124,7 @@ describe("CopilotKitEndpoint middleware", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
@@ -163,7 +163,7 @@ describe("CopilotKitEndpoint middleware", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     const response = await endpoint.fetch(
       new Request("https://example.com/agent/errorAgent/run", {
@@ -194,7 +194,7 @@ describe("CopilotKitEndpoint middleware", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mockImplementation(() => undefined as any);
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
@@ -229,7 +229,7 @@ describe("CopilotKitEndpoint middleware", () => {
       afterRequestMiddleware: afterURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
     const response = await endpoint.fetch(
       new Request("https://example.com/info", {
         headers: { foo: "bar" },
@@ -293,7 +293,7 @@ describe("CopilotKitEndpoint middleware", () => {
       afterRequestMiddleware: afterURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     // Make a POST request to info endpoint since it's simpler
     const response = await endpoint.fetch(
@@ -340,7 +340,7 @@ describe("CopilotKitEndpoint middleware", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     // Should return 502 on timeout
     const response = await endpoint.fetch(
@@ -367,7 +367,7 @@ describe("CopilotKitEndpoint middleware", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     // Should pass through error response
     const response = await endpoint.fetch(
@@ -392,7 +392,7 @@ describe("CopilotKitEndpoint middleware", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     // Should return 502 on server error
     const response = await endpoint.fetch(
@@ -416,7 +416,7 @@ describe("CopilotKitEndpoint middleware", () => {
       beforeRequestMiddleware: beforeURL,
     });
 
-    const endpoint = new CopilotKitEndpoint(runtime);
+    const endpoint = createCopilotEndpoint({ runtime, basePath: "/" });
 
     // Should continue with original request on 204
     const response = await endpoint.fetch(
