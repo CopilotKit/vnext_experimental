@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "mintlify dev",
+    "dev": "mintlify dev --port 4000",
     "lint": "mintlify broken-links",
     "check-types": "echo 'No TypeScript compilation needed for Mintlify docs'"
   },
