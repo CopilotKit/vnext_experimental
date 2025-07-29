@@ -34,13 +34,16 @@ export function CopilotChatMessageFeed({
     .map((message) => {
       if (message.role === "assistant") {
         return renderSlot(assistantMessage, CopilotChatAssistantMessage, {
+          key: message.id,
           message,
         });
       } else if (message.role === "user") {
         return renderSlot(userMessage, CopilotChatUserMessage, {
+          key: message.id,
           message,
         });
       }
+
       return;
     })
     .filter(Boolean) as React.ReactElement[];

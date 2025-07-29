@@ -5,7 +5,7 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: true,
   sourcemap: true,
-  clean: ['dist/**/*.{js,mjs,d.ts,d.mts,js.map,mjs.map}'], // Clean only JS/TS files, preserve CSS
+  clean: false, // Don't clean to preserve CSS file
   target: 'es2022',
   outDir: 'dist',
   external: ['react', 'react-dom'],

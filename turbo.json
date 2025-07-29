@@ -47,6 +47,15 @@
       "cache": false,
       "persistent": true
     },
+    "build:css": {
+      "cache": true,
+      "outputs": ["dist/styles.css"]
+    },
+    "demo#dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["@copilotkit/react#build:css"]
+    },
     "storybook:dev": {
       "cache": false,
       "dependsOn": ["^build"]
