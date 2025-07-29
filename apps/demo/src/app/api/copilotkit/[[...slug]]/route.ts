@@ -1,16 +1,11 @@
 import { CopilotKitRuntime, createEndpoint } from "@copilotkit/runtime";
 
 const runtime = new CopilotKitRuntime({
-  agents: {}
+  agents: {},
 });
 
 const copilotKitEndpoint = createEndpoint(runtime);
 
-export async function GET(request: Request) {
-  return copilotKitEndpoint(request);
-}
+export const GET = copilotKitEndpoint;
 
-export async function POST(request: Request) {
-  return copilotKitEndpoint(request);
-}
-
+export const POST = copilotKitEndpoint;
