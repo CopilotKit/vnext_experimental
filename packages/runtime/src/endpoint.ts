@@ -27,115 +27,106 @@ export function createCopilotEndpoint({
 }: CopilotEndpointParams) {
   const app = new Hono<CopilotEndpointContext>();
 
-  // Set base path
-  app.basePath(basePath);
+  return app
+    .basePath(basePath)
+    .use("*", async (c, next) => {
+      const request = c.req.raw;
+      const path = c.req.path;
 
-  // Global before middleware
-  app.use('*', async (c, next) => {
-    const request = c.req.raw;
-    const path = c.req.path;
-    
-    try {
-      const maybeModifiedRequest = await callBeforeRequestMiddleware({
+      try {
+        const maybeModifiedRequest = await callBeforeRequestMiddleware({
+          runtime,
+          request,
+          path,
+        });
+        if (maybeModifiedRequest) {
+          c.set("modifiedRequest", maybeModifiedRequest);
+        }
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path },
+          "Error running before request middleware"
+        );
+        if (error instanceof Response) {
+          return error;
+        }
+        throw error;
+      }
+
+      await next();
+    })
+    .use("*", async (c, next) => {
+      await next();
+
+      const response = c.res;
+      const path = c.req.path;
+
+      // Non-blocking after middleware
+      callAfterRequestMiddleware({
         runtime,
-        request,
+        response,
         path,
+      }).catch((error) => {
+        logger.error(
+          { err: error, url: c.req.url, path },
+          "Error running after request middleware"
+        );
       });
-      if (maybeModifiedRequest) {
-        c.set("modifiedRequest", maybeModifiedRequest);
-      }
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, path },
-        "Error running before request middleware"
-      );
-      if (error instanceof Response) {
-        return error;
-      }
-      throw error;
-    }
-    
-    await next();
-  });
+    })
+    .post("/agent/:agentId/run", async (c) => {
+      console.log("POST /agent/:agentId/run");
+      const agentId = c.req.param("agentId");
+      const request = c.get("modifiedRequest") || c.req.raw;
 
-  // Global after middleware
-  app.use('*', async (c, next) => {
-    await next();
-    
-    const response = c.res;
-    const path = c.req.path;
-    
-    // Non-blocking after middleware
-    callAfterRequestMiddleware({
-      runtime,
-      response,
-      path,
-    }).catch((error) => {
-      logger.error(
-        { err: error, url: c.req.url, path },
-        "Error running after request middleware"
-      );
+      try {
+        return await handleRunAgent({
+          runtime,
+          request,
+          agentId,
+        });
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path: c.req.path },
+          "Error running request handler"
+        );
+        throw error;
+      }
+    })
+    .get("/info", async (c) => {
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleGetRuntimeInfo({
+          runtime,
+          request,
+        });
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path: c.req.path },
+          "Error running request handler"
+        );
+        throw error;
+      }
+    })
+    .post("/transcribe", async (c) => {
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleTranscribe({
+          runtime,
+          request,
+        });
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path: c.req.path },
+          "Error running request handler"
+        );
+        throw error;
+      }
+    })
+    .notFound((c) => {
+      return c.json({ error: "Not found" }, 404);
     });
-  });
 
-  // Simple route handlers
-  app.post("/agent/:agentId/run", async (c) => {
-    console.log("POST /agent/:agentId/run");
-    const agentId = c.req.param("agentId");
-    const request = c.get("modifiedRequest") || c.req.raw;
-
-    try {
-      return await handleRunAgent({
-        runtime,
-        request,
-        agentId,
-      });
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, path: c.req.path },
-        "Error running request handler"
-      );
-      throw error;
-    }
-  });
-
-  app.get("/info", async (c) => {
-    const request = c.get("modifiedRequest") || c.req.raw;
-
-    try {
-      return await handleGetRuntimeInfo({
-        runtime,
-        request,
-      });
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, path: c.req.path },
-        "Error running request handler"
-      );
-      throw error;
-    }
-  });
-
-  app.post("/transcribe", async (c) => {
-    const request = c.get("modifiedRequest") || c.req.raw;
-
-    try {
-      return await handleTranscribe({
-        runtime,
-        request,
-      });
-    } catch (error) {
-      logger.error(
-        { err: error, url: request.url, path: c.req.path },
-        "Error running request handler"
-      );
-      throw error;
-    }
-  });
-
-  app.notFound((c) => {
-    return c.json({ error: "Not found" }, 404);
-  });
-
-  return app;
+  // return app;
 }
