@@ -4,11 +4,11 @@ import {
   RunAgentInputSchema,
 } from "@ag-ui/client";
 import { EventEncoder } from "@ag-ui/encoder";
-import { CopilotKitRuntime } from "../runtime";
+import { CopilotRuntime } from "../runtime";
 
 interface RunAgentParameters {
   request: Request;
-  runtime: CopilotKitRuntime;
+  runtime: CopilotRuntime;
   agentId: string;
 }
 

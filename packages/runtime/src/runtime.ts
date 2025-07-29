@@ -10,9 +10,9 @@ import { TranscriptionService } from "./transcription-service/transcription-serv
 export const VERSION = pkg.version;
 
 /**
- * Options used to construct a `CopilotKitRuntime` instance.
+ * Options used to construct a `CopilotRuntime` instance.
  */
-export interface CopilotKitRuntimeOptions {
+export interface CopilotRuntimeOptions {
   /** Map of available agents (loaded lazily is fine). */
   agents: MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>>;
   /** Optional transcription service for audio processing. */
@@ -26,18 +26,18 @@ export interface CopilotKitRuntimeOptions {
 /**
  * Central runtime object passed to all request handlers.
  */
-export class CopilotKitRuntime {
-  public agents: CopilotKitRuntimeOptions["agents"];
-  public transcriptionService: CopilotKitRuntimeOptions["transcriptionService"];
-  public beforeRequestMiddleware: CopilotKitRuntimeOptions["beforeRequestMiddleware"];
-  public afterRequestMiddleware: CopilotKitRuntimeOptions["afterRequestMiddleware"];
+export class CopilotRuntime {
+  public agents: CopilotRuntimeOptions["agents"];
+  public transcriptionService: CopilotRuntimeOptions["transcriptionService"];
+  public beforeRequestMiddleware: CopilotRuntimeOptions["beforeRequestMiddleware"];
+  public afterRequestMiddleware: CopilotRuntimeOptions["afterRequestMiddleware"];
 
   constructor({
     agents,
     transcriptionService,
     beforeRequestMiddleware,
     afterRequestMiddleware,
-  }: CopilotKitRuntimeOptions) {
+  }: CopilotRuntimeOptions) {
     this.agents = agents;
     this.transcriptionService = transcriptionService;
     this.beforeRequestMiddleware = beforeRequestMiddleware;

@@ -1,14 +1,14 @@
-import { CopilotKitRuntime, copilotkitEndpoint } from "@copilotkit/runtime";
+import { CopilotRuntime, createCopilotEndpoint } from "@copilotkit/runtime";
 import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 
-const runtime = new CopilotKitRuntime({
+const runtime = new CopilotRuntime({
   agents: {
     default: new OpenAIAgent(),
   },
 });
 
-const app = copilotkitEndpoint({
+const app = createCopilotEndpoint({
   runtime,
   basePath: "/api/copilotkit",
 });

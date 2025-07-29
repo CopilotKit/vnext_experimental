@@ -1,13 +1,13 @@
 import { vi, type MockedFunction } from "vitest";
 import { CopilotKitEndpoint } from "../endpoint";
-import { CopilotKitRuntime } from "../runtime";
+import { CopilotRuntime } from "../runtime";
 import { logger } from "@copilotkit/shared";
 import type { AbstractAgent } from "@ag-ui/client";
 import { WebhookStage } from "../middleware";
 import { afterEach, describe, expect, it } from "vitest";
 
-const dummyRuntime = (opts: Partial<CopilotKitRuntime> = {}) => {
-  const runtime = new CopilotKitRuntime({
+const dummyRuntime = (opts: Partial<CopilotRuntime> = {}) => {
+  const runtime = new CopilotRuntime({
     agents: { agent: {} as unknown as AbstractAgent },
     ...opts,
   });
@@ -53,7 +53,7 @@ describe("CopilotKitEndpoint middleware", () => {
   it("processes request through middleware and handler", async () => {
     const originalRequest = new Request("https://example.com/info");
     const modifiedRequest = new Request("https://example.com/info", {
-      headers: { "x-modified": "yes" }
+      headers: { "x-modified": "yes" },
     });
 
     const before = vi.fn().mockResolvedValue(modifiedRequest);
@@ -125,9 +125,11 @@ describe("CopilotKitEndpoint middleware", () => {
       .mockImplementation(() => undefined as any);
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
-    const response = await endpoint.fetch(new Request("https://example.com/info"));
-    
+
+    const response = await endpoint.fetch(
+      new Request("https://example.com/info")
+    );
+
     // Hono catches errors and returns them as 500 responses
     expect(response.status).toBe(500);
 
@@ -146,9 +148,11 @@ describe("CopilotKitEndpoint middleware", () => {
     const before = vi.fn();
     const after = vi.fn();
     const errorAgent = {
-      clone: () => { throw new Error("Agent error"); }
+      clone: () => {
+        throw new Error("Agent error");
+      },
     } as unknown as AbstractAgent;
-    
+
     const runtime = dummyRuntime({
       beforeRequestMiddleware: before,
       afterRequestMiddleware: after,
@@ -160,11 +164,13 @@ describe("CopilotKitEndpoint middleware", () => {
       .mockImplementation(() => undefined as any);
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     const response = await endpoint.fetch(
-      new Request("https://example.com/agent/errorAgent/run", { method: "POST" })
+      new Request("https://example.com/agent/errorAgent/run", {
+        method: "POST",
+      })
     );
-    
+
     // Hono catches errors and returns them as 500 responses
     expect(response.status).toBe(500);
 
@@ -288,7 +294,7 @@ describe("CopilotKitEndpoint middleware", () => {
     });
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     // Make a POST request to info endpoint since it's simpler
     const response = await endpoint.fetch(
       new Request("https://example.com/info", {
@@ -299,10 +305,10 @@ describe("CopilotKitEndpoint middleware", () => {
 
     // Should get a successful response
     expect(response.status).toBe(200);
-    
+
     // Wait for async afterRequestMiddleware
     await new Promise((r) => setTimeout(r, 100));
-    
+
     // The webhook middleware should have been called
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -310,20 +316,22 @@ describe("CopilotKitEndpoint middleware", () => {
   it("handles webhook middleware timeout", async () => {
     const beforeURL = "https://hooks.example.com/before";
     originalFetch = global.fetch;
-    
+
     // Create an AbortController to simulate timeout
     let abortSignal: AbortSignal | undefined;
-    fetchMock = vi.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
-      abortSignal = init?.signal;
-      // Wait for abort signal
-      return new Promise<Response>((_resolve, reject) => {
-        if (abortSignal) {
-          abortSignal.addEventListener('abort', () => {
-            reject(new Error('Aborted'));
-          });
-        }
+    fetchMock = vi
+      .fn()
+      .mockImplementation(async (_url: string, init?: RequestInit) => {
+        abortSignal = init?.signal;
+        // Wait for abort signal
+        return new Promise<Response>((_resolve, reject) => {
+          if (abortSignal) {
+            abortSignal.addEventListener("abort", () => {
+              reject(new Error("Aborted"));
+            });
+          }
+        });
       });
-    });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     global.fetch = fetchMock as unknown as typeof fetch;
@@ -333,14 +341,14 @@ describe("CopilotKitEndpoint middleware", () => {
     });
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     // Should return 502 on timeout
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
-    
+
     expect(response.status).toBe(502);
-    
+
     // Verify that the fetch was aborted due to timeout
     expect(abortSignal?.aborted).toBe(true);
   });
@@ -360,12 +368,12 @@ describe("CopilotKitEndpoint middleware", () => {
     });
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     // Should pass through error response
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
-    
+
     expect(response.status).toBe(400);
     expect(await response.text()).toBe("Bad request");
   });
@@ -385,12 +393,12 @@ describe("CopilotKitEndpoint middleware", () => {
     });
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     // Should return 502 on server error
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
-    
+
     expect(response.status).toBe(502);
   });
 
@@ -409,12 +417,12 @@ describe("CopilotKitEndpoint middleware", () => {
     });
 
     const endpoint = new CopilotKitEndpoint(runtime);
-    
+
     // Should continue with original request on 204
     const response = await endpoint.fetch(
       new Request("https://example.com/info")
     );
-    
+
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toHaveProperty("version");

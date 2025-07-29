@@ -12,7 +12,7 @@
  *   • `AFTER_REQUEST`  – runs *after* the handler returns a `Response`.
  */
 
-import type { CopilotKitRuntime } from "./runtime";
+import type { CopilotRuntime } from "./runtime";
 import type { CopilotKitRequestType } from "./handler";
 import type { MaybePromise } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
@@ -25,21 +25,21 @@ import { logger } from "@copilotkit/shared";
 export type MiddlewareURL = `${"http" | "https"}://${string}`;
 
 export interface BeforeRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime;
+  runtime: CopilotRuntime;
   request: Request;
   requestType: CopilotKitRequestType;
 }
 export interface AfterRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime;
+  runtime: CopilotRuntime;
   response: Response;
   requestType: CopilotKitRequestType;
 }
 
 export type BeforeRequestMiddlewareFn = (
-  params: BeforeRequestMiddlewareParameters,
+  params: BeforeRequestMiddlewareParameters
 ) => MaybePromise<Request | void>;
 export type AfterRequestMiddlewareFn = (
-  params: AfterRequestMiddlewareParameters,
+  params: AfterRequestMiddlewareParameters
 ) => MaybePromise<void>;
 
 /**
@@ -157,7 +157,11 @@ export async function callBeforeRequestMiddleware({
         init.headers = headers;
       }
       // Only add body for non-GET/HEAD requests
-      if (body !== undefined && request.method !== "GET" && request.method !== "HEAD") {
+      if (
+        body !== undefined &&
+        request.method !== "GET" &&
+        request.method !== "HEAD"
+      ) {
         init.body = JSON.stringify(body);
       }
       return new Request(request.url, init);
@@ -219,7 +223,7 @@ export async function callAfterRequestMiddleware({
 
     if (!res.ok) {
       throw new Error(
-        `after_request webhook ${mw} responded with ${res.status}`,
+        `after_request webhook ${mw} responded with ${res.status}`
       );
     }
     return;

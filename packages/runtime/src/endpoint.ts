@@ -1,5 +1,5 @@
 import { Hono, Context } from "hono";
-import { CopilotKitRuntime } from "./runtime";
+import { CopilotRuntime } from "./runtime";
 import { handleRunAgent } from "./handlers/handle-run";
 import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
 import { handleTranscribe } from "./handlers/handle-transcribe";
@@ -10,15 +10,15 @@ import {
   callAfterRequestMiddleware,
 } from "./middleware";
 
-interface CopilotKitEndpointParams {
-  runtime: CopilotKitRuntime;
+interface CopilotEndpointParams {
+  runtime: CopilotRuntime;
   basePath: string;
 }
 
-export function copilotkitEndpoint({
+export function createCopilotEndpoint({
   runtime,
   basePath,
-}: CopilotKitEndpointParams) {
+}: CopilotEndpointParams) {
   return new Hono()
     .basePath(basePath)
     .post("/agent/:agentId/run", async (c) => {
@@ -70,7 +70,7 @@ export function copilotkitEndpoint({
 
 async function handleWithMiddleware(
   c: Context,
-  runtime: CopilotKitRuntime,
+  runtime: CopilotRuntime,
   requestType: CopilotKitRequestType,
   handler: (request: Request) => Promise<Response>
 ): Promise<Response> {

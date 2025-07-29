@@ -93,9 +93,9 @@ const afterRequestMiddleware: AfterRequestMiddlewareFn = async ({
 ### Setting Up Function Middleware
 
 ```typescript
-import { CopilotKitRuntime } from "@copilotkit/runtime";
+import { CopilotRuntime } from "@copilotkit/runtime";
 
-const runtime = new CopilotKitRuntime({
+const runtime = new CopilotRuntime({
   beforeRequestMiddleware,
   afterRequestMiddleware,
 });
@@ -115,7 +115,7 @@ Webhook middleware allows you to process middleware events via HTTP endpoints, w
 Webhook URLs must start with `http://` or `https://`:
 
 ```typescript
-const runtime = new CopilotKitRuntime({
+const runtime = new CopilotRuntime({
   beforeRequestMiddleware: "https://your-api.com/middleware/before",
   afterRequestMiddleware: "https://your-api.com/middleware/after",
 });
@@ -149,7 +149,6 @@ with HTTP `200 OK` and an object containing optional `headers` and `body` keys:
   "body": { "message": "Hello", "approved": true }
 }
 ```
-
 
 ### After Request Webhook Payload
 
@@ -238,7 +237,7 @@ The `requestType` parameter indicates what type of CopilotKit operation is being
 
 ```typescript
 interface BeforeRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime; // The runtime instance
+  runtime: CopilotRuntime; // The runtime instance
   request: Request; // The incoming HTTP request
   requestType: CopilotKitRequestType; // Type of CopilotKit operation
 }
@@ -248,7 +247,7 @@ interface BeforeRequestMiddlewareParameters {
 
 ```typescript
 interface AfterRequestMiddlewareParameters {
-  runtime: CopilotKitRuntime; // The runtime instance
+  runtime: CopilotRuntime; // The runtime instance
   response: Response; // The outgoing HTTP response
   requestType: CopilotKitRequestType; // Type of CopilotKit operation
 }

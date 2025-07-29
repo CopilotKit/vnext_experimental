@@ -1,17 +1,17 @@
 import { handleRunAgent } from "../handlers/handle-run";
-import { CopilotKitRuntime } from "../runtime";
+import { CopilotRuntime } from "../runtime";
 import { describe, it, expect } from "vitest";
 
 describe("handleRunAgent", () => {
   const createMockRuntime = (
     agents: Record<string, unknown> = {}
-  ): CopilotKitRuntime => {
+  ): CopilotRuntime => {
     return {
       agents: Promise.resolve(agents),
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
-    } as CopilotKitRuntime;
+    } as CopilotRuntime;
   };
 
   const createMockRequest = (): Request => {
@@ -41,14 +41,13 @@ describe("handleRunAgent", () => {
     });
   });
 
-
   it("should return 500 when runtime.agents throws an error", async () => {
     const runtime = {
       agents: Promise.reject(new Error("Database connection failed")),
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
-    } as CopilotKitRuntime;
+    } as CopilotRuntime;
     const request = createMockRequest();
     const agentId = "test-agent";
 

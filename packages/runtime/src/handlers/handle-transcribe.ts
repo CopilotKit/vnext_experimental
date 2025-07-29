@@ -1,7 +1,7 @@
-import { CopilotKitRuntime } from "../runtime";
+import { CopilotRuntime } from "../runtime";
 
 interface HandleTranscribeParameters {
-  runtime: CopilotKitRuntime;
+  runtime: CopilotRuntime;
   request: Request;
 }
 

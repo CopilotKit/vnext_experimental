@@ -1,5 +1,5 @@
 import { handleGetRuntimeInfo } from "../handlers/get-runtime-info";
-import { CopilotKitRuntime } from "../runtime";
+import { CopilotRuntime } from "../runtime";
 import { TranscriptionService } from "../transcription-service/transcription-service";
 import { describe, it, expect } from "vitest";
 import type { AbstractAgent } from "@ag-ui/client";
@@ -15,7 +15,7 @@ describe("handleGetRuntimeInfo", () => {
   const mockRequest = new Request("https://example.com/info");
 
   it("should return runtime info with audioFileTranscriptionEnabled=false when no transcription service", async () => {
-    const runtime = new CopilotKitRuntime({
+    const runtime = new CopilotRuntime({
       agents: {},
       // No transcriptionService provided
     });
@@ -37,7 +37,7 @@ describe("handleGetRuntimeInfo", () => {
 
   it("should return runtime info with audioFileTranscriptionEnabled=true when transcription service is configured", async () => {
     const mockTranscriptionService = new MockTranscriptionService();
-    const runtime = new CopilotKitRuntime({
+    const runtime = new CopilotRuntime({
       agents: {},
       transcriptionService: mockTranscriptionService,
     });
@@ -63,7 +63,7 @@ describe("handleGetRuntimeInfo", () => {
       constructor: { name: "TestAgent" },
     };
 
-    const runtime = new CopilotKitRuntime({
+    const runtime = new CopilotRuntime({
       agents: {
         testAgent: mockAgent as AbstractAgent,
       },
@@ -99,7 +99,7 @@ describe("handleGetRuntimeInfo", () => {
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
-    } as CopilotKitRuntime;
+    } as CopilotRuntime;
 
     const response = await handleGetRuntimeInfo({
       runtime,
