@@ -14,7 +14,7 @@
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
-    "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch",
+    "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch --minify",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css -m",
     "dev": "concurrently \"npm:dev:css\" \"tsup --watch\"",
     "build": "tsup && npm run build:css",

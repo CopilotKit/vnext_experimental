@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "pnpm --filter @copilotkit/react run build:css && concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006 --no-open\"",
+    "dev": "pnpm --filter @copilotkit/react run build:css && sleep 1 && concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006 --no-open\"",
     "build": "storybook build",
-    "storybook:dev": "pnpm --filter @copilotkit/react run build:css && concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006 --no-open\"",
+    "storybook:dev": "pnpm --filter @copilotkit/react run build:css && sleep 1 && concurrently \"pnpm --filter @copilotkit/react run dev:css\" \"storybook dev -p 6006 --no-open\"",
     "storybook:build": "storybook build"
   },
   "dependencies": {
