@@ -463,8 +463,8 @@ describe("InProcessAgentRunner", () => {
       const run2 = runner.run({ threadId, agent: agent2, input });
       const events2 = await firstValueFrom(run2.pipe(toArray()));
 
-      expect(events2).toHaveLength(4); // 3 from error run + 1 from recovery
-      expect(events2[events2.length - 1].id).toBe("recovery-1");
+      expect(events2).toHaveLength(1); // Only events from current run
+      expect(events2[0].id).toBe("recovery-1");
 
       // Connect should have all events including from errored run
       const allEvents = await firstValueFrom(runner.connect({ threadId }).pipe(toArray()));
