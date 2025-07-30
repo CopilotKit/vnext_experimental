@@ -2,7 +2,7 @@ import { useAgent } from "@/hooks/use-agent";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -11,31 +11,29 @@ export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
 
 export function CopilotChat({
   agentId = DEFAULT_AGENT_ID,
-  threadId: propThreadId,
+  threadId,
   ...props
 }: CopilotChatProps) {
+  // console.log("Using agent", agentId);
   const { agent } = useAgent({ agentId });
+  // console.log(agent);
+  threadId = threadId ?? useMemo(() => randomUUID(), []);
+  // console.log("ThreadId", threadId);
 
-  // Set threadId to randomUUID if empty
-  const initialThreadId = useRef(propThreadId || randomUUID());
-  const [threadId, setThreadId] = useState(initialThreadId.current);
-
-  // React to threadId changes
   useEffect(() => {
-    if (propThreadId && propThreadId !== threadId) {
-      setThreadId(propThreadId);
-      
-      // Skeleton: React to threadId change
-      // TODO: Handle threadId change
-      console.log("ThreadId changed from", threadId, "to", propThreadId);
-      
-      // Example actions to implement:
-      // - Clear current messages
-      // - Load messages for new thread
-      // - Reset agent state
-      // - Update any thread-specific configurations
+    const connect = async () => {
+      console.log("Connecting to agent");
+      await agent?.runAgent({
+        forwardedProps: { __copilotkitConnect: true },
+      });
+      console.log("Connected to agent");
+    };
+    if (agent) {
+      agent.threadId = threadId;
+      connect();
     }
-  }, [propThreadId, threadId]);
+    return () => {};
+  }, [threadId, agent]);
 
   const [inputValue, setInputValue] = useState("");
   const onSubmitInput = useCallback(
@@ -59,7 +57,20 @@ export function CopilotChat({
       onSubmitInput={onSubmitInput}
       onChangeInput={setInputValue}
     >
-      <CopilotChatView {...props} messages={agent?.messages ?? []} />
+      <CopilotChatView
+        {...props}
+        messages={agent?.messages ?? []}
+        messageView={{
+          assistantMessage: {
+            className: "border border-red-500",
+            onClick: () => alert("hi"),
+            copyButton: {
+              className: "border border-blue-500",
+              onClick: ({}) => alert("abc"),
+            },
+          },
+        }}
+      />
     </CopilotChatConfigurationProvider>
   );
 }

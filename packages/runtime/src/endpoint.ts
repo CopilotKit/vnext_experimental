@@ -8,6 +8,7 @@ import {
   callBeforeRequestMiddleware,
   callAfterRequestMiddleware,
 } from "./middleware";
+import { handleConnectAgent } from "./handlers/handle-connect";
 
 interface CopilotEndpointParams {
   runtime: CopilotRuntime;
@@ -74,12 +75,29 @@ export function createCopilotEndpoint({
       });
     })
     .post("/agent/:agentId/run", async (c) => {
-      console.log("POST /agent/:agentId/run");
       const agentId = c.req.param("agentId");
       const request = c.get("modifiedRequest") || c.req.raw;
 
       try {
         return await handleRunAgent({
+          runtime,
+          request,
+          agentId,
+        });
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path: c.req.path },
+          "Error running request handler"
+        );
+        throw error;
+      }
+    })
+    .post("/agent/:agentId/connect", async (c) => {
+      const agentId = c.req.param("agentId");
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleConnectAgent({
           runtime,
           request,
           agentId,

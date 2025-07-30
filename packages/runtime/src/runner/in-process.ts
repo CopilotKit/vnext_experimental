@@ -74,11 +74,6 @@ export class InProcessAgentRunner extends AgentRunner {
             }
           },
           onRunStartedEvent: (args: { event: BaseEvent }) => {
-            if (args && args.event) {
-              // Inject the runStarted event only to store (not to run)
-              nextSubject.next(args.event);
-            }
-
             // Process each message from input and inject as events
             if (request.input.messages) {
               for (const message of request.input.messages) {

@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useEffect,
   useState,
+  useReducer,
 } from "react";
 import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { CopilotKitCore, CopilotKitCoreConfig } from "@copilotkit/core";
@@ -72,7 +73,9 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       properties,
       agents,
     };
-    return new CopilotKitCore(config);
+    const copilotkit = new CopilotKitCore(config);
+
+    return copilotkit;
   }, []);
 
   useEffect(() => {
@@ -99,8 +102,24 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 // Hook to use the CopilotKit instance - returns the full context value
 export const useCopilotKit = (): CopilotKitContextValue => {
   const context = useContext(CopilotKitContext);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
   if (!context) {
     throw new Error("useCopilotKit must be used within CopilotKitProvider");
   }
+  useEffect(() => {
+    const unsubscribe = context.copilotkit.subscribe({
+      onRuntimeLoaded: ({ copilotkit }) => {
+        forceUpdate();
+      },
+      onRuntimeLoadError: ({ copilotkit }) => {
+        forceUpdate();
+      },
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return context;
 };

@@ -25,7 +25,11 @@ export class CopilotKitHttpAgent extends HttpAgent {
   }
 
   run(input: RunAgentInput): Observable<BaseEvent> {
-    const url = (input.forwardedProps.__overrideUrl ?? this.url) as string;
+    const url = (
+      input.forwardedProps.__copilotkitConnect === true
+        ? `${this.runtimeUrl}/agent/${this.agentId}/connect`
+        : this.url
+    ) as string;
     const httpEvents = runHttpRequest(url, this.requestInit(input));
     return transformHttpEventStream(httpEvents);
   }

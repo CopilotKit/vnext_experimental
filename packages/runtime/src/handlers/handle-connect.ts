@@ -1,22 +1,18 @@
-import {
-  AbstractAgent,
-  RunAgentInput,
-  RunAgentInputSchema,
-} from "@ag-ui/client";
+import { RunAgentInput, RunAgentInputSchema } from "@ag-ui/client";
 import { EventEncoder } from "@ag-ui/encoder";
 import { CopilotRuntime } from "../runtime";
 
-interface RunAgentParameters {
+interface ConnectAgentParameters {
   request: Request;
   runtime: CopilotRuntime;
   agentId: string;
 }
 
-export async function handleRunAgent({
+export async function handleConnectAgent({
   runtime,
   request,
   agentId,
-}: RunAgentParameters) {
+}: ConnectAgentParameters) {
   try {
     const agents = await runtime.agents;
 
@@ -34,8 +30,6 @@ export async function handleRunAgent({
       );
     }
 
-    const agent = agents[agentId].clone() as AbstractAgent;
-
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new EventEncoder();
@@ -43,6 +37,9 @@ export async function handleRunAgent({
     // Process the request in the background
     (async () => {
       let input: RunAgentInput;
+      console.log("-----------");
+      console.log("COPILOTKIT CONNECT");
+      console.log("-----------");
       try {
         const requestBody = await request.json();
         input = RunAgentInputSchema.parse(requestBody);
@@ -55,18 +52,13 @@ export async function handleRunAgent({
         );
       }
 
-      agent.setMessages(input.messages);
-      agent.setState(input.state);
-      agent.threadId = input.threadId;
-
       runtime.runner
-        .run({
+        .connect({
           threadId: input.threadId,
-          agent,
-          input,
         })
         .subscribe({
           next: async (event) => {
+            console.log("------> EVENT", event);
             await writer.write(encoder.encode(event));
           },
           error: async (error) => {

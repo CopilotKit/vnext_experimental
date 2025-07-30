@@ -6,6 +6,8 @@ import type {
   AfterRequestMiddleware,
 } from "./middleware";
 import { TranscriptionService } from "./transcription-service/transcription-service";
+import { AgentRunner } from "./runner/agent-runner";
+import { InProcessAgentRunner } from "./runner/in-process";
 
 export const VERSION = pkg.version;
 
@@ -15,6 +17,8 @@ export const VERSION = pkg.version;
 export interface CopilotRuntimeOptions {
   /** Map of available agents (loaded lazily is fine). */
   agents: MaybePromise<NonEmptyRecord<Record<string, AbstractAgent>>>;
+  /** The runner to use for running agents. */
+  runner?: AgentRunner;
   /** Optional transcription service for audio processing. */
   transcriptionService?: TranscriptionService;
   /** Optional *before* middleware – callback function or webhook URL. */
@@ -31,16 +35,19 @@ export class CopilotRuntime {
   public transcriptionService: CopilotRuntimeOptions["transcriptionService"];
   public beforeRequestMiddleware: CopilotRuntimeOptions["beforeRequestMiddleware"];
   public afterRequestMiddleware: CopilotRuntimeOptions["afterRequestMiddleware"];
+  public runner: AgentRunner;
 
   constructor({
     agents,
     transcriptionService,
     beforeRequestMiddleware,
     afterRequestMiddleware,
+    runner,
   }: CopilotRuntimeOptions) {
     this.agents = agents;
     this.transcriptionService = transcriptionService;
     this.beforeRequestMiddleware = beforeRequestMiddleware;
     this.afterRequestMiddleware = afterRequestMiddleware;
+    this.runner = runner ?? new InProcessAgentRunner();
   }
 }

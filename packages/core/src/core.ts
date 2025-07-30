@@ -21,6 +21,15 @@ export interface RunAgentParams {
   withMessages?: Message[];
 }
 
+export interface CopilotKitCoreSubscriber {
+  onRuntimeLoaded?: (event: {
+    copilotkit: CopilotKitCore;
+  }) => void | Promise<void>;
+  onRuntimeLoadError?: (event: {
+    copilotkit: CopilotKitCore;
+  }) => void | Promise<void>;
+}
+
 export class CopilotKitCore {
   runtimeUrl?: string;
   didLoadRuntime: boolean = false;
@@ -33,8 +42,11 @@ export class CopilotKitCore {
   headers: Record<string, string>;
   properties: Record<string, unknown>;
 
+  version?: string;
+
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
+  private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
 
   constructor({
     runtimeUrl,
@@ -46,6 +58,7 @@ export class CopilotKitCore {
     this.properties = properties;
     this.localAgents = agents;
     this.agents = this.localAgents;
+
     this.setRuntimeUrl(runtimeUrl);
   }
 
@@ -78,12 +91,34 @@ export class CopilotKitCore {
   private async fetchRemoteAgents() {
     if (this.runtimeUrl) {
       this.getRuntimeInfo()
-        .then(({ agents }) => {
+        .then(({ agents, version }) => {
           this.remoteAgents = agents;
           this.agents = { ...this.localAgents, ...this.remoteAgents };
           this.didLoadRuntime = true;
+          this.version = version;
+
+          this.subscribers.forEach(async (subscriber) => {
+            try {
+              await subscriber.onRuntimeLoaded?.({ copilotkit: this });
+            } catch (error) {
+              logger.error(
+                "Error in CopilotKitCore subscriber (onRuntimeLoaded):",
+                error
+              );
+            }
+          });
         })
         .catch((error) => {
+          this.subscribers.forEach(async (subscriber) => {
+            try {
+              await subscriber.onRuntimeLoadError?.({ copilotkit: this });
+            } catch (error) {
+              logger.error(
+                "Error in CopilotKitCore subscriber (onRuntimeLoadError):",
+                error
+              );
+            }
+          });
           logger.warn(`Failed to load runtime info: ${error.message}`);
         });
     }
@@ -152,6 +187,19 @@ export class CopilotKitCore {
 
   setProperties(properties: Record<string, unknown>) {
     this.properties = properties;
+  }
+
+  subscribe(subscriber: CopilotKitCoreSubscriber): () => void {
+    this.subscribers.add(subscriber);
+
+    // Return unsubscribe function
+    return () => {
+      this.unsubscribe(subscriber);
+    };
+  }
+
+  unsubscribe(subscriber: CopilotKitCoreSubscriber) {
+    this.subscribers.delete(subscriber);
   }
 
   // TODO: AG-UI needs to expose the runAgent result type
