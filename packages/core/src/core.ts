@@ -2,6 +2,7 @@ import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
 import { logger } from "@copilotkit/shared";
 import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
 import { FrontendTool } from "./types";
+import { CopilotKitHttpAgent } from "./agent";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
@@ -62,8 +63,8 @@ export class CopilotKitCore {
 
     const agents: Record<string, AbstractAgent> = Object.fromEntries(
       Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
-        const agent = new HttpAgent({
-          url: `${this.runtimeUrl}/agent/${id}/run`,
+        const agent = new CopilotKitHttpAgent({
+          runtimeUrl: this.runtimeUrl,
           agentId: id,
           description: description,
         });
@@ -130,7 +131,9 @@ export class CopilotKitCore {
     this.fetchRemoteAgents();
   }
 
-  addTool<T extends Record<string, unknown> = Record<string, unknown>>(tool: FrontendTool<T>) {
+  addTool<T extends Record<string, unknown> = Record<string, unknown>>(
+    tool: FrontendTool<T>
+  ) {
     if (tool.name in this.tools) {
       logger.warn(`Tool already exists: '${tool.name}', skipping.`);
       return;
