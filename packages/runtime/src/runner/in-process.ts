@@ -72,7 +72,7 @@ export class InProcessAgentRunner extends AgentRunner {
               store!.seenMessageIds.add(message.id);
             }
           },
-          onRunStartedEvent: (args: any) => {
+          onRunStartedEvent: (args: { event: BaseEvent }) => {
             if (args && args.event) {
               // Inject the runStarted event only to store (not to run)
               nextSubject.next(args.event);
@@ -86,16 +86,24 @@ export class InProcessAgentRunner extends AgentRunner {
                   store!.seenMessageIds.add(message.id);
 
                   // Emit proper ag-ui events based on message type
-                  if (message.role === "assistant" && message.content) {
-                    // Text message events for assistant messages
+                  if (
+                    (message.role === "assistant" ||
+                      message.role === "user" ||
+                      message.role === "developer" ||
+                      message.role === "system") &&
+                    message.content
+                  ) {
+                    // Text message events for assistant and user messages
                     const textStartEvent: TextMessageStartEvent = {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       type: "TextMessageStartEvent" as any,
                       messageId: message.id,
-                      role: "assistant",
+                      role: message.role as "assistant", // ag-ui expects "assistant" role for text messages
                     };
                     nextSubject.next(textStartEvent);
 
                     const textContentEvent: TextMessageContentEvent = {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       type: "TextMessageContentEvent" as any,
                       messageId: message.id,
                       delta: message.content,
@@ -103,6 +111,7 @@ export class InProcessAgentRunner extends AgentRunner {
                     nextSubject.next(textContentEvent);
 
                     const textEndEvent: TextMessageEndEvent = {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       type: "TextMessageEndEvent" as any,
                       messageId: message.id,
                     };
@@ -114,6 +123,7 @@ export class InProcessAgentRunner extends AgentRunner {
                     for (const toolCall of message.toolCalls) {
                       // ToolCallStart event
                       const toolStartEvent: ToolCallStartEvent = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         type: "ToolCallStartEvent" as any,
                         toolCallId: toolCall.id,
                         toolCallName: toolCall.function.name,
@@ -123,6 +133,7 @@ export class InProcessAgentRunner extends AgentRunner {
 
                       // ToolCallArgs event
                       const toolArgsEvent: ToolCallArgsEvent = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         type: "ToolCallArgsEvent" as any,
                         toolCallId: toolCall.id,
                         delta: toolCall.function.arguments,
@@ -131,6 +142,7 @@ export class InProcessAgentRunner extends AgentRunner {
 
                       // ToolCallEnd event
                       const toolEndEvent: ToolCallEndEvent = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         type: "ToolCallEndEvent" as any,
                         toolCallId: toolCall.id,
                       };
@@ -141,6 +153,7 @@ export class InProcessAgentRunner extends AgentRunner {
                   // Handle tool results
                   if (message.role === "tool" && message.toolCallId) {
                     const toolResultEvent: ToolCallResultEvent = {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       type: "ToolCallResultEvent" as any,
                       messageId: message.id,
                       toolCallId: message.toolCallId,
