@@ -57,20 +57,7 @@ export function CopilotChat({
       onSubmitInput={onSubmitInput}
       onChangeInput={setInputValue}
     >
-      <CopilotChatView
-        {...props}
-        messages={agent?.messages ?? []}
-        messageView={{
-          assistantMessage: {
-            className: "border border-red-500",
-            onClick: () => alert("hi"),
-            copyButton: {
-              className: "border border-blue-500",
-              onClick: ({}) => alert("abc"),
-            },
-          },
-        }}
-      />
+      <CopilotChatView {...props} messages={agent?.messages ?? []} />
     </CopilotChatConfigurationProvider>
   );
 }
