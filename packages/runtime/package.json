@@ -37,7 +37,8 @@
     "@ag-ui/core": "0.0.35",
     "@ag-ui/encoder": "^0.0.35",
     "@copilotkit/shared": "workspace:*",
-    "hono": "^4.6.13"
+    "hono": "^4.6.13",
+    "rxjs": "7.8.1"
   },
   "peerDependencies": {
     "openai": "^5.9.0"
