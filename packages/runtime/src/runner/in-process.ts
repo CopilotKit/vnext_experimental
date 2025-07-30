@@ -8,6 +8,7 @@ import {
 import { EMPTY, Observable, ReplaySubject } from "rxjs";
 import {
   BaseEvent,
+  EventType,
   TextMessageContentEvent,
   TextMessageEndEvent,
   TextMessageStartEvent,
@@ -95,24 +96,21 @@ export class InProcessAgentRunner extends AgentRunner {
                   ) {
                     // Text message events for assistant and user messages
                     const textStartEvent: TextMessageStartEvent = {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      type: "TextMessageStartEvent" as any,
+                      type: EventType.TEXT_MESSAGE_START,
                       messageId: message.id,
-                      role: message.role as "assistant", // ag-ui expects "assistant" role for text messages
+                      role: message.role,
                     };
                     nextSubject.next(textStartEvent);
 
                     const textContentEvent: TextMessageContentEvent = {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      type: "TextMessageContentEvent" as any,
+                      type: EventType.TEXT_MESSAGE_CONTENT,
                       messageId: message.id,
                       delta: message.content,
                     };
                     nextSubject.next(textContentEvent);
 
                     const textEndEvent: TextMessageEndEvent = {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      type: "TextMessageEndEvent" as any,
+                      type: EventType.TEXT_MESSAGE_END,
                       messageId: message.id,
                     };
                     nextSubject.next(textEndEvent);
