@@ -60,6 +60,9 @@ class MessageAwareAgent extends AbstractAgent {
     for (const event of this.events) {
       options.onEvent({ event });
     }
+    
+    // Return a promise as expected
+    return Promise.resolve();
   }
 }
 
@@ -111,8 +114,8 @@ describe("InProcessAgentRunner - Message Injection", () => {
       const connectObservable = runner.connect({ threadId });
       const allEvents = await firstValueFrom(connectObservable.pipe(toArray()));
 
-      // Should have: RunStartedEvent + user message events (Start, Content, End) + agent event
-      expect(allEvents.length).toBeGreaterThanOrEqual(5);
+      // Should have: user message events (Start, Content, End) + agent event = 4 events
+      expect(allEvents.length).toBe(4);
 
       // Find the injected user message events
       const textStartEvents = allEvents.filter(
@@ -127,20 +130,20 @@ describe("InProcessAgentRunner - Message Injection", () => {
 
       expect(textStartEvents).toHaveLength(1);
       expect(textStartEvents[0]).toMatchObject({
-        type: "TextMessageStartEvent",
+        type: EventType.TEXT_MESSAGE_START,
         messageId: "user-msg-1",
       });
 
       expect(textContentEvents).toHaveLength(1);
       expect(textContentEvents[0]).toMatchObject({
-        type: "TextMessageContentEvent",
+        type: EventType.TEXT_MESSAGE_CONTENT,
         messageId: "user-msg-1",
         delta: "Hello, agent!",
       });
 
       expect(textEndEvents).toHaveLength(1);
       expect(textEndEvents[0]).toMatchObject({
-        type: "TextMessageEndEvent",
+        type: EventType.TEXT_MESSAGE_END,
         messageId: "user-msg-1",
       });
 
@@ -190,21 +193,21 @@ describe("InProcessAgentRunner - Message Injection", () => {
 
       expect(textStartEvents).toHaveLength(1);
       expect(textStartEvents[0]).toMatchObject({
-        type: "TextMessageStartEvent",
+        type: EventType.TEXT_MESSAGE_START,
         messageId: "assistant-msg-1",
         role: "assistant",
       });
 
       expect(textContentEvents).toHaveLength(1);
       expect(textContentEvents[0]).toMatchObject({
-        type: "TextMessageContentEvent",
+        type: EventType.TEXT_MESSAGE_CONTENT,
         messageId: "assistant-msg-1",
         delta: "I can help you with that!",
       });
 
       expect(textEndEvents).toHaveLength(1);
       expect(textEndEvents[0]).toMatchObject({
-        type: "TextMessageEndEvent",
+        type: EventType.TEXT_MESSAGE_END,
         messageId: "assistant-msg-1",
       });
     });
@@ -260,7 +263,7 @@ describe("InProcessAgentRunner - Message Injection", () => {
 
       expect(toolStartEvents).toHaveLength(1);
       expect(toolStartEvents[0]).toMatchObject({
-        type: "ToolCallStartEvent",
+        type: EventType.TOOL_CALL_START,
         toolCallId: "tool-call-1",
         toolCallName: "get_weather",
         parentMessageId: "assistant-msg-2",
@@ -268,14 +271,14 @@ describe("InProcessAgentRunner - Message Injection", () => {
 
       expect(toolArgsEvents).toHaveLength(1);
       expect(toolArgsEvents[0]).toMatchObject({
-        type: "ToolCallArgsEvent",
+        type: EventType.TOOL_CALL_ARGS,
         toolCallId: "tool-call-1",
         delta: '{"location": "New York"}',
       });
 
       expect(toolEndEvents).toHaveLength(1);
       expect(toolEndEvents[0]).toMatchObject({
-        type: "ToolCallEndEvent",
+        type: EventType.TOOL_CALL_END,
         toolCallId: "tool-call-1",
       });
     });
@@ -398,7 +401,7 @@ describe("InProcessAgentRunner - Message Injection", () => {
 
       expect(toolResultEvents).toHaveLength(1);
       expect(toolResultEvents[0]).toMatchObject({
-        type: "ToolCallResultEvent",
+        type: EventType.TOOL_CALL_RESULT,
         messageId: "tool-result-1",
         toolCallId: "tool-call-1",
         content: "72°F and sunny",
