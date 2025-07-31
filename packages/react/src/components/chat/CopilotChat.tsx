@@ -2,8 +2,7 @@ import { useAgent } from "@/hooks/use-agent";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
-import { useCallback, useState, useEffect, useRef, useMemo } from "react";
-import { merge } from "ts-deepmerge";
+import { useCallback, useState, useEffect, useMemo } from "react";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -65,6 +64,7 @@ export function CopilotChat({
       onChangeInput={setInputValue}
     >
       <CopilotChatView
+        messages={agent?.messages ?? []}
         messageView={{
           showCursor,
           ...(typeof props.messageView === "string"
