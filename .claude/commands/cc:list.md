@@ -21,3 +21,5 @@ Status: [status, using emojis: ✅, ⏳, ⚠️ and the word "done", "in progres
 Branch: `[branch name, if any and status is done]`
 
 [short description of the current status, possibly considering the context of all comments in the issue]
+
+[link to the issue]
