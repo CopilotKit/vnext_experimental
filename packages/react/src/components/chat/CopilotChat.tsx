@@ -3,6 +3,7 @@ import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
+import { merge } from "ts-deepmerge";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -14,19 +15,24 @@ export function CopilotChat({
   threadId,
   ...props
 }: CopilotChatProps) {
-  // console.log("Using agent", agentId);
   const { agent } = useAgent({ agentId });
-  // console.log(agent);
+  const [showCursor, setShowCursor] = useState(true);
   threadId = threadId ?? useMemo(() => randomUUID(), []);
-  // console.log("ThreadId", threadId);
+
+  const subscriber = {
+    onTextMessageStartEvent: () => setShowCursor(false),
+    onToolCallStartEvent: () => setShowCursor(false),
+  };
 
   useEffect(() => {
     const connect = async () => {
-      console.log("Connecting to agent");
-      await agent?.runAgent({
-        forwardedProps: { __copilotkitConnect: true },
-      });
-      console.log("Connected to agent");
+      setShowCursor(true);
+      await agent?.runAgent(
+        {
+          forwardedProps: { __copilotkitConnect: true },
+        },
+        subscriber
+      );
     };
     if (agent) {
       agent.threadId = threadId;
@@ -44,9 +50,8 @@ export function CopilotChat({
         role: "user",
         content: value,
       });
-      console.log("Running agent");
-      const result = await agent?.runAgent();
-      console.log("Result", result);
+      setShowCursor(true);
+      await agent?.runAgent({}, subscriber);
     },
     [agent]
   );
@@ -57,7 +62,15 @@ export function CopilotChat({
       onSubmitInput={onSubmitInput}
       onChangeInput={setInputValue}
     >
-      <CopilotChatView {...props} messages={agent?.messages ?? []} />
+      <CopilotChatView
+        messageView={{
+          showCursor,
+          ...(typeof props.messageView === "string"
+            ? { className: props.messageView }
+            : props.messageView),
+        }}
+        {...props}
+      />
     </CopilotChatConfigurationProvider>
   );
 }
