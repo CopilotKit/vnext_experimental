@@ -3,6 +3,7 @@ import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
+import { merge } from "ts-deepmerge";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -57,6 +58,20 @@ export function CopilotChat({
     [agent]
   );
 
+  const mergedProps = merge(
+    {
+      messageView: { showCursor },
+    },
+    {
+      ...props,
+      ...(typeof props.messageView === "string"
+        ? { messageView: { className: props.messageView } }
+        : props.messageView !== undefined
+          ? { messageView: props.messageView }
+          : {}),
+    }
+  );
+
   return (
     <CopilotChatConfigurationProvider
       inputValue={inputValue}
@@ -64,14 +79,7 @@ export function CopilotChat({
       onChangeInput={setInputValue}
     >
       <CopilotChatView
-        messages={agent?.messages ?? []}
-        messageView={{
-          showCursor,
-          ...(typeof props.messageView === "string"
-            ? { className: props.messageView }
-            : props.messageView),
-        }}
-        {...props}
+        {...{ messages: agent?.messages ?? [], ...mergedProps }}
       />
     </CopilotChatConfigurationProvider>
   );
