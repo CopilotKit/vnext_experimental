@@ -43,6 +43,7 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     onRegenerate?: (message: AssistantMessage) => void;
     message: AssistantMessage;
     additionalToolbarItems?: React.ReactNode;
+    toolbarVisible?: boolean;
   } & React.HTMLAttributes<HTMLDivElement>
 >;
 
@@ -53,6 +54,7 @@ export function CopilotChatAssistantMessage({
   onReadAloud,
   onRegenerate,
   additionalToolbarItems,
+  toolbarVisible = true,
   markdownRenderer,
   toolbar,
   copyButton,
@@ -154,6 +156,7 @@ export function CopilotChatAssistantMessage({
           onReadAloud,
           onRegenerate,
           additionalToolbarItems,
+          toolbarVisible,
         })}
       </>
     );
@@ -169,7 +172,7 @@ export function CopilotChatAssistantMessage({
       data-message-id={message.id}
     >
       {boundMarkdownRenderer}
-      {boundToolbar}
+      {toolbarVisible && boundToolbar}
     </div>
   );
 }
