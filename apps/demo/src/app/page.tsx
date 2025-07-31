@@ -11,7 +11,7 @@ export default function Home() {
       <div
         style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
       >
-        <CopilotChat />
+        <CopilotChat threadId="1" />
       </div>
     </CopilotKitProvider>
   );

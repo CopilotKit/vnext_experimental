@@ -38,9 +38,6 @@ export async function handleConnectAgent({
     // Process the request in the background
     (async () => {
       let input: RunAgentInput;
-      console.log("-----------");
-      console.log("COPILOTKIT CONNECT");
-      console.log("-----------");
       try {
         const requestBody = await request.json();
         input = RunAgentInputSchema.parse(requestBody);
@@ -59,12 +56,11 @@ export async function handleConnectAgent({
         })
         .subscribe({
           next: async (event) => {
-            console.log("------> EVENT", event);
             if (!request.signal.aborted && !streamClosed) {
               try {
                 await writer.write(encoder.encode(event));
               } catch (error) {
-                if (error instanceof Error && error.name === 'AbortError') {
+                if (error instanceof Error && error.name === "AbortError") {
                   streamClosed = true;
                 }
               }
