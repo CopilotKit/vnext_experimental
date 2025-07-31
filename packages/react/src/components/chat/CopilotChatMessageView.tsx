@@ -11,12 +11,14 @@ export type CopilotChatMessageViewProps = Omit<
       userMessage: typeof CopilotChatUserMessage;
     },
     {
+      showCursor?: boolean;
       messages?: Message[];
     } & React.HTMLAttributes<HTMLDivElement>
   >,
   "children"
 > & {
   children?: (props: {
+    showCursor: boolean;
     messages: Message[];
     messageElements: React.ReactElement[];
   }) => React.ReactElement;
@@ -26,6 +28,7 @@ export function CopilotChatMessageView({
   messages = [],
   assistantMessage,
   userMessage,
+  showCursor = false,
   children,
   className,
   ...props
@@ -49,7 +52,7 @@ export function CopilotChatMessageView({
     .filter(Boolean) as React.ReactElement[];
 
   if (children) {
-    return children({ messageElements, messages });
+    return children({ messageElements, messages, showCursor });
   }
 
   return (

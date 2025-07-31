@@ -25,9 +25,7 @@ export const Default: Story = {
   },
   decorators: [
     (Story) => (
-      <div
-        style={{ height: "100vh", margin: 0, padding: 0, overflow: "auto" }}
-      >
+      <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "auto" }}>
         <Story />
       </div>
     ),
@@ -96,6 +94,48 @@ In this example:
         <div style={{ height: "100%" }}>
           <CopilotChatMessageView
             messages={messages}
+            assistantMessage={{
+              onThumbsUp: () => {
+                alert("thumbsUp");
+              },
+              onThumbsDown: () => {
+                alert("thumbsDown");
+              },
+            }}
+          />
+        </div>
+      </CopilotChatConfigurationProvider>
+    );
+  },
+};
+
+export const ShowCursor: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "auto" }}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: () => {
+    const messages = [
+      {
+        id: "user-1",
+        content: "Can you explain how AI models work?",
+        timestamp: new Date(),
+        role: "user" as const,
+      },
+    ];
+
+    return (
+      <CopilotChatConfigurationProvider>
+        <div style={{ height: "100%" }}>
+          <CopilotChatMessageView
+            messages={messages}
+            showCursor={true}
             assistantMessage={{
               onThumbsUp: () => {
                 alert("thumbsUp");

@@ -12,7 +12,7 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
 
   const { copilotkit } = useCopilotKit();
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [running, setRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   const agent: AbstractAgent | undefined = useMemo(() => {
     return copilotkit.getAgent(agentId);
@@ -27,13 +27,13 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
         forceUpdate();
       },
       onRunInitialized(params) {
-        setRunning(true);
+        setIsRunning(true);
       },
       onRunFinalized(params) {
-        setRunning(false);
+        setIsRunning(false);
       },
       onRunFailed(params) {
-        setRunning(false);
+        setIsRunning(false);
       },
     });
 
@@ -42,6 +42,6 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
 
   return {
     agent,
-    running,
+    isRunning,
   };
 }
