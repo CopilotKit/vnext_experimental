@@ -542,6 +542,100 @@ describe("CopilotChatAssistantMessage", () => {
     });
   });
 
+  describe("Toolbar visibility functionality", () => {
+    it("shows toolbar by default (toolbarVisible = true by default)", () => {
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage} />
+      );
+
+      expect(screen.getByRole("button", { name: /copy/i })).toBeDefined();
+    });
+
+    it("shows toolbar when toolbarVisible is explicitly true", () => {
+      renderWithProvider(
+        <CopilotChatAssistantMessage 
+          message={basicMessage} 
+          toolbarVisible={true}
+        />
+      );
+
+      expect(screen.getByRole("button", { name: /copy/i })).toBeDefined();
+    });
+
+    it("hides toolbar when toolbarVisible is false", () => {
+      renderWithProvider(
+        <CopilotChatAssistantMessage 
+          message={basicMessage} 
+          toolbarVisible={false}
+        />
+      );
+
+      expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
+    });
+
+    it("always passes toolbar and toolbarVisible to children render prop", () => {
+      const childrenSpy = vi.fn(() => <div data-testid="children-render" />);
+
+      renderWithProvider(
+        <CopilotChatAssistantMessage 
+          message={basicMessage} 
+          toolbarVisible={false}
+        >
+          {childrenSpy}
+        </CopilotChatAssistantMessage>
+      );
+
+      expect(childrenSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          toolbar: expect.anything(),
+          toolbarVisible: false,
+          message: basicMessage,
+        })
+      );
+      expect(screen.getByTestId("children-render")).toBeDefined();
+    });
+
+    it("passes toolbarVisible true to children render prop by default", () => {
+      const childrenSpy = vi.fn(() => <div data-testid="children-render" />);
+
+      renderWithProvider(
+        <CopilotChatAssistantMessage message={basicMessage}>
+          {childrenSpy}
+        </CopilotChatAssistantMessage>
+      );
+
+      expect(childrenSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          toolbar: expect.anything(),
+          toolbarVisible: true,
+          message: basicMessage,
+        })
+      );
+    });
+
+    it("children can use toolbarVisible to conditionally render toolbar", () => {
+      renderWithProvider(
+        <CopilotChatAssistantMessage 
+          message={basicMessage} 
+          toolbarVisible={false}
+        >
+          {({ toolbar, toolbarVisible }) => (
+            <div data-testid="custom-layout">
+              <div data-testid="content">Custom content</div>
+              {toolbarVisible && <div data-testid="conditional-toolbar">{toolbar}</div>}
+              {!toolbarVisible && <div data-testid="no-toolbar">No toolbar</div>}
+            </div>
+          )}
+        </CopilotChatAssistantMessage>
+      );
+
+      expect(screen.getByTestId("custom-layout")).toBeDefined();
+      expect(screen.getByTestId("content")).toBeDefined();
+      expect(screen.queryByTestId("conditional-toolbar")).toBeNull();
+      expect(screen.getByTestId("no-toolbar")).toBeDefined();
+    });
+  });
+
   describe("Error handling", () => {
     it("handles copy errors gracefully", async () => {
       // Mock clipboard to throw an error
