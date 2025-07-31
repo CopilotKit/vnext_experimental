@@ -39,6 +39,7 @@ export async function handleRunAgent({
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new EventEncoder();
+    let streamClosed = false;
 
     // Process the request in the background
     (async () => {
@@ -67,14 +68,36 @@ export async function handleRunAgent({
         })
         .subscribe({
           next: async (event) => {
-            await writer.write(encoder.encode(event));
+            if (!request.signal.aborted && !streamClosed) {
+              try {
+                await writer.write(encoder.encode(event));
+              } catch (error) {
+                if (error instanceof Error && error.name === 'AbortError') {
+                  streamClosed = true;
+                }
+              }
+            }
           },
           error: async (error) => {
             console.error("Error running agent:", error);
-            await writer.close();
+            if (!streamClosed) {
+              try {
+                await writer.close();
+                streamClosed = true;
+              } catch {
+                // Stream already closed
+              }
+            }
           },
           complete: async () => {
-            await writer.close();
+            if (!streamClosed) {
+              try {
+                await writer.close();
+                streamClosed = true;
+              } catch {
+                // Stream already closed
+              }
+            }
           },
         });
     })().catch((error) => {
@@ -88,7 +111,14 @@ export async function handleRunAgent({
         message: error instanceof Error ? error.message : String(error),
         cause: error instanceof Error ? error.cause : undefined,
       });
-      writer.close();
+      if (!streamClosed) {
+        try {
+          writer.close();
+          streamClosed = true;
+        } catch {
+          // Stream already closed
+        }
+      }
     });
 
     // Return the SSE response

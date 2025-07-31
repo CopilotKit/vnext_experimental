@@ -33,13 +33,11 @@ export async function handleConnectAgent({
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new EventEncoder();
+    let streamClosed = false;
 
     // Process the request in the background
     (async () => {
       let input: RunAgentInput;
-      console.log("-----------");
-      console.log("COPILOTKIT CONNECT");
-      console.log("-----------");
       try {
         const requestBody = await request.json();
         input = RunAgentInputSchema.parse(requestBody);
@@ -58,15 +56,36 @@ export async function handleConnectAgent({
         })
         .subscribe({
           next: async (event) => {
-            console.log("------> EVENT", event);
-            await writer.write(encoder.encode(event));
+            if (!request.signal.aborted && !streamClosed) {
+              try {
+                await writer.write(encoder.encode(event));
+              } catch (error) {
+                if (error instanceof Error && error.name === "AbortError") {
+                  streamClosed = true;
+                }
+              }
+            }
           },
           error: async (error) => {
             console.error("Error running agent:", error);
-            await writer.close();
+            if (!streamClosed) {
+              try {
+                await writer.close();
+                streamClosed = true;
+              } catch {
+                // Stream already closed
+              }
+            }
           },
           complete: async () => {
-            await writer.close();
+            if (!streamClosed) {
+              try {
+                await writer.close();
+                streamClosed = true;
+              } catch {
+                // Stream already closed
+              }
+            }
           },
         });
     })().catch((error) => {
@@ -80,7 +99,14 @@ export async function handleConnectAgent({
         message: error instanceof Error ? error.message : String(error),
         cause: error instanceof Error ? error.cause : undefined,
       });
-      writer.close();
+      if (!streamClosed) {
+        try {
+          writer.close();
+          streamClosed = true;
+        } catch {
+          // Stream already closed
+        }
+      }
     });
 
     // Return the SSE response
