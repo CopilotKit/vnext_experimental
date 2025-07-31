@@ -9,6 +9,7 @@ export type CopilotChatMessageViewProps = Omit<
     {
       assistantMessage: typeof CopilotChatAssistantMessage;
       userMessage: typeof CopilotChatUserMessage;
+      cursor: typeof CopilotChatMessageView.Cursor;
     },
     {
       showCursor?: boolean;
@@ -28,6 +29,7 @@ export function CopilotChatMessageView({
   messages = [],
   assistantMessage,
   userMessage,
+  cursor,
   showCursor = false,
   children,
   className,
@@ -58,8 +60,24 @@ export function CopilotChatMessageView({
   return (
     <div className={twMerge("flex flex-col", className)} {...props}>
       {messageElements}
+      {showCursor && renderSlot(cursor, CopilotChatMessageView.Cursor, {})}
     </div>
   );
 }
+
+CopilotChatMessageView.Cursor = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div
+      className={twMerge(
+        "w-[11px] h-[11px] rounded-full bg-foreground animate-pulse-cursor ml-1",
+        className
+      )}
+      {...props}
+    />
+  );
+};
 
 export default CopilotChatMessageView;

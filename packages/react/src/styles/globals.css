@@ -118,6 +118,21 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@theme {
+  --animate-pulse-cursor: pulse-cursor 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  @keyframes pulse-cursor {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.8;
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

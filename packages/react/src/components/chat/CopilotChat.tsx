@@ -33,6 +33,7 @@ export function CopilotChat({
         },
         subscriber
       );
+      setShowCursor(false);
     };
     if (agent) {
       agent.threadId = threadId;
@@ -52,6 +53,7 @@ export function CopilotChat({
       });
       setShowCursor(true);
       await agent?.runAgent({}, subscriber);
+      setShowCursor(false);
     },
     [agent]
   );
