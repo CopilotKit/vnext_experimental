@@ -223,7 +223,7 @@ describe("SqliteAgentRunner", () => {
       // Run first agent
       await firstValueFrom(runner.run({ threadId, agent: agent1, input: input1 }).pipe(toArray()));
 
-      // Add more events that should compact with previous
+      // Add more events - each run stores only its own events
       const events2: BaseEvent[] = [
         { type: EventType.TEXT_MESSAGE_START, messageId: "msg2", role: "assistant" },
         { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "msg2", delta: "Second " },
@@ -250,16 +250,29 @@ describe("SqliteAgentRunner", () => {
       const run1Events = JSON.parse(rows[0].events);
       const run2Events = JSON.parse(rows[1].events);
 
-      // First run should have compacted events (text content combined)
+      // First run should have only its own compacted events
       // We expect: START, single CONTENT with "Hello world", END
+      expect(run1Events).toHaveLength(3);
       const contentEvents1 = run1Events.filter((e: any) => e.type === EventType.TEXT_MESSAGE_CONTENT);
       expect(contentEvents1).toHaveLength(1);
       expect(contentEvents1[0].delta).toBe("Hello world");
+      expect(run1Events[0].messageId).toBe("msg1");
 
-      // Second run should also be compacted
+      // Second run should have only its own compacted events
+      expect(run2Events).toHaveLength(3);
       const contentEvents2 = run2Events.filter((e: any) => e.type === EventType.TEXT_MESSAGE_CONTENT);
       expect(contentEvents2).toHaveLength(1);
       expect(contentEvents2[0].delta).toBe("Second message");
+      expect(run2Events[0].messageId).toBe("msg2");
+      
+      // Verify runs have different message IDs (no cross-contamination)
+      const run1MessageIds = new Set(run1Events.filter((e: any) => e.messageId).map((e: any) => e.messageId));
+      const run2MessageIds = new Set(run2Events.filter((e: any) => e.messageId).map((e: any) => e.messageId));
+      
+      // Ensure no overlap between message IDs in different runs
+      for (const id of run1MessageIds) {
+        expect(run2MessageIds.has(id)).toBe(false);
+      }
     });
 
     it("should never store empty events after text message compaction", async () => {
@@ -553,6 +566,243 @@ describe("SqliteAgentRunner", () => {
     });
   });
 
+  describe("Input message handling", () => {
+    it("should store NEW input messages but NOT old ones", async () => {
+      const threadId = "test-thread-input-storage";
+      
+      // First run: create some messages
+      const events1: BaseEvent[] = [
+        { type: EventType.TEXT_MESSAGE_START, messageId: "first-run-msg", role: "assistant" },
+        { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "first-run-msg", delta: "First run message" },
+        { type: EventType.TEXT_MESSAGE_END, messageId: "first-run-msg" },
+      ];
+
+      const agent1 = new MockAgent(events1);
+      const input1: RunAgentInput = {
+        threadId,
+        runId: "run1",
+        messages: [],
+      };
+
+      await firstValueFrom(runner.run({ threadId, agent: agent1, input: input1 }).pipe(toArray()));
+
+      // Second run: pass OLD message and a NEW message as input
+      const events2: BaseEvent[] = [
+        { type: EventType.TEXT_MESSAGE_START, messageId: "second-run-msg", role: "assistant" },
+        { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "second-run-msg", delta: "Second run message" },
+        { type: EventType.TEXT_MESSAGE_END, messageId: "second-run-msg" },
+      ];
+
+      const agent2 = new MockAgent(events2);
+      const input2: RunAgentInput = {
+        threadId,
+        runId: "run2",
+        messages: [
+          {
+            id: "first-run-msg",  // This is OLD - from run1, should NOT be stored again
+            role: "assistant",
+            content: "First run message"
+          },
+          {
+            id: "new-user-msg",  // This is NEW - should be stored in run2
+            role: "user",
+            content: "This is a NEW user message that SHOULD be stored in run2"
+          }
+        ],
+      };
+
+      await firstValueFrom(runner.run({ threadId, agent: agent2, input: input2 }).pipe(toArray()));
+
+      // Check database directly
+      const db = new Database(dbPath);
+      const rows = db.prepare("SELECT run_id, events FROM agent_runs WHERE thread_id = ? ORDER BY created_at").all(threadId) as any[];
+      db.close();
+
+      expect(rows).toHaveLength(2);
+      
+      // First run should only have its own message
+      const run1Events = JSON.parse(rows[0].events);
+      const run1MessageIds = run1Events.filter((e: any) => e.messageId).map((e: any) => e.messageId);
+      expect(run1MessageIds).toContain("first-run-msg");
+      expect(run1MessageIds).not.toContain("new-user-msg");
+      expect(run1MessageIds).not.toContain("second-run-msg");
+      
+      // Second run should have the NEW user message and agent response, but NOT the old message
+      const run2Events = JSON.parse(rows[1].events);
+      const run2MessageIds = run2Events.filter((e: any) => e.messageId).map((e: any) => e.messageId);
+      expect(run2MessageIds).toContain("second-run-msg"); // Agent's response
+      expect(run2MessageIds).toContain("new-user-msg");   // NEW user message - SHOULD be stored
+      expect(run2MessageIds).not.toContain("first-run-msg"); // OLD message - should NOT be stored again
+      
+      // Verify the second run has the right messages
+      const uniqueRun2MessageIds = [...new Set(run2MessageIds)];
+      expect(uniqueRun2MessageIds).toHaveLength(2); // Should have exactly 2 message IDs
+      expect(uniqueRun2MessageIds).toContain("new-user-msg");
+      expect(uniqueRun2MessageIds).toContain("second-run-msg");
+    });
+  });
+
+  describe("Complete conversation flow", () => {
+    it("should store ALL types of NEW messages including tool results", async () => {
+      const threadId = "test-thread-all-message-types";
+      
+      // Run 1: User message with tool call and result
+      const agent1 = new MockAgent([
+        { type: EventType.TOOL_CALL_START, toolCallId: "tool-1", toolName: "calculator" },
+        { type: EventType.TOOL_CALL_ARGS, toolCallId: "tool-1", delta: '{"a": 1, "b": 2}' },
+        { type: EventType.TOOL_CALL_END, toolCallId: "tool-1" },
+      ]);
+      
+      const input1: RunAgentInput = {
+        threadId,
+        runId: "run1",
+        messages: [
+          { id: "user-1", role: "user", content: "Calculate 1+2" },
+          { id: "assistant-1", role: "assistant", content: "Let me calculate that", toolCalls: [
+            { id: "tool-1", name: "calculator", arguments: { a: 1, b: 2 } }
+          ]},
+          { id: "tool-result-1", role: "tool", toolCallId: "tool-1", content: "3" }
+        ],
+      };
+      
+      await firstValueFrom(runner.run({ threadId, agent: agent1, input: input1 }).pipe(toArray()));
+      
+      // Run 2: Add more messages including system and developer
+      const agent2 = new MockAgent([
+        { type: EventType.TEXT_MESSAGE_START, messageId: "assistant-2", role: "assistant" },
+        { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "assistant-2", delta: "The answer is 3" },
+        { type: EventType.TEXT_MESSAGE_END, messageId: "assistant-2" },
+      ]);
+      
+      const input2: RunAgentInput = {
+        threadId,
+        runId: "run2",
+        messages: [
+          // Old messages from run 1
+          { id: "user-1", role: "user", content: "Calculate 1+2" },
+          { id: "assistant-1", role: "assistant", content: "Let me calculate that", toolCalls: [
+            { id: "tool-1", name: "calculator", arguments: { a: 1, b: 2 } }
+          ]},
+          { id: "tool-result-1", role: "tool", toolCallId: "tool-1", content: "3" },
+          // New messages for run 2
+          { id: "system-1", role: "system", content: "Be concise" },
+          { id: "developer-1", role: "developer", content: "Use simple language" },
+          { id: "user-2", role: "user", content: "What was the result?" }
+        ],
+      };
+      
+      await firstValueFrom(runner.run({ threadId, agent: agent2, input: input2 }).pipe(toArray()));
+      
+      // Check database
+      const db = new Database(dbPath);
+      const rows = db.prepare("SELECT run_id, events FROM agent_runs WHERE thread_id = ? ORDER BY created_at").all(threadId) as any[];
+      db.close();
+      
+      expect(rows).toHaveLength(2);
+      
+      // Run 1 should have all the initial messages
+      const run1Events = JSON.parse(rows[0].events);
+      const run1MessageIds = [...new Set(run1Events.filter((e: any) => e.messageId).map((e: any) => e.messageId))];
+      const run1ToolIds = [...new Set(run1Events.filter((e: any) => e.toolCallId).map((e: any) => e.toolCallId))];
+      
+      expect(run1MessageIds).toContain("user-1");
+      expect(run1MessageIds).toContain("assistant-1");
+      expect(run1ToolIds).toContain("tool-1"); // Tool events from both input and agent
+      
+      // Verify tool result event is stored
+      const toolResultEvents = run1Events.filter((e: any) => e.type === EventType.TOOL_CALL_RESULT);
+      expect(toolResultEvents).toHaveLength(1);
+      expect(toolResultEvents[0].toolCallId).toBe("tool-1");
+      expect(toolResultEvents[0].content).toBe("3");
+      
+      // Run 2 should have ONLY the new messages
+      const run2Events = JSON.parse(rows[1].events);
+      const run2MessageIds = [...new Set(run2Events.filter((e: any) => e.messageId).map((e: any) => e.messageId))];
+      
+      expect(run2MessageIds).toContain("system-1");    // NEW system message
+      expect(run2MessageIds).toContain("developer-1"); // NEW developer message
+      expect(run2MessageIds).toContain("user-2");      // NEW user message
+      expect(run2MessageIds).toContain("assistant-2"); // NEW assistant response
+      
+      // Should NOT contain old messages
+      expect(run2MessageIds).not.toContain("user-1");
+      expect(run2MessageIds).not.toContain("assistant-1");
+      
+      // Should NOT contain old tool results
+      const run2ToolResults = run2Events.filter((e: any) => e.type === EventType.TOOL_CALL_RESULT);
+      expect(run2ToolResults.filter((e: any) => e.toolCallId === "tool-1")).toHaveLength(0);
+      
+      // Verify we captured all 4 new message types in run 2
+      const run2EventTypes = new Set(run2Events.map((e: any) => e.type));
+      expect(run2EventTypes.has(EventType.TEXT_MESSAGE_START)).toBe(true);
+      expect(run2EventTypes.has(EventType.TEXT_MESSAGE_CONTENT)).toBe(true);
+      expect(run2EventTypes.has(EventType.TEXT_MESSAGE_END)).toBe(true);
+    });
+
+    it("should correctly store a multi-turn conversation", async () => {
+      const threadId = "test-thread-conversation";
+      
+      // Run 1: Initial user message and agent response
+      const agent1 = new MockAgent([
+        { type: EventType.TEXT_MESSAGE_START, messageId: "agent-1", role: "assistant" },
+        { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "agent-1", delta: "Hello! How can I help?" },
+        { type: EventType.TEXT_MESSAGE_END, messageId: "agent-1" },
+      ]);
+      
+      const input1: RunAgentInput = {
+        threadId,
+        runId: "run1",
+        messages: [
+          { id: "user-1", role: "user", content: "Hi!" }
+        ],
+      };
+      
+      await firstValueFrom(runner.run({ threadId, agent: agent1, input: input1 }).pipe(toArray()));
+      
+      // Run 2: Second user message and agent response
+      const agent2 = new MockAgent([
+        { type: EventType.TEXT_MESSAGE_START, messageId: "agent-2", role: "assistant" },
+        { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "agent-2", delta: "The weather is nice today!" },
+        { type: EventType.TEXT_MESSAGE_END, messageId: "agent-2" },
+      ]);
+      
+      const input2: RunAgentInput = {
+        threadId,
+        runId: "run2",
+        messages: [
+          { id: "user-1", role: "user", content: "Hi!" },
+          { id: "agent-1", role: "assistant", content: "Hello! How can I help?" },
+          { id: "user-2", role: "user", content: "What's the weather?" }
+        ],
+      };
+      
+      await firstValueFrom(runner.run({ threadId, agent: agent2, input: input2 }).pipe(toArray()));
+      
+      // Check database
+      const db = new Database(dbPath);
+      const rows = db.prepare("SELECT run_id, events FROM agent_runs WHERE thread_id = ? ORDER BY created_at").all(threadId) as any[];
+      db.close();
+      
+      expect(rows).toHaveLength(2);
+      
+      // Run 1 should have user-1 and agent-1
+      const run1Events = JSON.parse(rows[0].events);
+      const run1MessageIds = [...new Set(run1Events.filter((e: any) => e.messageId).map((e: any) => e.messageId))];
+      expect(run1MessageIds).toHaveLength(2);
+      expect(run1MessageIds).toContain("user-1");
+      expect(run1MessageIds).toContain("agent-1");
+      
+      // Run 2 should have ONLY user-2 and agent-2 (not the old messages)
+      const run2Events = JSON.parse(rows[1].events);
+      const run2MessageIds = [...new Set(run2Events.filter((e: any) => e.messageId).map((e: any) => e.messageId))];
+      expect(run2MessageIds).toHaveLength(2);
+      expect(run2MessageIds).toContain("user-2");
+      expect(run2MessageIds).toContain("agent-2");
+      expect(run2MessageIds).not.toContain("user-1");
+      expect(run2MessageIds).not.toContain("agent-1");
+    });
+  });
+
   describe("Database integrity", () => {
     it("should create all required tables", () => {
       const db = new Database(dbPath);
@@ -672,15 +922,23 @@ describe("SqliteAgentRunner", () => {
       expect(run1Events).not.toHaveLength(0);
       expect(run2Events).not.toHaveLength(0);
       
-      // First run should have the first message events
+      // First run should have ONLY the first message events
       expect(run1Events).toEqual(expect.arrayContaining([
         expect.objectContaining({ messageId: "msg1" }),
       ]));
+      expect(run1Events.every((e: any) => !e.messageId || e.messageId === "msg1")).toBe(true);
       
-      // Second run should have the second message events
+      // Second run should have ONLY the second message events
       expect(run2Events).toEqual(expect.arrayContaining([
         expect.objectContaining({ messageId: "msg2" }),
       ]));
+      expect(run2Events.every((e: any) => !e.messageId || e.messageId === "msg2")).toBe(true);
+      
+      // Verify no message duplication across runs
+      const run1MessageIds = new Set(run1Events.filter((e: any) => e.messageId).map((e: any) => e.messageId));
+      const run2MessageIds = new Set(run2Events.filter((e: any) => e.messageId).map((e: any) => e.messageId));
+      const intersection = [...run1MessageIds].filter(id => run2MessageIds.has(id));
+      expect(intersection).toHaveLength(0);
     });
 
     it("should handle edge case with no new events after compaction", async () => {

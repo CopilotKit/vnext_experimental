@@ -9,11 +9,17 @@ import { Observable, ReplaySubject } from "rxjs";
 import {
   BaseEvent,
   RunAgentInput,
+  Message,
+  EventType,
+  TextMessageStartEvent,
+  TextMessageContentEvent,
+  TextMessageEndEvent,
+  ToolCallStartEvent,
+  ToolCallArgsEvent,
+  ToolCallEndEvent,
+  ToolCallResultEvent,
 } from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
-import {
-  processInputMessages,
-} from "./agent-runner-helpers";
 import Database from "better-sqlite3";
 
 const SCHEMA_VERSION = 1;
@@ -59,6 +65,75 @@ export class SqliteAgentRunner extends AgentRunner {
     
     this.db = new Database(dbPath);
     this.initializeSchema();
+  }
+
+  private convertMessageToEvents(message: Message): BaseEvent[] {
+    const events: BaseEvent[] = [];
+
+    if (
+      (message.role === "assistant" ||
+        message.role === "user" ||
+        message.role === "developer" ||
+        message.role === "system") &&
+      message.content
+    ) {
+      const textStartEvent: TextMessageStartEvent = {
+        type: EventType.TEXT_MESSAGE_START,
+        messageId: message.id,
+        role: message.role,
+      };
+      events.push(textStartEvent);
+
+      const textContentEvent: TextMessageContentEvent = {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: message.id,
+        delta: message.content,
+      };
+      events.push(textContentEvent);
+
+      const textEndEvent: TextMessageEndEvent = {
+        type: EventType.TEXT_MESSAGE_END,
+        messageId: message.id,
+      };
+      events.push(textEndEvent);
+    }
+
+    if (message.role === "assistant" && message.toolCalls) {
+      for (const toolCall of message.toolCalls) {
+        const toolStartEvent: ToolCallStartEvent = {
+          type: EventType.TOOL_CALL_START,
+          toolCallId: toolCall.id,
+          toolName: toolCall.name,
+        };
+        events.push(toolStartEvent);
+
+        const toolArgsEvent: ToolCallArgsEvent = {
+          type: EventType.TOOL_CALL_ARGS,
+          toolCallId: toolCall.id,
+          delta: JSON.stringify(toolCall.arguments),
+        };
+        events.push(toolArgsEvent);
+
+        const toolEndEvent: ToolCallEndEvent = {
+          type: EventType.TOOL_CALL_END,
+          toolCallId: toolCall.id,
+        };
+        events.push(toolEndEvent);
+      }
+    }
+
+    if (message.role === "tool" && message.toolCallId) {
+      const toolResultEvent: ToolCallResultEvent = {
+        type: EventType.TOOL_CALL_RESULT,
+        messageId: message.id,
+        toolCallId: message.toolCallId,
+        content: message.content,
+        role: "tool",
+      };
+      events.push(toolResultEvent);
+    }
+
+    return events;
   }
 
   private initializeSchema(): void {
@@ -119,24 +194,8 @@ export class SqliteAgentRunner extends AgentRunner {
     input: RunAgentInput,
     parentRunId?: string | null
   ): void {
-    // Get all previous events for this thread to compact together with new events
-    const historicRuns = this.getHistoricRuns(threadId);
-    const allPreviousEvents: BaseEvent[] = [];
-    for (const run of historicRuns) {
-      allPreviousEvents.push(...run.events);
-    }
-    
-    // Compact just the new events with context of previous events
-    // This ensures proper compaction while storing only the delta
-    const allEventsForCompaction = [...allPreviousEvents, ...events];
-    const compactedAll = compactEvents(allEventsForCompaction);
-    
-    // Now compact just the previous events to see what they become
-    const compactedPrevious = allPreviousEvents.length > 0 ? compactEvents(allPreviousEvents) : [];
-    
-    // The new events to store are the difference between the two compacted sets
-    // This represents what the new events contribute after compaction
-    const newEventsToStore = compactedAll.slice(compactedPrevious.length);
+    // Compact ONLY the events from this run
+    const compactedEvents = compactEvents(events);
     
     const stmt = this.db.prepare(`
       INSERT INTO agent_runs (thread_id, run_id, parent_run_id, events, input, created_at, version)
@@ -147,7 +206,7 @@ export class SqliteAgentRunner extends AgentRunner {
       threadId,
       runId,
       parentRunId ?? null,
-      JSON.stringify(newEventsToStore), // Store only the new compacted events for this run
+      JSON.stringify(compactedEvents), // Store only this run's compacted events
       JSON.stringify(input),
       Date.now(),
       SCHEMA_VERSION
@@ -231,6 +290,17 @@ export class SqliteAgentRunner extends AgentRunner {
     // Track seen message IDs and current run events in memory for this run
     const seenMessageIds = new Set<string>();
     const currentRunEvents: BaseEvent[] = [];
+    
+    // Get all previously seen message IDs from historic runs
+    const historicRuns = this.getHistoricRuns(request.threadId);
+    const historicMessageIds = new Set<string>();
+    for (const run of historicRuns) {
+      for (const event of run.events) {
+        if ('messageId' in event && typeof event.messageId === 'string') {
+          historicMessageIds.add(event.messageId);
+        }
+      }
+    }
 
     // Get or create subject for this thread's connections
     const nextSubject = new ReplaySubject<BaseEvent>(Infinity);
@@ -261,12 +331,28 @@ export class SqliteAgentRunner extends AgentRunner {
             }
           },
           onRunStartedEvent: () => {
-            processInputMessages(
-              request.input.messages,
-              nextSubject,
-              currentRunEvents,
-              seenMessageIds
-            );
+            // Process input messages
+            if (request.input.messages) {
+              for (const message of request.input.messages) {
+                if (!seenMessageIds.has(message.id)) {
+                  seenMessageIds.add(message.id);
+                  const events = this.convertMessageToEvents(message);
+                  
+                  // Check if this message is NEW (not in historic runs)
+                  const isNewMessage = !historicMessageIds.has(message.id);
+                  
+                  for (const event of events) {
+                    // Always emit to stream for context
+                    nextSubject.next(event);
+                    
+                    // Store if this is a NEW message for this run
+                    if (isNewMessage) {
+                      currentRunEvents.push(event);
+                    }
+                  }
+                }
+              }
+            }
           },
         });
         
@@ -328,19 +414,21 @@ export class SqliteAgentRunner extends AgentRunner {
   connect(request: AgentRunnerConnectRequest): Observable<BaseEvent> {
     const connectionSubject = new ReplaySubject<BaseEvent>(Infinity);
 
-    // Load historic runs from database - they're already compacted!
+    // Load historic runs from database
     const historicRuns = this.getHistoricRuns(request.threadId);
     
-    // Collect all historic events from database (already compacted)
+    // Collect all historic events from database
     const allHistoricEvents: BaseEvent[] = [];
     for (const run of historicRuns) {
       allHistoricEvents.push(...run.events);
     }
     
-    // No need to compact - events are already compacted in storage
-    // Just emit them and track message IDs
+    // Compact all events together before emitting
+    const compactedEvents = compactEvents(allHistoricEvents);
+    
+    // Emit compacted events and track message IDs
     const emittedMessageIds = new Set<string>();
-    for (const event of allHistoricEvents) {
+    for (const event of compactedEvents) {
       connectionSubject.next(event);
       if ('messageId' in event && typeof event.messageId === 'string') {
         emittedMessageIds.add(event.messageId);

@@ -95,14 +95,17 @@ export function emitMessageEvents(
   message: Message,
   nextSubject: ReplaySubject<BaseEvent>,
   currentRunEvents: BaseEvent[],
-  seenMessageIds: Set<string>
+  seenMessageIds: Set<string>,
+  addToStorage: boolean = true
 ): void {
   if (!seenMessageIds.has(message.id)) {
     seenMessageIds.add(message.id);
     const events = convertMessageToEvents(message);
     for (const event of events) {
       nextSubject.next(event);
-      currentRunEvents.push(event);
+      if (addToStorage) {
+        currentRunEvents.push(event);
+      }
     }
   }
 }
@@ -115,7 +118,8 @@ export function processInputMessages(
 ): void {
   if (messages) {
     for (const message of messages) {
-      emitMessageEvents(message, nextSubject, currentRunEvents, seenMessageIds);
+      // Don't store input messages - they're from previous runs
+      emitMessageEvents(message, nextSubject, currentRunEvents, seenMessageIds, false);
     }
   }
 }
