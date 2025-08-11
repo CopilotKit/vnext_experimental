@@ -18,6 +18,7 @@ import {
   emitHistoricEventsToConnection,
   bridgeActiveRunToConnection,
 } from "./agent-runner-helpers";
+import Database from "better-sqlite3";
 
 const SCHEMA_VERSION = 1;
 
@@ -30,6 +31,10 @@ interface AgentRunRecord {
   input: RunAgentInput;
   created_at: number;
   version: number;
+}
+
+export interface SqliteAgentRunnerOptions {
+  dbPath?: string;
 }
 
 class SqliteEventStore implements EventStore {
@@ -59,24 +64,25 @@ const GLOBAL_STORE = new Map<string, SqliteEventStore>();
 export class SqliteAgentRunner extends AgentRunner {
   private db: any;
 
-  constructor(dbPath: string = ":memory:") {
+  constructor(options: SqliteAgentRunnerOptions = {}) {
     super();
-    this.db = this.loadDatabase(dbPath);
-    this.initializeSchema();
-  }
-
-  private loadDatabase(dbPath: string): any {
-    try {
-      // Use require to load better-sqlite3 synchronously
-      const Database = require('better-sqlite3');
-      return new Database(dbPath);
-    } catch (e) {
+    const dbPath = options.dbPath ?? ":memory:";
+    
+    if (!Database) {
       throw new Error(
-        'better-sqlite3 is required for SqliteAgentRunner. ' +
-        'Install it with: npm install better-sqlite3\n' +
+        'better-sqlite3 is required for SqliteAgentRunner but was not found.\n' +
+        'Please install it in your project:\n' +
+        '  npm install better-sqlite3\n' +
+        '  or\n' +
+        '  pnpm add better-sqlite3\n' +
+        '  or\n' +
+        '  yarn add better-sqlite3\n\n' +
         'If you don\'t need persistence, use InMemoryAgentRunner instead.'
       );
     }
+    
+    this.db = new Database(dbPath);
+    this.initializeSchema();
   }
 
   private initializeSchema(): void {
