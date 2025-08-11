@@ -6,15 +6,19 @@ import {
   type AgentRunnerStopRequest,
 } from "./agent-runner";
 import { Observable, ReplaySubject } from "rxjs";
-import { BaseEvent } from "@ag-ui/client";
+import { 
+  BaseEvent,
+  Message,
+  EventType,
+  TextMessageStartEvent,
+  TextMessageContentEvent,
+  TextMessageEndEvent,
+  ToolCallStartEvent,
+  ToolCallArgsEvent,
+  ToolCallEndEvent,
+  ToolCallResultEvent
+} from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
-import {
-  EventStore,
-  processInputMessages,
-  completeRun,
-  emitHistoricEventsToConnection,
-  bridgeActiveRunToConnection,
-} from "./agent-runner-helpers";
 
 interface HistoricRun {
   threadId: string;
@@ -24,7 +28,7 @@ interface HistoricRun {
   createdAt: number;
 }
 
-class InMemoryEventStore implements EventStore {
+class InMemoryEventStore {
   constructor(public threadId: string) {}
 
   /** The subject that current consumers subscribe to. */
@@ -36,14 +40,8 @@ class InMemoryEventStore implements EventStore {
   /** Lets stop() cancel the current producer. */
   abortController = new AbortController();
 
-  /** Set of message IDs we've already seen. */
-  seenMessageIds = new Set<string>();
-  
   /** Current run ID */
   currentRunId: string | null = null;
-  
-  /** Accumulated events for current run */
-  currentRunEvents: BaseEvent[] = [];
   
   /** Historic completed runs */
   historicRuns: HistoricRun[] = [];
@@ -52,6 +50,76 @@ class InMemoryEventStore implements EventStore {
 const GLOBAL_STORE = new Map<string, InMemoryEventStore>();
 
 export class InMemoryAgentRunner extends AgentRunner {
+  private convertMessageToEvents(message: Message): BaseEvent[] {
+    const events: BaseEvent[] = [];
+
+    if (
+      (message.role === "assistant" ||
+        message.role === "user" ||
+        message.role === "developer" ||
+        message.role === "system") &&
+      message.content
+    ) {
+      const textStartEvent: TextMessageStartEvent = {
+        type: EventType.TEXT_MESSAGE_START,
+        messageId: message.id,
+        role: message.role,
+      };
+      events.push(textStartEvent);
+
+      const textContentEvent: TextMessageContentEvent = {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: message.id,
+        delta: message.content,
+      };
+      events.push(textContentEvent);
+
+      const textEndEvent: TextMessageEndEvent = {
+        type: EventType.TEXT_MESSAGE_END,
+        messageId: message.id,
+      };
+      events.push(textEndEvent);
+    }
+
+    if (message.role === "assistant" && message.toolCalls) {
+      for (const toolCall of message.toolCalls) {
+        const toolStartEvent: ToolCallStartEvent = {
+          type: EventType.TOOL_CALL_START,
+          toolCallId: toolCall.id,
+          toolCallName: toolCall.function.name,
+          parentMessageId: message.id,
+        };
+        events.push(toolStartEvent);
+
+        const toolArgsEvent: ToolCallArgsEvent = {
+          type: EventType.TOOL_CALL_ARGS,
+          toolCallId: toolCall.id,
+          delta: toolCall.function.arguments,
+        };
+        events.push(toolArgsEvent);
+
+        const toolEndEvent: ToolCallEndEvent = {
+          type: EventType.TOOL_CALL_END,
+          toolCallId: toolCall.id,
+        };
+        events.push(toolEndEvent);
+      }
+    }
+
+    if (message.role === "tool" && message.toolCallId) {
+      const toolResultEvent: ToolCallResultEvent = {
+        type: EventType.TOOL_CALL_RESULT,
+        messageId: message.id,
+        toolCallId: message.toolCallId,
+        content: message.content,
+        role: "tool",
+      };
+      events.push(toolResultEvent);
+    }
+
+    return events;
+  }
+
   run(request: AgentRunnerRunRequest): Observable<BaseEvent> {
     let existingStore = GLOBAL_STORE.get(request.threadId);
     if (!existingStore) {
@@ -65,7 +133,20 @@ export class InMemoryAgentRunner extends AgentRunner {
     }
     store.isRunning = true;
     store.currentRunId = request.input.runId;
-    store.currentRunEvents = [];
+
+    // Track seen message IDs and current run events for this run
+    const seenMessageIds = new Set<string>();
+    const currentRunEvents: BaseEvent[] = [];
+    
+    // Get all previously seen message IDs from historic runs
+    const historicMessageIds = new Set<string>();
+    for (const run of store.historicRuns) {
+      for (const event of run.events) {
+        if ('messageId' in event && typeof event.messageId === 'string') {
+          historicMessageIds.add(event.messageId);
+        }
+      }
+    }
 
     const nextSubject = new ReplaySubject<BaseEvent>(Infinity);
     const prevSubject = store.subject;
@@ -88,51 +169,77 @@ export class InMemoryAgentRunner extends AgentRunner {
           onEvent: ({ event }) => {
             runSubject.next(event); // For run() return - only agent events
             nextSubject.next(event); // For connect() / store - all events
-            store.currentRunEvents.push(event); // Accumulate for storage
+            currentRunEvents.push(event); // Accumulate for storage
           },
           onNewMessage: ({ message }) => {
             // Called for each new message
-            if (!store.seenMessageIds.has(message.id)) {
-              store.seenMessageIds.add(message.id);
+            if (!seenMessageIds.has(message.id)) {
+              seenMessageIds.add(message.id);
             }
           },
           onRunStartedEvent: () => {
-            processInputMessages(
-              request.input.messages,
-              nextSubject,
-              store.currentRunEvents,
-              store.seenMessageIds
-            );
+            // Process input messages (same logic as SQLite)
+            if (request.input.messages) {
+              for (const message of request.input.messages) {
+                if (!seenMessageIds.has(message.id)) {
+                  seenMessageIds.add(message.id);
+                  const events = this.convertMessageToEvents(message);
+                  
+                  // Check if this message is NEW (not in historic runs)
+                  const isNewMessage = !historicMessageIds.has(message.id);
+                  
+                  for (const event of events) {
+                    // Always emit to stream for context
+                    nextSubject.next(event);
+                    
+                    // Store if this is a NEW message for this run
+                    if (isNewMessage) {
+                      currentRunEvents.push(event);
+                    }
+                  }
+                }
+              }
+            }
           },
         });
         
-        // Store the completed run in memory
+        // Store the completed run in memory with ONLY its events
         if (store.currentRunId) {
+          // Compact the events before storing (like SQLite does)
+          const compactedEvents = compactEvents(currentRunEvents);
           store.historicRuns.push({
             threadId: request.threadId,
             runId: store.currentRunId,
             parentRunId,
-            events: [...store.currentRunEvents],
+            events: compactedEvents,
             createdAt: Date.now(),
           });
         }
         
-        completeRun(store, runSubject, nextSubject);
+        // Complete the run
+        store.isRunning = false;
+        store.currentRunId = null;
+        runSubject.complete();
+        nextSubject.complete();
       } catch {
         // Store the run even if it failed (partial events)
-        if (store.currentRunId && store.currentRunEvents.length > 0) {
+        if (store.currentRunId && currentRunEvents.length > 0) {
+          // Compact the events before storing (like SQLite does)
+          const compactedEvents = compactEvents(currentRunEvents);
           store.historicRuns.push({
             threadId: request.threadId,
             runId: store.currentRunId,
             parentRunId,
-            events: [...store.currentRunEvents],
+            events: compactedEvents,
             createdAt: Date.now(),
           });
         }
         
-        // Don't emit error to the subject, just complete it
-        // This allows subscribers to get events emitted before the error
-        completeRun(store, runSubject, nextSubject);
+        // Complete the run
+        store.isRunning = false;
+        store.currentRunId = null;
+        runSubject.complete();
+        nextSubject.complete();
       }
     };
 
@@ -170,17 +277,35 @@ export class InMemoryAgentRunner extends AgentRunner {
       allHistoricEvents.push(...run.events);
     }
     
-    // Apply compaction to historic events
-    const compactedHistoric = compactEvents(allHistoricEvents);
+    // Apply compaction to all historic events together (like SQLite)
+    const compactedEvents = compactEvents(allHistoricEvents);
     
-    // Emit compacted historic events and get emitted message IDs
-    const emittedMessageIds = emitHistoricEventsToConnection(
-      compactedHistoric,
-      connectionSubject
-    );
+    // Emit compacted events and track message IDs
+    const emittedMessageIds = new Set<string>();
+    for (const event of compactedEvents) {
+      connectionSubject.next(event);
+      if ('messageId' in event && typeof event.messageId === 'string') {
+        emittedMessageIds.add(event.messageId);
+      }
+    }
     
     // Bridge active run to connection if exists
-    bridgeActiveRunToConnection(store, emittedMessageIds, connectionSubject);
+    if (store.subject && store.isRunning) {
+      store.subject.subscribe({
+        next: (event) => {
+          // Skip message events that we've already emitted from historic
+          if ('messageId' in event && typeof event.messageId === 'string' && emittedMessageIds.has(event.messageId)) {
+            return;
+          }
+          connectionSubject.next(event);
+        },
+        complete: () => connectionSubject.complete(),
+        error: (err) => connectionSubject.error(err)
+      });
+    } else {
+      // No active run, complete after historic events
+      connectionSubject.complete();
+    }
     
     return connectionSubject.asObservable();
   }

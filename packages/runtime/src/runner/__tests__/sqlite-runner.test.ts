@@ -659,7 +659,7 @@ describe("SqliteAgentRunner", () => {
         messages: [
           { id: "user-1", role: "user", content: "Calculate 1+2" },
           { id: "assistant-1", role: "assistant", content: "Let me calculate that", toolCalls: [
-            { id: "tool-1", name: "calculator", arguments: { a: 1, b: 2 } }
+            { id: "tool-1", type: "function", function: { name: "calculator", arguments: JSON.stringify({ a: 1, b: 2 }) } }
           ]},
           { id: "tool-result-1", role: "tool", toolCallId: "tool-1", content: "3" }
         ],
@@ -681,7 +681,7 @@ describe("SqliteAgentRunner", () => {
           // Old messages from run 1
           { id: "user-1", role: "user", content: "Calculate 1+2" },
           { id: "assistant-1", role: "assistant", content: "Let me calculate that", toolCalls: [
-            { id: "tool-1", name: "calculator", arguments: { a: 1, b: 2 } }
+            { id: "tool-1", type: "function", function: { name: "calculator", arguments: JSON.stringify({ a: 1, b: 2 }) } }
           ]},
           { id: "tool-result-1", role: "tool", toolCallId: "tool-1", content: "3" },
           // New messages for run 2

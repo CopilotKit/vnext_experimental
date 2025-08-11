@@ -103,14 +103,15 @@ export class SqliteAgentRunner extends AgentRunner {
         const toolStartEvent: ToolCallStartEvent = {
           type: EventType.TOOL_CALL_START,
           toolCallId: toolCall.id,
-          toolName: toolCall.name,
+          toolCallName: toolCall.function.name,
+          parentMessageId: message.id,
         };
         events.push(toolStartEvent);
 
         const toolArgsEvent: ToolCallArgsEvent = {
           type: EventType.TOOL_CALL_ARGS,
           toolCallId: toolCall.id,
-          delta: JSON.stringify(toolCall.arguments),
+          delta: toolCall.function.arguments,
         };
         events.push(toolArgsEvent);
 
