@@ -14,6 +14,7 @@
     "@copilotkit/react": "workspace:*",
     "@copilotkit/runtime": "workspace:*",
     "@copilotkit/shared": "workspace:*",
+    "better-sqlite3": "^12.2.0",
     "hono": "^4.6.13",
     "next": "15.4.4",
     "openai": "^5.9.0",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -47,6 +47,9 @@ importers:
       '@copilotkit/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      better-sqlite3:
+        specifier: ^12.2.0
+        version: 12.2.0
       hono:
         specifier: ^4.6.13
         version: 4.8.10
@@ -72,6 +75,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.11
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
       '@types/node':
         specifier: ^20
         version: 20.19.9
