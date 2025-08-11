@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InProcessAgentRunner } from "../runner/in-process";
+import { InMemoryAgentRunner } from "../runner/in-memory";
 import {
   AbstractAgent,
   BaseEvent,
@@ -66,11 +66,11 @@ class MessageAwareAgent extends AbstractAgent {
   }
 }
 
-describe("InProcessAgentRunner - Message Injection", () => {
-  let runner: InProcessAgentRunner;
+describe("InMemoryAgentRunner - Message Injection", () => {
+  let runner: InMemoryAgentRunner;
 
   beforeEach(() => {
-    runner = new InProcessAgentRunner(":memory:");
+    runner = new InMemoryAgentRunner();
   });
 
   describe("Message Injection on Run", () => {

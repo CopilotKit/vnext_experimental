@@ -7,7 +7,7 @@ import type {
 } from "./middleware";
 import { TranscriptionService } from "./transcription-service/transcription-service";
 import { AgentRunner } from "./runner/agent-runner";
-import { InProcessAgentRunner } from "./runner/in-process";
+import { InMemoryAgentRunner } from "./runner/in-memory";
 
 export const VERSION = pkg.version;
 
@@ -48,6 +48,6 @@ export class CopilotRuntime {
     this.transcriptionService = transcriptionService;
     this.beforeRequestMiddleware = beforeRequestMiddleware;
     this.afterRequestMiddleware = afterRequestMiddleware;
-    this.runner = runner ?? new InProcessAgentRunner(":memory:");
+    this.runner = runner ?? new InMemoryAgentRunner();
   }
 }

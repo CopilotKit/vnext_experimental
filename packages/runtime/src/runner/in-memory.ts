@@ -18,9 +18,16 @@ import {
   ToolCallStartEvent,
 } from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
-import { AgentRunDatabase } from "./database";
 
-class InProcessEventStore {
+interface HistoricRun {
+  threadId: string;
+  runId: string;
+  parentRunId: string | null;
+  events: BaseEvent[];
+  createdAt: number;
+}
+
+class InMemoryEventStore {
   constructor(public threadId: string) {}
 
   /** The subject that current consumers subscribe to. */
@@ -40,23 +47,21 @@ class InProcessEventStore {
   
   /** Accumulated events for current run */
   currentRunEvents: BaseEvent[] = [];
+  
+  /** Historic completed runs */
+  historicRuns: HistoricRun[] = [];
 }
 
-const GLOBAL_STORE = new Map<string, InProcessEventStore>();
+const GLOBAL_STORE = new Map<string, InMemoryEventStore>();
 
-export class InProcessAgentRunner extends AgentRunner {
-  private db: AgentRunDatabase;
-
-  constructor(dbPath: string = ":memory:") {
-    super();
-    this.db = new AgentRunDatabase(dbPath);
-  }
+export class InMemoryAgentRunner extends AgentRunner {
   run(request: AgentRunnerRunRequest): Observable<BaseEvent> {
-    let store = GLOBAL_STORE.get(request.threadId);
-    if (!store) {
-      store = new InProcessEventStore(request.threadId);
-      GLOBAL_STORE.set(request.threadId, store);
+    let existingStore = GLOBAL_STORE.get(request.threadId);
+    if (!existingStore) {
+      existingStore = new InMemoryEventStore(request.threadId);
+      GLOBAL_STORE.set(request.threadId, existingStore);
     }
+    const store = existingStore; // Now store is const and non-null
 
     if (store.isRunning) {
       throw new Error("Thread already running");
@@ -74,32 +79,33 @@ export class InProcessAgentRunner extends AgentRunner {
 
     // Create a subject for run() return value
     const runSubject = new ReplaySubject<BaseEvent>(Infinity);
-    
-    // Get parent run ID for chaining
-    const parentRunId = this.db.getLatestRunId(request.threadId);
 
     // Helper function to run the agent and handle errors
     const runAgent = async () => {
+      // Get parent run ID for chaining
+      const lastRun = store.historicRuns[store.historicRuns.length - 1];
+      const parentRunId = lastRun?.runId ?? null;
+      
       try {
         await request.agent.runAgent(request.input, {
           onEvent: ({ event }) => {
             runSubject.next(event); // For run() return - only agent events
             nextSubject.next(event); // For connect() / store - all events
-            store!.currentRunEvents.push(event); // Accumulate for database storage
+            store.currentRunEvents.push(event); // Accumulate for storage
           },
           onNewMessage: ({ message }) => {
             // Called for each new message
-            if (!store!.seenMessageIds.has(message.id)) {
-              store!.seenMessageIds.add(message.id);
+            if (!store.seenMessageIds.has(message.id)) {
+              store.seenMessageIds.add(message.id);
             }
           },
           onRunStartedEvent: (args: { event: BaseEvent }) => {
             // Process each message from input and inject as events
             if (request.input.messages) {
               for (const message of request.input.messages) {
-                if (!store!.seenMessageIds.has(message.id)) {
+                if (!store.seenMessageIds.has(message.id)) {
                   // Track the message ID
-                  store!.seenMessageIds.add(message.id);
+                  store.seenMessageIds.add(message.id);
 
                   // Emit proper ag-ui events based on message type
                   if (
@@ -116,7 +122,7 @@ export class InProcessAgentRunner extends AgentRunner {
                       role: message.role,
                     };
                     nextSubject.next(textStartEvent);
-                    store!.currentRunEvents.push(textStartEvent);
+                    store.currentRunEvents.push(textStartEvent);
 
                     const textContentEvent: TextMessageContentEvent = {
                       type: EventType.TEXT_MESSAGE_CONTENT,
@@ -124,14 +130,14 @@ export class InProcessAgentRunner extends AgentRunner {
                       delta: message.content,
                     };
                     nextSubject.next(textContentEvent);
-                    store!.currentRunEvents.push(textContentEvent);
+                    store.currentRunEvents.push(textContentEvent);
 
                     const textEndEvent: TextMessageEndEvent = {
                       type: EventType.TEXT_MESSAGE_END,
                       messageId: message.id,
                     };
                     nextSubject.next(textEndEvent);
-                    store!.currentRunEvents.push(textEndEvent);
+                    store.currentRunEvents.push(textEndEvent);
                   }
 
                   // Handle tool calls if present
@@ -145,7 +151,7 @@ export class InProcessAgentRunner extends AgentRunner {
                         parentMessageId: message.id,
                       };
                       nextSubject.next(toolStartEvent);
-                      store!.currentRunEvents.push(toolStartEvent);
+                      store.currentRunEvents.push(toolStartEvent);
 
                       // ToolCallArgs event
                       const toolArgsEvent: ToolCallArgsEvent = {
@@ -154,7 +160,7 @@ export class InProcessAgentRunner extends AgentRunner {
                         delta: toolCall.function.arguments,
                       };
                       nextSubject.next(toolArgsEvent);
-                      store!.currentRunEvents.push(toolArgsEvent);
+                      store.currentRunEvents.push(toolArgsEvent);
 
                       // ToolCallEnd event
                       const toolEndEvent: ToolCallEndEvent = {
@@ -162,7 +168,7 @@ export class InProcessAgentRunner extends AgentRunner {
                         toolCallId: toolCall.id,
                       };
                       nextSubject.next(toolEndEvent);
-                      store!.currentRunEvents.push(toolEndEvent);
+                      store.currentRunEvents.push(toolEndEvent);
                     }
                   }
 
@@ -176,7 +182,7 @@ export class InProcessAgentRunner extends AgentRunner {
                       role: "tool",
                     };
                     nextSubject.next(toolResultEvent);
-                    store!.currentRunEvents.push(toolResultEvent);
+                    store.currentRunEvents.push(toolResultEvent);
                   }
                 }
               }
@@ -184,15 +190,15 @@ export class InProcessAgentRunner extends AgentRunner {
           },
         });
         
-        // Store the run in database
+        // Store the completed run in memory
         if (store.currentRunId) {
-          this.db.storeRun(
-            request.threadId,
-            store.currentRunId,
-            store.currentRunEvents,
-            request.input,
-            parentRunId
-          );
+          store.historicRuns.push({
+            threadId: request.threadId,
+            runId: store.currentRunId,
+            parentRunId,
+            events: [...store.currentRunEvents],
+            createdAt: Date.now(),
+          });
         }
         
         store.isRunning = false;
@@ -202,19 +208,19 @@ export class InProcessAgentRunner extends AgentRunner {
         nextSubject.complete();
       } catch (error) {
         // Store the run even if it failed (partial events)
-        if (store!.currentRunId && store!.currentRunEvents.length > 0) {
-          this.db.storeRun(
-            request.threadId,
-            store!.currentRunId,
-            store!.currentRunEvents,
-            request.input,
-            parentRunId
-          );
+        if (store.currentRunId && store.currentRunEvents.length > 0) {
+          store.historicRuns.push({
+            threadId: request.threadId,
+            runId: store.currentRunId,
+            parentRunId,
+            events: [...store.currentRunEvents],
+            createdAt: Date.now(),
+          });
         }
         
-        store!.isRunning = false;
-        store!.currentRunId = null;
-        store!.currentRunEvents = [];
+        store.isRunning = false;
+        store.currentRunId = null;
+        store.currentRunEvents = [];
         // Don't emit error to the subject, just complete it
         // This allows subscribers to get events emitted before the error
         runSubject.complete();
@@ -244,22 +250,19 @@ export class InProcessAgentRunner extends AgentRunner {
     const store = GLOBAL_STORE.get(request.threadId);
     const connectionSubject = new ReplaySubject<BaseEvent>(Infinity);
 
-    // Load historic runs from database
-    const historicRuns = this.db.getHistoricRuns(request.threadId);
-    
-    // Collect all historic events from database
+    if (!store) {
+      // No store means no events
+      connectionSubject.complete();
+      return connectionSubject.asObservable();
+    }
+
+    // Collect all historic events from memory
     const allHistoricEvents: BaseEvent[] = [];
-    for (const run of historicRuns) {
+    for (const run of store.historicRuns) {
       allHistoricEvents.push(...run.events);
     }
     
-    // If there's an active run, also include its current events in the historic events
-    // (since they haven't been persisted to DB yet)
-    if (store && store.isRunning && store.currentRunEvents.length > 0) {
-      allHistoricEvents.push(...store.currentRunEvents);
-    }
-    
-    // Apply compaction to all historic events (including current run if active)
+    // Apply compaction to historic events
     const compactedHistoric = compactEvents(allHistoricEvents);
     
     // Emit compacted historic events
@@ -267,18 +270,25 @@ export class InProcessAgentRunner extends AgentRunner {
       connectionSubject.next(event);
     }
     
-    // If there's an active run, stream future live events
-    if (store && store.subject && store.isRunning) {
-      const currentEventCount = store.currentRunEvents.length;
+    // If there's an active run, stream all events from it
+    if (store.subject && store.isRunning) {
+      // Track which message IDs we've already emitted from historic events
+      const emittedMessageIds = new Set<string>();
+      for (const event of compactedHistoric) {
+        if ('messageId' in event && typeof event.messageId === 'string') {
+          emittedMessageIds.add(event.messageId);
+        }
+      }
       
-      // Subscribe to live events
+      // The subject is a ReplaySubject that will replay all events from the current run
+      // We subscribe to it and forward all events to the connection, but skip duplicate message events
       store.subject.subscribe({
         next: (event) => {
-          // Only emit new events (those added after connect was called)
-          const eventIndex = store.currentRunEvents.indexOf(event);
-          if (eventIndex >= currentEventCount) {
-            connectionSubject.next(event);
+          // Skip message events that we've already emitted from historic
+          if ('messageId' in event && typeof event.messageId === 'string' && emittedMessageIds.has(event.messageId)) {
+            return;
           }
+          connectionSubject.next(event);
         },
         complete: () => connectionSubject.complete(),
         error: (err) => connectionSubject.error(err)
@@ -299,12 +309,5 @@ export class InProcessAgentRunner extends AgentRunner {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   stop(_request: AgentRunnerStopRequest): Promise<boolean | undefined> {
     throw new Error("Method not implemented.");
-  }
-
-  /**
-   * Close the database connection (for cleanup)
-   */
-  close(): void {
-    this.db.close();
   }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InProcessAgentRunner } from "../runner/in-process";
+import { InMemoryAgentRunner } from "../runner/in-memory";
 import { AbstractAgent, BaseEvent, RunAgentInput } from "@ag-ui/client";
 import { firstValueFrom } from "rxjs";
 import { toArray } from "rxjs/operators";
@@ -134,11 +134,11 @@ class MultiEventAgent extends AbstractAgent {
   }
 }
 
-describe("InProcessAgentRunner", () => {
-  let runner: InProcessAgentRunner;
+describe("InMemoryAgentRunner", () => {
+  let runner: InMemoryAgentRunner;
 
   beforeEach(() => {
-    runner = new InProcessAgentRunner(":memory:");
+    runner = new InMemoryAgentRunner();
   });
 
   describe("Basic Functionality", () => {
@@ -445,7 +445,7 @@ describe("InProcessAgentRunner", () => {
         messages: [],
         state: {},
         threadId,
-        runId: "run-error",
+        runId: "run-error-1",
       };
 
       const runObservable = runner.run({ threadId, agent, input });
@@ -460,7 +460,14 @@ describe("InProcessAgentRunner", () => {
         { type: "recovery", id: "recovery-1", timestamp: new Date().toISOString(), data: {} } as BaseEvent,
       ]);
 
-      const run2 = runner.run({ threadId, agent: agent2, input });
+      const input2: RunAgentInput = {
+        messages: [],
+        state: {},
+        threadId,
+        runId: "run-error-2",
+      };
+
+      const run2 = runner.run({ threadId, agent: agent2, input: input2 });
       const events2 = await firstValueFrom(run2.pipe(toArray()));
 
       expect(events2).toHaveLength(1); // Only events from current run
@@ -494,8 +501,15 @@ describe("InProcessAgentRunner", () => {
         { type: "test", id: "after-error", timestamp: new Date().toISOString(), data: {} } as BaseEvent,
       ]);
 
+      const input2: RunAgentInput = {
+        messages: [],
+        state: {},
+        threadId,
+        runId: "run-fail-2",
+      };
+
       expect(() => {
-        runner.run({ threadId, agent: agent2, input });
+        runner.run({ threadId, agent: agent2, input: input2 });
       }).not.toThrow();
     });
   });
