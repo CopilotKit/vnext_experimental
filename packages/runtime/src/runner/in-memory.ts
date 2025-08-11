@@ -5,19 +5,16 @@ import {
   AgentRunnerRunRequest,
   type AgentRunnerStopRequest,
 } from "./agent-runner";
-import { EMPTY, Observable, ReplaySubject } from "rxjs";
-import {
-  BaseEvent,
-  EventType,
-  TextMessageContentEvent,
-  TextMessageEndEvent,
-  TextMessageStartEvent,
-  ToolCallArgsEvent,
-  ToolCallEndEvent,
-  ToolCallResultEvent,
-  ToolCallStartEvent,
-} from "@ag-ui/client";
+import { Observable, ReplaySubject } from "rxjs";
+import { BaseEvent } from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
+import {
+  EventStore,
+  processInputMessages,
+  completeRun,
+  emitHistoricEventsToConnection,
+  bridgeActiveRunToConnection,
+} from "./agent-runner-helpers";
 
 interface HistoricRun {
   threadId: string;
@@ -27,7 +24,7 @@ interface HistoricRun {
   createdAt: number;
 }
 
-class InMemoryEventStore {
+class InMemoryEventStore implements EventStore {
   constructor(public threadId: string) {}
 
   /** The subject that current consumers subscribe to. */
@@ -99,94 +96,13 @@ export class InMemoryAgentRunner extends AgentRunner {
               store.seenMessageIds.add(message.id);
             }
           },
-          onRunStartedEvent: (args: { event: BaseEvent }) => {
-            // Process each message from input and inject as events
-            if (request.input.messages) {
-              for (const message of request.input.messages) {
-                if (!store.seenMessageIds.has(message.id)) {
-                  // Track the message ID
-                  store.seenMessageIds.add(message.id);
-
-                  // Emit proper ag-ui events based on message type
-                  if (
-                    (message.role === "assistant" ||
-                      message.role === "user" ||
-                      message.role === "developer" ||
-                      message.role === "system") &&
-                    message.content
-                  ) {
-                    // Text message events for assistant and user messages
-                    const textStartEvent: TextMessageStartEvent = {
-                      type: EventType.TEXT_MESSAGE_START,
-                      messageId: message.id,
-                      role: message.role,
-                    };
-                    nextSubject.next(textStartEvent);
-                    store.currentRunEvents.push(textStartEvent);
-
-                    const textContentEvent: TextMessageContentEvent = {
-                      type: EventType.TEXT_MESSAGE_CONTENT,
-                      messageId: message.id,
-                      delta: message.content,
-                    };
-                    nextSubject.next(textContentEvent);
-                    store.currentRunEvents.push(textContentEvent);
-
-                    const textEndEvent: TextMessageEndEvent = {
-                      type: EventType.TEXT_MESSAGE_END,
-                      messageId: message.id,
-                    };
-                    nextSubject.next(textEndEvent);
-                    store.currentRunEvents.push(textEndEvent);
-                  }
-
-                  // Handle tool calls if present
-                  if (message.role === "assistant" && message.toolCalls) {
-                    for (const toolCall of message.toolCalls) {
-                      // ToolCallStart event
-                      const toolStartEvent: ToolCallStartEvent = {
-                        type: EventType.TOOL_CALL_START,
-                        toolCallId: toolCall.id,
-                        toolCallName: toolCall.function.name,
-                        parentMessageId: message.id,
-                      };
-                      nextSubject.next(toolStartEvent);
-                      store.currentRunEvents.push(toolStartEvent);
-
-                      // ToolCallArgs event
-                      const toolArgsEvent: ToolCallArgsEvent = {
-                        type: EventType.TOOL_CALL_ARGS,
-                        toolCallId: toolCall.id,
-                        delta: toolCall.function.arguments,
-                      };
-                      nextSubject.next(toolArgsEvent);
-                      store.currentRunEvents.push(toolArgsEvent);
-
-                      // ToolCallEnd event
-                      const toolEndEvent: ToolCallEndEvent = {
-                        type: EventType.TOOL_CALL_END,
-                        toolCallId: toolCall.id,
-                      };
-                      nextSubject.next(toolEndEvent);
-                      store.currentRunEvents.push(toolEndEvent);
-                    }
-                  }
-
-                  // Handle tool results
-                  if (message.role === "tool" && message.toolCallId) {
-                    const toolResultEvent: ToolCallResultEvent = {
-                      type: EventType.TOOL_CALL_RESULT,
-                      messageId: message.id,
-                      toolCallId: message.toolCallId,
-                      content: message.content,
-                      role: "tool",
-                    };
-                    nextSubject.next(toolResultEvent);
-                    store.currentRunEvents.push(toolResultEvent);
-                  }
-                }
-              }
-            }
+          onRunStartedEvent: () => {
+            processInputMessages(
+              request.input.messages,
+              nextSubject,
+              store.currentRunEvents,
+              store.seenMessageIds
+            );
           },
         });
         
@@ -201,12 +117,8 @@ export class InMemoryAgentRunner extends AgentRunner {
           });
         }
         
-        store.isRunning = false;
-        store.currentRunId = null;
-        store.currentRunEvents = [];
-        runSubject.complete();
-        nextSubject.complete();
-      } catch (error) {
+        completeRun(store, runSubject, nextSubject);
+      } catch {
         // Store the run even if it failed (partial events)
         if (store.currentRunId && store.currentRunEvents.length > 0) {
           store.historicRuns.push({
@@ -218,13 +130,9 @@ export class InMemoryAgentRunner extends AgentRunner {
           });
         }
         
-        store.isRunning = false;
-        store.currentRunId = null;
-        store.currentRunEvents = [];
         // Don't emit error to the subject, just complete it
         // This allows subscribers to get events emitted before the error
-        runSubject.complete();
-        nextSubject.complete();
+        completeRun(store, runSubject, nextSubject);
       }
     };
 
@@ -265,38 +173,14 @@ export class InMemoryAgentRunner extends AgentRunner {
     // Apply compaction to historic events
     const compactedHistoric = compactEvents(allHistoricEvents);
     
-    // Emit compacted historic events
-    for (const event of compactedHistoric) {
-      connectionSubject.next(event);
-    }
+    // Emit compacted historic events and get emitted message IDs
+    const emittedMessageIds = emitHistoricEventsToConnection(
+      compactedHistoric,
+      connectionSubject
+    );
     
-    // If there's an active run, stream all events from it
-    if (store.subject && store.isRunning) {
-      // Track which message IDs we've already emitted from historic events
-      const emittedMessageIds = new Set<string>();
-      for (const event of compactedHistoric) {
-        if ('messageId' in event && typeof event.messageId === 'string') {
-          emittedMessageIds.add(event.messageId);
-        }
-      }
-      
-      // The subject is a ReplaySubject that will replay all events from the current run
-      // We subscribe to it and forward all events to the connection, but skip duplicate message events
-      store.subject.subscribe({
-        next: (event) => {
-          // Skip message events that we've already emitted from historic
-          if ('messageId' in event && typeof event.messageId === 'string' && emittedMessageIds.has(event.messageId)) {
-            return;
-          }
-          connectionSubject.next(event);
-        },
-        complete: () => connectionSubject.complete(),
-        error: (err) => connectionSubject.error(err)
-      });
-    } else {
-      // No active run, complete after historic events
-      connectionSubject.complete();
-    }
+    // Bridge active run to connection if exists
+    bridgeActiveRunToConnection(store, emittedMessageIds, connectionSubject);
     
     return connectionSubject.asObservable();
   }
