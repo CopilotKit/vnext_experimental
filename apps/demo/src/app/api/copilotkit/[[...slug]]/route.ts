@@ -11,7 +11,7 @@ const runtime = new CopilotRuntime({
   agents: {
     default: new OpenAIAgent(),
   },
-  agentRunner: new SqliteAgentRunner({ dbPath }),
+  runner: new SqliteAgentRunner({ dbPath }),
 });
 
 const app = createCopilotEndpoint({
