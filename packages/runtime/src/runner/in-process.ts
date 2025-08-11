@@ -17,6 +17,7 @@ import {
   ToolCallResultEvent,
   ToolCallStartEvent,
 } from "@ag-ui/client";
+import { compactEvents } from "./event-compaction";
 
 class InProcessEventStore {
   constructor(public threadId: string) {}
@@ -193,7 +194,75 @@ export class InProcessAgentRunner extends AgentRunner {
       return EMPTY;
     }
 
-    return store.subject.asObservable();
+    // If not running, we can safely compact all events
+    if (!store.isRunning) {
+      const connectionSubject = new ReplaySubject<BaseEvent>(Infinity);
+      const allEvents: BaseEvent[] = [];
+      
+      // Collect all events
+      const subscription = store.subject.subscribe({
+        next: (event) => allEvents.push(event),
+        error: (err) => connectionSubject.error(err)
+      });
+      
+      // Immediately unsubscribe since we got the buffered events
+      subscription.unsubscribe();
+      
+      // Compact and emit
+      const compactedEvents = compactEvents(allEvents);
+      for (const event of compactedEvents) {
+        connectionSubject.next(event);
+      }
+      connectionSubject.complete();
+      
+      return connectionSubject.asObservable();
+    }
+
+    // If running, we need to handle the race condition carefully
+    // Solution: Keep a single subscription and use a flag to track when to start compaction
+    const connectionSubject = new ReplaySubject<BaseEvent>(Infinity);
+    const historicEvents: BaseEvent[] = [];
+    let historicCutoff = 0;
+    let emittedHistoric = false;
+    
+    const subscription = store.subject.subscribe({
+      next: (event) => {
+        if (!emittedHistoric) {
+          // Still collecting historic events
+          historicEvents.push(event);
+        } else {
+          // We've already emitted historic, this is a live event
+          connectionSubject.next(event);
+        }
+      },
+      complete: () => connectionSubject.complete(),
+      error: (err) => connectionSubject.error(err)
+    });
+    
+    // Mark the cutoff point and emit compacted historic events
+    // Using setImmediate ensures we collect all currently buffered events first
+    setImmediate(() => {
+      historicCutoff = historicEvents.length;
+      
+      // Compact only the events up to the cutoff
+      const toCompact = historicEvents.slice(0, historicCutoff);
+      const compactedHistoric = compactEvents(toCompact);
+      
+      // Emit compacted historic events
+      for (const event of compactedHistoric) {
+        connectionSubject.next(event);
+      }
+      
+      // Mark that we've emitted historic events
+      emittedHistoric = true;
+      
+      // Emit any events that arrived after the cutoff (these are live events)
+      for (let i = historicCutoff; i < historicEvents.length; i++) {
+        connectionSubject.next(historicEvents[i]);
+      }
+    });
+    
+    return connectionSubject.asObservable();
   }
 
   isRunning(request: AgentRunnerIsRunningRequest): Promise<boolean> {

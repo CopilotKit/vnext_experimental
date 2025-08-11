@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important Rules
+- NEVER commit or push to the repository unless explicitly asked to
+- NEVER credit yourself in commit messages (no "Generated with Claude Code" or similar)
+
 ## Common Commands
 
 ### Development
