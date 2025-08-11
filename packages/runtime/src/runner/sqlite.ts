@@ -12,11 +12,7 @@ import {
 } from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
 import {
-  EventStore,
   processInputMessages,
-  completeRun,
-  emitHistoricEventsToConnection,
-  bridgeActiveRunToConnection,
 } from "./agent-runner-helpers";
 import Database from "better-sqlite3";
 
@@ -37,29 +33,9 @@ export interface SqliteAgentRunnerOptions {
   dbPath?: string;
 }
 
-class SqliteEventStore implements EventStore {
-  constructor(public threadId: string) {}
-
-  /** The subject that current consumers subscribe to. */
-  subject: ReplaySubject<BaseEvent> | null = null;
-
-  /** True while a run is actively producing events. */
-  isRunning = false;
-
-  /** Lets stop() cancel the current producer. */
-  abortController = new AbortController();
-
-  /** Set of message IDs we've already seen. */
-  seenMessageIds = new Set<string>();
-  
-  /** Current run ID */
-  currentRunId: string | null = null;
-  
-  /** Accumulated events for current run */
-  currentRunEvents: BaseEvent[] = [];
-}
-
-const GLOBAL_STORE = new Map<string, SqliteEventStore>();
+// Active connections for streaming events
+// This is the only in-memory state we need - just for active streaming
+const ACTIVE_CONNECTIONS = new Map<string, ReplaySubject<BaseEvent>>();
 
 export class SqliteAgentRunner extends AgentRunner {
   private db: any;
@@ -100,6 +76,16 @@ export class SqliteAgentRunner extends AgentRunner {
       )
     `);
 
+    // Create run_state table to track active runs
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS run_state (
+        thread_id TEXT PRIMARY KEY,
+        is_running INTEGER DEFAULT 0,
+        current_run_id TEXT,
+        updated_at INTEGER NOT NULL
+      )
+    `);
+
     // Create indexes for efficient queries
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_thread_id ON agent_runs(thread_id);
@@ -133,6 +119,25 @@ export class SqliteAgentRunner extends AgentRunner {
     input: RunAgentInput,
     parentRunId?: string | null
   ): void {
+    // Get all previous events for this thread to compact together with new events
+    const historicRuns = this.getHistoricRuns(threadId);
+    const allPreviousEvents: BaseEvent[] = [];
+    for (const run of historicRuns) {
+      allPreviousEvents.push(...run.events);
+    }
+    
+    // Compact just the new events with context of previous events
+    // This ensures proper compaction while storing only the delta
+    const allEventsForCompaction = [...allPreviousEvents, ...events];
+    const compactedAll = compactEvents(allEventsForCompaction);
+    
+    // Now compact just the previous events to see what they become
+    const compactedPrevious = allPreviousEvents.length > 0 ? compactEvents(allPreviousEvents) : [];
+    
+    // The new events to store are the difference between the two compacted sets
+    // This represents what the new events contribute after compaction
+    const newEventsToStore = compactedAll.slice(compactedPrevious.length);
+    
     const stmt = this.db.prepare(`
       INSERT INTO agent_runs (thread_id, run_id, parent_run_id, events, input, created_at, version)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -142,7 +147,7 @@ export class SqliteAgentRunner extends AgentRunner {
       threadId,
       runId,
       parentRunId ?? null,
-      JSON.stringify(events),
+      JSON.stringify(newEventsToStore), // Store only the new compacted events for this run
       JSON.stringify(input),
       Date.now(),
       SCHEMA_VERSION
@@ -193,26 +198,46 @@ export class SqliteAgentRunner extends AgentRunner {
     return result?.run_id ?? null;
   }
 
-  run(request: AgentRunnerRunRequest): Observable<BaseEvent> {
-    let store = GLOBAL_STORE.get(request.threadId);
-    if (!store) {
-      store = new SqliteEventStore(request.threadId);
-      GLOBAL_STORE.set(request.threadId, store);
-    }
+  private setRunState(threadId: string, isRunning: boolean, runId?: string): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO run_state (thread_id, is_running, current_run_id, updated_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(threadId, isRunning ? 1 : 0, runId ?? null, Date.now());
+  }
 
-    if (store.isRunning) {
+  private getRunState(threadId: string): { isRunning: boolean; currentRunId: string | null } {
+    const stmt = this.db.prepare(`
+      SELECT is_running, current_run_id FROM run_state WHERE thread_id = ?
+    `);
+    const result = stmt.get(threadId) as { is_running: number; current_run_id: string | null } | undefined;
+    
+    return {
+      isRunning: result?.is_running === 1,
+      currentRunId: result?.current_run_id ?? null
+    };
+  }
+
+  run(request: AgentRunnerRunRequest): Observable<BaseEvent> {
+    // Check if thread is already running in database
+    const runState = this.getRunState(request.threadId);
+    if (runState.isRunning) {
       throw new Error("Thread already running");
     }
-    store.isRunning = true;
-    store.currentRunId = request.input.runId;
-    store.currentRunEvents = [];
 
+    // Mark thread as running in database
+    this.setRunState(request.threadId, true, request.input.runId);
+
+    // Track seen message IDs and current run events in memory for this run
+    const seenMessageIds = new Set<string>();
+    const currentRunEvents: BaseEvent[] = [];
+
+    // Get or create subject for this thread's connections
     const nextSubject = new ReplaySubject<BaseEvent>(Infinity);
-    const prevSubject = store.subject;
-
-    // Update the store's subject immediately
-    store.subject = nextSubject;
-    store.abortController = new AbortController();
+    const prevSubject = ACTIVE_CONNECTIONS.get(request.threadId);
+    
+    // Update the active connection for this thread
+    ACTIVE_CONNECTIONS.set(request.threadId, nextSubject);
 
     // Create a subject for run() return value
     const runSubject = new ReplaySubject<BaseEvent>(Infinity);
@@ -227,51 +252,58 @@ export class SqliteAgentRunner extends AgentRunner {
           onEvent: ({ event }) => {
             runSubject.next(event); // For run() return - only agent events
             nextSubject.next(event); // For connect() / store - all events
-            store!.currentRunEvents.push(event); // Accumulate for database storage
+            currentRunEvents.push(event); // Accumulate for database storage
           },
           onNewMessage: ({ message }) => {
             // Called for each new message
-            if (!store!.seenMessageIds.has(message.id)) {
-              store!.seenMessageIds.add(message.id);
+            if (!seenMessageIds.has(message.id)) {
+              seenMessageIds.add(message.id);
             }
           },
           onRunStartedEvent: () => {
             processInputMessages(
               request.input.messages,
               nextSubject,
-              store!.currentRunEvents,
-              store!.seenMessageIds
+              currentRunEvents,
+              seenMessageIds
             );
           },
         });
         
         // Store the run in database
-        if (store.currentRunId) {
+        this.storeRun(
+          request.threadId,
+          request.input.runId,
+          currentRunEvents,
+          request.input,
+          parentRunId
+        );
+        
+        // Mark run as complete in database
+        this.setRunState(request.threadId, false);
+        
+        // Complete the subjects
+        runSubject.complete();
+        nextSubject.complete();
+      } catch {
+        // Store the run even if it failed (partial events)
+        if (currentRunEvents.length > 0) {
           this.storeRun(
             request.threadId,
-            store.currentRunId,
-            store.currentRunEvents,
+            request.input.runId,
+            currentRunEvents,
             request.input,
             parentRunId
           );
         }
         
-        completeRun(store, runSubject, nextSubject);
-      } catch {
-        // Store the run even if it failed (partial events)
-        if (store!.currentRunId && store!.currentRunEvents.length > 0) {
-          this.storeRun(
-            request.threadId,
-            store!.currentRunId,
-            store!.currentRunEvents,
-            request.input,
-            parentRunId
-          );
-        }
+        // Mark run as complete in database
+        this.setRunState(request.threadId, false);
         
         // Don't emit error to the subject, just complete it
         // This allows subscribers to get events emitted before the error
-        completeRun(store!, runSubject, nextSubject);
+        runSubject.complete();
+        nextSubject.complete();
       }
     };
 
@@ -294,36 +326,54 @@ export class SqliteAgentRunner extends AgentRunner {
   }
 
   connect(request: AgentRunnerConnectRequest): Observable<BaseEvent> {
-    const store = GLOBAL_STORE.get(request.threadId);
     const connectionSubject = new ReplaySubject<BaseEvent>(Infinity);
 
-    // Load historic runs from database synchronously
+    // Load historic runs from database - they're already compacted!
     const historicRuns = this.getHistoricRuns(request.threadId);
     
-    // Collect all historic events from database
+    // Collect all historic events from database (already compacted)
     const allHistoricEvents: BaseEvent[] = [];
     for (const run of historicRuns) {
       allHistoricEvents.push(...run.events);
     }
     
-    // Apply compaction to historic events from database only
-    const compactedHistoric = compactEvents(allHistoricEvents);
-    
-    // Emit compacted historic events and get emitted message IDs
-    const emittedMessageIds = emitHistoricEventsToConnection(
-      compactedHistoric,
-      connectionSubject
-    );
+    // No need to compact - events are already compacted in storage
+    // Just emit them and track message IDs
+    const emittedMessageIds = new Set<string>();
+    for (const event of allHistoricEvents) {
+      connectionSubject.next(event);
+      if ('messageId' in event && typeof event.messageId === 'string') {
+        emittedMessageIds.add(event.messageId);
+      }
+    }
     
     // Bridge active run to connection if exists
-    bridgeActiveRunToConnection(store, emittedMessageIds, connectionSubject);
+    const activeSubject = ACTIVE_CONNECTIONS.get(request.threadId);
+    const runState = this.getRunState(request.threadId);
+    
+    if (activeSubject && runState.isRunning) {
+      activeSubject.subscribe({
+        next: (event) => {
+          // Skip message events that we've already emitted from historic
+          if ('messageId' in event && typeof event.messageId === 'string' && emittedMessageIds.has(event.messageId)) {
+            return;
+          }
+          connectionSubject.next(event);
+        },
+        complete: () => connectionSubject.complete(),
+        error: (err) => connectionSubject.error(err)
+      });
+    } else {
+      // No active run, complete after historic events
+      connectionSubject.complete();
+    }
     
     return connectionSubject.asObservable();
   }
 
   isRunning(request: AgentRunnerIsRunningRequest): Promise<boolean> {
-    const store = GLOBAL_STORE.get(request.threadId);
-    return Promise.resolve(store?.isRunning ?? false);
+    const runState = this.getRunState(request.threadId);
+    return Promise.resolve(runState.isRunning);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
