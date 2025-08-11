@@ -138,7 +138,7 @@ describe("InProcessAgentRunner", () => {
   let runner: InProcessAgentRunner;
 
   beforeEach(() => {
-    runner = new InProcessAgentRunner();
+    runner = new InProcessAgentRunner(":memory:");
   });
 
   describe("Basic Functionality", () => {

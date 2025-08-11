@@ -70,7 +70,7 @@ describe("InProcessAgentRunner - Message Injection", () => {
   let runner: InProcessAgentRunner;
 
   beforeEach(() => {
-    runner = new InProcessAgentRunner();
+    runner = new InProcessAgentRunner(":memory:");
   });
 
   describe("Message Injection on Run", () => {

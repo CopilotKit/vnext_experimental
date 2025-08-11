@@ -48,6 +48,6 @@ export class CopilotRuntime {
     this.transcriptionService = transcriptionService;
     this.beforeRequestMiddleware = beforeRequestMiddleware;
     this.afterRequestMiddleware = afterRequestMiddleware;
-    this.runner = runner ?? new InProcessAgentRunner();
+    this.runner = runner ?? new InProcessAgentRunner(":memory:");
   }
 }

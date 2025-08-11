@@ -25,6 +25,7 @@
   "devDependencies": {
     "@copilotkit/eslint-config": "workspace:*",
     "@copilotkit/typescript-config": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
     "openai": "^5.9.0",
@@ -37,6 +38,7 @@
     "@ag-ui/core": "0.0.36-alpha.1",
     "@ag-ui/encoder": "0.0.36-alpha.1",
     "@copilotkit/shared": "workspace:*",
+    "better-sqlite3": "^12.2.0",
     "hono": "^4.6.13",
     "rxjs": "7.8.1"
   },
