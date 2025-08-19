@@ -5,6 +5,17 @@ import { CopilotKitConfigDirective } from '../copilotkit-config.directive';
 import { CopilotKitService } from '../../core/copilotkit.service';
 import { provideCopilotKit } from '../../core/copilotkit.providers';
 
+// Mock CopilotKitCore to prevent network calls
+vi.mock('@copilotkit/core', () => ({
+  CopilotKitCore: vi.fn().mockImplementation(() => ({
+    setRuntimeUrl: vi.fn(),
+    setHeaders: vi.fn(),
+    setProperties: vi.fn(),
+    setAgents: vi.fn(),
+    subscribe: vi.fn(() => () => {}), // Return unsubscribe function
+  }))
+}));
+
 @Component({
   template: `
     <div [copilotkitConfig]="config"></div>
