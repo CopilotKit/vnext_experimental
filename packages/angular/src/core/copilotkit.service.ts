@@ -176,6 +176,15 @@ export class CopilotKitService {
   }
 
   /**
+   * Get an agent by ID
+   * @param agentId - The agent ID to retrieve
+   * @returns The agent or undefined if not found
+   */
+  getAgent(agentId: string): AbstractAgent | undefined {
+    return this.copilotkit.getAgent(agentId);
+  }
+
+  /**
    * Update render tool calls (warns if object reference changes)
    */
   setRenderToolCalls(renderToolCalls: Record<string, ToolCallRender<unknown>>): void {

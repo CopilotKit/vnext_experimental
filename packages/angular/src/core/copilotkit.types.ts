@@ -1,4 +1,4 @@
-import { InjectionToken, TemplateRef, Type } from "@angular/core";
+import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { CopilotKitCoreConfig, CopilotKitCore, FrontendTool } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 import { z } from "zod";
@@ -57,3 +57,18 @@ export const COPILOTKIT_INITIAL_CONFIG = new InjectionToken<
 export const COPILOTKIT_INITIAL_RENDERERS = new InjectionToken<
   Record<string, ToolCallRender<unknown>>
 >("COPILOTKIT_INITIAL_RENDERERS", { factory: () => ({}) });
+
+// Agent-related types
+export interface AgentWatchResult {
+  agent: Signal<AbstractAgent | undefined>;
+  isRunning: Signal<boolean>;
+  unsubscribe?: () => void;
+}
+
+export interface AgentSubscriptionCallbacks {
+  onMessagesChanged?: (params: any) => void;
+  onStateChanged?: (params: any) => void;
+  onRunInitialized?: (params: any) => void;
+  onRunFinalized?: (params: any) => void;
+  onRunFailed?: (params: any) => void;
+}
