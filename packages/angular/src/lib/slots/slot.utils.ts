@@ -1,0 +1,304 @@
+import { 
+  Type, 
+  TemplateRef, 
+  ViewContainerRef,
+  ComponentRef,
+  EmbeddedViewRef,
+  Injector,
+  inject
+} from '@angular/core';
+import { SlotValue, RenderSlotOptions, SlotRegistryEntry, SLOT_CONFIG } from './slot.types';
+
+/**
+ * Renders a slot value into a ViewContainerRef.
+ * This is the core utility for slot rendering.
+ * 
+ * @param viewContainer - The ViewContainerRef to render into
+ * @param options - Options for rendering the slot
+ * @returns The created component or embedded view reference
+ * 
+ * @example
+ * ```typescript
+ * export class MyComponent {
+ *   @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
+ *   
+ *   renderButton() {
+ *     renderSlot(this.container, {
+ *       slot: this.buttonOverride,
+ *       defaultComponent: DefaultButton,
+ *       props: { text: 'Click me' }
+ *     });
+ *   }
+ * }
+ * ```
+ */
+export function renderSlot<T = any>(
+  viewContainer: ViewContainerRef,
+  options: RenderSlotOptions<T>
+): ComponentRef<T> | EmbeddedViewRef<T> | null {
+  const { slot, defaultComponent, props, injector } = options;
+  
+  viewContainer.clear();
+  
+  const effectiveSlot = slot ?? defaultComponent;
+  const effectiveInjector = injector ?? viewContainer.injector;
+  
+  if (typeof effectiveSlot === 'string') {
+    // String: CSS class for default component
+    return createComponentWithClass(
+      viewContainer,
+      defaultComponent,
+      effectiveSlot,
+      props,
+      effectiveInjector
+    );
+  } else if (effectiveSlot instanceof TemplateRef) {
+    // TemplateRef: render template
+    return viewContainer.createEmbeddedView(effectiveSlot, {
+      $implicit: props ?? {},
+      props: props ?? {}
+    } as any);
+  } else if (isComponentType(effectiveSlot)) {
+    // Component type
+    return createComponent(
+      viewContainer,
+      effectiveSlot as Type<T>,
+      props,
+      effectiveInjector
+    );
+  } else if (typeof effectiveSlot === 'object') {
+    // Object: property overrides for default component
+    return createComponent(
+      viewContainer,
+      defaultComponent,
+      { ...props, ...effectiveSlot },
+      effectiveInjector
+    );
+  }
+  
+  // Default: render default component
+  return createComponent(
+    viewContainer,
+    defaultComponent,
+    props,
+    effectiveInjector
+  );
+}
+
+/**
+ * Creates a component and applies properties.
+ */
+function createComponent<T>(
+  viewContainer: ViewContainerRef,
+  component: Type<T>,
+  props?: Partial<T>,
+  injector?: Injector
+): ComponentRef<T> {
+  const componentRef = viewContainer.createComponent(component, {
+    injector
+  });
+  
+  if (props) {
+    Object.assign(componentRef.instance as any, props);
+  }
+  
+  return componentRef;
+}
+
+/**
+ * Creates a component with a CSS class applied.
+ */
+function createComponentWithClass<T>(
+  viewContainer: ViewContainerRef,
+  component: Type<T>,
+  cssClass: string,
+  props?: Partial<T>,
+  injector?: Injector
+): ComponentRef<T> {
+  const componentRef = createComponent(viewContainer, component, props, injector);
+  
+  if (componentRef.location.nativeElement) {
+    const element = componentRef.location.nativeElement as HTMLElement;
+    element.className = cssClass;
+  }
+  
+  return componentRef;
+}
+
+/**
+ * Checks if a value is a component type.
+ */
+export function isComponentType(value: any): boolean {
+  if (typeof value !== 'function') {
+    return false;
+  }
+  
+  // Arrow functions don't have prototype
+  if (!value.prototype) {
+    return false;
+  }
+  
+  return value.prototype.constructor &&
+         !!(value.ɵcmp || Object.prototype.hasOwnProperty.call(value, 'ɵcmp')); // Angular component marker
+}
+
+/**
+ * Checks if a value is a valid slot value.
+ */
+export function isSlotValue(value: any): value is SlotValue {
+  return typeof value === 'string' ||
+         value instanceof TemplateRef ||
+         isComponentType(value) ||
+         (typeof value === 'object' && value !== null);
+}
+
+/**
+ * Normalizes a slot value to a consistent format.
+ */
+export function normalizeSlotValue<T = any>(
+  value: SlotValue<T> | undefined,
+  defaultComponent: Type<T> | undefined
+): SlotRegistryEntry<T> {
+  if (!value) {
+    return { component: defaultComponent };
+  }
+  
+  if (typeof value === 'string') {
+    return { 
+      component: defaultComponent, 
+      class: value 
+    };
+  }
+  
+  if (value instanceof TemplateRef) {
+    return { template: value };
+  }
+  
+  if (isComponentType(value)) {
+    return { component: value as Type<T> };
+  }
+  
+  // Object with props
+  return { 
+    component: defaultComponent,
+    props: value as Partial<T>
+  };
+}
+
+/**
+ * Creates a slot configuration map for a component.
+ * 
+ * @example
+ * ```typescript
+ * const slots = createSlotConfig({
+ *   sendButton: CustomSendButton,
+ *   toolbar: 'custom-toolbar-class',
+ *   footer: footerTemplate
+ * }, {
+ *   sendButton: DefaultSendButton,
+ *   toolbar: DefaultToolbar,
+ *   footer: DefaultFooter
+ * });
+ * ```
+ */
+export function createSlotConfig<T extends Record<string, Type<any>>>(
+  overrides: Partial<Record<keyof T, SlotValue>>,
+  defaults: T
+): Map<keyof T, SlotRegistryEntry> {
+  const config = new Map<keyof T, SlotRegistryEntry>();
+  
+  for (const key in defaults) {
+    const override = overrides[key];
+    const defaultComponent = defaults[key];
+    config.set(key, normalizeSlotValue(override, defaultComponent));
+  }
+  
+  return config;
+}
+
+/**
+ * Provides slot configuration to child components via DI.
+ * 
+ * @example
+ * ```typescript
+ * @Component({
+ *   providers: [
+ *     provideSlots({
+ *       sendButton: CustomSendButton,
+ *       toolbar: 'custom-class'
+ *     })
+ *   ]
+ * })
+ * ```
+ */
+export function provideSlots(slots: Record<string, SlotValue>) {
+  return {
+    provide: SLOT_CONFIG,
+    useValue: slots
+  };
+}
+
+/**
+ * Gets slot configuration from DI.
+ * Must be called within an injection context.
+ * 
+ * @example
+ * ```typescript
+ * export class MyComponent {
+ *   slots = getSlotConfig();
+ *   
+ *   ngOnInit() {
+ *     const sendButton = this.slots.get('sendButton');
+ *   }
+ * }
+ * ```
+ */
+export function getSlotConfig(): Map<string, SlotRegistryEntry> | null {
+  return inject(SLOT_CONFIG, { optional: true });
+}
+
+/**
+ * Creates a render function for a specific slot.
+ * Useful for creating reusable slot renderers.
+ * 
+ * @example
+ * ```typescript
+ * const renderSendButton = createSlotRenderer(
+ *   DefaultSendButton,
+ *   'sendButton'
+ * );
+ * 
+ * // Later in template
+ * renderSendButton(this.viewContainer, this.sendButtonOverride);
+ * ```
+ */
+export function createSlotRenderer<T>(
+  defaultComponent: Type<T>,
+  slotName?: string
+) {
+  // Get config in the injection context when the renderer is created
+  const config = slotName ? getSlotConfig() : null;
+  
+  return (
+    viewContainer: ViewContainerRef,
+    slot?: SlotValue<T>,
+    props?: Partial<T>
+  ) => {
+    // Check DI for overrides if slot name provided
+    if (slotName && !slot && config) {
+      const entry = config.get(slotName);
+      if (entry) {
+        if (entry.component) slot = entry.component;
+        else if (entry.template) slot = entry.template;
+        else if (entry.class) slot = entry.class;
+        props = { ...props, ...entry.props };
+      }
+    }
+    
+    return renderSlot(viewContainer, {
+      slot,
+      defaultComponent,
+      props
+    });
+  };
+}
