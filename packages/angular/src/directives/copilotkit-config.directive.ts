@@ -7,7 +7,7 @@ import { AbstractAgent } from "@ag-ui/client";
  * 
  * @example
  * ```html
- * <div [copilotKitConfig]="{
+ * <div [copilotkitConfig]="{
  *   runtimeUrl: 'https://api.example.com',
  *   headers: { 'Authorization': 'Bearer token' }
  * }">
@@ -17,7 +17,7 @@ import { AbstractAgent } from "@ag-ui/client";
  * 
  * Or with individual inputs:
  * ```html
- * <div copilotKitConfig
+ * <div copilotkitConfig
  *      [runtimeUrl]="apiUrl"
  *      [headers]="authHeaders"
  *      [agents]="myAgents">
@@ -26,13 +26,13 @@ import { AbstractAgent } from "@ag-ui/client";
  * ```
  */
 @Directive({
-  selector: "[copilotKitConfig]",
+  selector: "[copilotkitConfig]",
   standalone: true,
 })
 export class CopilotKitConfigDirective implements OnChanges {
-  private readonly copilotKit = inject(CopilotKitService);
+  private readonly copilotkit = inject(CopilotKitService);
 
-  @Input() copilotKitConfig?: {
+  @Input() copilotkitConfig?: {
     runtimeUrl?: string;
     headers?: Record<string, string>;
     properties?: Record<string, unknown>;
@@ -46,36 +46,36 @@ export class CopilotKitConfigDirective implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     // Handle combined config object
-    if (changes['copilotKitConfig']) {
-      const config = this.copilotKitConfig;
+    if (changes['copilotkitConfig']) {
+      const config = this.copilotkitConfig;
       if (config) {
         if (config.runtimeUrl !== undefined) {
-          this.copilotKit.setRuntimeUrl(config.runtimeUrl);
+          this.copilotkit.setRuntimeUrl(config.runtimeUrl);
         }
         if (config.headers) {
-          this.copilotKit.setHeaders(config.headers);
+          this.copilotkit.setHeaders(config.headers);
         }
         if (config.properties) {
-          this.copilotKit.setProperties(config.properties);
+          this.copilotkit.setProperties(config.properties);
         }
         if (config.agents) {
-          this.copilotKit.setAgents(config.agents);
+          this.copilotkit.setAgents(config.agents);
         }
       }
     }
 
     // Handle individual inputs
-    if (changes['runtimeUrl'] && !this.copilotKitConfig) {
-      this.copilotKit.setRuntimeUrl(this.runtimeUrl);
+    if (changes['runtimeUrl'] && !this.copilotkitConfig) {
+      this.copilotkit.setRuntimeUrl(this.runtimeUrl);
     }
-    if (changes['headers'] && !this.copilotKitConfig) {
-      this.copilotKit.setHeaders(this.headers || {});
+    if (changes['headers'] && !this.copilotkitConfig) {
+      this.copilotkit.setHeaders(this.headers || {});
     }
-    if (changes['properties'] && !this.copilotKitConfig) {
-      this.copilotKit.setProperties(this.properties || {});
+    if (changes['properties'] && !this.copilotkitConfig) {
+      this.copilotkit.setProperties(this.properties || {});
     }
-    if (changes['agents'] && !this.copilotKitConfig) {
-      this.copilotKit.setAgents(this.agents || {});
+    if (changes['agents'] && !this.copilotkitConfig) {
+      this.copilotkit.setAgents(this.agents || {});
     }
   }
 }

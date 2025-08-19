@@ -7,10 +7,10 @@ import { CopilotKitService } from "../core/copilotkit.service";
  * @example
  * ```typescript
  * export class MyComponent {
- *   private copilotKit = useCopilotKit();
+ *   private copilotkit = useCopilotKit();
  *   
  *   sendMessage() {
- *     this.copilotKit.copilotkit.sendMessage(...);
+ *     this.copilotkit.copilotkit.sendMessage(...);
  *   }
  * }
  * ```
