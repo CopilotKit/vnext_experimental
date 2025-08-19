@@ -37,7 +37,7 @@ export function addAgentContext(
 }
 
 /**
- * Adds an agent context to CopilotKit and automatically removes it when the component/service is destroyed.
+ * Registers an agent context with CopilotKit and automatically removes it when the component/service is destroyed.
  * Must be called within an injection context.
  * 
  * @param context - The context to add
@@ -48,7 +48,7 @@ export function addAgentContext(
  * export class MyComponent implements OnInit {
  *   ngOnInit() {
  *     // Automatically cleaned up on component destroy
- *     useAgentContext({
+ *     registerAgentContext({
  *       description: 'Component state',
  *       value: this.state
  *     });
@@ -56,7 +56,7 @@ export function addAgentContext(
  * }
  * ```
  */
-export function useAgentContext(context: Context): string {
+export function registerAgentContext(context: Context): string {
   const copilotkit = inject(CopilotKitService);
   const destroyRef = inject(DestroyRef);
   

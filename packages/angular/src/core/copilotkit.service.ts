@@ -193,4 +193,37 @@ export class CopilotKitService {
   setCurrentRenderToolCalls(renderToolCalls: Record<string, ToolCallRender<unknown>>): void {
     this._currentRenderToolCalls.set(renderToolCalls);
   }
+
+  /**
+   * Register a tool render
+   */
+  registerToolRender(name: string, render: ToolCallRender<unknown>): void {
+    const current = this._currentRenderToolCalls();
+    if (name in current) {
+      console.warn(`Tool render for '${name}' is being overwritten`);
+    }
+    this._currentRenderToolCalls.set({
+      ...current,
+      [name]: render
+    });
+  }
+
+  /**
+   * Unregister a tool render
+   */
+  unregisterToolRender(name: string): void {
+    const current = this._currentRenderToolCalls();
+    if (!(name in current)) {
+      return;
+    }
+    const { [name]: _, ...remaining } = current;
+    this._currentRenderToolCalls.set(remaining);
+  }
+
+  /**
+   * Get a specific tool render
+   */
+  getToolRender(name: string): ToolCallRender<unknown> | undefined {
+    return this._currentRenderToolCalls()[name];
+  }
 }

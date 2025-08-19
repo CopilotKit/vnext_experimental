@@ -3,5 +3,8 @@ export * from './core/copilotkit.types';
 export * from './core/copilotkit.providers';
 export * from './utils/copilotkit.utils';
 export * from './utils/agent-context.utils';
+export * from './utils/frontend-tool.utils';
 export { CopilotKitConfigDirective } from './directives/copilotkit-config.directive';
 export { CopilotkitAgentContextDirective } from './directives/copilotkit-agent-context.directive';
+export { CopilotkitFrontendToolDirective } from './directives/copilotkit-frontend-tool.directive';
+export { CopilotkitToolRenderComponent } from './components/copilotkit-tool-render.component';

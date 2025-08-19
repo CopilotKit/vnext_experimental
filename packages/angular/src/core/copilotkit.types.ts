@@ -1,12 +1,37 @@
-import { InjectionToken } from "@angular/core";
-import { CopilotKitCoreConfig, CopilotKitCore } from "@copilotkit/core";
-import { AbstractAgent, Context } from "@ag-ui/client";
+import { InjectionToken, TemplateRef, Type } from "@angular/core";
+import { CopilotKitCoreConfig, CopilotKitCore, FrontendTool } from "@copilotkit/core";
+import { AbstractAgent } from "@ag-ui/client";
+import { z } from "zod";
 
 // Re-export commonly used types
 export type { Context } from "@ag-ui/client";
 
-// Replace your React type with a generic Angular-friendly alias
-export type ToolCallRender<T = unknown> = (toolCall: T) => unknown;
+// Tool call status type
+export type ToolCallStatus = 'inProgress' | 'executing' | 'complete';
+
+// Props passed to tool render components
+export interface ToolCallProps<T = unknown> {
+  name: string;
+  description: string;
+  args: T | Partial<T>;
+  status: ToolCallStatus;
+  result?: unknown;
+}
+
+// Angular-specific tool call render definition
+export interface AngularToolCallRender<T = unknown> {
+  args: z.ZodSchema<T>;
+  render: Type<any> | TemplateRef<any>;  // Angular component class or template ref
+}
+
+// Angular-specific frontend tool extending core FrontendTool
+export interface AngularFrontendTool<T extends Record<string, any> = Record<string, any>> 
+  extends FrontendTool<T> {
+  render?: Type<any> | TemplateRef<any>;
+}
+
+// Legacy type alias for backward compatibility
+export type ToolCallRender<T = unknown> = AngularToolCallRender<T>;
 
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;

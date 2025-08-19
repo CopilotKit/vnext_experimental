@@ -15,9 +15,10 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@copilotkit/core": "workspace:*",
     "@ag-ui/client": "0.0.36-alpha.1",
-    "rxjs": "^7.8.1"
+    "@copilotkit/core": "workspace:*",
+    "rxjs": "^7.8.1",
+    "zod": "^3.22.4"
   },
   "peerDependencies": {
     "@angular/common": "^19.0.0",
@@ -34,6 +35,7 @@
     "@angular/platform-browser-dynamic": "^19.0.0",
     "@copilotkit/eslint-config": "workspace:*",
     "@copilotkit/typescript-config": "workspace:*",
+    "@eslint/js": "^9.30.0",
     "@types/node": "^22.5.1",
     "@vitest/ui": "^2.0.5",
     "jsdom": "^24.0.0",
@@ -42,6 +44,7 @@
     "rxjs": "^7.8.1",
     "tslib": "^2.8.1",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.35.0",
     "vitest": "^2.0.5",
     "zone.js": "^0.15.0"
   },
