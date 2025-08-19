@@ -7,7 +7,7 @@ import { CopilotKitService } from "../core/copilotkit.service";
  * @example
  * ```typescript
  * export class MyComponent {
- *   private copilotkit = useCopilotKit();
+ *   private copilotkit = injectCopilotKit();
  *   
  *   sendMessage() {
  *     this.copilotkit.copilotkit.sendMessage(...);
@@ -15,14 +15,6 @@ import { CopilotKitService } from "../core/copilotkit.service";
  * }
  * ```
  */
-export function useCopilotKit() {
-  return inject(CopilotKitService);
-}
-
-/**
- * @deprecated Use `useCopilotKit()` instead
- */
 export function injectCopilotKit() {
-  console.warn('injectCopilotKit() is deprecated. Use useCopilotKit() instead.');
-  return useCopilotKit();
+  return inject(CopilotKitService);
 }
