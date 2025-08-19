@@ -163,6 +163,13 @@ importers:
         version: 5.8.2
 
   packages/angular:
+    dependencies:
+      '@ag-ui/client':
+        specifier: 0.0.36-alpha.1
+        version: 0.0.36-alpha.1
+      '@copilotkit/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@angular/common':
         specifier: ^19.0.0

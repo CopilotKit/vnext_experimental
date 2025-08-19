@@ -1,12 +1,12 @@
 import { InjectionToken } from "@angular/core";
-import { CopilotKitCoreConfig } from "@copilotkit/core";
+import { CopilotKitCoreConfig, CopilotKitCore } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 
 // Replace your React type with a generic Angular-friendly alias
 export type ToolCallRender<T = unknown> = (toolCall: T) => unknown;
 
 export interface CopilotKitContextValue {
-  copilotkit: import("@copilotkit/core").CopilotKitCore;
+  copilotkit: CopilotKitCore;
   renderToolCalls: Record<string, ToolCallRender<unknown>>;
   currentRenderToolCalls: Record<string, ToolCallRender<unknown>>;
   setCurrentRenderToolCalls: (
