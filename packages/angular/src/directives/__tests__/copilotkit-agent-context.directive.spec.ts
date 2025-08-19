@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { CopilotkitAgentContextDirective } from '../copilotkit-agent-context.directive';
 import { CopilotKitService } from '../../core/copilotkit.service';
@@ -32,7 +32,7 @@ vi.mock('@copilotkit/core', () => ({
 })
 class TestComponentWithInputs {
   description = 'Test context';
-  value = { data: 'initial' };
+  value: any = { data: 'initial' };
 }
 
 @Component({

@@ -64,7 +64,7 @@ describe('CopilotKitConfigDirective', () => {
     // Update config
     fixture.componentInstance.config = {
       runtimeUrl: 'https://api.updated.com',
-      headers: {}
+      headers: { 'X-Test': 'updated' }
     };
     fixture.detectChanges();
 
