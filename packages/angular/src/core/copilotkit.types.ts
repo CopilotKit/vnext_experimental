@@ -1,7 +1,7 @@
 import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { CopilotKitCoreConfig, CopilotKitCore, FrontendTool } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
-import { z } from "zod";
+import type { z } from "zod";
 
 // Re-export commonly used types
 export type { Context } from "@ag-ui/client";
@@ -71,4 +71,27 @@ export interface AgentSubscriptionCallbacks {
   onRunInitialized?: (params: any) => void;
   onRunFinalized?: (params: any) => void;
   onRunFailed?: (params: any) => void;
+}
+
+// Human-in-the-loop types
+export type HumanInTheLoopStatus = 'inProgress' | 'executing' | 'complete';
+
+// Extended props for human-in-the-loop components
+export interface HumanInTheLoopProps<T = unknown> extends ToolCallProps<T> {
+  respond?: (result: unknown) => Promise<void>;
+}
+
+// Angular human-in-the-loop tool definition
+export interface AngularHumanInTheLoop<T extends Record<string, any> = Record<string, any>> 
+  extends Omit<AngularFrontendTool<T>, 'handler' | 'render'> {
+  render: Type<any> | TemplateRef<HumanInTheLoopProps<T>>;
+  // Redefine parameters to ensure it's present (it's optional in FrontendTool)
+  parameters: z.ZodType<T>;
+}
+
+// Human-in-the-loop state result
+export interface HumanInTheLoopState {
+  status: Signal<HumanInTheLoopStatus>;
+  toolId: string;
+  destroy: () => void;
 }
