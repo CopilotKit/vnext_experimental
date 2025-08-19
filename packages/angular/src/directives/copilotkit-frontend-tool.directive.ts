@@ -6,8 +6,7 @@ import {
   OnDestroy,
   SimpleChanges,
   TemplateRef,
-  Type,
-  inject
+  Type
 } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import type { AngularFrontendTool, AngularToolCallRender } from '../core/copilotkit.types';
@@ -28,8 +27,9 @@ export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDes
   // Alternative: Accept a full tool object
   @Input('copilotkitFrontendTool') tool?: AngularFrontendTool;
   
-  private copilotkit = inject(CopilotKitService);
   private isRegistered = false;
+  
+  constructor(private copilotkit: CopilotKitService) {}
   
   ngOnInit(): void {
     this.registerTool();
