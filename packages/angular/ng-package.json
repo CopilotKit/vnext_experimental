@@ -3,5 +3,6 @@
   "dest": "dist",
   "lib": {
     "entryFile": "src/index.ts"
-  }
+  },
+  "allowedNonPeerDependencies": ["@ag-ui/client", "@copilotkit/shared", "@copilotkit/core", "rxjs", "zod"]
 }

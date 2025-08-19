@@ -20,3 +20,19 @@ export { CopilotkitHumanInTheLoopDirective, CopilotkitHumanInTheLoopRespondDirec
 export { CopilotkitChatConfigDirective } from './directives/copilotkit-chat-config.directive';
 export { CopilotSlotDirective, CopilotSlotContentDirective } from './lib/slots/slot.directive';
 export { CopilotkitToolRenderComponent } from './components/copilotkit-tool-render.component';
+
+// Chat Input Components
+export * from './components/chat/copilot-chat-input.types';
+export { CopilotChatInputComponent } from './components/chat/copilot-chat-input.component';
+export { CopilotChatTextareaComponent } from './components/chat/copilot-chat-textarea.component';
+export { CopilotChatAudioRecorderComponent } from './components/chat/copilot-chat-audio-recorder.component';
+export {
+  CopilotChatSendButtonComponent,
+  CopilotChatToolbarButtonComponent,
+  CopilotChatStartTranscribeButtonComponent,
+  CopilotChatCancelTranscribeButtonComponent,
+  CopilotChatFinishTranscribeButtonComponent,
+  CopilotChatAddFileButtonComponent
+} from './components/chat/copilot-chat-buttons.component';
+export { CopilotChatToolbarComponent } from './components/chat/copilot-chat-toolbar.component';
+export { CopilotChatToolsMenuComponent } from './components/chat/copilot-chat-tools-menu.component';
