@@ -44,6 +44,9 @@ export class CopilotKitService {
   private readonly _headers = signal<Record<string, string>>({});
   private readonly _properties = signal<Record<string, unknown>>({});
   private readonly _agents = signal<Record<string, AbstractAgent>>({});
+  
+  // Runtime state change notification signal
+  private readonly _runtimeStateVersion = signal<number>(0);
 
   // Public readonly signals
   readonly renderToolCalls = this._renderToolCalls.asReadonly();
@@ -52,6 +55,7 @@ export class CopilotKitService {
   readonly headers = this._headers.asReadonly();
   readonly properties = this._properties.asReadonly();
   readonly agents = this._agents.asReadonly();
+  readonly runtimeStateVersion = this._runtimeStateVersion.asReadonly();
 
   // Observable APIs for RxJS users
   readonly renderToolCalls$ = toObservable(this.renderToolCalls);
@@ -62,12 +66,18 @@ export class CopilotKitService {
   readonly agents$ = toObservable(this.agents);
 
   // Context value as computed signal
-  readonly context = computed<CopilotKitContextValue>(() => ({
-    copilotkit: this.copilotkit,
-    renderToolCalls: this.renderToolCalls(),
-    currentRenderToolCalls: this.currentRenderToolCalls(),
-    setCurrentRenderToolCalls: (v) => this.setCurrentRenderToolCalls(v),
-  }));
+  readonly context = computed<CopilotKitContextValue>(() => {
+    // Touch the runtime state version to ensure this computed updates
+    // when runtime events occur (loaded/error)
+    this.runtimeStateVersion();
+    
+    return {
+      copilotkit: this.copilotkit,
+      renderToolCalls: this.renderToolCalls(),
+      currentRenderToolCalls: this.currentRenderToolCalls(),
+      setCurrentRenderToolCalls: (v) => this.setCurrentRenderToolCalls(v),
+    };
+  });
 
   readonly context$ = toObservable(this.context);
 
@@ -112,15 +122,27 @@ export class CopilotKitService {
   private setupEventSubscription(): void {
     const unsubscribe = this.copilotkit.subscribe({
       onRuntimeLoaded: () => {
-        // Trigger signal update to notify consumers
-        this._currentRenderToolCalls.update((x) => ({ ...x }));
+        // Increment version to notify all consumers that runtime state has changed
+        // This triggers re-evaluation of computed signals that depend on runtime state
+        this.notifyRuntimeStateChange();
       },
       onRuntimeLoadError: () => {
-        this._currentRenderToolCalls.update((x) => ({ ...x }));
+        // Increment version to notify all consumers that runtime state has changed
+        // This triggers re-evaluation of computed signals that depend on runtime state
+        this.notifyRuntimeStateChange();
       },
     });
 
     this.destroyRef.onDestroy(() => unsubscribe());
+  }
+
+  /**
+   * Notify consumers that the runtime state has changed.
+   * This is similar to React's forceUpdate - it triggers change detection
+   * for any computed signals or effects that depend on runtime state.
+   */
+  private notifyRuntimeStateChange(): void {
+    this._runtimeStateVersion.update(version => version + 1);
   }
 
   // Public mutation methods
