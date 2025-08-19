@@ -6,7 +6,8 @@ import {
   OnDestroy,
   SimpleChanges,
   TemplateRef,
-  Type
+  Type,
+  inject
 } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import type { AngularFrontendTool, AngularToolCallRender } from '../core/copilotkit.types';
@@ -17,6 +18,9 @@ import { z } from 'zod';
   standalone: true
 })
 export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDestroy {
+  private readonly copilotkit = inject(CopilotKitService);
+  private isRegistered = false;
+  
   @Input() name!: string;
   @Input() description?: string;
   @Input() parameters?: z.ZodSchema<any>;
@@ -26,10 +30,6 @@ export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDes
   
   // Alternative: Accept a full tool object
   @Input('copilotkitFrontendTool') tool?: AngularFrontendTool;
-  
-  private isRegistered = false;
-  
-  constructor(private copilotkit: CopilotKitService) {}
   
   ngOnInit(): void {
     this.registerTool();
