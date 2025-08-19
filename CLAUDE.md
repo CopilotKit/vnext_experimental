@@ -100,6 +100,31 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 - Runtime code uses Node environment for testing
 - Coverage reports available via `test:coverage`
 
+#### Angular Testing Patterns
+**Important findings from testing Angular directives and components:**
+
+1. **Dependency Injection Context Issues**
+   - Angular's `inject()` function must be called in an injection context
+   - Cannot directly instantiate directives/components that use `inject()` in tests
+   - Use `TestBed.createComponent()` for testing components with DI dependencies
+   - Prefer field initializers over `ngOnInit` for `inject()` calls when possible
+
+2. **Memory Issues with Test Components**
+   - Declaring too many Angular components at module level can cause "JavaScript heap out of memory" errors
+   - Keep test components minimal and focused
+   - Consider declaring simple test components inside test functions (like `CopilotkitAgentContextDirective` tests)
+   - If experiencing memory issues, reduce the number of test components or split tests across files
+
+3. **TestBed Configuration**
+   - Cannot call `TestBed.configureTestingModule()` multiple times in the same test
+   - Components declared with `@Component` decorator can import their own dependencies (directives, etc.)
+   - Use `providers: [provideCopilotKit({})]` in TestBed or component decorator for CopilotKit services
+
+4. **Directive Testing Patterns**
+   - For directives using field injection (`inject()`), test through host components
+   - For directives with constructor injection, can test more directly
+   - Follow existing patterns in `copilotkit-agent-context.directive.spec.ts` for reference
+
 ### Build Process
 - React package builds both TypeScript and CSS (Tailwind)
 - Runtime package compiles TypeScript from `src/` to `dist/`
