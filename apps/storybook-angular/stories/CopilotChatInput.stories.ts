@@ -34,25 +34,27 @@ const meta: Meta<CopilotChatInputComponent> = {
       valueChange: fn(),
     },
     template: `
-      <div style="width: 100%; max-width: 640px; margin: 0 auto;">
-        <copilot-chat-input
-          [mode]="mode"
-          [inputClass]="inputClass"
-          [toolsMenu]="toolsMenu"
-          [value]="value"
-          [autoFocus]="autoFocus"
-          (submitMessage)="submitMessage($event)"
-          (startTranscribe)="startTranscribe()"
-          (cancelTranscribe)="cancelTranscribe()"
-          (finishTranscribe)="finishTranscribe()"
-          (addFile)="addFile()"
-          (valueChange)="valueChange($event)"
-        ></copilot-chat-input>
+      <div style="position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding: 16px;">
+        <div style="width: 100%; max-width: 640px;">
+          <copilot-chat-input
+            [mode]="mode"
+            [inputClass]="inputClass"
+            [toolsMenu]="toolsMenu"
+            [value]="value"
+            [autoFocus]="autoFocus"
+            (submitMessage)="submitMessage($event)"
+            (startTranscribe)="startTranscribe()"
+            (cancelTranscribe)="cancelTranscribe()"
+            (finishTranscribe)="finishTranscribe()"
+            (addFile)="addFile()"
+            (valueChange)="valueChange($event)"
+          ></copilot-chat-input>
+        </div>
       </div>
     `,
   }),
   parameters: {
-    layout: 'centered',
+    layout: 'fullscreen',
     docs: {
       description: {
         component: `
