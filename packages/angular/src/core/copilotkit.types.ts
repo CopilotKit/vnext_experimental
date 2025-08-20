@@ -32,6 +32,7 @@ export interface AngularFrontendTool<T extends Record<string, any> = Record<stri
   parameters?: z.ZodSchema<T>;
   handler?: (args: T) => Promise<any>;
   render?: Type<any> | TemplateRef<any>;
+  followUp?: boolean;
 }
 
 // Legacy type alias for backward compatibility

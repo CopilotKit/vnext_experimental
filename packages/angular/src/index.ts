@@ -37,6 +37,6 @@ export {
 export { CopilotChatToolbarComponent } from './components/chat/copilot-chat-toolbar.component';
 export { CopilotChatToolsMenuComponent } from './components/chat/copilot-chat-tools-menu.component';
 
-// Testing utilities
-export * from './testing/testing.utils';
+// Testing utilities are not exported from the main entry point
+// They should be imported directly from '@copilotkit/angular/testing' if needed
 
