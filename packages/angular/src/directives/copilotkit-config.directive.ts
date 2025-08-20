@@ -1,4 +1,4 @@
-import { Directive, Input, OnChanges, SimpleChanges, inject } from "@angular/core";
+import { Directive, Input, OnChanges, SimpleChanges, Inject } from "@angular/core";
 import { CopilotKitService } from "../core/copilotkit.service";
 import { AbstractAgent } from "@ag-ui/client";
 
@@ -30,7 +30,7 @@ import { AbstractAgent } from "@ag-ui/client";
   standalone: true,
 })
 export class CopilotKitConfigDirective implements OnChanges {
-  private readonly copilotkit = inject(CopilotKitService);
+  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
 
   @Input() copilotkitConfig?: {
     runtimeUrl?: string;

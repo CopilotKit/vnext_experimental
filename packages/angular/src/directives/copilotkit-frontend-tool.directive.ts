@@ -7,7 +7,8 @@ import {
   SimpleChanges,
   TemplateRef,
   Type,
-  inject
+  isDevMode,
+  Inject
 } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import type { AngularFrontendTool, AngularToolCallRender } from '../core/copilotkit.types';
@@ -17,19 +18,20 @@ import { z } from 'zod';
   selector: '[copilotkitFrontendTool]',
   standalone: true
 })
-export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDestroy {
-  private readonly copilotkit = inject(CopilotKitService);
+export class CopilotkitFrontendToolDirective<T extends Record<string, any> = Record<string, any>> implements OnInit, OnChanges, OnDestroy {
   private isRegistered = false;
+
+  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
   
   @Input() name!: string;
   @Input() description?: string;
-  @Input() parameters?: z.ZodSchema<any>;
-  @Input() handler?: (args: any) => Promise<any>;
+  @Input() parameters?: z.ZodSchema<T>;
+  @Input() handler?: (args: T) => Promise<any>;
   @Input() render?: Type<any> | TemplateRef<any>;
   @Input() followUp?: boolean;
   
   // Alternative: Accept a full tool object
-  @Input('copilotkitFrontendTool') tool?: AngularFrontendTool;
+  @Input('copilotkitFrontendTool') tool?: AngularFrontendTool<T>;
   
   ngOnInit(): void {
     this.registerTool();
@@ -51,8 +53,14 @@ export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDes
     const tool = this.getTool();
     
     if (!tool.name) {
-      console.warn('CopilotkitFrontendToolDirective: name is required');
-      return;
+      if (isDevMode()) {
+        console.warn(
+          'CopilotkitFrontendToolDirective: "name" is required. ' +
+          'Please provide a name via [name]="toolName" or ' +
+          '[copilotkitFrontendTool]="{ name: \'toolName\', ... }"'
+        );
+      }
+      return; // Don't register if no name
     }
     
     // Register the tool with CopilotKit
@@ -68,13 +76,18 @@ export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDes
       
       // Check for duplicate
       if (tool.name in currentRenders) {
-        console.error(`Tool with name '${tool.name}' already has a render. Skipping.`);
-      } else {
-        this.copilotkit.setCurrentRenderToolCalls({
-          ...currentRenders,
-          [tool.name]: renderEntry
-        });
+        if (isDevMode()) {
+          console.warn(
+            `[CopilotKit] Tool "${tool.name}" already has a render. ` +
+            `The previous render will be replaced. ` +
+            `This may indicate a duplicate tool registration.`
+          );
+        }
       }
+      this.copilotkit.setCurrentRenderToolCalls({
+        ...currentRenders,
+        [tool.name]: renderEntry
+      });
     }
     
     this.isRegistered = true;
@@ -100,7 +113,7 @@ export class CopilotkitFrontendToolDirective implements OnInit, OnChanges, OnDes
     this.isRegistered = false;
   }
   
-  private getTool(): AngularFrontendTool {
+  private getTool(): AngularFrontendTool<T> {
     // If full tool object is provided, use it
     if (this.tool) {
       return this.tool;

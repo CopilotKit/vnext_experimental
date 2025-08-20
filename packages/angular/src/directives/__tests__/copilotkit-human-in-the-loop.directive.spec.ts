@@ -45,8 +45,7 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideCopilotKit({})],
-      imports: [CopilotkitHumanInTheLoopDirective]
+      providers: [provideCopilotKit({})]
     });
     
     service = TestBed.inject(CopilotKitService);

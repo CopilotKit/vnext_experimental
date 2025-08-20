@@ -9,7 +9,8 @@ import {
   ComponentRef,
   EmbeddedViewRef,
   Injector,
-  inject
+  isDevMode,
+  Inject
 } from '@angular/core';
 import type { Type } from '@angular/core';
 import type { SlotValue, SlotContext } from './slot.types';
@@ -49,8 +50,11 @@ export class CopilotSlotDirective<T = any> implements OnInit, OnChanges {
   @Input() slotInjector?: Injector;
 
   private currentView?: ComponentRef<T> | EmbeddedViewRef<T>;
-  private viewContainerRef = inject(ViewContainerRef);
-  private injector = inject(Injector);
+
+  constructor(
+    @Inject(ViewContainerRef) private readonly viewContainerRef: ViewContainerRef,
+    @Inject(Injector) private readonly injector: Injector
+  ) {}
 
   ngOnInit(): void {
     this.render();
@@ -65,7 +69,9 @@ export class CopilotSlotDirective<T = any> implements OnInit, OnChanges {
     this.clear();
 
     if (!this.slotDefault) {
-      console.warn('CopilotSlotDirective: slotDefault is required');
+      if (isDevMode()) {
+        throw new Error('CopilotSlotDirective: slotDefault is required');
+      }
       return;
     }
 
@@ -154,8 +160,10 @@ export class CopilotSlotContentDirective implements OnInit {
   @Input() slotContentDefault!: Type<any>;
   @Input() slotContentProps?: any;
 
-  private viewContainerRef = inject(ViewContainerRef);
-  private injector = inject(Injector);
+  constructor(
+    @Inject(ViewContainerRef) private readonly viewContainerRef: ViewContainerRef,
+    @Inject(Injector) private readonly injector: Injector
+  ) {}
 
   ngOnInit(): void {
     // Check if there's projected content first

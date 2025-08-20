@@ -1,4 +1,5 @@
 import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
+import { Observable } from "rxjs";
 import { CopilotKitCoreConfig, CopilotKitCore, FrontendTool } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 import type { z } from "zod";
@@ -24,9 +25,12 @@ export interface AngularToolCallRender<T = unknown> {
   render: Type<any> | TemplateRef<any>;  // Angular component class or template ref
 }
 
-// Angular-specific frontend tool extending core FrontendTool
-export interface AngularFrontendTool<T extends Record<string, any> = Record<string, any>> 
-  extends FrontendTool<T> {
+// Angular-specific frontend tool definition
+export interface AngularFrontendTool<T extends Record<string, any> = Record<string, any>> {
+  name: string;
+  description?: string;
+  parameters?: z.ZodSchema<T>;
+  handler?: (args: T) => Promise<any>;
   render?: Type<any> | TemplateRef<any>;
 }
 
@@ -62,6 +66,8 @@ export const COPILOTKIT_INITIAL_RENDERERS = new InjectionToken<
 export interface AgentWatchResult {
   agent: Signal<AbstractAgent | undefined>;
   isRunning: Signal<boolean>;
+  agent$: Observable<AbstractAgent | undefined>;
+  isRunning$: Observable<boolean>;
   unsubscribe?: () => void;
 }
 

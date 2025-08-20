@@ -7,8 +7,11 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  inject
+  signal,
+  Inject
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AbstractAgent } from '@ag-ui/client';
 import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
@@ -48,11 +51,14 @@ import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
   standalone: true
 })
 export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
-  private readonly copilotkit = inject(CopilotKitService);
   private agent?: AbstractAgent;
   private agentSubscription?: { unsubscribe: () => void };
   private coreUnsubscribe?: () => void;  // subscribe returns function directly
   private _isRunning = false;
+  private runningSignal = signal<boolean>(false);
+  private agentSignal = signal<AbstractAgent | undefined>(undefined);
+
+  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
 
   /**
    * The ID of the agent to watch.
@@ -65,13 +71,8 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
    * Allows: [copilotkitAgent]="'agent-id'"
    */
   @Input('copilotkitAgent') 
-  set directiveAgentId(value: string | undefined | '') {
-    // Handle empty string as undefined
-    if (value === '') {
-      this.agentId = undefined;
-    } else if (typeof value === 'string') {
-      this.agentId = value;
-    }
+  set directiveAgentId(value: string | undefined) {
+    this.agentId = value || undefined;
   }
 
   /**
@@ -83,6 +84,20 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
    * Emits when the running state changes.
    */
   @Output() runningChange = new EventEmitter<boolean>();
+
+  /**
+   * Observable of the running state.
+   */
+  get running$(): Observable<boolean> {
+    return toObservable(this.runningSignal);
+  }
+
+  /**
+   * Observable of the agent instance.
+   */
+  get agent$(): Observable<AbstractAgent | undefined> {
+    return toObservable(this.agentSignal);
+  }
 
   /**
    * Two-way binding for running state.
@@ -143,6 +158,9 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
     const effectiveAgentId = this.agentId ?? DEFAULT_AGENT_ID;
     this.agent = this.copilotkit.getAgent(effectiveAgentId);
     
+    // Update signals
+    this.agentSignal.set(this.agent);
+    
     // Emit initial agent
     this.agentChange.emit(this.agent);
     
@@ -163,16 +181,19 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
         },
         onRunInitialized: (params) => {
           this._isRunning = true;
+          this.runningSignal.set(true);
           this.runningChange.emit(true);
           this.runInitialized.emit(params);
         },
         onRunFinalized: (params) => {
           this._isRunning = false;
+          this.runningSignal.set(false);
           this.runningChange.emit(false);
           this.runFinalized.emit(params);
         },
         onRunFailed: (params) => {
           this._isRunning = false;
+          this.runningSignal.set(false);
           this.runningChange.emit(false);
           this.runFailed.emit(params);
         },

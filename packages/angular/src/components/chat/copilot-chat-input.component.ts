@@ -18,7 +18,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotDirective } from '../../lib/slots/slot.directive';
-import { renderSlot } from '../../lib/slots/slot.utils';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import { CopilotChatTextareaComponent } from './copilot-chat-textarea.component';
 import { CopilotChatAudioRecorderComponent } from './copilot-chat-audio-recorder.component';
@@ -33,8 +32,7 @@ import { CopilotChatToolbarComponent } from './copilot-chat-toolbar.component';
 import { CopilotChatToolsMenuComponent } from './copilot-chat-tools-menu.component';
 import type {
   CopilotChatInputMode,
-  ToolsMenuItem,
-  CopilotChatInputSlots
+  ToolsMenuItem
 } from './copilot-chat-input.types';
 import { cn } from '../../lib/utils';
 

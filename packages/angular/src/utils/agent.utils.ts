@@ -1,4 +1,5 @@
 import { DestroyRef, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AgentWatchResult, AgentSubscriptionCallbacks } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
@@ -98,9 +99,15 @@ export function watchAgent(agentId?: string): AgentWatchResult {
   
   destroyRef.onDestroy(unsubscribe);
   
+  // Create Observable versions
+  const agent$ = toObservable(agentSignal);
+  const isRunning$ = toObservable(isRunningSignal);
+  
   return {
     agent: agentSignal.asReadonly(),
     isRunning: isRunningSignal.asReadonly(),
+    agent$,
+    isRunning$,
     unsubscribe,
   };
 }

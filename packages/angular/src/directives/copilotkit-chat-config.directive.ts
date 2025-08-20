@@ -7,7 +7,9 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  inject
+  Optional,
+  isDevMode,
+  Inject
 } from '@angular/core';
 import { CopilotChatConfigurationService } from '../core/chat-configuration/chat-configuration.service';
 import { 
@@ -48,10 +50,11 @@ import {
   standalone: true
 })
 export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestroy {
-  private readonly chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   private _value?: string;
   private submitHandler?: (value: string) => void;
   private changeHandler?: (value: string) => void;
+
+  constructor(@Optional() @Inject(CopilotChatConfigurationService) private readonly chatConfig: CopilotChatConfigurationService | null) {}
 
   /**
    * Partial labels to override defaults
@@ -109,8 +112,10 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
 
   ngOnInit(): void {
     if (!this.chatConfig) {
-      console.warn('CopilotkitChatConfigDirective: No CopilotChatConfigurationService found. ' +
-                   'Make sure to provide it using provideCopilotChatConfiguration().');
+      if (isDevMode()) {
+        console.warn('CopilotkitChatConfigDirective: No CopilotChatConfigurationService found. ' +
+                     'Make sure to provide it using provideCopilotChatConfiguration().');
+      }
       return;
     }
 

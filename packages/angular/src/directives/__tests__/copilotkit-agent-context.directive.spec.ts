@@ -28,7 +28,8 @@ vi.mock('@copilotkit/core', () => ({
     </div>
   `,
   standalone: true,
-  imports: [CopilotkitAgentContextDirective]
+  imports: [CopilotkitAgentContextDirective],
+  providers: [provideCopilotKit({})]
 })
 class TestComponentWithInputs {
   description = 'Test context';
@@ -41,7 +42,8 @@ class TestComponentWithInputs {
     </div>
   `,
   standalone: true,
-  imports: [CopilotkitAgentContextDirective]
+  imports: [CopilotkitAgentContextDirective],
+  providers: [provideCopilotKit({})]
 })
 class TestComponentWithContext {
   context = {
@@ -59,7 +61,8 @@ class TestComponentWithContext {
     </div>
   `,
   standalone: true,
-  imports: [CommonModule, CopilotkitAgentContextDirective]
+  imports: [CommonModule, CopilotkitAgentContextDirective],
+  providers: [provideCopilotKit({})]
 })
 class TestComponentConditional {
   showContext = true;

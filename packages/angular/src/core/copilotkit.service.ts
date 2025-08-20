@@ -1,6 +1,6 @@
 import {
   Injectable,
-  inject,
+  Inject,
   signal,
   computed,
   effect,
@@ -23,65 +23,102 @@ import { AbstractAgent } from "@ag-ui/client";
  */
 @Injectable({ providedIn: "root" })
 export class CopilotKitService {
-  private readonly initialRenderers = inject(COPILOTKIT_INITIAL_RENDERERS);
-  private readonly initialConfig = inject(COPILOTKIT_INITIAL_CONFIG);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly initialRenderers: Record<string, ToolCallRender<unknown>>;
+  private readonly initialConfig: Partial<CopilotKitCoreConfig>;
+  private readonly destroyRef: DestroyRef;
 
   // Core instance - created once
-  readonly copilotkit = new CopilotKitCore({
-    ...this.initialConfig,
-    runtimeUrl: undefined, // Prevent server-side fetching
-  } as CopilotKitCoreConfig);
+  readonly copilotkit: CopilotKitCore;
 
   // State signals
-  private readonly _renderToolCalls = signal<Record<string, ToolCallRender<unknown>>>(
-    this.initialRenderers
-  );
-  private readonly _currentRenderToolCalls = signal<Record<string, ToolCallRender<unknown>>>(
-    this.initialRenderers
-  );
-  private readonly _runtimeUrl = signal<string | undefined>(undefined);
-  private readonly _headers = signal<Record<string, string>>({});
-  private readonly _properties = signal<Record<string, unknown>>({});
-  private readonly _agents = signal<Record<string, AbstractAgent>>({});
+  private readonly _renderToolCalls: ReturnType<typeof signal<Record<string, ToolCallRender<unknown>>>>;
+  private readonly _currentRenderToolCalls: ReturnType<typeof signal<Record<string, ToolCallRender<unknown>>>>;
+  private readonly _runtimeUrl: ReturnType<typeof signal<string | undefined>>;
+  private readonly _headers: ReturnType<typeof signal<Record<string, string>>>;
+  private readonly _properties: ReturnType<typeof signal<Record<string, unknown>>>;
+  private readonly _agents: ReturnType<typeof signal<Record<string, AbstractAgent>>>;
   
   // Runtime state change notification signal
-  private readonly _runtimeStateVersion = signal<number>(0);
+  private readonly _runtimeStateVersion: ReturnType<typeof signal<number>>;
 
-  // Public readonly signals
-  readonly renderToolCalls = this._renderToolCalls.asReadonly();
-  readonly currentRenderToolCalls = this._currentRenderToolCalls.asReadonly();
-  readonly runtimeUrl = this._runtimeUrl.asReadonly();
-  readonly headers = this._headers.asReadonly();
-  readonly properties = this._properties.asReadonly();
-  readonly agents = this._agents.asReadonly();
-  readonly runtimeStateVersion = this._runtimeStateVersion.asReadonly();
+  // Public readonly signals - will be initialized in constructor
+  readonly renderToolCalls: any;
+  readonly currentRenderToolCalls: any;
+  readonly runtimeUrl: any;
+  readonly headers: any;
+  readonly properties: any;
+  readonly agents: any;
+  readonly runtimeStateVersion: any;
 
-  // Observable APIs for RxJS users
-  readonly renderToolCalls$ = toObservable(this.renderToolCalls);
-  readonly currentRenderToolCalls$ = toObservable(this.currentRenderToolCalls);
-  readonly runtimeUrl$ = toObservable(this.runtimeUrl);
-  readonly headers$ = toObservable(this.headers);
-  readonly properties$ = toObservable(this.properties);
-  readonly agents$ = toObservable(this.agents);
+  // Observable APIs for RxJS users - will be initialized in constructor
+  readonly renderToolCalls$: any;
+  readonly currentRenderToolCalls$: any;
+  readonly runtimeUrl$: any;
+  readonly headers$: any;
+  readonly properties$: any;
+  readonly agents$: any;
 
-  // Context value as computed signal
-  readonly context = computed<CopilotKitContextValue>(() => {
-    // Touch the runtime state version to ensure this computed updates
-    // when runtime events occur (loaded/error)
-    this.runtimeStateVersion();
+  // Context value as computed signal - will be initialized in constructor
+  readonly context: any;
+  readonly context$: any;
+
+  constructor(
+    @Inject(COPILOTKIT_INITIAL_RENDERERS) initialRenderers: Record<string, ToolCallRender<unknown>>,
+    @Inject(COPILOTKIT_INITIAL_CONFIG) initialConfig: Partial<CopilotKitCoreConfig>,
+    @Inject(DestroyRef) destroyRef: DestroyRef
+  ) {
+    this.initialRenderers = initialRenderers;
+    this.initialConfig = initialConfig;
+    this.destroyRef = destroyRef;
     
-    return {
-      copilotkit: this.copilotkit,
-      renderToolCalls: this.renderToolCalls(),
-      currentRenderToolCalls: this.currentRenderToolCalls(),
-      setCurrentRenderToolCalls: (v) => this.setCurrentRenderToolCalls(v),
-    };
-  });
-
-  readonly context$ = toObservable(this.context);
-
-  constructor() {
+    // Initialize core instance
+    this.copilotkit = new CopilotKitCore({
+      ...initialConfig,
+      runtimeUrl: undefined, // Prevent server-side fetching
+    } as CopilotKitCoreConfig);
+    
+    // Initialize state signals
+    this._renderToolCalls = signal<Record<string, ToolCallRender<unknown>>>(initialRenderers);
+    this._currentRenderToolCalls = signal<Record<string, ToolCallRender<unknown>>>(initialRenderers);
+    this._runtimeUrl = signal<string | undefined>(undefined);
+    this._headers = signal<Record<string, string>>({});
+    this._properties = signal<Record<string, unknown>>({});
+    this._agents = signal<Record<string, AbstractAgent>>({});
+    this._runtimeStateVersion = signal<number>(0);
+    
+    // Initialize public readonly signals
+    this.renderToolCalls = this._renderToolCalls.asReadonly();
+    this.currentRenderToolCalls = this._currentRenderToolCalls.asReadonly();
+    this.runtimeUrl = this._runtimeUrl.asReadonly();
+    this.headers = this._headers.asReadonly();
+    this.properties = this._properties.asReadonly();
+    this.agents = this._agents.asReadonly();
+    this.runtimeStateVersion = this._runtimeStateVersion.asReadonly();
+    
+    // Initialize Observable APIs
+    this.renderToolCalls$ = toObservable(this.renderToolCalls);
+    this.currentRenderToolCalls$ = toObservable(this.currentRenderToolCalls);
+    this.runtimeUrl$ = toObservable(this.runtimeUrl);
+    this.headers$ = toObservable(this.headers);
+    this.properties$ = toObservable(this.properties);
+    this.agents$ = toObservable(this.agents);
+    
+    // Initialize context value as computed signal
+    this.context = computed<CopilotKitContextValue>(() => {
+      // Touch the runtime state version to ensure this computed updates
+      // when runtime events occur (loaded/error)
+      this.runtimeStateVersion();
+      
+      return {
+        copilotkit: this.copilotkit,
+        renderToolCalls: this.renderToolCalls(),
+        currentRenderToolCalls: this.currentRenderToolCalls(),
+        setCurrentRenderToolCalls: (v) => this.setCurrentRenderToolCalls(v),
+      };
+    });
+    
+    this.context$ = toObservable(this.context);
+    
     // Effects must be created in injection context (constructor)
     this.setupRuntimeSyncEffects();
     this.setupEventSubscription();
@@ -133,7 +170,9 @@ export class CopilotKitService {
       },
     });
 
-    this.destroyRef.onDestroy(() => unsubscribe());
+    if (this.destroyRef) {
+      this.destroyRef.onDestroy(() => unsubscribe());
+    }
   }
 
   /**

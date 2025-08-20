@@ -7,10 +7,11 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  inject,
   TemplateRef,
   Type,
-  signal
+  signal,
+  isDevMode,
+  Inject
 } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import type { 
@@ -61,12 +62,13 @@ import * as z from 'zod';
   selector: '[copilotkitHumanInTheLoop]',
   standalone: true
 })
-export class CopilotkitHumanInTheLoopDirective implements OnInit, OnChanges, OnDestroy {
-  private readonly copilotkit = inject(CopilotKitService);
+export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = Record<string, any>> implements OnInit, OnChanges, OnDestroy {
   private toolId?: string;
   private statusSignal = signal<HumanInTheLoopStatus>('inProgress');
   private resolvePromise: ((result: unknown) => void) | null = null;
   private _status: HumanInTheLoopStatus = 'inProgress';
+
+  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
 
   /**
    * The name of the human-in-the-loop tool.
@@ -81,12 +83,12 @@ export class CopilotkitHumanInTheLoopDirective implements OnInit, OnChanges, OnD
   /**
    * Zod schema for the tool parameters.
    */
-  @Input() parameters!: z.ZodSchema<any>;
+  @Input() parameters!: z.ZodSchema<T>;
 
   /**
    * Component class or template to render for user interaction.
    */
-  @Input() render!: Type<any> | TemplateRef<HumanInTheLoopProps<any>>;
+  @Input() render!: Type<any> | TemplateRef<HumanInTheLoopProps<T>>;
 
   /**
    * Whether the tool should be registered (default: true).
@@ -98,11 +100,11 @@ export class CopilotkitHumanInTheLoopDirective implements OnInit, OnChanges, OnD
    * Allows: [copilotkitHumanInTheLoop]="config"
    */
   @Input('copilotkitHumanInTheLoop')
-  set config(value: Partial<AngularHumanInTheLoop> | undefined) {
+  set config(value: Partial<AngularHumanInTheLoop<T>> | undefined) {
     if (value) {
       if (value.name) this.name = value.name;
       if (value.description) this.description = value.description;
-      if ('parameters' in value && value.parameters) this.parameters = value.parameters;
+      if ('parameters' in value && value.parameters) this.parameters = value.parameters as z.ZodSchema<T>;
       if ('render' in value && value.render) this.render = value.render;
     }
   }
@@ -175,12 +177,17 @@ export class CopilotkitHumanInTheLoopDirective implements OnInit, OnChanges, OnD
 
   private registerTool(): void {
     if (!this.name || !this.description || !this.parameters || !this.render) {
-      console.warn('CopilotkitHumanInTheLoopDirective: Missing required inputs');
+      if (isDevMode()) {
+        throw new Error(
+          'CopilotkitHumanInTheLoopDirective: Missing required inputs. ' +
+          'Required: name, description, parameters, and render.'
+        );
+      }
       return;
     }
 
     // Create handler that returns a Promise
-    const handler = async (args: any): Promise<unknown> => {
+    const handler = async (args: T): Promise<unknown> => {
       return new Promise((resolve) => {
         this.updateStatus('executing');
         this.resolvePromise = resolve;
@@ -189,7 +196,7 @@ export class CopilotkitHumanInTheLoopDirective implements OnInit, OnChanges, OnD
     };
 
     // Create the frontend tool with enhanced render
-    const frontendTool: AngularFrontendTool = {
+    const frontendTool: AngularFrontendTool<T> = {
       name: this.name,
       description: this.description,
       parameters: this.parameters,

@@ -212,7 +212,7 @@ export class CopilotChatAudioRecorderComponent implements AfterViewInit, OnDestr
         // Draw initial flat line
         this.drawWaveform(new Array(50).fill(0.5));
       }
-    } catch (error) {
+    } catch {
       // Canvas not supported in test environment
       console.debug('Canvas initialization skipped (likely in test environment)');
     }

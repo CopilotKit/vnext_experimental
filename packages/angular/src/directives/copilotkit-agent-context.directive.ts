@@ -4,8 +4,8 @@ import {
   OnInit, 
   OnChanges, 
   OnDestroy, 
-  SimpleChanges, 
-  inject 
+  SimpleChanges,
+  Inject
 } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import type { Context } from '@ag-ui/client';
@@ -38,8 +38,9 @@ import type { Context } from '@ag-ui/client';
   standalone: true
 })
 export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDestroy {
-  private readonly copilotkit = inject(CopilotKitService);
   private contextId?: string;
+
+  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
 
   /**
    * Context object containing both description and value.
@@ -54,7 +55,7 @@ export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDes
   @Input() description?: string;
 
   /**
-   * Value of the context. Can be any serializable type.
+   * Value of the context.
    * Used when context object is not provided.
    */
   @Input() value?: any;

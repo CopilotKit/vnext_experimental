@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, DestroyRef } from '@angular/core';
+import { Injectable, Inject, Optional, signal, DestroyRef } from '@angular/core';
 import { 
   CopilotChatConfiguration, 
   CopilotChatLabels,
@@ -24,26 +24,38 @@ import {
  */
 @Injectable()
 export class CopilotChatConfigurationService {
-  private readonly initialConfig = inject(COPILOT_CHAT_INITIAL_CONFIG, { optional: true });
-  private readonly destroyRef = inject(DestroyRef);
-  
   // State signals
-  private readonly _labels = signal<CopilotChatLabels>(
-    this.mergeLabels(this.initialConfig?.labels)
-  );
-  private readonly _inputValue = signal<string | undefined>(
-    this.initialConfig?.inputValue
-  );
-  private readonly _onSubmitInput = signal<((value: string) => void) | undefined>(
-    this.initialConfig?.onSubmitInput
-  );
-  private readonly _onChangeInput = signal<((value: string) => void) | undefined>(
-    this.initialConfig?.onChangeInput
-  );
+  private readonly _labels: ReturnType<typeof signal<CopilotChatLabels>>;
+  private readonly _inputValue: ReturnType<typeof signal<string | undefined>>;
+  private readonly _onSubmitInput: ReturnType<typeof signal<((value: string) => void) | undefined>>;
+  private readonly _onChangeInput: ReturnType<typeof signal<((value: string) => void) | undefined>>;
   
   // Public readonly signals
-  readonly labels = this._labels.asReadonly();
-  readonly inputValue = this._inputValue.asReadonly();
+  readonly labels: ReturnType<typeof signal<CopilotChatLabels>>['asReadonly'] extends () => infer R ? R : never;
+  readonly inputValue: ReturnType<typeof signal<string | undefined>>['asReadonly'] extends () => infer R ? R : never;
+  
+  constructor(
+    @Optional() @Inject(COPILOT_CHAT_INITIAL_CONFIG) private readonly initialConfig: CopilotChatConfiguration | null,
+    private readonly destroyRef: DestroyRef
+  ) {
+    // Initialize state signals
+    this._labels = signal<CopilotChatLabels>(
+      this.mergeLabels(this.initialConfig?.labels)
+    );
+    this._inputValue = signal<string | undefined>(
+      this.initialConfig?.inputValue
+    );
+    this._onSubmitInput = signal<((value: string) => void) | undefined>(
+      this.initialConfig?.onSubmitInput
+    );
+    this._onChangeInput = signal<((value: string) => void) | undefined>(
+      this.initialConfig?.onChangeInput
+    );
+    
+    // Initialize public readonly signals
+    this.labels = this._labels.asReadonly();
+    this.inputValue = this._inputValue.asReadonly();
+  }
   
   /**
    * Update chat labels (partial update, merged with defaults)

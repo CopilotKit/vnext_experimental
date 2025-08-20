@@ -78,7 +78,7 @@ describe('CopilotkitFrontendToolDirective', () => {
 
       expect(addToolSpy).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('name is required')
+        'CopilotkitFrontendToolDirective: "name" is required. Please provide a name via [name]="toolName" or [copilotkitFrontendTool]="{ name: \'toolName\', ... }"'
       );
       
       consoleSpy.mockRestore();
