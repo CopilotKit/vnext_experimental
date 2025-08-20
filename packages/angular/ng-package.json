@@ -4,5 +4,5 @@
   "lib": {
     "entryFile": "src/index.ts"
   },
-  "allowedNonPeerDependencies": ["@ag-ui/client", "@copilotkit/shared", "@copilotkit/core", "rxjs", "zod"]
+  "allowedNonPeerDependencies": ["@ag-ui/client", "@copilotkit/shared", "@copilotkit/core", "rxjs", "zod", "lucide-angular"]
 }

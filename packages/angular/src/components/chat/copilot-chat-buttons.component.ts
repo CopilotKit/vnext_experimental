@@ -10,6 +10,14 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { 
+  LucideAngularModule,
+  ArrowUp,
+  Mic,
+  X,
+  Check,
+  Plus
+} from 'lucide-angular';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import { cn } from '../../lib/utils';
 
@@ -64,7 +72,7 @@ const chatInputToolbarSecondary = cn(
 @Component({
   selector: 'copilot-chat-send-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -75,10 +83,7 @@ const chatInputToolbarSecondary = cn(
         [class]="buttonClass"
         (click)="onClick()"
       >
-        <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="19" x2="12" y2="5"></line>
-          <polyline points="5 12 12 5 19 12"></polyline>
-        </svg>
+        <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
       </button>
     </div>
   `,
@@ -88,6 +93,7 @@ export class CopilotChatSendButtonComponent {
   @Input() disabled = false;
   @Output() click = new EventEmitter<void>();
   
+  readonly ArrowUpIcon = ArrowUp;
   buttonClass = cn(buttonBase, chatInputToolbarPrimary);
   
   onClick(): void {
@@ -100,7 +106,7 @@ export class CopilotChatSendButtonComponent {
 @Component({
   selector: 'copilot-chat-start-transcribe-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -111,12 +117,7 @@ export class CopilotChatSendButtonComponent {
       [title]="label"
       (click)="onClick()"
     >
-      <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-        <line x1="12" y1="19" x2="12" y2="23"></line>
-        <line x1="8" y1="23" x2="16" y2="23"></line>
-      </svg>
+      <lucide-angular [img]="MicIcon" [size]="18"></lucide-angular>
     </button>
   `,
   styles: [``]
@@ -127,6 +128,7 @@ export class CopilotChatStartTranscribeButtonComponent {
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
+  readonly MicIcon = Mic;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-2');
   
   get label(): string {
@@ -143,7 +145,7 @@ export class CopilotChatStartTranscribeButtonComponent {
 @Component({
   selector: 'copilot-chat-cancel-transcribe-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -154,10 +156,7 @@ export class CopilotChatStartTranscribeButtonComponent {
       [title]="label"
       (click)="onClick()"
     >
-      <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
+      <lucide-angular [img]="XIcon" [size]="18"></lucide-angular>
     </button>
   `,
   styles: [``]
@@ -168,6 +167,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
+  readonly XIcon = X;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-2');
   
   get label(): string {
@@ -184,7 +184,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
 @Component({
   selector: 'copilot-chat-finish-transcribe-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -195,9 +195,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
       [title]="label"
       (click)="onClick()"
     >
-      <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
+      <lucide-angular [img]="CheckIcon" [size]="18"></lucide-angular>
     </button>
   `,
   styles: [``]
@@ -208,6 +206,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
+  readonly CheckIcon = Check;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-[10px]');
   
   get label(): string {
@@ -224,7 +223,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
 @Component({
   selector: 'copilot-chat-add-file-button',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -235,10 +234,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
       [title]="label"
       (click)="onClick()"
     >
-      <svg class="size-[20px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
+      <lucide-angular [img]="PlusIcon" [size]="20"></lucide-angular>
     </button>
   `,
   styles: [``]
@@ -249,6 +245,7 @@ export class CopilotChatAddFileButtonComponent {
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
+  readonly PlusIcon = Plus;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'ml-2');
   
   get label(): string {

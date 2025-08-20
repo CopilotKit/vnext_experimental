@@ -11,6 +11,7 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule, icons } from 'lucide-angular';
 import { CopilotChatToolbarButtonComponent } from './copilot-chat-buttons.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import type { ToolsMenuItem } from './copilot-chat-input.types';
@@ -19,7 +20,7 @@ import { cn } from '../../lib/utils';
 @Component({
   selector: 'copilot-chat-tools-menu',
   standalone: true,
-  imports: [CommonModule, CopilotChatToolbarButtonComponent],
+  imports: [CommonModule, LucideAngularModule, CopilotChatToolbarButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -31,18 +32,7 @@ import { cn } from '../../lib/utils';
           [class]="buttonClass()"
           (click)="toggleMenu()"
         >
-          <!-- Settings Icon -->
-          <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6"></path>
-            <path d="M12 17v6"></path>
-            <path d="M4.22 4.22l4.24 4.24"></path>
-            <path d="M15.54 15.54l4.24 4.24"></path>
-            <path d="M1 12h6"></path>
-            <path d="M17 12h6"></path>
-            <path d="M4.22 19.78l4.24-4.24"></path>
-            <path d="M15.54 8.46l4.24-4.24"></path>
-          </svg>
+          <lucide-icon name="settings-2" [size]="18"></lucide-icon>
           <span class="text-sm font-normal">{{ label() }}</span>
         </button>
         
@@ -61,9 +51,7 @@ import { cn } from '../../lib/utils';
                       (mouseleave)="closeSubmenu($index)"
                     >
                       {{ item.label }}
-                      <svg class="ml-auto size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                      </svg>
+                      <lucide-icon name="chevron-right" [size]="12" class="ml-auto"></lucide-icon>
                     </button>
                     @if (isSubmenuOpen($index)) {
                       <div class="absolute left-full top-0 ml-1 min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">

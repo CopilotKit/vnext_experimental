@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
 import { fn } from '@storybook/test';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
-import { provideCopilotChatConfiguration } from '@copilotkit/angular';
-import type { ToolsMenuItem } from '@copilotkit/angular';
+import { 
+  CopilotChatInputComponent,
+  provideCopilotChatConfiguration,
+  type ToolsMenuItem 
+} from '@copilotkit/angular';
 
 const meta: Meta<CopilotChatInputComponent> = {
   title: 'UI/CopilotChatInput',
