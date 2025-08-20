@@ -1,0 +1,38 @@
+{
+  "name": "storybook-angular",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "ng run storybook-angular:storybook",
+    "build": "ng run storybook-angular:build-storybook",
+    "storybook:dev": "ng run storybook-angular:storybook",
+    "storybook:build": "ng run storybook-angular:build-storybook"
+  },
+  "dependencies": {
+    "@angular/animations": "^19.0.0",
+    "@angular/common": "^19.0.0",
+    "@angular/compiler": "^19.0.0",
+    "@angular/core": "^19.0.0",
+    "@angular/forms": "^19.0.0",
+    "@angular/platform-browser": "^19.0.0",
+    "@angular/platform-browser-dynamic": "^19.0.0",
+    "rxjs": "^7.8.1",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^19.2.15",
+    "@angular/cli": "^19.2.15",
+    "@angular/compiler-cli": "^19.0.0",
+    "@copilotkit/angular": "workspace:*",
+    "@copilotkit/typescript-config": "workspace:*",
+    "@storybook/addon-essentials": "^8",
+    "@storybook/addon-interactions": "^8",
+    "@storybook/addon-themes": "^8",
+    "@storybook/angular": "^8",
+    "@storybook/test": "^8",
+    "@types/node": "^22",
+    "storybook": "^8",
+    "typescript": "5.8.2"
+  }
+}

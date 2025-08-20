@@ -39,3 +39,6 @@ yarn-error.log*
 
 *storybook.log
 storybook-static
+
+# Angular
+.angular/
