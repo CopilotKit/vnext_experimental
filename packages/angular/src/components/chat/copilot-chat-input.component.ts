@@ -104,10 +104,11 @@ import { cn } from '../../lib/utils';
                 (click)="handleStartTranscribe()">
               </copilot-chat-start-transcribe-button>
             }
-            <copilot-chat-send-button
-              [disabled]="!computedValue().trim()"
-              (click)="send()">
-            </copilot-chat-send-button>
+            <ng-container 
+              [copilotSlot]="computedSendButtonSlot()"
+              [slotDefault]="defaultSendButton"
+              [slotProps]="sendButtonProps()">
+            </ng-container>
           }
         </div>
       </div>
@@ -184,6 +185,9 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @Output() finishTranscribe = new EventEmitter<void>();
   @Output() addFile = new EventEmitter<void>();
   @Output() valueChange = new EventEmitter<string>();
+  
+  // Event handler for send button (used with slot)
+  sendButtonClick = () => this.send();
   
   // Services
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -263,6 +267,11 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     inputDisabled: this.computedMode() === 'processing',
     onKeyDown: (event: KeyboardEvent) => this.handleKeyDown(event),
     valueChange: (value: string) => this.handleValueChange(value)
+  }));
+  
+  sendButtonProps = computed(() => ({
+    disabled: !this.computedValue().trim(),
+    click: this.sendButtonClick
   }));
   
   audioRecorderProps = computed(() => ({

@@ -7,6 +7,7 @@ import {
   provideCopilotChatConfiguration,
   type ToolsMenuItem 
 } from '@copilotkit/angular';
+import { CustomSendButtonComponent } from '../components/custom-send-button.component';
 
 const meta: Meta<CopilotChatInputComponent> = {
   title: 'UI/CopilotChatInput',
@@ -44,6 +45,7 @@ const meta: Meta<CopilotChatInputComponent> = {
             [toolsMenu]="toolsMenu"
             [value]="value"
             [autoFocus]="autoFocus"
+            [sendButtonSlot]="sendButtonSlot"
             (submitMessage)="submitMessage($event)"
             (startTranscribe)="startTranscribe()"
             (cancelTranscribe)="cancelTranscribe()"
@@ -250,6 +252,46 @@ export const ExpandedTextarea: Story = {
     docs: {
       description: {
         story: 'Demonstrates the auto-expanding textarea with multiple lines of content.'
+      }
+    }
+  }
+};
+
+export const CustomSendButton: Story = {
+  name: 'Custom Send Button',
+  decorators: [
+    moduleMetadata({
+      imports: [CommonModule, CopilotChatInputComponent, CustomSendButtonComponent],
+      providers: [
+        provideCopilotChatConfiguration({
+          labels: {
+            chatInputPlaceholder: 'Type a message...',
+            chatInputToolbarToolsButtonLabel: 'Tools',
+          }
+        })
+      ],
+    }),
+  ],
+  render: () => ({
+    props: {
+      submitMessage: fn(),
+      sendButtonSlot: CustomSendButtonComponent, // Pass the component class directly
+    },
+    template: `
+      <div style="position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding: 16px;">
+        <div style="width: 100%; max-width: 640px;">
+          <copilot-chat-input
+            [sendButtonSlot]="sendButtonSlot"
+            (submitMessage)="submitMessage($event)"
+          ></copilot-chat-input>
+        </div>
+      </div>
+    `,
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates using a custom send button component through the slot system. The slot system allows you to replace default UI components with your own custom implementations.'
       }
     }
   }

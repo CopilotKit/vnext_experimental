@@ -10,7 +10,8 @@ import {
   EmbeddedViewRef,
   Injector,
   isDevMode,
-  Inject
+  Inject,
+  EventEmitter
 } from '@angular/core';
 import type { Type } from '@angular/core';
 import type { SlotValue, SlotContext } from './slot.types';
@@ -115,7 +116,20 @@ export class CopilotSlotDirective<T = any> implements OnInit, OnChanges {
     // Apply props
     const props = { ...this.slotProps, ...additionalProps };
     if (props) {
-      Object.assign(componentRef.instance as any, props);
+      const instance = componentRef.instance as any;
+      
+      // Assign non-EventEmitter props directly
+      Object.keys(props).forEach(key => {
+        const value = (props as any)[key];
+        if (key === 'click' && typeof value === 'function') {
+          // If click is a function, wire it to the component's click EventEmitter
+          if (instance.click && typeof instance.click.subscribe === 'function') {
+            instance.click.subscribe(value);
+          }
+        } else if (!(value instanceof EventEmitter)) {
+          instance[key] = value;
+        }
+      });
     }
 
     this.currentView = componentRef;
