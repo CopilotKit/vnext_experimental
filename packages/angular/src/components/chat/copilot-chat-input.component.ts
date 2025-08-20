@@ -69,8 +69,7 @@ import { cn } from '../../lib/utils';
           [inputAutoFocus]="computedAutoFocus()"
           [inputDisabled]="computedMode() === 'processing'"
           (keyDown)="handleKeyDown($event)"
-          (valueChange)="handleValueChange($event)">
-        </textarea>
+          (valueChange)="handleValueChange($event)"></textarea>
       }
       
       <!-- Toolbar -->

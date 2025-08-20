@@ -34,12 +34,12 @@ describe('CopilotChatInputComponent', () => {
     });
     
     it('should render textarea by default', () => {
-      const textarea = fixture.nativeElement.querySelector('copilot-chat-textarea');
+      const textarea = fixture.nativeElement.querySelector('textarea[copilotChatTextarea]');
       expect(textarea).toBeTruthy();
     });
     
     it('should render toolbar', () => {
-      const toolbar = fixture.nativeElement.querySelector('copilot-chat-toolbar');
+      const toolbar = fixture.nativeElement.querySelector('div[copilotChatToolbar]');
       expect(toolbar).toBeTruthy();
     });
     
@@ -63,7 +63,7 @@ describe('CopilotChatInputComponent', () => {
       const audioRecorder = fixture.nativeElement.querySelector('copilot-chat-audio-recorder');
       expect(audioRecorder).toBeTruthy();
       
-      const textarea = fixture.nativeElement.querySelector('copilot-chat-textarea');
+      const textarea = fixture.nativeElement.querySelector('textarea[copilotChatTextarea]');
       expect(textarea).toBeFalsy();
     });
     
@@ -74,7 +74,7 @@ describe('CopilotChatInputComponent', () => {
       component.mode = 'input';
       fixture.detectChanges();
       
-      const textarea = fixture.nativeElement.querySelector('copilot-chat-textarea');
+      const textarea = fixture.nativeElement.querySelector('textarea[copilotChatTextarea]');
       expect(textarea).toBeTruthy();
       
       const audioRecorder = fixture.nativeElement.querySelector('copilot-chat-audio-recorder');
@@ -253,13 +253,41 @@ describe('CopilotChatInputComponent', () => {
   });
 });
 
+// Test host component for CopilotChatTextareaComponent directive
+@Component({
+  template: `
+    <textarea copilotChatTextarea
+      [inputValue]="value"
+      [inputPlaceholder]="placeholder"
+      [inputMaxRows]="maxRows"
+      [inputAutoFocus]="autoFocus"
+      [inputDisabled]="disabled"
+      (valueChange)="onValueChange($event)"
+      (keyDown)="onKeyDown($event)">
+    </textarea>
+  `,
+  standalone: true,
+  imports: [CopilotChatTextareaComponent]
+})
+class TestHostComponent {
+  value = '';
+  placeholder = '';
+  maxRows = 5;
+  autoFocus = false;
+  disabled = false;
+  onValueChange = vi.fn();
+  onKeyDown = vi.fn();
+}
+
 describe('CopilotChatTextareaComponent', () => {
+  let hostComponent: TestHostComponent;
+  let fixture: ComponentFixture<TestHostComponent>;
   let component: CopilotChatTextareaComponent;
-  let fixture: ComponentFixture<CopilotChatTextareaComponent>;
+  let textareaElement: HTMLTextAreaElement;
   
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [CopilotChatTextareaComponent],
+      imports: [TestHostComponent, CopilotChatTextareaComponent],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
@@ -269,9 +297,14 @@ describe('CopilotChatTextareaComponent', () => {
       ]
     });
     
-    fixture = TestBed.createComponent(CopilotChatTextareaComponent);
-    component = fixture.componentInstance;
+    fixture = TestBed.createComponent(TestHostComponent);
+    hostComponent = fixture.componentInstance;
     fixture.detectChanges();
+    
+    // Get the directive instance
+    const textareaDebugElement = fixture.debugElement.query(By.css('textarea'));
+    component = textareaDebugElement.injector.get(CopilotChatTextareaComponent);
+    textareaElement = textareaDebugElement.nativeElement;
   });
   
   describe('Textarea Behavior', () => {
@@ -280,25 +313,18 @@ describe('CopilotChatTextareaComponent', () => {
     });
     
     it('should set placeholder from configuration', () => {
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      expect(textarea.placeholder).toBe('Test placeholder');
+      expect(textareaElement.placeholder).toBe('Test placeholder');
     });
     
     it('should handle input events', () => {
-      const spy = vi.fn();
-      component.valueChange.subscribe(spy);
+      textareaElement.value = 'New text';
+      textareaElement.dispatchEvent(new Event('input'));
       
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      textarea.value = 'New text';
-      textarea.dispatchEvent(new Event('input'));
-      
-      expect(spy).toHaveBeenCalledWith('New text');
+      expect(hostComponent.onValueChange).toHaveBeenCalledWith('New text');
       expect(component.value()).toBe('New text');
     });
     
     it('should auto-resize based on content', () => {
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      
       // Mock getComputedStyle to return values
       const originalGetComputedStyle = window.getComputedStyle;
       window.getComputedStyle = vi.fn().mockReturnValue({
@@ -307,18 +333,18 @@ describe('CopilotChatTextareaComponent', () => {
       });
       
       // Set scrollHeight manually for test
-      Object.defineProperty(textarea, 'scrollHeight', {
+      Object.defineProperty(textareaElement, 'scrollHeight', {
         configurable: true,
         value: 100
       });
       
       // Add multiple lines of text
-      textarea.value = 'Line 1\nLine 2\nLine 3';
-      textarea.dispatchEvent(new Event('input'));
+      textareaElement.value = 'Line 1\nLine 2\nLine 3';
+      textareaElement.dispatchEvent(new Event('input'));
       fixture.detectChanges();
       
       // Height should be set
-      const newHeight = textarea.style.height;
+      const newHeight = textareaElement.style.height;
       expect(newHeight).toBeTruthy();
       
       // Restore original getComputedStyle
@@ -326,41 +352,55 @@ describe('CopilotChatTextareaComponent', () => {
     });
     
     it('should respect maxRows limit', () => {
-      component.inputMaxRows = 3;
+      hostComponent.maxRows = 3;
       fixture.detectChanges();
       
       expect(component.maxRows()).toBe(3);
     });
     
     it('should focus when autoFocus is true', async () => {
-      component.inputAutoFocus = true;
-      fixture.detectChanges();
+      // Set autoFocus before creating the component
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [TestHostComponent, CopilotChatTextareaComponent],
+        providers: [
+          provideCopilotChatConfiguration({
+            labels: {
+              chatInputPlaceholder: 'Test placeholder'
+            }
+          })
+        ]
+      });
       
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Create a new fixture with autoFocus set to true
+      const newFixture = TestBed.createComponent(TestHostComponent);
+      const newHostComponent = newFixture.componentInstance;
+      newHostComponent.autoFocus = true;
+      newFixture.detectChanges();
       
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      expect(document.activeElement).toBe(textarea);
+      // Get the new textarea element
+      const newTextareaElement = newFixture.nativeElement.querySelector('textarea');
+      
+      // Wait for async focus to complete
+      await newFixture.whenStable();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      expect(document.activeElement).toBe(newTextareaElement);
     });
     
     it('should emit keyDown events', () => {
-      const spy = vi.fn();
-      component.keyDown.subscribe(spy);
-      
-      const textarea = fixture.nativeElement.querySelector('textarea');
       const event = new KeyboardEvent('keydown', { key: 'Enter' });
-      textarea.dispatchEvent(event);
+      textareaElement.dispatchEvent(event);
       
-      expect(spy).toHaveBeenCalled();
+      expect(hostComponent.onKeyDown).toHaveBeenCalled();
     });
   });
   
   describe('Public Methods', () => {
     it('should focus textarea programmatically', () => {
-      const textarea = fixture.nativeElement.querySelector('textarea');
-      
       component.focus();
       
-      expect(document.activeElement).toBe(textarea);
+      expect(document.activeElement).toBe(textareaElement);
     });
     
     it('should get current value', () => {
@@ -370,13 +410,10 @@ describe('CopilotChatTextareaComponent', () => {
     });
     
     it('should set value programmatically', () => {
-      const spy = vi.fn();
-      component.valueChange.subscribe(spy);
-      
       component.setValue('New value');
       
       expect(component.getValue()).toBe('New value');
-      expect(spy).toHaveBeenCalledWith('New value');
+      expect(hostComponent.onValueChange).toHaveBeenCalledWith('New value');
     });
   });
 });
