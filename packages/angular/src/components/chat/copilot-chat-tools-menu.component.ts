@@ -11,7 +11,7 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, icons } from 'lucide-angular';
+import { LucideAngularModule, Settings2, ChevronRight } from 'lucide-angular';
 import { CopilotChatToolbarButtonComponent } from './copilot-chat-buttons.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import type { ToolsMenuItem } from './copilot-chat-input.types';
@@ -32,7 +32,7 @@ import { cn } from '../../lib/utils';
           [class]="buttonClass()"
           (click)="toggleMenu()"
         >
-          <lucide-icon name="settings-2" [size]="18"></lucide-icon>
+          <lucide-angular [img]="Settings2Icon" [size]="18"></lucide-angular>
           <span class="text-sm font-normal">{{ label() }}</span>
         </button>
         
@@ -43,18 +43,19 @@ import { cn } from '../../lib/utils';
                 @if (item === '-') {
                   <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
                 } @else if (isMenuItem(item) && item.items && item.items.length > 0) {
-                  <div class="relative">
+                  <div class="relative group" 
+                       (mouseenter)="openSubmenu($index)"
+                       (mouseleave)="closeSubmenu($index)">
                     <button 
                       type="button"
                       class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm flex items-center justify-between"
-                      (mouseenter)="openSubmenu($index)"
-                      (mouseleave)="closeSubmenu($index)"
                     >
                       {{ item.label }}
-                      <lucide-icon name="chevron-right" [size]="12" class="ml-auto"></lucide-icon>
+                      <lucide-angular [img]="ChevronRightIcon" [size]="12" class="ml-auto"></lucide-angular>
                     </button>
                     @if (isSubmenuOpen($index)) {
-                      <div class="absolute left-full top-0 ml-1 min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
+                      <div class="absolute left-full top-0 -ml-1 min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1"
+                           style="padding-left: 8px;">
                         @for (subItem of item.items; track $index) {
                           @if (subItem === '-') {
                             <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
@@ -91,6 +92,9 @@ import { cn } from '../../lib/utils';
 })
 export class CopilotChatToolsMenuComponent {
   @ViewChild('menuContainer', { read: ElementRef }) menuContainer?: ElementRef;
+  
+  readonly Settings2Icon = Settings2;
+  readonly ChevronRightIcon = ChevronRight;
   
   @Input() set inputToolsMenu(val: (ToolsMenuItem | '-')[] | undefined) {
     this.toolsMenu.set(val || []);
@@ -183,7 +187,7 @@ export class CopilotChatToolsMenuComponent {
         newSet.delete(index);
         return newSet;
       });
-    }, 100);
+    }, 200);
   }
   
   isSubmenuOpen(index: number): boolean {

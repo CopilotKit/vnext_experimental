@@ -161,11 +161,17 @@ export const WithToolsMenu: Story = {
     toolsMenu: [
       {
         label: 'Do X',
-        action: () => console.log('Do X clicked')
+        action: () => {
+          console.log('Do X clicked');
+          alert('Action: Do X was clicked!');
+        }
       },
       {
         label: 'Do Y',
-        action: () => console.log('Do Y clicked')
+        action: () => {
+          console.log('Do Y clicked');
+          alert('Action: Do Y was clicked!');
+        }
       },
       '-',
       {
@@ -173,12 +179,18 @@ export const WithToolsMenu: Story = {
         items: [
           {
             label: 'Do Advanced X',
-            action: () => console.log('Do Advanced X clicked')
+            action: () => {
+              console.log('Do Advanced X clicked');
+              alert('Advanced Action: Do Advanced X was clicked!');
+            }
           },
           '-',
           {
             label: 'Do Advanced Y',
-            action: () => console.log('Do Advanced Y clicked')
+            action: () => {
+              console.log('Do Advanced Y clicked');
+              alert('Advanced Action: Do Advanced Y was clicked!');
+            }
           }
         ]
       }
@@ -249,11 +261,17 @@ export const Playground: Story = {
     toolsMenu: [
       {
         label: 'Clear Chat',
-        action: () => console.log('Clear chat clicked')
+        action: () => {
+          console.log('Clear chat clicked');
+          alert('Chat cleared!');
+        }
       },
       {
         label: 'Export',
-        action: () => console.log('Export clicked')
+        action: () => {
+          console.log('Export clicked');
+          alert('Chat exported!');
+        }
       },
       '-',
       {
@@ -261,11 +279,17 @@ export const Playground: Story = {
         items: [
           {
             label: 'Preferences',
-            action: () => console.log('Preferences clicked')
+            action: () => {
+              console.log('Preferences clicked');
+              alert('Opening preferences...');
+            }
           },
           {
             label: 'Account',
-            action: () => console.log('Account clicked')
+            action: () => {
+              console.log('Account clicked');
+              alert('Opening account settings...');
+            }
           },
         ]
       }
