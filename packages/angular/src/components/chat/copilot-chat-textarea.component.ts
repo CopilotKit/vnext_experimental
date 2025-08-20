@@ -12,7 +12,8 @@ import {
   computed,
   effect,
   inject,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  ViewEncapsulation
 } from '@angular/core';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import { cn } from '../../lib/utils';
@@ -22,6 +23,7 @@ import { cn } from '../../lib/utils';
   standalone: true,
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <textarea
       #textareaRef
@@ -39,13 +41,9 @@ import { cn } from '../../lib/utils';
   `,
   styles: [`
     :host {
-      display: block;
-      width: 100%;
+      display: contents;
     }
-  `],
-  host: {
-    '[class.copilot-chat-textarea]': 'true'
-  }
+  `]
 })
 export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   @ViewChild('textareaRef', { static: true }) textareaRef!: ElementRef<HTMLTextAreaElement>;

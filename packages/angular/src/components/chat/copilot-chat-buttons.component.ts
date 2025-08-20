@@ -6,7 +6,8 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
-  computed
+  computed,
+  ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
@@ -65,6 +66,7 @@ const chatInputToolbarSecondary = cn(
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div class="mr-[10px]">
       <button
@@ -100,6 +102,7 @@ export class CopilotChatSendButtonComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button
       type="button"
@@ -142,6 +145,7 @@ export class CopilotChatStartTranscribeButtonComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button
       type="button"
@@ -182,6 +186,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button
       type="button"
@@ -221,6 +226,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button
       type="button"
@@ -262,6 +268,7 @@ export class CopilotChatAddFileButtonComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button
       type="button"

@@ -3,7 +3,8 @@ import {
   Input,
   signal,
   computed,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { cn } from '../../lib/utils';
@@ -13,6 +14,7 @@ import { cn } from '../../lib/utils';
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div [class]="computedClass()">
       <ng-content></ng-content>
@@ -20,13 +22,9 @@ import { cn } from '../../lib/utils';
   `,
   styles: [`
     :host {
-      display: block;
-      width: 100%;
+      display: contents;
     }
-  `],
-  host: {
-    '[class.copilot-chat-toolbar]': 'true'
-  }
+  `]
 })
 export class CopilotChatToolbarComponent {
   @Input() set inputClass(val: string | undefined) {
@@ -36,9 +34,7 @@ export class CopilotChatToolbarComponent {
   customClass = signal<string | undefined>(undefined);
   
   computedClass = computed(() => {
-    const baseClasses = cn(
-      'w-full h-[60px] bg-transparent flex items-center justify-between'
-    );
+    const baseClasses = 'w-full h-[60px] bg-transparent flex items-center justify-between';
     return cn(baseClasses, this.customClass());
   });
 }

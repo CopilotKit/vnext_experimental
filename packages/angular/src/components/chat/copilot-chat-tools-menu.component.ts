@@ -7,21 +7,24 @@ import {
   ChangeDetectionStrategy,
   ViewChild,
   ElementRef,
-  HostListener
+  HostListener,
+  ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotChatToolbarButtonComponent } from './copilot-chat-buttons.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import type { ToolsMenuItem } from './copilot-chat-input.types';
+import { cn } from '../../lib/utils';
 
 @Component({
   selector: 'copilot-chat-tools-menu',
   standalone: true,
   imports: [CommonModule, CopilotChatToolbarButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     @if (hasItems()) {
-      <div class="tools-menu-container" #menuContainer>
+      <div class="relative inline-block" #menuContainer>
         <button
           type="button"
           [disabled]="disabled()"
@@ -29,7 +32,7 @@ import type { ToolsMenuItem } from './copilot-chat-input.types';
           (click)="toggleMenu()"
         >
           <!-- Settings Icon -->
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M12 1v6"></path>
             <path d="M12 17v6"></path>
@@ -40,37 +43,37 @@ import type { ToolsMenuItem } from './copilot-chat-input.types';
             <path d="M4.22 19.78l4.24-4.24"></path>
             <path d="M15.54 8.46l4.24-4.24"></path>
           </svg>
-          <span class="button-label">{{ label() }}</span>
+          <span class="text-sm font-normal">{{ label() }}</span>
         </button>
         
         @if (isOpen()) {
-          <div class="dropdown-menu" [class.show]="isOpen()">
-            <div class="dropdown-content">
+          <div class="absolute bottom-full right-0 mb-2 z-50" [class.hidden]="!isOpen()">
+            <div class="min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
               @for (item of toolsMenu(); track $index) {
                 @if (item === '-') {
-                  <div class="dropdown-separator"></div>
+                  <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
                 } @else if (isMenuItem(item) && item.items && item.items.length > 0) {
-                  <div class="dropdown-submenu">
+                  <div class="relative">
                     <button 
                       type="button"
-                      class="dropdown-item submenu-trigger"
+                      class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm flex items-center justify-between"
                       (mouseenter)="openSubmenu($index)"
                       (mouseleave)="closeSubmenu($index)"
                     >
                       {{ item.label }}
-                      <svg class="submenu-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <svg class="ml-auto size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="9 18 15 12 9 6"></polyline>
                       </svg>
                     </button>
                     @if (isSubmenuOpen($index)) {
-                      <div class="dropdown-submenu-content">
+                      <div class="absolute left-full top-0 ml-1 min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
                         @for (subItem of item.items; track $index) {
                           @if (subItem === '-') {
-                            <div class="dropdown-separator"></div>
+                            <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
                           } @else if (isMenuItem(subItem)) {
                             <button 
                               type="button"
-                              class="dropdown-item"
+                              class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
                               (click)="handleItemClick(subItem)"
                             >
                               {{ subItem.label }}
@@ -83,7 +86,7 @@ import type { ToolsMenuItem } from './copilot-chat-input.types';
                 } @else if (isMenuItem(item)) {
                   <button 
                     type="button"
-                    class="dropdown-item"
+                    class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
                     (click)="handleItemClick(item)"
                   >
                     {{ item.label }}
@@ -96,143 +99,7 @@ import type { ToolsMenuItem } from './copilot-chat-input.types';
       </div>
     }
   `,
-  styles: [`
-    .tools-menu-container {
-      position: relative;
-      display: inline-block;
-    }
-    
-    button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 6px;
-      background: transparent;
-      color: rgb(93, 93, 93);
-      border: none;
-      cursor: pointer;
-      transition: all 150ms;
-      font-size: 14px;
-      font-weight: normal;
-    }
-    
-    button:hover:not(:disabled) {
-      background: #E8E8E8;
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    :host-context(.dark) button {
-      color: rgb(243, 243, 243);
-    }
-    
-    :host-context(.dark) button:hover:not(:disabled) {
-      background: #303030;
-    }
-    
-    .button-label {
-      margin-left: 0.25rem;
-    }
-    
-    .dropdown-menu {
-      position: absolute;
-      bottom: 100%;
-      right: 0;
-      margin-bottom: 0.5rem;
-      z-index: 1000;
-      display: none;
-    }
-    
-    .dropdown-menu.show {
-      display: block;
-    }
-    
-    .dropdown-content {
-      min-width: 200px;
-      background: white;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      padding: 0.25rem;
-    }
-    
-    :host-context(.dark) .dropdown-content {
-      background: #1F1F1F;
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .dropdown-item {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      text-align: left;
-      background: none;
-      border: none;
-      border-radius: 4px;
-      color: inherit;
-      cursor: pointer;
-      transition: background 150ms;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    
-    .dropdown-item:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    :host-context(.dark) .dropdown-item:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .dropdown-separator {
-      height: 1px;
-      background: rgba(0, 0, 0, 0.1);
-      margin: 0.25rem 0;
-    }
-    
-    :host-context(.dark) .dropdown-separator {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .dropdown-submenu {
-      position: relative;
-    }
-    
-    .submenu-trigger {
-      position: relative;
-    }
-    
-    .submenu-arrow {
-      margin-left: auto;
-    }
-    
-    .dropdown-submenu-content {
-      position: absolute;
-      left: 100%;
-      top: 0;
-      margin-left: 0.25rem;
-      min-width: 200px;
-      background: white;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      padding: 0.25rem;
-    }
-    
-    :host-context(.dark) .dropdown-submenu-content {
-      background: #1F1F1F;
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-  `],
-  host: {
-    '[class.copilot-chat-tools-menu]': 'true'
-  }
+  styles: [``]
 })
 export class CopilotChatToolsMenuComponent {
   @ViewChild('menuContainer', { read: ElementRef }) menuContainer?: ElementRef;
@@ -262,8 +129,27 @@ export class CopilotChatToolsMenuComponent {
   });
   
   buttonClass = computed(() => {
-    const baseClasses = 'tools-button';
-    return this.customClass() || baseClasses;
+    const baseClasses = cn(
+      // Base button styles
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium',
+      'transition-all disabled:pointer-events-none disabled:opacity-50',
+      'shrink-0 outline-none',
+      'focus-visible:ring-[3px]',
+      // chatInputToolbarSecondary variant
+      'cursor-pointer',
+      'bg-transparent text-[#444444]',
+      'dark:text-white dark:border-[#404040]',
+      'transition-colors',
+      'focus:outline-none',
+      'hover:bg-[#f8f8f8] hover:text-[#333333]',
+      'dark:hover:bg-[#404040] dark:hover:text-[#FFFFFF]',
+      'disabled:cursor-not-allowed disabled:opacity-50',
+      'disabled:hover:bg-transparent disabled:hover:text-[#444444]',
+      'dark:disabled:hover:bg-transparent dark:disabled:hover:text-[#CCCCCC]',
+      // Size
+      'h-9 px-3 gap-2 font-normal'
+    );
+    return cn(baseClasses, this.customClass());
   });
   
   @HostListener('document:click', ['$event'])

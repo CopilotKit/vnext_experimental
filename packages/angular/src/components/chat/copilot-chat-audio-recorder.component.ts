@@ -9,7 +9,8 @@ import {
   OnDestroy,
   signal,
   computed,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  ViewEncapsulation
 } from '@angular/core';
 import { AudioRecorderState, AudioRecorderError } from './copilot-chat-input.types';
 
@@ -17,6 +18,7 @@ import { AudioRecorderState, AudioRecorderError } from './copilot-chat-input.typ
   selector: 'copilot-chat-audio-recorder',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div [class]="computedClass()">
       <canvas

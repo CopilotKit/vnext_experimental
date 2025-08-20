@@ -13,7 +13,8 @@ import {
   AfterViewInit,
   OnDestroy,
   Type,
-  ViewContainerRef
+  ViewContainerRef,
+  ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotDirective } from '../../lib/slots/slot.directive';
@@ -54,6 +55,7 @@ import { cn } from '../../lib/utils';
     CopilotChatToolsMenuComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div [class]="computedClass()">
       <!-- Main input area: either textarea or audio recorder -->
@@ -119,10 +121,10 @@ import { cn } from '../../lib/utils';
       display: block;
       width: 100%;
     }
-  `],
-  host: {
-    '[class.copilot-chat-input]': 'true'
-  }
+    .shadow-\\[0_4px_4px_0_\\#0000000a\\2c_0_0_1px_0_\\#0000009e\\] {
+      box-shadow: 0 4px 4px 0 #0000000a, 0 0 1px 0 #0000009e !important;
+    }
+  `]
 })
 export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @ViewChild('slotContainer', { read: ViewContainerRef }) slotContainer!: ViewContainerRef;
@@ -236,8 +238,8 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
       'flex w-full flex-col items-center justify-center',
       // Interaction
       'cursor-text',
-      // Overflow and clipping
-      'overflow-visible bg-clip-padding contain-inline-size',
+      // Overflow and clipping - REMOVED contain-inline-size which causes vertical text
+      'overflow-visible bg-clip-padding',
       // Background
       'bg-white dark:bg-[#303030]',
       // Visual effects
