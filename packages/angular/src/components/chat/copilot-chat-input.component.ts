@@ -14,11 +14,15 @@ import {
   OnDestroy,
   Type,
   ViewContainerRef,
-  ViewEncapsulation
+  ViewEncapsulation,
+  OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotDirective } from '../../lib/slots/slot.directive';
+import { SlotProxyDirective } from '../../lib/slots/slot-proxy.directive';
+import { SlotRegistryService } from '../../lib/slots/slot-registry.service';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
+import { LucideAngularModule, ArrowUp } from 'lucide-angular';
 import { CopilotChatTextareaComponent } from './copilot-chat-textarea.component';
 import { CopilotChatAudioRecorderComponent } from './copilot-chat-audio-recorder.component';
 import {
@@ -42,6 +46,8 @@ import { cn } from '../../lib/utils';
   imports: [
     CommonModule,
     CopilotSlotDirective,
+    SlotProxyDirective,
+    LucideAngularModule,
     CopilotChatTextareaComponent,
     CopilotChatAudioRecorderComponent,
     CopilotChatSendButtonComponent,
@@ -52,6 +58,7 @@ import { cn } from '../../lib/utils';
     CopilotChatToolbarComponent,
     CopilotChatToolsMenuComponent
   ],
+  providers: [SlotRegistryService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -104,11 +111,16 @@ import { cn } from '../../lib/utils';
                 (click)="handleStartTranscribe()">
               </copilot-chat-start-transcribe-button>
             }
-            <ng-container 
-              [copilotSlot]="computedSendButtonSlot()"
-              [slotDefault]="defaultSendButton"
-              [slotProps]="sendButtonProps()">
-            </ng-container>
+            <!-- Use the new slot proxy system -->
+            <button 
+              [slotProxy]="'chat.input.sendButton'"
+              [defaultClass]="defaultButtonClass"
+              [defaultProps]="sendButtonProps()"
+              (slotClick)="send()"
+              [disabled]="!computedValue().trim()"
+              (click)="send()">
+              <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
+            </button>
           }
         </div>
       </div>
@@ -124,7 +136,7 @@ import { cn } from '../../lib/utils';
     }
   `]
 })
-export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
+export class CopilotChatInputComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('slotContainer', { read: ViewContainerRef }) slotContainer!: ViewContainerRef;
   @ViewChild(CopilotChatTextareaComponent, { read: CopilotChatTextareaComponent }) textAreaRef?: CopilotChatTextareaComponent;
   @ViewChild(CopilotChatAudioRecorderComponent) audioRecorderRef?: CopilotChatAudioRecorderComponent;
@@ -189,8 +201,13 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   // Event handler for send button (used with slot)
   sendButtonClick = () => this.send();
   
+  // Icons and default classes
+  readonly ArrowUpIcon = ArrowUp;
+  readonly defaultButtonClass = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full h-9 w-9 bg-black text-white dark:bg-white dark:text-black transition-colors hover:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed';
+  
   // Services
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private slotRegistry = inject(SlotRegistryService);
   
   // Signals
   modeSignal = signal<CopilotChatInputMode>('input');
@@ -271,7 +288,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   
   sendButtonProps = computed(() => ({
     disabled: !this.computedValue().trim(),
-    click: this.sendButtonClick
+    click: () => this.send()
   }));
   
   audioRecorderProps = computed(() => ({
@@ -302,6 +319,32 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
         this.valueSignal.set(configValue);
       }
     });
+    
+    // Register slots when they change
+    effect(() => {
+      this.registerSlot('chat.input.sendButton', this.sendButtonSlotSignal());
+      this.registerSlot('chat.input.startTranscribeButton', this.startTranscribeButtonSlotSignal());
+      this.registerSlot('chat.input.cancelTranscribeButton', this.cancelTranscribeButtonSlotSignal());
+      this.registerSlot('chat.input.finishTranscribeButton', this.finishTranscribeButtonSlotSignal());
+      this.registerSlot('chat.input.addFileButton', this.addFileButtonSlotSignal());
+      this.registerSlot('chat.input.toolsButton', this.toolsButtonSlotSignal());
+      this.registerSlot('chat.input.toolbar', this.toolbarSlotSignal());
+      this.registerSlot('chat.input.textArea', this.textAreaSlotSignal());
+      this.registerSlot('chat.input.audioRecorder', this.audioRecorderSlotSignal());
+    });
+  }
+  
+  ngOnInit(): void {
+    // Register initial slots
+    this.registerSlot('chat.input.sendButton', this.sendButtonSlotSignal());
+    this.registerSlot('chat.input.startTranscribeButton', this.startTranscribeButtonSlotSignal());
+    this.registerSlot('chat.input.cancelTranscribeButton', this.cancelTranscribeButtonSlotSignal());
+    this.registerSlot('chat.input.finishTranscribeButton', this.finishTranscribeButtonSlotSignal());
+    this.registerSlot('chat.input.addFileButton', this.addFileButtonSlotSignal());
+    this.registerSlot('chat.input.toolsButton', this.toolsButtonSlotSignal());
+    this.registerSlot('chat.input.toolbar', this.toolbarSlotSignal());
+    this.registerSlot('chat.input.textArea', this.textAreaSlotSignal());
+    this.registerSlot('chat.input.audioRecorder', this.audioRecorderSlotSignal());
   }
   
   ngAfterViewInit(): void {
@@ -384,5 +427,35 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     // This will be rendered inside the toolbar slot
     // The actual rendering will be handled by the slot directive
     return undefined;
+  }
+  
+  private registerSlot(path: string, value: Type<any> | TemplateRef<any> | string | undefined): void {
+    if (!value) {
+      return;
+    }
+    
+    // Determine slot type and register
+    if (typeof value === 'string') {
+      // String is treated as a class override
+      this.slotRegistry.register(path, {
+        type: 'class',
+        value: value
+      });
+    } else if (value instanceof TemplateRef) {
+      // Template reference
+      this.slotRegistry.register(path, {
+        type: 'template',
+        value: value
+      });
+    } else {
+      // Component type
+      this.slotRegistry.register(path, {
+        type: 'component',
+        value: {
+          componentType: value,
+          props: {}
+        }
+      });
+    }
   }
 }
