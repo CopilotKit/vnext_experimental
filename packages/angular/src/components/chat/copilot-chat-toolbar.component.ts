@@ -10,21 +10,16 @@ import { CommonModule } from '@angular/common';
 import { cn } from '../../lib/utils';
 
 @Component({
-  selector: 'copilot-chat-toolbar',
+  selector: 'div[copilotChatToolbar]',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  template: `
-    <div [class]="computedClass()">
-      <ng-content></ng-content>
-    </div>
-  `,
-  styles: [`
-    :host {
-      display: contents;
-    }
-  `]
+  host: {
+    '[class]': 'computedClass()'
+  },
+  template: `<ng-content></ng-content>`,
+  styles: []
 })
 export class CopilotChatToolbarComponent {
   @Input() set inputClass(val: string | undefined) {

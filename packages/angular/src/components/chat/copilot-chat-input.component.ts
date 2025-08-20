@@ -64,17 +64,17 @@ import { cn } from '../../lib/utils';
           [inputShowControls]="true">
         </copilot-chat-audio-recorder>
       } @else {
-        <copilot-chat-textarea
+        <textarea copilotChatTextarea
           [inputValue]="computedValue()"
           [inputAutoFocus]="computedAutoFocus()"
           [inputDisabled]="computedMode() === 'processing'"
           (keyDown)="handleKeyDown($event)"
           (valueChange)="handleValueChange($event)">
-        </copilot-chat-textarea>
+        </textarea>
       }
       
       <!-- Toolbar -->
-      <copilot-chat-toolbar>
+      <div copilotChatToolbar>
         <div class="flex items-center">
           @if (addFile.observed) {
             <copilot-chat-add-file-button
@@ -113,7 +113,7 @@ import { cn } from '../../lib/utils';
             </copilot-chat-send-button>
           }
         </div>
-      </copilot-chat-toolbar>
+      </div>
     </div>
   `,
   styles: [`
@@ -128,7 +128,7 @@ import { cn } from '../../lib/utils';
 })
 export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @ViewChild('slotContainer', { read: ViewContainerRef }) slotContainer!: ViewContainerRef;
-  @ViewChild(CopilotChatTextareaComponent) textAreaRef?: CopilotChatTextareaComponent;
+  @ViewChild(CopilotChatTextareaComponent, { read: CopilotChatTextareaComponent }) textAreaRef?: CopilotChatTextareaComponent;
   @ViewChild(CopilotChatAudioRecorderComponent) audioRecorderRef?: CopilotChatAudioRecorderComponent;
   
   // Input properties

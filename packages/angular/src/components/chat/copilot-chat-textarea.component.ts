@@ -19,34 +19,29 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
 import { cn } from '../../lib/utils';
 
 @Component({
-  selector: 'copilot-chat-textarea',
+  selector: 'textarea[copilotChatTextarea]',
   standalone: true,
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  template: `
-    <textarea
-      #textareaRef
-      [value]="value()"
-      [placeholder]="placeholder()"
-      [disabled]="disabled()"
-      [class]="computedClass()"
-      [style.max-height.px]="maxHeight()"
-      [style.overflow]="'auto'"
-      [style.resize]="'none'"
-      (input)="onInput($event)"
-      (keydown)="onKeyDown($event)"
-      rows="1"
-    ></textarea>
-  `,
-  styles: [`
-    :host {
-      display: contents;
-    }
-  `]
+  host: {
+    '[value]': 'value()',
+    '[placeholder]': 'placeholder()',
+    '[disabled]': 'disabled()',
+    '[class]': 'computedClass()',
+    '[style.max-height.px]': 'maxHeight()',
+    '[style.overflow]': "'auto'",
+    '[style.resize]': "'none'",
+    '(input)': 'onInput($event)',
+    '(keydown)': 'onKeyDown($event)',
+    '[attr.rows]': '1'
+  },
+  template: '',
+  styles: []
 })
 export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
-  @ViewChild('textareaRef', { static: true }) textareaRef!: ElementRef<HTMLTextAreaElement>;
+  private elementRef = inject(ElementRef<HTMLTextAreaElement>);
+  get textareaRef() { return this.elementRef; }
   
   @Input() set inputValue(val: string | undefined) {
     this.value.set(val || '');
@@ -120,7 +115,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
     
     if (this.autoFocus()) {
       setTimeout(() => {
-        this.textareaRef.nativeElement.focus();
+        this.elementRef.nativeElement.focus();
       });
     }
   }
@@ -157,7 +152,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   }
   
   private calculateMaxHeight(): void {
-    const textarea = this.textareaRef.nativeElement;
+    const textarea = this.elementRef.nativeElement;
     const maxRowsValue = this.maxRows();
     
     // Save current value
@@ -189,7 +184,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   }
   
   private adjustHeight(): void {
-    const textarea = this.textareaRef.nativeElement;
+    const textarea = this.elementRef.nativeElement;
     const maxHeightValue = this.maxHeight();
     
     if (maxHeightValue > 0) {
@@ -202,7 +197,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
    * Public method to focus the textarea
    */
   focus(): void {
-    this.textareaRef.nativeElement.focus();
+    this.elementRef.nativeElement.focus();
   }
   
   /**
