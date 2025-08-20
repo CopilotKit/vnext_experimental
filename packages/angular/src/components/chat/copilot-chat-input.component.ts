@@ -35,6 +35,7 @@ import type {
   ToolsMenuItem,
   CopilotChatInputSlots
 } from './copilot-chat-input.types';
+import { cn } from '../../lib/utils';
 
 @Component({
   selector: 'copilot-chat-input',
@@ -57,55 +58,66 @@ import type {
     <div [class]="computedClass()">
       <!-- Main input area: either textarea or audio recorder -->
       @if (computedMode() === 'transcribe') {
-        <ng-container 
-          [copilotSlot]="computedAudioRecorderSlot()"
-          [slotDefault]="defaultAudioRecorder"
-          [slotProps]="audioRecorderProps()">
-        </ng-container>
+        <copilot-chat-audio-recorder
+          [inputShowControls]="true">
+        </copilot-chat-audio-recorder>
       } @else {
-        <ng-container 
-          [copilotSlot]="computedTextAreaSlot()"
-          [slotDefault]="defaultTextArea"
-          [slotProps]="textAreaProps()">
-        </ng-container>
+        <copilot-chat-textarea
+          [inputValue]="computedValue()"
+          [inputAutoFocus]="computedAutoFocus()"
+          [inputDisabled]="computedMode() === 'processing'"
+          (keyDown)="handleKeyDown($event)"
+          (valueChange)="handleValueChange($event)">
+        </copilot-chat-textarea>
       }
       
       <!-- Toolbar -->
-      <ng-container 
-        [copilotSlot]="computedToolbarSlot()"
-        [slotDefault]="defaultToolbar"
-        [slotProps]="toolbarProps()">
-      </ng-container>
-      
-      <!-- Hidden containers for rendering slot content -->
-      <div class="slot-content" style="display: none;">
-        <div #slotContainer></div>
-      </div>
+      <copilot-chat-toolbar>
+        <div class="flex items-center">
+          @if (addFile.observed) {
+            <copilot-chat-add-file-button
+              [disabled]="computedMode() === 'transcribe'"
+              (click)="handleAddFile()">
+            </copilot-chat-add-file-button>
+          }
+          @if (computedToolsMenu().length > 0) {
+            <copilot-chat-tools-menu
+              [inputToolsMenu]="computedToolsMenu()"
+              [inputDisabled]="computedMode() === 'transcribe'">
+            </copilot-chat-tools-menu>
+          }
+        </div>
+        <div class="flex items-center">
+          @if (computedMode() === 'transcribe') {
+            @if (cancelTranscribe.observed) {
+              <copilot-chat-cancel-transcribe-button
+                (click)="handleCancelTranscribe()">
+              </copilot-chat-cancel-transcribe-button>
+            }
+            @if (finishTranscribe.observed) {
+              <copilot-chat-finish-transcribe-button
+                (click)="handleFinishTranscribe()">
+              </copilot-chat-finish-transcribe-button>
+            }
+          } @else {
+            @if (startTranscribe.observed) {
+              <copilot-chat-start-transcribe-button
+                (click)="handleStartTranscribe()">
+              </copilot-chat-start-transcribe-button>
+            }
+            <copilot-chat-send-button
+              [disabled]="!computedValue().trim()"
+              (click)="send()">
+            </copilot-chat-send-button>
+          }
+        </div>
+      </copilot-chat-toolbar>
     </div>
   `,
   styles: [`
     :host {
       display: block;
       width: 100%;
-    }
-    
-    .chat-input-container {
-      display: flex;
-      width: 100%;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: text;
-      overflow: visible;
-      background-clip: padding-box;
-      contain: inline-size;
-      background: white;
-      box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.04), 0 0 1px 0 rgba(0, 0, 0, 0.62);
-      border-radius: 28px;
-    }
-    
-    :host-context(.dark) .chat-input-container {
-      background: #303030;
     }
   `],
   host: {
@@ -219,8 +231,19 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   });
   
   computedClass = computed(() => {
-    const baseClasses = 'chat-input-container';
-    return this.customClass() || baseClasses;
+    const baseClasses = cn(
+      // Layout
+      'flex w-full flex-col items-center justify-center',
+      // Interaction
+      'cursor-text',
+      // Overflow and clipping
+      'overflow-visible bg-clip-padding contain-inline-size',
+      // Background
+      'bg-white dark:bg-[#303030]',
+      // Visual effects
+      'shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]'
+    );
+    return cn(baseClasses, this.customClass());
   });
   
   // Slot getters - use different names to avoid conflicts with Input setters

@@ -52,7 +52,9 @@
             "configDir": ".storybook",
             "port": 6007,
             "compodoc": false,
-            "styles": []
+            "styles": [
+              "../../packages/angular/dist/styles.css"
+            ]
           }
         },
         "build-storybook": {
@@ -61,7 +63,9 @@
             "configDir": ".storybook",
             "outputDir": "storybook-static",
             "compodoc": false,
-            "styles": []
+            "styles": [
+              "../../packages/angular/dist/styles.css"
+            ]
           }
         }
       }

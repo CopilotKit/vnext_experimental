@@ -15,6 +15,7 @@ import {
   ChangeDetectionStrategy
 } from '@angular/core';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
+import { cn } from '../../lib/utils';
 
 @Component({
   selector: 'copilot-chat-textarea',
@@ -40,27 +41,6 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
     :host {
       display: block;
       width: 100%;
-    }
-    
-    textarea {
-      width: 100%;
-      padding: 1.25rem;
-      padding-bottom: 0;
-      outline: none;
-      resize: none;
-      background: transparent;
-      font-size: 16px;
-      line-height: 1.625;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    textarea::placeholder {
-      color: rgba(0, 0, 0, 0.47);
-    }
-    
-    :host-context(.dark) textarea::placeholder {
-      color: rgba(255, 255, 255, 0.8);
     }
   `],
   host: {
@@ -111,8 +91,19 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   });
   
   computedClass = computed(() => {
-    const baseClasses = 'copilot-chat-textarea-input';
-    return this.customClass() || baseClasses;
+    const baseClasses = cn(
+      // Layout and sizing
+      'w-full p-5 pb-0',
+      // Behavior
+      'outline-none resize-none',
+      // Background
+      'bg-transparent',
+      // Typography
+      'antialiased font-regular leading-relaxed text-[16px]',
+      // Placeholder styles
+      'placeholder:text-[#00000077] dark:placeholder:text-[#fffc]'
+    );
+    return cn(baseClasses, this.customClass());
   });
   
   constructor() {

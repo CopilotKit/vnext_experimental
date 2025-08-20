@@ -1,4 +1,5 @@
 import type { Preview } from "@storybook/angular";
+// Styles are loaded via angular.json configuration
 
 const preview: Preview = {
   parameters: {
