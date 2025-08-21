@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@ag-ui/client": "0.0.36-alpha.1",
+    "@angular/cdk": "^19.0.0",
     "@copilotkit/core": "workspace:*",
     "@copilotkit/shared": "workspace:*",
     "lucide-angular": "^0.540.0",

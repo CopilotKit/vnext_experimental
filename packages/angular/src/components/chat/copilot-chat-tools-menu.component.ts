@@ -5,14 +5,12 @@ import {
   computed,
   inject,
   ChangeDetectionStrategy,
-  ViewChild,
-  ElementRef,
-  HostListener,
   ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CdkMenuModule } from '@angular/cdk/menu';
+import { OverlayModule } from '@angular/cdk/overlay';
 import { LucideAngularModule, Settings2, ChevronRight } from 'lucide-angular';
-import { CopilotChatToolbarButtonComponent } from './copilot-chat-buttons.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import type { ToolsMenuItem } from './copilot-chat-input.types';
 import { cn } from '../../lib/utils';
@@ -20,79 +18,114 @@ import { cn } from '../../lib/utils';
 @Component({
   selector: 'copilot-chat-tools-menu',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CopilotChatToolbarButtonComponent],
+  imports: [
+    CommonModule,
+    CdkMenuModule,
+    OverlayModule,
+    LucideAngularModule
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   template: `
     @if (hasItems()) {
-      <div class="relative inline-block" #menuContainer>
-        <button
-          type="button"
-          [disabled]="disabled()"
-          [class]="buttonClass()"
-          (click)="toggleMenu()"
-        >
-          <lucide-angular [img]="Settings2Icon" [size]="18"></lucide-angular>
-          <span class="text-sm font-normal">{{ label() }}</span>
-        </button>
-        
-        @if (isOpen()) {
-          <div class="absolute bottom-full right-0 mb-2 z-50" [class.hidden]="!isOpen()">
-            <div class="min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1">
-              @for (item of toolsMenu(); track $index) {
-                @if (item === '-') {
-                  <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
-                } @else if (isMenuItem(item) && item.items && item.items.length > 0) {
-                  <div class="relative group" 
-                       (mouseenter)="openSubmenu($index)"
-                       (mouseleave)="closeSubmenu($index)">
-                    <button 
-                      type="button"
-                      class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm flex items-center justify-between"
-                    >
-                      {{ item.label }}
-                      <lucide-angular [img]="ChevronRightIcon" [size]="12" class="ml-auto"></lucide-angular>
-                    </button>
-                    @if (isSubmenuOpen($index)) {
-                      <div class="absolute left-full top-0 -ml-1 min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1"
-                           style="padding-left: 8px;">
-                        @for (subItem of item.items; track $index) {
-                          @if (subItem === '-') {
-                            <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
-                          } @else if (isMenuItem(subItem)) {
-                            <button 
-                              type="button"
-                              class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
-                              (click)="handleItemClick(subItem)"
-                            >
-                              {{ subItem.label }}
-                            </button>
-                          }
-                        }
-                      </div>
+      <button
+        type="button"
+        [disabled]="disabled()"
+        [class]="buttonClass()"
+        [cdkMenuTriggerFor]="menu"
+      >
+        <lucide-angular [img]="Settings2Icon" [size]="18"></lucide-angular>
+        <span class="text-sm font-normal">{{ label() }}</span>
+      </button>
+      
+      <ng-template #menu>
+        <div class="min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1"
+             cdkMenu>
+          @for (item of toolsMenu(); track $index) {
+            @if (item === '-') {
+              <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+            } @else if (isMenuItem(item)) {
+              @if (item.items && item.items.length > 0) {
+                <!-- Submenu trigger -->
+                <button
+                  type="button"
+                  class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm flex items-center justify-between"
+                  [cdkMenuTriggerFor]="submenu"
+                  cdkMenuItem
+                >
+                  {{ item.label }}
+                  <lucide-angular [img]="ChevronRightIcon" [size]="12" class="ml-auto"></lucide-angular>
+                </button>
+                
+                <!-- Submenu template -->
+                <ng-template #submenu>
+                  <div class="min-w-[200px] bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-1"
+                       cdkMenu>
+                    @for (subItem of item.items; track $index) {
+                      @if (subItem === '-') {
+                        <div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+                      } @else if (isMenuItem(subItem)) {
+                        <button
+                          type="button"
+                          class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
+                          (click)="handleItemClick(subItem)"
+                          cdkMenuItem
+                        >
+                          {{ subItem.label }}
+                        </button>
+                      }
                     }
                   </div>
-                } @else if (isMenuItem(item)) {
-                  <button 
-                    type="button"
-                    class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
-                    (click)="handleItemClick(item)"
-                  >
-                    {{ item.label }}
-                  </button>
-                }
+                </ng-template>
+              } @else {
+                <!-- Regular menu item -->
+                <button
+                  type="button"
+                  class="w-full px-3 py-2 text-left bg-transparent border-none rounded hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
+                  (click)="handleItemClick(item)"
+                  cdkMenuItem
+                >
+                  {{ item.label }}
+                </button>
               }
-            </div>
-          </div>
-        }
-      </div>
+            }
+          }
+        </div>
+      </ng-template>
     }
   `,
-  styles: [``]
+  styles: [`
+    /* CDK Overlay styles for positioning */
+    .cdk-overlay-pane {
+      position: absolute;
+      pointer-events: auto;
+      z-index: 1000;
+    }
+    
+    /* Ensure menu appears above other content */
+    .cdk-overlay-container {
+      position: fixed;
+      z-index: 1000;
+    }
+    
+    /* Menu animation */
+    [cdkMenu] {
+      animation: menuFadeIn 0.15s ease-out;
+    }
+    
+    @keyframes menuFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  `]
 })
 export class CopilotChatToolsMenuComponent {
-  @ViewChild('menuContainer', { read: ElementRef }) menuContainer?: ElementRef;
-  
   readonly Settings2Icon = Settings2;
   readonly ChevronRightIcon = ChevronRight;
   
@@ -111,8 +144,6 @@ export class CopilotChatToolsMenuComponent {
   toolsMenu = signal<(ToolsMenuItem | '-')[]>([]);
   disabled = signal<boolean>(false);
   customClass = signal<string | undefined>(undefined);
-  isOpen = signal<boolean>(false);
-  openSubmenus = signal<Set<number>>(new Set());
   
   hasItems = computed(() => this.toolsMenu().length > 0);
   
@@ -144,21 +175,6 @@ export class CopilotChatToolsMenuComponent {
     return cn(baseClasses, this.customClass());
   });
   
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.menuContainer && !this.menuContainer.nativeElement.contains(event.target)) {
-      this.isOpen.set(false);
-      this.openSubmenus.set(new Set());
-    }
-  }
-  
-  toggleMenu(): void {
-    this.isOpen.update(v => !v);
-    if (!this.isOpen()) {
-      this.openSubmenus.set(new Set());
-    }
-  }
-  
   isMenuItem(item: any): item is ToolsMenuItem {
     return item && typeof item === 'object' && 'label' in item;
   }
@@ -166,31 +182,6 @@ export class CopilotChatToolsMenuComponent {
   handleItemClick(item: ToolsMenuItem): void {
     if (item.action) {
       item.action();
-      this.isOpen.set(false);
-      this.openSubmenus.set(new Set());
     }
-  }
-  
-  openSubmenu(index: number): void {
-    this.openSubmenus.update(set => {
-      const newSet = new Set(set);
-      newSet.add(index);
-      return newSet;
-    });
-  }
-  
-  closeSubmenu(index: number): void {
-    // Add a small delay to prevent menu from closing when moving to submenu
-    setTimeout(() => {
-      this.openSubmenus.update(set => {
-        const newSet = new Set(set);
-        newSet.delete(index);
-        return newSet;
-      });
-    }, 200);
-  }
-  
-  isSubmenuOpen(index: number): boolean {
-    return this.openSubmenus().has(index);
   }
 }

@@ -258,6 +258,9 @@ importers:
       '@ag-ui/client':
         specifier: 0.0.36-alpha.1
         version: 0.0.36-alpha.1
+      '@angular/cdk':
+        specifier: ^19.0.0
+        version: 19.2.19(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)
       '@copilotkit/core':
         specifier: workspace:*
         version: link:../core
@@ -789,6 +792,13 @@ packages:
         optional: true
       tailwindcss:
         optional: true
+
+  '@angular/cdk@19.2.19':
+    resolution: {integrity: sha512-PCpJagurPBqciqcq4Z8+3OtKLb7rSl4w/qBJoIMua8CgnrjvA1i+SWawhdtfI1zlY8FSwhzLwXV0CmWWfFzQPg==}
+    peerDependencies:
+      '@angular/common': ^19.0.0 || ^20.0.0
+      '@angular/core': ^19.0.0 || ^20.0.0
+      rxjs: ^6.5.3 || ^7.4.0
 
   '@angular/cli@19.2.15':
     resolution: {integrity: sha512-YRIpARHWSOnWkHusUWTQgeUrPWMjWvtQrOkjWc6stF36z2KUzKMEng6EzUvH6sZolNSwVwOFpODEP0ut4aBkvQ==}
@@ -11167,6 +11177,14 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  '@angular/cdk@19.2.19(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)':
+    dependencies:
+      '@angular/common': 19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)
+      '@angular/core': 19.2.14(rxjs@7.8.1)(zone.js@0.15.1)
+      parse5: 7.3.0
+      rxjs: 7.8.1
+      tslib: 2.8.1
 
   '@angular/cli@19.2.15(@types/node@22.15.3)(chokidar@4.0.3)':
     dependencies:
