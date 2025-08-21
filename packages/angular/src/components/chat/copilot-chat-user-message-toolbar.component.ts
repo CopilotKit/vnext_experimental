@@ -29,8 +29,7 @@ export class CopilotChatUserMessageToolbarComponent {
   ngOnInit() {
     this.computedClass.set(
       cn(
-        'w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[4px]',
-        'invisible group-hover:visible',
+        "w-full bg-transparent flex items-center justify-end -mr-[5px] mt-[4px] invisible group-hover:visible",
         this.inputClass
       )
     );

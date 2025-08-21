@@ -53,7 +53,8 @@
             "port": 6007,
             "compodoc": false,
             "styles": [
-              "../../../packages/angular/dist/styles.css"
+              "../../../packages/angular/dist/styles.css",
+              ".storybook/preview.css"
             ]
           }
         },
@@ -64,7 +65,8 @@
             "outputDir": "storybook-static",
             "compodoc": false,
             "styles": [
-              "../../../packages/angular/dist/styles.css"
+              "../../../packages/angular/dist/styles.css",
+              ".storybook/preview.css"
             ]
           }
         }

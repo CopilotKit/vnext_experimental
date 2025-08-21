@@ -20,6 +20,7 @@ import { cn } from '../../lib/utils';
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <ng-content></ng-content>
   `,
@@ -82,6 +83,7 @@ export class CopilotChatUserMessageToolbarButtonComponent {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, CopilotChatUserMessageToolbarButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button 
       copilotChatUserMessageToolbarButton
@@ -136,6 +138,7 @@ export class CopilotChatUserMessageCopyButtonComponent {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, CopilotChatUserMessageToolbarButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <button 
       copilotChatUserMessageToolbarButton

@@ -193,7 +193,7 @@ export class CopilotChatUserMessageComponent {
   
   computedClass = computed(() => {
     return cn(
-      'flex flex-col items-end group pt-10',
+      "flex flex-col items-end group pt-10",
       this.customClass()
     );
   });

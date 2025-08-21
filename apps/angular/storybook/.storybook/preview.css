@@ -13,17 +13,3 @@ html.dark .sb-show-main,
 html.dark .sb-main-padded {
   background-color: #212121;
 }
-
-/* Fix for textarea layout */
-textarea {
-  display: block !important;
-  width: 100% !important;
-  white-space: pre-wrap !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-}
-
-/* Ensure shadow is applied */
-.shadow-\[0_4px_4px_0_\#0000000a\2c_0_0_1px_0_\#0000009e\] {
-  box-shadow: 0 4px 4px 0 #0000000a, 0 0 1px 0 #0000009e !important;
-}
