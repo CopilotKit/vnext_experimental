@@ -82,7 +82,7 @@ const meta: Meta<CopilotChatUserMessageComponent> = {
       ...args,
     },
     template: `
-      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px; background: #f5f5f5;">
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
         <div style="width: 100%; max-width: 640px;">
           <copilot-chat-user-message
             [message]="message"
