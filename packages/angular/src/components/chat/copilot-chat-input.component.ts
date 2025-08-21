@@ -198,6 +198,7 @@ export interface ToolbarContext {
                   <button 
                     type="button"
                     [class]="sendButtonProps?.className || defaultButtonClass"
+                    [style]="sendButtonProps?.style"
                     [disabled]="!computedValue().trim()"
                     (click)="send()">
                     <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>

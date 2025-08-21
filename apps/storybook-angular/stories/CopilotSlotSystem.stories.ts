@@ -207,7 +207,15 @@ export const PropsForDefaults: Story = {
     props: {
       submitMessage: fn(),
       buttonProps: {
-        className: 'rounded-lg px-6 py-3 bg-indigo-600 text-white font-bold hover:bg-indigo-700',
+        style: {
+          borderRadius: '8px',
+          padding: '12px 24px',
+          backgroundColor: '#4f46e5',
+          color: 'white',
+          fontWeight: 'bold',
+          border: 'none',
+          cursor: 'pointer'
+        }
       }
     },
     template: `
@@ -218,7 +226,13 @@ export const PropsForDefaults: Story = {
 &lt;/copilot-chat-input&gt;
 
 buttonProps = {{ '{' }}
-  className: 'rounded-lg px-6 py-3 bg-indigo-600 text-white'
+  style: {{ '{' }}
+    borderRadius: '8px',
+    padding: '12px 24px',
+    backgroundColor: '#4f46e5',
+    color: 'white',
+    fontWeight: 'bold'
+  {{ '}' }}
 {{ '}' }}</pre>
         
         <!-- Use the component -->
