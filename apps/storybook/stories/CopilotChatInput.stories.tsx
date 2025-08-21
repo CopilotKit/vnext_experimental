@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
 import {
   CopilotChatInput,
   CopilotChatConfigurationProvider,
@@ -9,28 +10,38 @@ const meta = {
   title: "UI/CopilotChatInput",
   component: CopilotChatInput,
   decorators: [
-    (Story) => (
-      <div
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          display: "flex",
-          justifyContent: "center",
-          padding: "16px",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: "640px" }}>
-          <CopilotChatConfigurationProvider>
-            <Story />
-          </CopilotChatConfigurationProvider>
+    (Story) => {
+      const [inputValue, setInputValue] = useState("");
+      
+      return (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div style={{ width: "100%", maxWidth: "640px" }}>
+            <CopilotChatConfigurationProvider
+              inputValue={inputValue}
+              onChangeInput={setInputValue}
+              onSubmitInput={(value) => {
+                console.log(`Message sent: ${value}`);
+                setInputValue("");
+              }}
+            >
+              <Story />
+            </CopilotChatConfigurationProvider>
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
   ],
   args: {
-    onSubmitMessage: (t: string) => console.log(`Message sent: ${t}`),
     onStartTranscribe: () => console.log("Transcribe started"),
     onCancelTranscribe: () => console.log("Transcribe cancelled"),
     onFinishTranscribe: () => console.log("Transcribe completed"),
