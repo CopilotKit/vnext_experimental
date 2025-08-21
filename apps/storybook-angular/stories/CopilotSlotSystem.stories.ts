@@ -120,23 +120,27 @@ export const TemplateSlot: Story = {
   }),
 };
 
-// Example 2: Component in template
-export const ComponentInTemplate: Story = {
-  name: '2. Component in Template',
+// Example 2: Inline custom button
+export const InlineCustomButton: Story = {
+  name: '2. Inline Custom Button (Airplane)',
   render: () => ({
     props: {
       submitMessage: fn(),
     },
     template: `
       <div style="padding: 20px; background: #f5f5f5;">
-        <h3 style="margin-bottom: 10px;">Use a custom component inside template:</h3>
+        <h3 style="margin-bottom: 10px;">Define custom button inline in template:</h3>
         <pre style="background: #282c34; color: #abb2bf; padding: 10px; border-radius: 4px;">
 &lt;copilot-chat-input&gt;
   &lt;ng-template #sendButton let-send="send" let-disabled="disabled"&gt;
-    &lt;airplane-send-button 
+    &lt;button 
       [disabled]="disabled" 
-      (click)="send()"&gt;
-    &lt;/airplane-send-button&gt;
+      (click)="send()"
+      class="rounded-full w-10 h-10 bg-blue-500 text-white 
+             hover:bg-blue-600 transition-colors mr-2 
+             disabled:opacity-50 disabled:cursor-not-allowed"&gt;
+      ✈️
+    &lt;/button&gt;
   &lt;/ng-template&gt;
 &lt;/copilot-chat-input&gt;</pre>
         
@@ -145,10 +149,12 @@ export const ComponentInTemplate: Story = {
           <copilot-chat-input
             (submitMessage)="submitMessage($event)">
             <ng-template #sendButton let-send="send" let-disabled="disabled">
-              <airplane-send-button 
+              <button 
                 [disabled]="disabled" 
-                (click)="send()">
-              </airplane-send-button>
+                (click)="send()"
+                class="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                ✈️
+              </button>
             </ng-template>
           </copilot-chat-input>
         </div>
@@ -157,9 +163,46 @@ export const ComponentInTemplate: Story = {
   }),
 };
 
-// Example 3: Props for tweaking defaults
+// Example 3: Component in template
+export const ComponentInTemplate: Story = {
+  name: '3. Component in Template (Rocket)',
+  render: () => ({
+    props: {
+      submitMessage: fn(),
+    },
+    template: `
+      <div style="padding: 20px; background: #f5f5f5;">
+        <h3 style="margin-bottom: 10px;">Use a pre-built component in template:</h3>
+        <pre style="background: #282c34; color: #abb2bf; padding: 10px; border-radius: 4px;">
+&lt;copilot-chat-input&gt;
+  &lt;ng-template #sendButton let-send="send" let-disabled="disabled"&gt;
+    &lt;rocket-send-button 
+      [disabled]="disabled" 
+      (click)="send()"&gt;
+    &lt;/rocket-send-button&gt;
+  &lt;/ng-template&gt;
+&lt;/copilot-chat-input&gt;</pre>
+        
+        <!-- Use the component -->
+        <div style="margin-top: 20px;">
+          <copilot-chat-input
+            (submitMessage)="submitMessage($event)">
+            <ng-template #sendButton let-send="send" let-disabled="disabled">
+              <rocket-send-button 
+                [disabled]="disabled" 
+                (click)="send()">
+              </rocket-send-button>
+            </ng-template>
+          </copilot-chat-input>
+        </div>
+      </div>
+    `,
+  }),
+};
+
+// Example 4: Props for tweaking defaults
 export const PropsForDefaults: Story = {
-  name: '3. Props for Tweaking Defaults',
+  name: '4. Props for Tweaking Defaults',
   render: () => ({
     props: {
       submitMessage: fn(),
@@ -174,9 +217,9 @@ export const PropsForDefaults: Story = {
 &lt;copilot-chat-input [sendButtonProps]="buttonProps"&gt;
 &lt;/copilot-chat-input&gt;
 
-buttonProps = {
+buttonProps = {{ '{' }}
   className: 'rounded-lg px-6 py-3 bg-indigo-600 text-white'
-}</pre>
+{{ '}' }}</pre>
         
         <!-- Use the component -->
         <div style="margin-top: 20px;">
@@ -190,9 +233,9 @@ buttonProps = {
   }),
 };
 
-// Example 4: Direct component (backward compat)
+// Example 5: Direct component (backward compat)
 export const DirectComponent: Story = {
-  name: '4. Direct Component (Backward Compatible)',
+  name: '5. Direct Component (Backward Compatible)',
   render: () => ({
     props: {
       submitMessage: fn(),
@@ -217,9 +260,9 @@ export const DirectComponent: Story = {
   }),
 };
 
-// Example 5: Multiple slots
+// Example 6: Multiple slots
 export const MultipleSlots: Story = {
-  name: '5. Multiple Slots',
+  name: '6. Multiple Slots',
   render: () => ({
     props: {
       submitMessage: fn(),
@@ -256,9 +299,9 @@ export const MultipleSlots: Story = {
   }),
 };
 
-// Example 6: Pure defaults
+// Example 7: Pure defaults
 export const PureDefaults: Story = {
-  name: '6. Pure Defaults',
+  name: '7. Pure Defaults',
   render: () => ({
     props: {
       submitMessage: fn(),
