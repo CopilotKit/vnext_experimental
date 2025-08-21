@@ -1,23 +1,23 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
-import { 
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import {
   CopilotChatUserMessageComponent,
   provideCopilotChatConfiguration,
   type UserMessage,
-} from '@copilotkit/angular';
+} from "@copilotkit/angular";
 
 // Simple default message
 const simpleMessage: UserMessage = {
-  id: 'simple-user-message',
-  content: 'Hello! Can you help me build an Angular component?',
-  role: 'user',
-  timestamp: new Date()
+  id: "simple-user-message",
+  content: "Hello! Can you help me build an Angular component?",
+  role: "user",
+  timestamp: new Date(),
 };
 
 // Longer user message
 const longMessage: UserMessage = {
-  id: 'long-user-message',
+  id: "long-user-message",
   content: `I need help with creating a complex Angular component that handles user authentication. Here are my requirements:
 
 1. The component should have login and signup forms
@@ -28,13 +28,13 @@ const longMessage: UserMessage = {
 6. Support social login (Google, GitHub)
 
 Can you help me implement this step by step? I'm particularly struggling with the form validation and state management parts.`,
-  role: 'user',
-  timestamp: new Date()
+  role: "user",
+  timestamp: new Date(),
 };
 
 // Code-related user message
 const codeMessage: UserMessage = {
-  id: 'code-user-message',
+  id: "code-user-message",
   content: `I'm getting this error in my Angular app:
 
 TypeError: Cannot read property 'map' of undefined
@@ -54,27 +54,25 @@ export class UserListComponent {
 }
 
 How can I fix this?`,
-  role: 'user',
-  timestamp: new Date()
+  role: "user",
+  timestamp: new Date(),
 };
 
 // Short question
 const shortMessage: UserMessage = {
-  id: 'short-user-message',
+  id: "short-user-message",
   content: "What's the difference between signals and observables in Angular?",
-  role: 'user',
-  timestamp: new Date()
+  role: "user",
+  timestamp: new Date(),
 };
 
 const meta: Meta<CopilotChatUserMessageComponent> = {
-  title: 'UI/CopilotChatUserMessage',
+  title: "UI/CopilotChatUserMessage",
   component: CopilotChatUserMessageComponent,
   decorators: [
     moduleMetadata({
       imports: [CommonModule, CopilotChatUserMessageComponent],
-      providers: [
-        provideCopilotChatConfiguration({})
-      ],
+      providers: [provideCopilotChatConfiguration({})],
     }),
   ],
   render: (args) => ({
@@ -99,7 +97,7 @@ const meta: Meta<CopilotChatUserMessageComponent> = {
   }),
   args: {
     message: simpleMessage,
-    editMessage: () => console.log('Edit clicked!'),
+    editMessage: () => console.log("Edit clicked!"),
   },
 };
 
@@ -117,7 +115,7 @@ export const LongMessage: Story = {
 export const WithEditButton: Story = {
   args: {
     message: simpleMessage,
-    editMessage: () => alert('Edit message clicked!'),
+    editMessage: () => alert("Edit message clicked!"),
   },
 };
 
@@ -131,14 +129,14 @@ export const WithoutEditButton: Story = {
 export const CodeRelatedMessage: Story = {
   args: {
     message: codeMessage,
-    editMessage: () => alert('Edit code message clicked!'),
+    editMessage: () => alert("Edit code message clicked!"),
   },
 };
 
 export const ShortQuestion: Story = {
   args: {
     message: shortMessage,
-    editMessage: () => console.log('Edit short message clicked!'),
+    editMessage: () => console.log("Edit short message clicked!"),
   },
 };
 
@@ -146,7 +144,7 @@ export const WithAdditionalToolbarItems: Story = {
   render: () => ({
     props: {
       message: simpleMessage,
-      editMessage: () => console.log('Edit clicked!'),
+      editMessage: () => console.log("Edit clicked!"),
     },
     template: `
       <ng-template #additionalItems>
@@ -164,7 +162,7 @@ export const WithAdditionalToolbarItems: Story = {
         </button>
       </ng-template>
       
-      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px; background: #f5f5f5;">
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
         <div style="width: 100%; max-width: 640px;">
           <copilot-chat-user-message
             [message]="message"
@@ -180,13 +178,13 @@ export const WithAdditionalToolbarItems: Story = {
 export const CustomAppearance: Story = {
   args: {
     message: simpleMessage,
-    editMessage: () => console.log('Edit clicked!'),
-    inputClass: 'bg-blue-50 border border-blue-200 rounded-lg p-4',
+    editMessage: () => console.log("Edit clicked!"),
+    inputClass: "bg-blue-50 border border-blue-200 rounded-lg p-4",
   },
   render: () => ({
     props: {
       message: simpleMessage,
-      editMessage: () => console.log('Edit clicked!'),
+      editMessage: () => console.log("Edit clicked!"),
     },
     template: `
       <ng-template #messageRenderer let-content="content">
@@ -212,11 +210,11 @@ export const CustomAppearance: Story = {
         </div>
       </ng-template>
       
-      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px; background: #f5f5f5;">
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
         <div style="width: 100%; max-width: 640px;">
           <copilot-chat-user-message
             [message]="message"
-            inputClass="bg-blue-50 border border-blue-200 rounded-lg p-4"
+            inputClass="bg-blue-50 border-blue-200 rounded-lg p-4"
             (editMessage)="editMessage($event)">
             <ng-template #messageRenderer let-content="content">
               <div class="prose dark:prose-invert bg-muted relative max-w-[80%] rounded-[18px] px-4 py-1.5 data-[multiline]:py-3 inline-block whitespace-pre-wrap text-blue-900 font-medium">
@@ -233,13 +231,14 @@ export const CustomAppearance: Story = {
 export const CustomComponents: Story = {
   args: {
     message: simpleMessage,
-    editMessage: () => console.log('Edit clicked!'),
-    inputClass: 'bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 shadow-sm',
+    editMessage: () => console.log("Edit clicked!"),
+    inputClass:
+      "bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 shadow-sm",
   },
   render: () => ({
     props: {
       message: simpleMessage,
-      editMessage: () => console.log('Edit clicked!'),
+      editMessage: () => console.log("Edit clicked!"),
     },
     template: `
       <ng-template #messageRenderer let-content="content">
@@ -248,7 +247,7 @@ export const CustomComponents: Story = {
         </div>
       </ng-template>
       
-      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px; background: #f5f5f5;">
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
         <div style="width: 100%; max-width: 640px;">
           <copilot-chat-user-message
             [message]="message"
@@ -269,11 +268,12 @@ export const CustomComponents: Story = {
 export const WithBranchNavigation: Story = {
   args: {
     message: {
-      id: 'branch-message',
-      content: 'This message has multiple branches. You can navigate between them using the branch controls.',
-      role: 'user',
+      id: "branch-message",
+      content:
+        "This message has multiple branches. You can navigate between them using the branch controls.",
+      role: "user",
     },
-    editMessage: () => console.log('Edit clicked!'),
+    editMessage: () => console.log("Edit clicked!"),
     branchIndex: 2,
     numberOfBranches: 3,
     switchToBranch: ({ branchIndex }) =>
@@ -284,11 +284,12 @@ export const WithBranchNavigation: Story = {
 export const WithManyBranches: Story = {
   args: {
     message: {
-      id: 'many-branches-message',
-      content: 'This is branch 5 of 10. Use the navigation arrows to explore different variations of this message.',
-      role: 'user',
+      id: "many-branches-message",
+      content:
+        "This is branch 5 of 10. Use the navigation arrows to explore different variations of this message.",
+      role: "user",
     },
-    editMessage: () => console.log('Edit clicked!'),
+    editMessage: () => console.log("Edit clicked!"),
     branchIndex: 4,
     numberOfBranches: 10,
     switchToBranch: ({ branchIndex }) =>

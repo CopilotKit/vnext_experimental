@@ -1,18 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { fn } from '@storybook/test';
-import { 
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { Component, EventEmitter, Input, Output } from "@angular/core";
+import { fn } from "@storybook/test";
+import {
   CopilotChatInputComponent,
   provideCopilotChatConfiguration,
-  type ToolsMenuItem 
-} from '@copilotkit/angular';
-import { CustomSendButtonComponent } from '../components/custom-send-button.component';
+  type ToolsMenuItem,
+} from "@copilotkit/angular";
+import { CustomSendButtonComponent } from "../components/custom-send-button.component";
 
 // Additional custom button components for slot demonstrations
 @Component({
-  selector: 'airplane-send-button',
+  selector: "airplane-send-button",
   standalone: true,
   template: `
     <button
@@ -23,12 +23,12 @@ import { CustomSendButtonComponent } from '../components/custom-send-button.comp
     >
       ✈️
     </button>
-  `
+  `,
 })
 class AirplaneSendButtonComponent {
   @Input() disabled = false;
   @Output() click = new EventEmitter<void>();
-  
+
   handleClick(): void {
     if (!this.disabled) {
       this.click.emit();
@@ -37,7 +37,7 @@ class AirplaneSendButtonComponent {
 }
 
 @Component({
-  selector: 'rocket-send-button',
+  selector: "rocket-send-button",
   standalone: true,
   template: `
     <button
@@ -48,12 +48,12 @@ class AirplaneSendButtonComponent {
     >
       🚀
     </button>
-  `
+  `,
 })
 class RocketSendButtonComponent {
   @Input() disabled = false;
   @Output() click = new EventEmitter<void>();
-  
+
   handleClick(): void {
     if (!this.disabled) {
       this.click.emit();
@@ -62,19 +62,25 @@ class RocketSendButtonComponent {
 }
 
 const meta: Meta<CopilotChatInputComponent> = {
-  title: 'UI/CopilotChatInput',
+  title: "UI/CopilotChatInput",
   component: CopilotChatInputComponent,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, CustomSendButtonComponent, AirplaneSendButtonComponent, RocketSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        CustomSendButtonComponent,
+        AirplaneSendButtonComponent,
+        RocketSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatInputToolbarToolsButtonLabel: 'Tools',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+            chatInputToolbarToolsButtonLabel: "Tools",
+          },
+        }),
       ],
     }),
   ],
@@ -111,7 +117,7 @@ const meta: Meta<CopilotChatInputComponent> = {
     `,
   }),
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
         component: `
@@ -165,76 +171,76 @@ The component supports extensive customization through:
 - **Styling**: Apply custom CSS classes
 
 See individual stories below for detailed examples of each customization approach.
-        `
-      }
-    }
+        `,
+      },
+    },
   },
   argTypes: {
     mode: {
-      control: { type: 'radio' },
-      options: ['input', 'transcribe'],
-      description: 'The input mode - text input or voice recording',
+      control: { type: "radio" },
+      options: ["input", "transcribe"],
+      description: "The input mode - text input or voice recording",
       table: {
         type: { summary: "'input' | 'transcribe'" },
-        defaultValue: { summary: 'input' },
-        category: 'Behavior'
-      }
+        defaultValue: { summary: "input" },
+        category: "Behavior",
+      },
     },
     inputClass: {
-      control: { type: 'text' },
-      description: 'Custom CSS class for styling the input container',
+      control: { type: "text" },
+      description: "Custom CSS class for styling the input container",
       table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-        category: 'Appearance'
-      }
+        type: { summary: "string" },
+        defaultValue: { summary: "" },
+        category: "Appearance",
+      },
     },
     value: {
-      control: { type: 'text' },
-      description: 'The current input value (for controlled components)',
+      control: { type: "text" },
+      description: "The current input value (for controlled components)",
       table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: '' },
-        category: 'Data'
-      }
+        type: { summary: "string" },
+        defaultValue: { summary: "" },
+        category: "Data",
+      },
     },
     autoFocus: {
-      control: { type: 'boolean' },
-      description: 'Auto-focus the input when the component mounts',
+      control: { type: "boolean" },
+      description: "Auto-focus the input when the component mounts",
       table: {
-        type: { summary: 'boolean' },
-        defaultValue: { summary: 'true' },
-        category: 'Behavior'
-      }
+        type: { summary: "boolean" },
+        defaultValue: { summary: "true" },
+        category: "Behavior",
+      },
     },
     toolsMenu: {
-      description: 'Array of menu items for the tools dropdown',
+      description: "Array of menu items for the tools dropdown",
       table: {
         type: { summary: '(ToolsMenuItem | "-")[]' },
-        category: 'Features'
-      }
+        category: "Features",
+      },
     },
     sendButtonSlot: {
-      description: 'Custom send button component or template',
+      description: "Custom send button component or template",
       table: {
-        type: { summary: 'Component | TemplateRef' },
-        category: 'Customization'
-      }
+        type: { summary: "Component | TemplateRef" },
+        category: "Customization",
+      },
     },
     additionalToolbarItems: {
-      description: 'Additional toolbar items to display',
+      description: "Additional toolbar items to display",
       table: {
-        type: { summary: 'TemplateRef | Component[]' },
-        category: 'Customization'
-      }
-    }
+        type: { summary: "TemplateRef | Component[]" },
+        category: "Customization",
+      },
+    },
   },
   args: {
-    mode: 'input',
-    inputClass: '',
-    value: '',
+    mode: "input",
+    inputClass: "",
+    value: "",
     autoFocus: true,
-  }
+  },
 };
 
 export default meta;
@@ -245,53 +251,53 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'The default chat input with all standard features enabled.'
-      }
-    }
-  }
+        story: "The default chat input with all standard features enabled.",
+      },
+    },
+  },
 };
 
 // 2. With Tools Menu
 export const WithToolsMenu: Story = {
-  name: 'With Tools Menu',
+  name: "With Tools Menu",
   args: {
     toolsMenu: [
       {
-        label: 'Do X',
+        label: "Do X",
         action: () => {
-          console.log('Do X clicked');
-          alert('Action: Do X was clicked!');
-        }
+          console.log("Do X clicked");
+          alert("Action: Do X was clicked!");
+        },
       },
       {
-        label: 'Do Y',
+        label: "Do Y",
         action: () => {
-          console.log('Do Y clicked');
-          alert('Action: Do Y was clicked!');
-        }
+          console.log("Do Y clicked");
+          alert("Action: Do Y was clicked!");
+        },
       },
-      '-',
+      "-",
       {
-        label: 'Advanced',
+        label: "Advanced",
         items: [
           {
-            label: 'Do Advanced X',
+            label: "Do Advanced X",
             action: () => {
-              console.log('Do Advanced X clicked');
-              alert('Advanced Action: Do Advanced X was clicked!');
-            }
+              console.log("Do Advanced X clicked");
+              alert("Advanced Action: Do Advanced X was clicked!");
+            },
           },
-          '-',
+          "-",
           {
-            label: 'Do Advanced Y',
+            label: "Do Advanced Y",
             action: () => {
-              console.log('Do Advanced Y clicked');
-              alert('Advanced Action: Do Advanced Y was clicked!');
-            }
-          }
-        ]
-      }
-    ] as (ToolsMenuItem | '-')[]
+              console.log("Do Advanced Y clicked");
+              alert("Advanced Action: Do Advanced Y was clicked!");
+            },
+          },
+        ],
+      },
+    ] as (ToolsMenuItem | "-")[],
   },
   parameters: {
     docs: {
@@ -311,17 +317,17 @@ toolsMenu: [
   }
 ]
 \`\`\`
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 3. Transcribe Mode
 export const TranscribeMode: Story = {
-  name: 'Transcribe Mode',
+  name: "Transcribe Mode",
   args: {
-    mode: 'transcribe',
+    mode: "transcribe",
     autoFocus: false,
   },
   parameters: {
@@ -338,25 +344,29 @@ Emits:
 - \`(startTranscribe)\` - Recording started
 - \`(cancelTranscribe)\` - Recording cancelled
 - \`(finishTranscribe)\` - Recording completed
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 4. Custom Send Button
 export const CustomSendButton: Story = {
-  name: 'Custom Send Button (Template Slot)',
+  name: "Custom Send Button (Template Slot)",
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, CustomSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        CustomSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatInputToolbarToolsButtonLabel: 'Tools',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+            chatInputToolbarToolsButtonLabel: "Tools",
+          },
+        }),
       ],
     }),
   ],
@@ -402,27 +412,27 @@ Replace the default send button using Angular's template slot system.
 The template receives:
 - \`send\`: Function to trigger message submission
 - \`disabled\`: Boolean indicating if sending is allowed
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 5. With Additional Toolbar Items
 export const WithAdditionalToolbarItems: Story = {
-  name: 'With Additional Toolbar Items',
+  name: "With Additional Toolbar Items",
   render: () => ({
     props: {
       submitMessage: fn(),
       addFile: fn(),
       onCustomAction: () => {
-        console.log('Custom action clicked!');
-        alert('Custom action clicked!');
+        console.log("Custom action clicked!");
+        alert("Custom action clicked!");
       },
       onAnotherAction: () => {
-        console.log('Another custom action clicked!');
-        alert('Another custom action clicked!');
-      }
+        console.log("Another custom action clicked!");
+        alert("Another custom action clicked!");
+      },
     },
     template: `
       <ng-template #additionalItems>
@@ -478,17 +488,17 @@ Add custom toolbar items alongside the default tools.
 
 These items appear in the toolbar area next to the default buttons.
 Note: The template is passed as an input property, not as content projection.
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 6. Prefilled Text
 export const PrefilledText: Story = {
-  name: 'Prefilled Text',
+  name: "Prefilled Text",
   args: {
-    value: 'Hello, this is a prefilled message!',
+    value: "Hello, this is a prefilled message!",
   },
   parameters: {
     docs: {
@@ -507,17 +517,18 @@ Useful for:
 - Draft messages
 - Edit mode
 - Template messages
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 7. Expanded Textarea
 export const ExpandedTextarea: Story = {
-  name: 'Expanded Textarea',
+  name: "Expanded Textarea",
   args: {
-    value: 'This is a longer message that will cause the textarea to expand.\n\nIt has multiple lines to demonstrate the auto-resize functionality.\n\nThe textarea will grow up to the maxRows limit.',
+    value:
+      "This is a longer message that will cause the textarea to expand.\n\nIt has multiple lines to demonstrate the auto-resize functionality.\n\nThe textarea will grow up to the maxRows limit.",
   },
   parameters: {
     docs: {
@@ -530,15 +541,15 @@ Features:
 - Smooth expansion animation
 - Maintains scroll position
 - Respects maxRows configuration
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // 8. Custom Styling
 export const CustomStyling: Story = {
-  name: 'Custom Styling',
+  name: "Custom Styling",
   render: (args) => ({
     props: {
       ...args,
@@ -593,7 +604,7 @@ export const CustomStyling: Story = {
     `,
   }),
   args: {
-    inputClass: 'custom-chat-input',
+    inputClass: "custom-chat-input",
   },
   parameters: {
     docs: {
@@ -623,17 +634,17 @@ This example shows:
 - Modified typography for the textarea
 - Hover effects on buttons
 - Box shadow for depth
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 // === SLOT CUSTOMIZATION EXAMPLES ===
 // The following stories demonstrate Angular's powerful slot system for component customization
 
 export const SlotTemplateFullControl: Story = {
-  name: 'Slot: Template with Full Control',
+  name: "Slot: Template with Full Control",
   render: () => ({
     props: {
       submitMessage: fn(),
@@ -680,23 +691,27 @@ The most flexible approach - use ng-template to completely control the send butt
 - Direct access to template variables
 - Can use any Angular directives
 - Perfect for complex custom components
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 export const SlotInlineButton: Story = {
-  name: 'Slot: Inline Custom Button',
+  name: "Slot: Inline Custom Button",
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, AirplaneSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        AirplaneSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+          },
+        }),
       ],
     }),
   ],
@@ -746,23 +761,27 @@ Create a custom button directly in the template without a separate component.
 - One-off designs
 - Prototyping
 - When you don't need reusability
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 export const SlotWithComponent: Story = {
-  name: 'Slot: Using Custom Component',
+  name: "Slot: Using Custom Component",
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, RocketSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        RocketSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+          },
+        }),
       ],
     }),
   ],
@@ -815,23 +834,27 @@ Use a standalone Angular component within the template slot.
 - Must accept \`disabled\` input
 - Must emit \`click\` event
 - Should be standalone or properly imported
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 export const SlotDirectComponent: Story = {
-  name: 'Slot: Direct Component (Legacy)',
+  name: "Slot: Direct Component (Legacy)",
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, RocketSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        RocketSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+          },
+        }),
       ],
     }),
   ],
@@ -874,23 +897,27 @@ Legacy approach for backward compatibility - pass a component class directly.
 - Less flexible than templates
 - Harder to pass custom props
 - Component must match expected interface exactly
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
 
 export const SlotMultipleCustomizations: Story = {
-  name: 'Slot: Multiple Customizations',
+  name: "Slot: Multiple Customizations",
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatInputComponent, AirplaneSendButtonComponent],
+      imports: [
+        CommonModule,
+        CopilotChatInputComponent,
+        AirplaneSendButtonComponent,
+      ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-          }
-        })
+            chatInputPlaceholder: "Type a message...",
+          },
+        }),
       ],
     }),
   ],
@@ -961,8 +988,8 @@ Customize multiple aspects of the component simultaneously using different slots
 - More slots coming soon!
 
 Each slot operates independently, allowing for granular customization.
-        `
-      }
-    }
-  }
+        `,
+      },
+    },
+  },
 };
