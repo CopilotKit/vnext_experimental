@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@source "../**/*.{ts,html}";
+@source "../../apps/angular/storybook/stories/**/*.{ts,html}";
+
+@import "tw-animate-css";
 
 :root {
   --background: oklch(1 0 0);
@@ -130,7 +133,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
