@@ -275,15 +275,19 @@ export const CustomSendButton: Story = {
   render: () => ({
     props: {
       submitMessage: fn(),
-      sendButtonSlot: CustomSendButtonComponent, // Pass the component class directly
     },
     template: `
       <div style="position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; padding: 16px;">
         <div style="width: 100%; max-width: 640px;">
           <copilot-chat-input
-            [sendButtonSlot]="sendButtonSlot"
-            (submitMessage)="submitMessage($event)"
-          ></copilot-chat-input>
+            (submitMessage)="submitMessage($event)">
+            <ng-template #sendButton let-send="send" let-disabled="disabled">
+              <custom-send-button 
+                [disabled]="disabled" 
+                (click)="send()">
+              </custom-send-button>
+            </ng-template>
+          </copilot-chat-input>
         </div>
       </div>
     `,

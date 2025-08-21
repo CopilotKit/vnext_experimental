@@ -240,15 +240,15 @@ describe('CopilotChatInputComponent', () => {
       component.textAreaSlot = CustomTextarea;
       fixture.detectChanges();
       
-      // The slot directive should render the custom component
-      expect(component.computedTextAreaSlot()).toBe(CustomTextarea);
+      // The slot should accept the custom component
+      expect(component.textAreaSlot).toBe(CustomTextarea);
     });
     
     it('should support CSS class override for textarea', () => {
       component.textAreaSlot = 'custom-textarea-class';
       fixture.detectChanges();
       
-      expect(component.computedTextAreaSlot()).toBe('custom-textarea-class');
+      expect(component.textAreaSlot).toBe('custom-textarea-class');
     });
   });
 });

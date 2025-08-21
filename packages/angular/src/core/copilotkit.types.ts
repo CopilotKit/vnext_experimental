@@ -1,6 +1,6 @@
 import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { Observable } from "rxjs";
-import { CopilotKitCoreConfig, CopilotKitCore, FrontendTool } from "@copilotkit/core";
+import { CopilotKitCoreConfig, CopilotKitCore } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
 import type { z } from "zod";
 

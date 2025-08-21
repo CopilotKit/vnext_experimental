@@ -66,6 +66,14 @@ export function renderSlot<T = any>(
       props,
       effectiveInjector
     );
+  } else if (isDirectiveType(effectiveSlot)) {
+    // Directive type - cannot be rendered directly, use default
+    return defaultComponent ? createComponent(
+      viewContainer,
+      defaultComponent,
+      props,
+      effectiveInjector
+    ) : null;
   } else if (typeof effectiveSlot === 'object') {
     // Object: property overrides for default component
     return createComponent(
@@ -99,7 +107,24 @@ function createComponent<T>(
   });
   
   if (props) {
-    Object.assign(componentRef.instance as any, props);
+    // Apply props to component instance
+    const instance = componentRef.instance as any;
+    for (const key in props) {
+      const value = props[key];
+      // Try multiple naming conventions
+      // 1. Try inputXxx format (e.g., toolsMenu -> inputToolsMenu)
+      const inputKey = `input${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+      
+      if (typeof instance[inputKey] === 'function' || inputKey in instance) {
+        // Use the input setter
+        instance[inputKey] = value;
+      } else if (key in instance) {
+        // Direct property assignment
+        instance[key] = value;
+      }
+    }
+    // Trigger change detection
+    componentRef.changeDetectorRef.detectChanges();
   }
   
   return componentRef;
@@ -138,8 +163,20 @@ export function isComponentType(value: any): boolean {
     return false;
   }
   
-  return value.prototype.constructor &&
-         !!(value.ɵcmp || Object.prototype.hasOwnProperty.call(value, 'ɵcmp')); // Angular component marker
+  // Check for Angular component marker
+  return !!(value.ɵcmp || Object.prototype.hasOwnProperty.call(value, 'ɵcmp'));
+}
+
+/**
+ * Checks if a value is a directive type.
+ */
+export function isDirectiveType(value: any): boolean {
+  if (typeof value !== 'function') {
+    return false;
+  }
+  
+  // Check for Angular directive marker
+  return !!(value.ɵdir || Object.prototype.hasOwnProperty.call(value, 'ɵdir'));
 }
 
 /**
