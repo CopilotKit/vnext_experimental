@@ -86,20 +86,35 @@ export interface ToolbarContext {
           </copilot-chat-audio-recorder>
         }
       } @else {
-        @if (textAreaTemplate) {
-          <ng-container *ngTemplateOutlet="textAreaTemplate; context: textAreaContext()"></ng-container>
-        } @else if (textAreaSlot && !isDirective(textAreaSlot)) {
-          <copilot-slot
-            [slot]="textAreaSlot"
-            [context]="textAreaContext()"
-            [props]="textAreaProps">
-          </copilot-slot>
+        @if (textAreaTemplate || textAreaSlot) {
+          @if (textAreaTemplate) {
+            <ng-container *ngTemplateOutlet="textAreaTemplate; context: textAreaContext()"></ng-container>
+          } @else if (!isDirective(textAreaSlot)) {
+            <copilot-slot
+              [slot]="textAreaSlot"
+              [context]="textAreaContext()"
+              [props]="textAreaProps">
+            </copilot-slot>
+          } @else {
+            <!-- Fallback for directive slots -->
+            <textarea copilotChatTextarea
+              [inputValue]="computedValue()"
+              [inputAutoFocus]="computedAutoFocus()"
+              [inputDisabled]="computedMode() === 'processing'"
+              [inputClass]="textAreaProps?.className || textAreaProps?.class"
+              [inputMaxRows]="textAreaProps?.maxRows"
+              [inputPlaceholder]="textAreaProps?.placeholder"
+              (keyDown)="handleKeyDown($event)"
+              (valueChange)="handleValueChange($event)"></textarea>
+          }
         } @else {
           <textarea copilotChatTextarea
             [inputValue]="computedValue()"
             [inputAutoFocus]="computedAutoFocus()"
             [inputDisabled]="computedMode() === 'processing'"
-            [inputClass]="textAreaProps?.className"
+            [inputClass]="textAreaProps?.className || textAreaProps?.class"
+            [inputMaxRows]="textAreaProps?.maxRows"
+            [inputPlaceholder]="textAreaProps?.placeholder"
             (keyDown)="handleKeyDown($event)"
             (valueChange)="handleValueChange($event)"></textarea>
         }
@@ -142,6 +157,9 @@ export interface ToolbarContext {
                   [inputDisabled]="computedMode() === 'transcribe'">
                 </copilot-chat-tools-menu>
               }
+            }
+            @if (additionalToolbarItems) {
+              <ng-container *ngTemplateOutlet="additionalToolbarItems"></ng-container>
             }
           </div>
           <div class="flex items-center">
@@ -197,9 +215,9 @@ export interface ToolbarContext {
                 <div class="mr-[10px]">
                   <button 
                     type="button"
-                    [class]="sendButtonProps?.className || defaultButtonClass"
+                    [class]="sendButtonProps?.className || sendButtonProps?.class || defaultButtonClass"
                     [style]="sendButtonProps?.style"
-                    [disabled]="!computedValue().trim()"
+                    [disabled]="!computedValue().trim() || computedMode() === 'processing'"
                     (click)="send()">
                     <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
                   </button>
@@ -281,6 +299,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @Input() set inputClass(val: string | undefined) {
     this.customClass.set(val);
   }
+  @Input() additionalToolbarItems?: TemplateRef<any>;
   
   // Output events
   @Output() submitMessage = new EventEmitter<string>();
@@ -321,8 +340,9 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   customClass = signal<string | undefined>(undefined);
   
   // Default components
-  // Note: CopilotChatTextareaComponent is a directive, not a component
+  // Note: CopilotChatTextareaComponent uses attribute selector but is a component
   defaultAudioRecorder = CopilotChatAudioRecorderComponent;
+  defaultSendButton: any = null; // Will be set to avoid circular dependency
   
   // Computed values
   computedMode = computed(() => this.modeSignal());
@@ -353,7 +373,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   // Context for slots (reactive via signals)
   sendButtonContext = computed<SendButtonContext>(() => ({
     send: () => this.send(),
-    disabled: !this.computedValue().trim(),
+    disabled: !this.computedValue().trim() || this.computedMode() === 'processing',
     value: this.computedValue()
   }));
   
@@ -366,6 +386,9 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     value: this.computedValue(),
     autoFocus: this.computedAutoFocus(),
     disabled: this.computedMode() === 'processing',
+    maxRows: this.textAreaProps?.maxRows,
+    placeholder: this.textAreaProps?.placeholder,
+    className: this.textAreaProps?.className || this.textAreaProps?.class,
     onKeyDown: (event: KeyboardEvent) => this.handleKeyDown(event),
     onChange: (value: string) => this.handleValueChange(value)
   }));

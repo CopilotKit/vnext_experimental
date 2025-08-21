@@ -28,6 +28,7 @@ export { CopilotKitToolRenderComponent } from "./components/copilotkit-tool-rend
 // Chat Input Components
 export * from "./components/chat/copilot-chat-input.types";
 export { CopilotChatInputComponent } from "./components/chat/copilot-chat-input.component";
+export { CopilotChatInputDefaults } from "./components/chat/copilot-chat-input-defaults";
 export { CopilotChatTextareaComponent } from "./components/chat/copilot-chat-textarea.component";
 export { CopilotChatAudioRecorderComponent } from "./components/chat/copilot-chat-audio-recorder.component";
 export {
