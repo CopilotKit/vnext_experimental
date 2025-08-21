@@ -106,91 +106,108 @@ export interface ToolbarContext {
       }
       
       <!-- Toolbar -->
-      <copilot-slot
-        [slot]="toolbarTemplate || toolbarSlot"
-        [context]="toolbarContext()"
-        [props]="toolbarProps"
-        [defaultComponent]="defaultToolbar">
+      @if (toolbarTemplate || toolbarSlot) {
+        <copilot-slot
+          [slot]="toolbarTemplate || toolbarSlot"
+          [context]="toolbarContext()"
+          [props]="toolbarProps">
+        </copilot-slot>
+      } @else {
         <div copilotChatToolbar>
           <div class="flex items-center">
             @if (addFile.observed) {
-              <copilot-slot
-                [slot]="addFileButtonTemplate || addFileButtonSlot"
-                [context]="addFileContext()"
-                [props]="addFileButtonProps"
-                [defaultComponent]="defaultAddFileButton">
+              @if (addFileButtonTemplate || addFileButtonSlot) {
+                <copilot-slot
+                  [slot]="addFileButtonTemplate || addFileButtonSlot"
+                  [context]="addFileContext()"
+                  [props]="addFileButtonProps">
+                </copilot-slot>
+              } @else {
                 <copilot-chat-add-file-button
                   [disabled]="computedMode() === 'transcribe'"
                   (click)="handleAddFile()">
                 </copilot-chat-add-file-button>
-              </copilot-slot>
+              }
             }
             @if (computedToolsMenu().length > 0) {
-              <copilot-slot
-                [slot]="toolsButtonTemplate || toolsButtonSlot"
-                [context]="toolsContext()"
-                [props]="toolsButtonProps"
-                [defaultComponent]="defaultToolsButton">
+              @if (toolsButtonTemplate || toolsButtonSlot) {
+                <copilot-slot
+                  [slot]="toolsButtonTemplate || toolsButtonSlot"
+                  [context]="toolsContext()"
+                  [props]="toolsButtonProps">
+                </copilot-slot>
+              } @else {
                 <copilot-chat-tools-menu
                   [inputToolsMenu]="computedToolsMenu()"
                   [inputDisabled]="computedMode() === 'transcribe'">
                 </copilot-chat-tools-menu>
-              </copilot-slot>
+              }
             }
           </div>
           <div class="flex items-center">
             @if (computedMode() === 'transcribe') {
               @if (cancelTranscribe.observed) {
-                <copilot-slot
-                  [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot"
-                  [context]="cancelTranscribeContext()"
-                  [props]="cancelTranscribeButtonProps"
-                  [defaultComponent]="defaultCancelTranscribeButton">
+                @if (cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot) {
+                  <copilot-slot
+                    [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot"
+                    [context]="cancelTranscribeContext()"
+                    [props]="cancelTranscribeButtonProps">
+                  </copilot-slot>
+                } @else {
                   <copilot-chat-cancel-transcribe-button
                     (click)="handleCancelTranscribe()">
                   </copilot-chat-cancel-transcribe-button>
-                </copilot-slot>
+                }
               }
               @if (finishTranscribe.observed) {
-                <copilot-slot
-                  [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonSlot"
-                  [context]="finishTranscribeContext()"
-                  [props]="finishTranscribeButtonProps"
-                  [defaultComponent]="defaultFinishTranscribeButton">
+                @if (finishTranscribeButtonTemplate || finishTranscribeButtonSlot) {
+                  <copilot-slot
+                    [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonSlot"
+                    [context]="finishTranscribeContext()"
+                    [props]="finishTranscribeButtonProps">
+                  </copilot-slot>
+                } @else {
                   <copilot-chat-finish-transcribe-button
                     (click)="handleFinishTranscribe()">
                   </copilot-chat-finish-transcribe-button>
-                </copilot-slot>
+                }
               }
             } @else {
               @if (startTranscribe.observed) {
-                <copilot-slot
-                  [slot]="startTranscribeButtonTemplate || startTranscribeButtonSlot"
-                  [context]="startTranscribeContext()"
-                  [props]="startTranscribeButtonProps"
-                  [defaultComponent]="defaultStartTranscribeButton">
+                @if (startTranscribeButtonTemplate || startTranscribeButtonSlot) {
+                  <copilot-slot
+                    [slot]="startTranscribeButtonTemplate || startTranscribeButtonSlot"
+                    [context]="startTranscribeContext()"
+                    [props]="startTranscribeButtonProps">
+                  </copilot-slot>
+                } @else {
                   <copilot-chat-start-transcribe-button
                     (click)="handleStartTranscribe()">
                   </copilot-chat-start-transcribe-button>
-                </copilot-slot>
+                }
               }
               <!-- Send button with slot -->
-              <copilot-slot
-                [slot]="sendButtonTemplate || sendButtonSlot || sendButtonComponent"
-                [context]="sendButtonContext()"
-                [props]="sendButtonProps"
-                [defaultComponent]="defaultSendButton">
-                <button 
-                  [class]="sendButtonProps?.className || defaultButtonClass"
-                  [disabled]="!computedValue().trim()"
-                  (click)="send()">
-                  <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
-                </button>
-              </copilot-slot>
+              @if (sendButtonTemplate || sendButtonSlot || sendButtonComponent) {
+                <copilot-slot
+                  [slot]="sendButtonTemplate || sendButtonSlot || sendButtonComponent"
+                  [context]="sendButtonContext()"
+                  [props]="sendButtonProps">
+                </copilot-slot>
+              } @else {
+                <div class="mr-[10px]">
+                  <button 
+                    type="button"
+                    [class]="sendButtonProps?.className || defaultButtonClass"
+                    [disabled]="!computedValue().trim()"
+                    (click)="send()">
+                    <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
+                  </button>
+                </div>
+              }
             }
           </div>
         </div>
-      </copilot-slot>
+      }
     </div>
   `,
   styles: [`
@@ -274,7 +291,23 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   
   // Icons and default classes
   readonly ArrowUpIcon = ArrowUp;
-  readonly defaultButtonClass = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full h-9 w-9 bg-black text-white dark:bg-white dark:text-black transition-colors hover:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed';
+  readonly defaultButtonClass = cn(
+    // Base button styles
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium',
+    'transition-all disabled:pointer-events-none disabled:opacity-50',
+    'shrink-0 outline-none',
+    'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+    // chatInputToolbarPrimary variant
+    'cursor-pointer',
+    'bg-black text-white',
+    'dark:bg-white dark:text-black dark:focus-visible:outline-white',
+    'rounded-full h-9 w-9',
+    'transition-colors',
+    'focus:outline-none',
+    'hover:opacity-70 disabled:hover:opacity-100',
+    'disabled:cursor-not-allowed disabled:bg-[#00000014] disabled:text-[rgb(13,13,13)]',
+    'dark:disabled:bg-[#454545] dark:disabled:text-white'
+  );
   
   // Services
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -289,13 +322,6 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   // Default components
   // Note: CopilotChatTextareaComponent is a directive, not a component
   defaultAudioRecorder = CopilotChatAudioRecorderComponent;
-  defaultSendButton = CopilotChatSendButtonComponent;
-  defaultStartTranscribeButton = CopilotChatStartTranscribeButtonComponent;
-  defaultCancelTranscribeButton = CopilotChatCancelTranscribeButtonComponent;
-  defaultFinishTranscribeButton = CopilotChatFinishTranscribeButtonComponent;
-  defaultAddFileButton = CopilotChatAddFileButtonComponent;
-  defaultToolsButton = CopilotChatToolsMenuComponent;
-  defaultToolbar = CopilotChatToolbarComponent;
   
   // Computed values
   computedMode = computed(() => this.modeSignal());
@@ -314,7 +340,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
       // Interaction
       'cursor-text',
       // Overflow and clipping
-      'overflow-visible bg-clip-padding',
+      'overflow-visible bg-clip-padding contain-inline-size',
       // Background
       'bg-white dark:bg-[#303030]',
       // Visual effects
