@@ -42,5 +42,17 @@ export {
 export { CopilotChatToolbarComponent } from "./components/chat/copilot-chat-toolbar.component";
 export { CopilotChatToolsMenuComponent } from "./components/chat/copilot-chat-tools-menu.component";
 
+// Chat User Message Components
+export * from "./components/chat/copilot-chat-user-message.types";
+export { CopilotChatUserMessageComponent } from "./components/chat/copilot-chat-user-message.component";
+export { CopilotChatUserMessageRendererComponent } from "./components/chat/copilot-chat-user-message-renderer.component";
+export {
+  CopilotChatUserMessageToolbarButtonComponent,
+  CopilotChatUserMessageCopyButtonComponent,
+  CopilotChatUserMessageEditButtonComponent,
+} from "./components/chat/copilot-chat-user-message-buttons.component";
+export { CopilotChatUserMessageToolbarComponent } from "./components/chat/copilot-chat-user-message-toolbar.component";
+export { CopilotChatUserMessageBranchNavigationComponent } from "./components/chat/copilot-chat-user-message-branch-navigation.component";
+
 // Testing utilities are not exported from the main entry point
 // They should be imported directly from '@copilotkit/angular/testing' if needed
