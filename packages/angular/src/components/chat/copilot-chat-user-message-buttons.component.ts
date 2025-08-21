@@ -29,9 +29,9 @@ import { cn } from '../../lib/utils';
   host: {
     '[class]': 'computedClass()',
     '[attr.title]': 'title',
+    '[attr.disabled]': 'disabled ? true : null',
     'type': 'button',
-    '[attr.aria-label]': 'title',
-    '(click)': 'handleClick($event)'
+    '[attr.aria-label]': 'title'
   },
   hostDirectives: [
     {
@@ -46,7 +46,6 @@ export class CopilotChatUserMessageToolbarButtonComponent {
   @Input() set inputClass(value: string | undefined) {
     this.customClass.set(value);
   }
-  @Output() click = new EventEmitter<MouseEvent>();
   
   private customClass = signal<string | undefined>(undefined);
   
@@ -74,12 +73,6 @@ export class CopilotChatUserMessageToolbarButtonComponent {
       this.customClass()
     );
   });
-  
-  handleClick(event: MouseEvent): void {
-    if (!this.disabled) {
-      this.click.emit(event);
-    }
-  }
 }
 
 // Copy button component
