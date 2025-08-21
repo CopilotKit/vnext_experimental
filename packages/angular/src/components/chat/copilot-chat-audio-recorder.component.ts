@@ -23,63 +23,12 @@ import { AudioRecorderState, AudioRecorderError } from './copilot-chat-input.typ
     <div [class]="computedClass()">
       <canvas
         #canvasRef
-        width="300"
-        height="100"
-        class="audio-waveform"
+        class="w-full h-full"
+        [style.imageRendering]="'pixelated'"
       ></canvas>
-      @if (showControls()) {
-        <div class="controls">
-          <span class="status">{{ statusText() }}</span>
-        </div>
-      }
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      padding: 1.25rem;
-    }
-    
-    .audio-recorder-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-    }
-    
-    .audio-waveform {
-      width: 100%;
-      height: 100px;
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.05);
-    }
-    
-    :host-context(.dark) .audio-waveform {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 14px;
-      color: rgba(0, 0, 0, 0.6);
-    }
-    
-    :host-context(.dark) .controls {
-      color: rgba(255, 255, 255, 0.6);
-    }
-    
-    .status {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-  `],
+  styles: [],
   host: {
     '[class.copilot-chat-audio-recorder]': 'true'
   }
@@ -105,8 +54,8 @@ export class CopilotChatAudioRecorderComponent implements AfterViewInit, OnDestr
   
   // Computed values
   computedClass = computed(() => {
-    const baseClasses = 'audio-recorder-container';
-    return this.customClass() || baseClasses;
+    const baseClasses = 'h-11 w-full px-5';
+    return `${baseClasses} ${this.customClass() || ''}`;
   });
   
   statusText = computed(() => {
@@ -122,15 +71,13 @@ export class CopilotChatAudioRecorderComponent implements AfterViewInit, OnDestr
   
   // Animation and canvas properties
   private animationFrameId?: number;
-  private canvasContext?: CanvasRenderingContext2D | null;
-  private isAnimating = false;
   
   ngAfterViewInit(): void {
-    this.initializeCanvas();
+    this.startAnimation();
   }
   
   ngOnDestroy(): void {
-    this.stopAnimation();
+    this.dispose();
   }
   
   /**
@@ -159,22 +106,14 @@ export class CopilotChatAudioRecorderComponent implements AfterViewInit, OnDestr
   }
   
   /**
-   * Stop recording audio
+   * Stop recording audio and return blob
    */
-  async stop(): Promise<void> {
+  async stop(): Promise<Blob> {
     try {
-      if (this.state() !== 'recording') {
-        return;
-      }
-      
-      this.setState('processing');
-      
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       this.setState('idle');
-      this.stopAnimation();
-      
+      // Return empty blob - stub implementation
+      const emptyBlob = new Blob([], { type: 'audio/webm' });
+      return emptyBlob;
     } catch (err) {
       const error = new AudioRecorderError(
         err instanceof Error ? err.message : 'Failed to stop recording'
@@ -192,133 +131,111 @@ export class CopilotChatAudioRecorderComponent implements AfterViewInit, OnDestr
     return this.state();
   }
   
+  /**
+   * Dispose of resources
+   */
+  dispose(): void {
+    this.stopAnimation();
+  }
+
   private setState(state: AudioRecorderState): void {
     this.state.set(state);
     this.stateChange.emit(state);
   }
   
-  private initializeCanvas(): void {
-    const canvas = this.canvasRef.nativeElement;
-    
-    try {
-      this.canvasContext = canvas.getContext('2d');
-      
-      if (this.canvasContext) {
-        // Set initial canvas properties
-        this.canvasContext.strokeStyle = '#4F46E5'; // Indigo color
-        this.canvasContext.lineWidth = 2;
-        this.canvasContext.lineCap = 'round';
-        
-        // Draw initial flat line
-        this.drawWaveform(new Array(50).fill(0.5));
-      }
-    } catch {
-      // Canvas not supported in test environment
-      console.debug('Canvas initialization skipped (likely in test environment)');
-    }
-  }
-  
   private startAnimation(): void {
-    if (this.isAnimating) return;
-    
-    this.isAnimating = true;
-    this.animate();
+    const canvas = this.canvasRef.nativeElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const draw = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      // Update canvas dimensions if container resized
+      if (
+        canvas.width !== rect.width * dpr ||
+        canvas.height !== rect.height * dpr
+      ) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.imageSmoothingEnabled = false;
+      }
+
+      // Configuration
+      const barWidth = 2;
+      const minHeight = 2;
+      const maxHeight = 20;
+      const gap = 2;
+      const numSamples = Math.ceil(rect.width / (barWidth + gap));
+
+      // Get loudness data
+      const loudnessData = this.getLoudness(numSamples);
+
+      // Clear canvas
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      // Get current foreground color
+      const computedStyle = getComputedStyle(canvas);
+      const currentForeground = computedStyle.color;
+
+      // Draw bars
+      ctx.fillStyle = currentForeground;
+      const centerY = rect.height / 2;
+
+      for (let i = 0; i < loudnessData.length; i++) {
+        const sample = loudnessData[i] ?? 0;
+        const barHeight = Math.round(
+          sample * (maxHeight - minHeight) + minHeight
+        );
+        const x = Math.round(i * (barWidth + gap));
+        const y = Math.round(centerY - barHeight / 2);
+
+        ctx.fillRect(x, y, barWidth, barHeight);
+      }
+
+      this.animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
   }
   
   private stopAnimation(): void {
-    this.isAnimating = false;
-    
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = undefined;
     }
-    
-    // Draw flat line when stopped
-    if (this.canvasContext) {
-      this.drawWaveform(new Array(50).fill(0.5));
-    }
   }
-  
-  private animate(): void {
-    if (!this.isAnimating) return;
-    
-    const samples = this.generateWaveform(50);
-    this.drawWaveform(samples);
-    
-    this.animationFrameId = requestAnimationFrame(() => this.animate());
-  }
-  
-  private generateWaveform(sampleCount: number): number[] {
-    const elapsed = Date.now() / 1000;
+
+  private getLoudness(n: number): number[] {
+    const elapsed = Date.now() / 1000; // Use current timestamp directly
     const samples: number[] = [];
-    
-    for (let i = 0; i < sampleCount; i++) {
+
+    for (let i = 0; i < n; i++) {
       // Create a position that moves from left to right over time
-      const position = (i / sampleCount) * 10 + elapsed * 0.5;
-      
+      const position = (i / n) * 10 + elapsed * 0.5; // Scroll speed (slower)
+
       // Generate waveform using multiple sine waves for realism
       const wave1 = Math.sin(position * 2) * 0.3;
       const wave2 = Math.sin(position * 5 + elapsed) * 0.2;
       const wave3 = Math.sin(position * 0.5 + elapsed * 0.3) * 0.4;
-      
+
       // Add some randomness for natural variation
       const noise = (Math.random() - 0.5) * 0.1;
-      
+
       // Combine waves and add envelope for realistic amplitude variation
-      const envelope = Math.sin(elapsed * 0.7) * 0.5 + 0.5;
+      const envelope = Math.sin(elapsed * 0.7) * 0.5 + 0.5; // Slow amplitude modulation
       let amplitude = (wave1 + wave2 + wave3 + noise) * envelope;
-      
+
       // Clamp to 0-1 range
-      amplitude = Math.max(0, Math.min(1, amplitude * 0.5 + 0.5));
-      
+      amplitude = Math.max(0, Math.min(1, amplitude * 0.5 + 0.3));
+
       samples.push(amplitude);
     }
-    
+
     return samples;
-  }
-  
-  private drawWaveform(samples: number[]): void {
-    if (!this.canvasContext) return;
-    
-    const canvas = this.canvasRef.nativeElement;
-    const ctx = this.canvasContext;
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Set style based on state
-    if (this.state() === 'recording') {
-      ctx.strokeStyle = '#EF4444'; // Red when recording
-    } else if (this.state() === 'processing') {
-      ctx.strokeStyle = '#F59E0B'; // Amber when processing
-    } else {
-      ctx.strokeStyle = '#4F46E5'; // Indigo when idle
-    }
-    
-    // Draw waveform
-    ctx.beginPath();
-    
-    samples.forEach((sample, index) => {
-      const x = (index / (samples.length - 1)) * width;
-      const y = height / 2 + (sample - 0.5) * height * 0.8;
-      
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    
-    ctx.stroke();
-    
-    // Add glow effect when recording
-    if (this.state() === 'recording') {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = ctx.strokeStyle as string;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
   }
 }
