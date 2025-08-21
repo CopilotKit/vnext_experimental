@@ -258,9 +258,6 @@ importers:
       '@ag-ui/client':
         specifier: 0.0.36-alpha.1
         version: 0.0.36-alpha.1
-      '@angular/cdk':
-        specifier: ^19.0.0
-        version: 19.2.19(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)
       '@copilotkit/core':
         specifier: workspace:*
         version: link:../core
@@ -277,6 +274,9 @@ importers:
         specifier: ^3.22.4
         version: 3.25.75
     devDependencies:
+      '@angular/cdk':
+        specifier: ^19.0.0
+        version: 19.2.19(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)
       '@angular/common':
         specifier: ^19.0.0
         version: 19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)

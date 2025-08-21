@@ -13,6 +13,7 @@ export * from './utils/chat-config.utils';
 export * from './lib/slots/slot.types';
 export * from './lib/slots/slot.utils';
 export { CopilotSlotComponent } from './lib/slots/copilot-slot.component';
+export { CopilotTooltipDirective } from './lib/directives/tooltip.directive';
 export { CopilotKitConfigDirective } from './directives/copilotkit-config.directive';
 export { CopilotkitAgentContextDirective } from './directives/copilotkit-agent-context.directive';
 export { CopilotkitFrontendToolDirective } from './directives/copilotkit-frontend-tool.directive';
