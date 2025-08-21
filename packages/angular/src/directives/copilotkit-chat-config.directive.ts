@@ -9,18 +9,18 @@ import {
   SimpleChanges,
   Optional,
   isDevMode,
-  Inject
-} from '@angular/core';
-import { CopilotChatConfigurationService } from '../core/chat-configuration/chat-configuration.service';
-import { 
+  Inject,
+} from "@angular/core";
+import { CopilotChatConfigurationService } from "../core/chat-configuration/chat-configuration.service";
+import {
   CopilotChatConfiguration,
-  CopilotChatLabels
-} from '../core/chat-configuration/chat-configuration.types';
+  CopilotChatLabels,
+} from "../core/chat-configuration/chat-configuration.types";
 
 /**
  * Directive for configuring CopilotKit chat settings declaratively in templates.
  * Works with the CopilotChatConfigurationService to provide reactive chat configuration.
- * 
+ *
  * @example
  * ```html
  * <!-- Basic usage with individual inputs -->
@@ -31,12 +31,12 @@ import {
  *      (changeInput)="onChange($event)">
  *   <!-- Chat UI components -->
  * </div>
- * 
+ *
  * <!-- Using configuration object -->
  * <div [copilotkitChatConfig]="chatConfig">
  *   <!-- Chat UI components -->
  * </div>
- * 
+ *
  * <!-- Two-way binding for input value -->
  * <div copilotkitChatConfig
  *      [(value)]="chatInput"
@@ -46,15 +46,21 @@ import {
  * ```
  */
 @Directive({
-  selector: '[copilotkitChatConfig]',
-  standalone: true
+  selector: "[copilotkitChatConfig]",
+  standalone: true,
 })
-export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestroy {
+export class CopilotKitChatConfigDirective
+  implements OnInit, OnChanges, OnDestroy
+{
   private _value?: string;
   private submitHandler?: (value: string) => void;
   private changeHandler?: (value: string) => void;
 
-  constructor(@Optional() @Inject(CopilotChatConfigurationService) private readonly chatConfig: CopilotChatConfigurationService | null) {}
+  constructor(
+    @Optional()
+    @Inject(CopilotChatConfigurationService)
+    private readonly chatConfig: CopilotChatConfigurationService | null
+  ) {}
 
   /**
    * Partial labels to override defaults
@@ -79,7 +85,7 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
   /**
    * Alternative: accept full configuration object
    */
-  @Input('copilotkitChatConfig')
+  @Input("copilotkitChatConfig")
   set config(value: CopilotChatConfiguration | undefined) {
     if (value) {
       if (value.labels) this.labels = value.labels;
@@ -113,8 +119,10 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
   ngOnInit(): void {
     if (!this.chatConfig) {
       if (isDevMode()) {
-        console.warn('CopilotkitChatConfigDirective: No CopilotChatConfigurationService found. ' +
-                     'Make sure to provide it using provideCopilotChatConfiguration().');
+        console.warn(
+          "CopilotKitChatConfigDirective: No CopilotChatConfigurationService found. " +
+            "Make sure to provide it using provideCopilotChatConfiguration()."
+        );
       }
       return;
     }
@@ -128,10 +136,9 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
       return;
     }
 
-    const relevantChanges = changes['labels'] || 
-                          changes['inputValue'] ||
-                          changes['value'];
-    
+    const relevantChanges =
+      changes["labels"] || changes["inputValue"] || changes["value"];
+
     if (relevantChanges && !relevantChanges.firstChange) {
       this.updateConfiguration();
     }
@@ -147,12 +154,12 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
   submit(value: string): void {
     // Emit to template binding
     this.submitInput.emit(value);
-    
+
     // Call service handler
     if (this.chatConfig) {
       this.chatConfig.submitInput(value);
     }
-    
+
     // Call provided handler
     if (this.submitHandler) {
       this.submitHandler(value);
@@ -165,16 +172,16 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
   change(value: string): void {
     // Update internal value
     this._value = value;
-    
+
     // Emit to template bindings
     this.changeInput.emit(value);
     this.valueChange.emit(value);
-    
+
     // Call service handler
     if (this.chatConfig) {
       this.chatConfig.changeInput(value);
     }
-    
+
     // Call provided handler
     if (this.changeHandler) {
       this.changeHandler(value);
@@ -192,7 +199,8 @@ export class CopilotkitChatConfigDirective implements OnInit, OnChanges, OnDestr
     }
 
     // Update input value if provided
-    const valueToSet = this._value !== undefined ? this._value : this.inputValue;
+    const valueToSet =
+      this._value !== undefined ? this._value : this.inputValue;
     if (valueToSet !== undefined) {
       this.chatConfig.setInputValue(valueToSet);
     }

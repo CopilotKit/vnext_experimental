@@ -3,12 +3,14 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Important Rules
+
 - NEVER commit or push to the repository unless explicitly asked to
 - NEVER credit yourself in commit messages (no "Generated with Claude Code" or similar)
 
 ## Common Commands
 
 ### Development
+
 ```bash
 # Install dependencies
 pnpm install
@@ -24,6 +26,7 @@ pnpm turbo run build --filter=@copilotkit/react
 ```
 
 ### Testing & Quality
+
 ```bash
 # Run all tests
 pnpm test
@@ -45,6 +48,7 @@ pnpm format
 ```
 
 ### Storybook
+
 ```bash
 # Start Storybook development server
 pnpm storybook
@@ -75,11 +79,13 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 ## Development Guidelines
 
 ### Package Management
+
 - Always use `pnpm` for package management (never use `npm`)
 - Add workspace dependencies with `pnpm add -w <pkg>`
 - Keep scripts standardized across packages: `build`, `dev`, `lint`, `check-types`, `test`, `test:watch`
 
 ### Code Organization
+
 - React components are in `packages/react/src/components/`
 - Server-side logic belongs in `packages/runtime/src/`
 - Shared utilities go in `packages/shared/src/`
@@ -87,6 +93,7 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 - Build outputs (`dist/`, `.next/`) are never committed
 
 ### Key Technologies
+
 - **TypeScript 5.8.2** for type safety
 - **React 18+** for UI components
 - **Tailwind CSS** for styling (with custom build process)
@@ -95,12 +102,14 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 - **@ag-ui** for core AI agent functionality
 
 ### Testing
+
 - Tests use Vitest with jsdom environment
 - React components tested with @testing-library/react
 - Runtime code uses Node environment for testing
 - Coverage reports available via `test:coverage`
 
 #### Angular Testing Patterns
+
 **Important findings from testing Angular directives and components:**
 
 1. **Dependency Injection Context Issues**
@@ -112,7 +121,7 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 2. **Memory Issues with Test Components**
    - Declaring too many Angular components at module level can cause "JavaScript heap out of memory" errors
    - Keep test components minimal and focused
-   - Consider declaring simple test components inside test functions (like `CopilotkitAgentContextDirective` tests)
+   - Consider declaring simple test components inside test functions (like `CopilotKitAgentContextDirective` tests)
    - If experiencing memory issues, reduce the number of test components or split tests across files
 
 3. **TestBed Configuration**
@@ -126,6 +135,7 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
    - Follow existing patterns in `copilotkit-agent-context.directive.spec.ts` for reference
 
 ### Build Process
+
 - React package builds both TypeScript and CSS (Tailwind)
 - Runtime package compiles TypeScript from `src/` to `dist/`
 - Turbo handles dependency ordering and caching

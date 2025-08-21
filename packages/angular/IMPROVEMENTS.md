@@ -12,10 +12,10 @@ The Angular implementation has inconsistent API patterns compared to React:
 
 | React API             | Angular Current                             | Angular Recommended                  |
 | --------------------- | ------------------------------------------- | ------------------------------------ |
-| `useAgent()`          | `watchAgent()` + `CopilotkitAgentDirective` | Keep both, standardize naming        |
-| `useAgentContext()`   | `CopilotkitAgentContextDirective` only      | Add `registerAgentContext()` utility |
+| `useAgent()`          | `watchAgent()` + `CopilotKitAgentDirective` | Keep both, standardize naming        |
+| `useAgentContext()`   | `CopilotKitAgentContextDirective` only      | Add `registerAgentContext()` utility |
 | `useFrontendTool()`   | `registerFrontendTool()` + directive        | ✅ Good pattern                      |
-| `useHumanInTheLoop()` | `CopilotkitHumanInTheLoopDirective` only    | Add utility function                 |
+| `useHumanInTheLoop()` | `CopilotKitHumanInTheLoopDirective` only    | Add utility function                 |
 
 ### Recommendations
 
@@ -29,7 +29,7 @@ The Angular implementation has inconsistent API patterns compared to React:
 
 ```typescript
 // Current (problematic)
-export class CopilotkitAgentDirective {
+export class CopilotKitAgentDirective {
   private readonly copilotkit = inject(CopilotKitService);
   private readonly destroyRef = inject(DestroyRef);
 }
@@ -45,7 +45,7 @@ export class CopilotkitAgentDirective {
 
 ```typescript
 // Recommended
-export class CopilotkitAgentDirective {
+export class CopilotKitAgentDirective {
   constructor(
     private readonly copilotkit: CopilotKitService,
     private readonly destroyRef: DestroyRef
@@ -156,7 +156,7 @@ readonly isRunning$ = toObservable(this.isRunning);
 
 ```typescript
 // Use generics
-export class CopilotkitAgentContextDirective<T = unknown> {
+export class CopilotKitAgentContextDirective<T = unknown> {
   @Input() value?: T;
   @Input() description!: string;
 }
@@ -191,7 +191,7 @@ renderSlot(slots.textArea, {} /* default content */);
 ```typescript
 if (!tool.name) {
   throw new Error(
-    'CopilotkitFrontendToolDirective: "name" is required. ' +
+    'CopilotKitFrontendToolDirective: "name" is required. ' +
       'Please provide a name via [name]="toolName" or ' +
       "[copilotkitFrontendTool]=\"{ name: 'toolName', ... }\""
   );

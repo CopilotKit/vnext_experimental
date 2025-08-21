@@ -1,19 +1,19 @@
-import { 
-  Directive, 
-  Input, 
-  OnInit, 
-  OnChanges, 
-  OnDestroy, 
+import {
+  Directive,
+  Input,
+  OnInit,
+  OnChanges,
+  OnDestroy,
   SimpleChanges,
-  Inject
-} from '@angular/core';
-import { CopilotKitService } from '../core/copilotkit.service';
-import type { Context } from '@ag-ui/client';
+  Inject,
+} from "@angular/core";
+import { CopilotKitService } from "../core/copilotkit.service";
+import type { Context } from "@ag-ui/client";
 
 /**
  * Directive to manage agent context in CopilotKit.
  * Automatically adds context on init, updates on changes, and removes on destroy.
- * 
+ *
  * @example
  * ```html
  * <!-- With separate inputs -->
@@ -21,11 +21,11 @@ import type { Context } from '@ag-ui/client';
  *      [description]="'User preferences'"
  *      [value]="userSettings">
  * </div>
- * 
+ *
  * <!-- With context object -->
  * <div [copilotkitAgentContext]="contextObject">
  * </div>
- * 
+ *
  * <!-- With dynamic values -->
  * <div copilotkitAgentContext
  *      description="Form state"
@@ -34,19 +34,23 @@ import type { Context } from '@ag-ui/client';
  * ```
  */
 @Directive({
-  selector: '[copilotkitAgentContext]',
-  standalone: true
+  selector: "[copilotkitAgentContext]",
+  standalone: true,
 })
-export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDestroy {
+export class CopilotKitAgentContextDirective
+  implements OnInit, OnChanges, OnDestroy
+{
   private contextId?: string;
 
-  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
+  constructor(
+    @Inject(CopilotKitService) private readonly copilotkit: CopilotKitService
+  ) {}
 
   /**
    * Context object containing both description and value.
    * If provided, this takes precedence over individual inputs.
    */
-  @Input('copilotkitAgentContext') context?: Context;
+  @Input("copilotkitAgentContext") context?: Context;
 
   /**
    * Description of the context.
@@ -66,9 +70,9 @@ export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDes
 
   ngOnChanges(changes: SimpleChanges): void {
     // Check if any relevant input has changed
-    const hasContextChange = 'context' in changes;
-    const hasDescriptionChange = 'description' in changes;
-    const hasValueChange = 'value' in changes;
+    const hasContextChange = "context" in changes;
+    const hasDescriptionChange = "description" in changes;
+    const hasValueChange = "value" in changes;
 
     if (hasContextChange || hasDescriptionChange || hasValueChange) {
       // Skip the first change as ngOnInit handles initial setup
@@ -87,7 +91,7 @@ export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDes
    */
   private addContext(): void {
     const contextToAdd = this.getContext();
-    
+
     if (contextToAdd) {
       this.contextId = this.copilotkit.copilotkit.addContext(contextToAdd);
     }
@@ -125,7 +129,7 @@ export class CopilotkitAgentContextDirective implements OnInit, OnChanges, OnDes
     if (this.description !== undefined && this.value !== undefined) {
       return {
         description: this.description,
-        value: this.value
+        value: this.value,
       };
     }
 

@@ -1,15 +1,15 @@
-import { Component, TemplateRef, ViewChild } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { CopilotkitHumanInTheLoopDirective } from '../copilotkit-human-in-the-loop.directive';
-import { CopilotKitService } from '../../core/copilotkit.service';
-import { provideCopilotKit } from '../../core/copilotkit.providers';
-import { z } from 'zod';
-import { By } from '@angular/platform-browser';
+import { Component, TemplateRef, ViewChild } from "@angular/core";
+import { TestBed } from "@angular/core/testing";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { CopilotKitHumanInTheLoopDirective } from "../copilotkit-human-in-the-loop.directive";
+import { CopilotKitService } from "../../core/copilotkit.service";
+import { provideCopilotKit } from "../../core/copilotkit.providers";
+import { z } from "zod";
+import { By } from "@angular/platform-browser";
 
 // Mock CopilotKitCore
 const mockCopilotKitCore = {
-  addTool: vi.fn(() => 'tool-id-123'),
+  addTool: vi.fn(() => "tool-id-123"),
   removeTool: vi.fn(),
   setRuntimeUrl: vi.fn(),
   setHeaders: vi.fn(),
@@ -19,13 +19,13 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()),
 };
 
-vi.mock('@copilotkit/core', () => ({
-  CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore)
+vi.mock("@copilotkit/core", () => ({
+  CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
 }));
 
 // Test approval component
 @Component({
-  selector: 'test-approval',
+  selector: "test-approval",
   template: `
     <div class="approval-dialog">
       <p>{{ action }}</p>
@@ -33,21 +33,21 @@ vi.mock('@copilotkit/core', () => ({
       <button class="reject-btn">Reject</button>
     </div>
   `,
-  standalone: true
+  standalone: true,
 })
 class TestApprovalComponent {
-  action = '';
+  action = "";
   respond?: (result: unknown) => Promise<void>;
 }
 
-describe('CopilotkitHumanInTheLoopDirective', () => {
+describe("CopilotKitHumanInTheLoopDirective", () => {
   let service: CopilotKitService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideCopilotKit({})]
+      providers: [provideCopilotKit({})],
     });
-    
+
     service = TestBed.inject(CopilotKitService);
     vi.clearAllMocks();
   });
@@ -56,19 +56,20 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
     vi.clearAllMocks();
   });
 
-  describe('Basic Usage', () => {
-    it('should register tool when directive is applied', () => {
+  describe("Basic Usage", () => {
+    it("should register tool when directive is applied", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -80,26 +81,23 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
 
       expect(mockCopilotKitCore.addTool).toHaveBeenCalled();
       const addToolCall = mockCopilotKitCore.addTool.mock.calls[0][0];
-      expect(addToolCall.name).toBe('requireApproval');
-      expect(addToolCall.description).toBe('Requires user approval');
-      expect(typeof addToolCall.handler).toBe('function');
+      expect(addToolCall.name).toBe("requireApproval");
+      expect(addToolCall.description).toBe("Requires user approval");
+      expect(typeof addToolCall.handler).toBe("function");
     });
 
-    it('should support config object input', () => {
+    it("should support config object input", () => {
       @Component({
-        template: `
-          <div [copilotkitHumanInTheLoop]="config">
-          </div>
-        `,
+        template: ` <div [copilotkitHumanInTheLoop]="config"></div> `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         config = {
-          name: 'requireApproval',
-          description: 'Requires user approval',
+          name: "requireApproval",
+          description: "Requires user approval",
           parameters: z.object({ action: z.string() }),
-          render: TestApprovalComponent
+          render: TestApprovalComponent,
         };
       }
 
@@ -108,22 +106,23 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
 
       expect(mockCopilotKitCore.addTool).toHaveBeenCalled();
       const addToolCall = mockCopilotKitCore.addTool.mock.calls[0][0];
-      expect(addToolCall.name).toBe('requireApproval');
+      expect(addToolCall.name).toBe("requireApproval");
     });
 
-    it('should not register when enabled is false', () => {
+    it("should not register when enabled is false", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent"
-               [enabled]="false">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+            [enabled]="false"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -137,27 +136,28 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
     });
   });
 
-  describe('Event Emissions', () => {
-    it('should emit statusChange events', () => {
+  describe("Event Emissions", () => {
+    it("should emit statusChange events", () => {
       let statusChanges: string[] = [];
-      
+
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent"
-               (statusChange)="onStatusChange($event)">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+            (statusChange)="onStatusChange($event)"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
         approvalComponent = TestApprovalComponent;
-        
+
         onStatusChange(status: string) {
           statusChanges.push(status);
         }
@@ -167,42 +167,47 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       fixture.detectChanges();
 
       // Get the directive instance
-      const directiveEl = fixture.debugElement.query(By.directive(CopilotkitHumanInTheLoopDirective));
-      const directive = directiveEl.injector.get(CopilotkitHumanInTheLoopDirective);
+      const directiveEl = fixture.debugElement.query(
+        By.directive(CopilotKitHumanInTheLoopDirective)
+      );
+      const directive = directiveEl.injector.get(
+        CopilotKitHumanInTheLoopDirective
+      );
 
       // Initial status should be 'inProgress'
-      expect(directive.status).toBe('inProgress');
+      expect(directive.status).toBe("inProgress");
 
       // Get the handler and call it to trigger status change
       const addToolCall = mockCopilotKitCore.addTool.mock.calls[0][0];
       const handler = addToolCall.handler;
-      
+
       // This should change status to 'executing'
-      handler({ action: 'delete' });
-      
+      handler({ action: "delete" });
+
       // Note: We can't easily test the async behavior without more complex setup
     });
 
-    it('should emit executionStarted when handler is called', () => {
+    it("should emit executionStarted when handler is called", () => {
       let executionArgs: any;
-      
+
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent"
-               (executionStarted)="onExecutionStarted($event)">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+            (executionStarted)="onExecutionStarted($event)"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
         approvalComponent = TestApprovalComponent;
-        
+
         onExecutionStarted(args: any) {
           executionArgs = args;
         }
@@ -214,52 +219,54 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       // Get the handler and call it
       const addToolCall = mockCopilotKitCore.addTool.mock.calls[0][0];
       const handler = addToolCall.handler;
-      
-      handler({ action: 'delete' });
-      
-      expect(executionArgs).toEqual({ action: 'delete' });
+
+      handler({ action: "delete" });
+
+      expect(executionArgs).toEqual({ action: "delete" });
     });
 
-    it('should support two-way binding for status', () => {
+    it("should support two-way binding for status", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent"
-               [(status)]="currentStatus">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+            [(status)]="currentStatus"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
         approvalComponent = TestApprovalComponent;
-        currentStatus = 'inProgress';
+        currentStatus = "inProgress";
       }
 
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.currentStatus).toBe('inProgress');
-      
+      expect(fixture.componentInstance.currentStatus).toBe("inProgress");
+
       // Note: Testing two-way binding fully would require triggering status changes
     });
   });
 
-  describe('Template Support', () => {
-    it('should work with template ref', () => {
+  describe("Template Support", () => {
+    it("should work with template ref", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalTemplate">
-          </div>
-          
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalTemplate"
+          ></div>
+
           <ng-template #approvalTemplate let-props>
             <div class="template-approval">
               <p>{{ props.args.action }}</p>
@@ -268,10 +275,11 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
           </ng-template>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
-        @ViewChild('approvalTemplate', { static: true }) approvalTemplate!: TemplateRef<any>;
+        @ViewChild("approvalTemplate", { static: true })
+        approvalTemplate!: TemplateRef<any>;
         parametersSchema = z.object({ action: z.string() });
       }
 
@@ -280,27 +288,28 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
 
       expect(mockCopilotKitCore.addTool).toHaveBeenCalled();
       const addToolCall = mockCopilotKitCore.addTool.mock.calls[0][0];
-      expect(addToolCall.name).toBe('requireApproval');
+      expect(addToolCall.name).toBe("requireApproval");
     });
   });
 
-  describe('Dynamic Updates', () => {
-    it('should re-register tool when inputs change', () => {
+  describe("Dynamic Updates", () => {
+    it("should re-register tool when inputs change", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="toolName"
-               [description]="description"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="toolName"
+            [description]="description"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
-        toolName = 'requireApproval';
-        description = 'Requires user approval';
+        toolName = "requireApproval";
+        description = "Requires user approval";
         parametersSchema = z.object({ action: z.string() });
         approvalComponent = TestApprovalComponent;
       }
@@ -311,30 +320,33 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       expect(mockCopilotKitCore.addTool).toHaveBeenCalledTimes(1);
 
       // Change the name
-      fixture.componentInstance.toolName = 'requireConfirmation';
+      fixture.componentInstance.toolName = "requireConfirmation";
       fixture.detectChanges();
 
       // Should remove old tool and add new one
-      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith('requireApproval');
+      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith(
+        "requireApproval"
+      );
       expect(mockCopilotKitCore.addTool).toHaveBeenCalledTimes(2);
-      
+
       const secondCall = mockCopilotKitCore.addTool.mock.calls[1][0];
-      expect(secondCall.name).toBe('requireConfirmation');
+      expect(secondCall.name).toBe("requireConfirmation");
     });
 
-    it('should handle enabling/disabling', () => {
+    it("should handle enabling/disabling", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent"
-               [enabled]="isEnabled">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+            [enabled]="isEnabled"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -351,7 +363,9 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       fixture.componentInstance.isEnabled = false;
       fixture.detectChanges();
 
-      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith('requireApproval');
+      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith(
+        "requireApproval"
+      );
 
       // Re-enable the tool
       fixture.componentInstance.isEnabled = true;
@@ -361,19 +375,20 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
     });
   });
 
-  describe('Cleanup', () => {
-    it('should unregister tool on destroy', () => {
+  describe("Cleanup", () => {
+    it("should unregister tool on destroy", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -383,28 +398,31 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
-      const unregisterSpy = vi.spyOn(service, 'unregisterToolRender');
+      const unregisterSpy = vi.spyOn(service, "unregisterToolRender");
 
       fixture.destroy();
 
-      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith('requireApproval');
-      expect(unregisterSpy).toHaveBeenCalledWith('requireApproval');
+      expect(mockCopilotKitCore.removeTool).toHaveBeenCalledWith(
+        "requireApproval"
+      );
+      expect(unregisterSpy).toHaveBeenCalledWith("requireApproval");
     });
   });
 
-  describe('Respond Method', () => {
-    it('should provide respond method on directive', () => {
+  describe("Respond Method", () => {
+    it("should provide respond method on directive", () => {
       @Component({
         template: `
-          <div copilotkitHumanInTheLoop
-               [name]="'requireApproval'"
-               [description]="'Requires user approval'"
-               [parameters]="parametersSchema"
-               [render]="approvalComponent">
-          </div>
+          <div
+            copilotkitHumanInTheLoop
+            [name]="'requireApproval'"
+            [description]="'Requires user approval'"
+            [parameters]="parametersSchema"
+            [render]="approvalComponent"
+          ></div>
         `,
         standalone: true,
-        imports: [CopilotkitHumanInTheLoopDirective]
+        imports: [CopilotKitHumanInTheLoopDirective],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -414,11 +432,15 @@ describe('CopilotkitHumanInTheLoopDirective', () => {
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
-      const directiveEl = fixture.debugElement.query(By.directive(CopilotkitHumanInTheLoopDirective));
-      const directive = directiveEl.injector.get(CopilotkitHumanInTheLoopDirective);
+      const directiveEl = fixture.debugElement.query(
+        By.directive(CopilotKitHumanInTheLoopDirective)
+      );
+      const directive = directiveEl.injector.get(
+        CopilotKitHumanInTheLoopDirective
+      );
 
-      expect(typeof directive.respond).toBe('function');
-      
+      expect(typeof directive.respond).toBe("function");
+
       // Note: Testing the actual response would require more complex async setup
     });
   });

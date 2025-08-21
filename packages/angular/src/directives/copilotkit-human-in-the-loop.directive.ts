@@ -11,23 +11,23 @@ import {
   Type,
   signal,
   isDevMode,
-  Inject
-} from '@angular/core';
-import { CopilotKitService } from '../core/copilotkit.service';
-import type { 
+  Inject,
+} from "@angular/core";
+import { CopilotKitService } from "../core/copilotkit.service";
+import type {
   AngularHumanInTheLoop,
   HumanInTheLoopProps,
-  AngularFrontendTool
-} from '../core/copilotkit.types';
+  AngularFrontendTool,
+} from "../core/copilotkit.types";
 
 // Define the status type locally to avoid decorator issues
-type HumanInTheLoopStatus = 'inProgress' | 'executing' | 'complete';
-import * as z from 'zod';
+type HumanInTheLoopStatus = "inProgress" | "executing" | "complete";
+import * as z from "zod";
 
 /**
  * Directive for declaratively creating human-in-the-loop tools.
  * Provides reactive outputs for status changes and response events.
- * 
+ *
  * @example
  * ```html
  * <!-- Basic usage -->
@@ -39,7 +39,7 @@ import * as z from 'zod';
  *      (statusChange)="onStatusChange($event)"
  *      (responseProvided)="onResponse($event)">
  * </div>
- * 
+ *
  * <!-- With template -->
  * <div copilotkitHumanInTheLoop
  *      [name]="'requireApproval'"
@@ -48,7 +48,7 @@ import * as z from 'zod';
  *      [render]="approvalTemplate"
  *      [(status)]="approvalStatus">
  * </div>
- * 
+ *
  * <ng-template #approvalTemplate let-props>
  *   <div *ngIf="props.status === 'executing'">
  *     <p>{{ props.args.action }}</p>
@@ -59,16 +59,22 @@ import * as z from 'zod';
  * ```
  */
 @Directive({
-  selector: '[copilotkitHumanInTheLoop]',
-  standalone: true
+  selector: "[copilotkitHumanInTheLoop]",
+  standalone: true,
 })
-export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = Record<string, any>> implements OnInit, OnChanges, OnDestroy {
+export class CopilotKitHumanInTheLoopDirective<
+    T extends Record<string, any> = Record<string, any>,
+  >
+  implements OnInit, OnChanges, OnDestroy
+{
   private toolId?: string;
-  private statusSignal = signal<HumanInTheLoopStatus>('inProgress');
+  private statusSignal = signal<HumanInTheLoopStatus>("inProgress");
   private resolvePromise: ((result: unknown) => void) | null = null;
-  private _status: HumanInTheLoopStatus = 'inProgress';
+  private _status: HumanInTheLoopStatus = "inProgress";
 
-  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
+  constructor(
+    @Inject(CopilotKitService) private readonly copilotkit: CopilotKitService
+  ) {}
 
   /**
    * The name of the human-in-the-loop tool.
@@ -99,13 +105,14 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
    * Alternative input using the directive selector.
    * Allows: [copilotkitHumanInTheLoop]="config"
    */
-  @Input('copilotkitHumanInTheLoop')
+  @Input("copilotkitHumanInTheLoop")
   set config(value: Partial<AngularHumanInTheLoop<T>> | undefined) {
     if (value) {
       if (value.name) this.name = value.name;
       if (value.description) this.description = value.description;
-      if ('parameters' in value && value.parameters) this.parameters = value.parameters as z.ZodSchema<T>;
-      if ('render' in value && value.render) this.render = value.render;
+      if ("parameters" in value && value.parameters)
+        this.parameters = value.parameters as z.ZodSchema<T>;
+      if ("render" in value && value.render) this.render = value.render;
     }
   }
 
@@ -148,12 +155,13 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const relevantChanges = changes['name'] || 
-                          changes['description'] || 
-                          changes['args'] || 
-                          changes['render'] ||
-                          changes['enabled'];
-    
+    const relevantChanges =
+      changes["name"] ||
+      changes["description"] ||
+      changes["args"] ||
+      changes["render"] ||
+      changes["enabled"];
+
     if (relevantChanges && !relevantChanges.firstChange) {
       // Re-register the tool with new configuration
       this.unregisterTool();
@@ -179,8 +187,8 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
     if (!this.name || !this.description || !this.parameters || !this.render) {
       if (isDevMode()) {
         throw new Error(
-          'CopilotkitHumanInTheLoopDirective: Missing required inputs. ' +
-          'Required: name, description, parameters, and render.'
+          "CopilotKitHumanInTheLoopDirective: Missing required inputs. " +
+            "Required: name, description, parameters, and render."
         );
       }
       return;
@@ -189,7 +197,7 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
     // Create handler that returns a Promise
     const handler = async (args: T): Promise<unknown> => {
       return new Promise((resolve) => {
-        this.updateStatus('executing');
+        this.updateStatus("executing");
         this.resolvePromise = resolve;
         this.executionStarted.emit(args);
       });
@@ -201,7 +209,7 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
       description: this.description,
       parameters: this.parameters,
       handler,
-      render: this.render  // Will be enhanced by the render component
+      render: this.render, // Will be enhanced by the render component
     };
 
     // Add the tool (returns void, so we use the tool name as ID)
@@ -211,7 +219,7 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
     // Register the render with respond capability
     this.copilotkit.registerToolRender(this.name, {
       args: this.parameters,
-      render: this.createEnhancedRender()
+      render: this.createEnhancedRender(),
     });
   }
 
@@ -227,18 +235,18 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
     // If it's a template, we need to wrap it with our respond function
     // This is handled by returning a special marker that the render component
     // will recognize and enhance with the respond function
-    
+
     // Store reference to this directive instance for the render component
     (this.render as any).__humanInTheLoopDirective = this;
     (this.render as any).__humanInTheLoopStatus = this.statusSignal;
-    
+
     return this.render;
   }
 
   private handleResponse(result: unknown): void {
     if (this.resolvePromise) {
       this.resolvePromise(result);
-      this.updateStatus('complete');
+      this.updateStatus("complete");
       this.resolvePromise = null;
       this.responseProvided.emit(result);
       this.executionCompleted.emit(result);
@@ -255,16 +263,16 @@ export class CopilotkitHumanInTheLoopDirective<T extends Record<string, any> = R
 /**
  * Helper directive to provide respond function in templates.
  * This would be used internally by the tool render component.
- * 
+ *
  * @internal
  */
 @Directive({
-  selector: '[copilotkitHumanInTheLoopRespond]',
-  standalone: true
+  selector: "[copilotkitHumanInTheLoopRespond]",
+  standalone: true,
 })
-export class CopilotkitHumanInTheLoopRespondDirective {
+export class CopilotKitHumanInTheLoopRespondDirective {
   @Input() copilotkitHumanInTheLoopRespond?: (result: unknown) => Promise<void>;
-  
+
   /**
    * Convenience method for templates to call respond.
    */

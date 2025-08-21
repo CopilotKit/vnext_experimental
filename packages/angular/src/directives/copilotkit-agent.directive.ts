@@ -8,29 +8,29 @@ import {
   OnDestroy,
   SimpleChanges,
   signal,
-  Inject
-} from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
-import { CopilotKitService } from '../core/copilotkit.service';
-import { AbstractAgent } from '@ag-ui/client';
-import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
+  Inject,
+} from "@angular/core";
+import { toObservable } from "@angular/core/rxjs-interop";
+import { Observable } from "rxjs";
+import { CopilotKitService } from "../core/copilotkit.service";
+import { AbstractAgent } from "@ag-ui/client";
+import { DEFAULT_AGENT_ID } from "@copilotkit/shared";
 
 /**
  * Directive to watch and interact with CopilotKit agents.
  * Provides reactive outputs for agent state changes.
- * 
+ *
  * @example
  * ```html
  * <!-- Basic usage with default agent -->
- * <div copilotkitAgent 
+ * <div copilotkitAgent
  *      (agentChange)="onAgentChange($event)"
  *      (runningChange)="isProcessing = $event">
  *   Content here
  * </div>
- * 
+ *
  * <!-- With specific agent ID -->
- * <div copilotkitAgent 
+ * <div copilotkitAgent
  *      [agentId]="'my-agent-id'"
  *      (agentChange)="currentAgent = $event"
  *      (runningChange)="onRunningStateChange($event)"
@@ -38,27 +38,29 @@ import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
  *      (stateChange)="onStateUpdate($event)">
  *   Content here
  * </div>
- * 
+ *
  * <!-- Two-way binding for running state -->
- * <div copilotkitAgent 
+ * <div copilotkitAgent
  *      [(running)]="isAgentRunning">
  *   <span *ngIf="isAgentRunning">Processing...</span>
  * </div>
  * ```
  */
 @Directive({
-  selector: '[copilotkitAgent]',
-  standalone: true
+  selector: "[copilotkitAgent]",
+  standalone: true,
 })
-export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
+export class CopilotKitAgentDirective implements OnInit, OnChanges, OnDestroy {
   private agent?: AbstractAgent;
   private agentSubscription?: { unsubscribe: () => void };
-  private coreUnsubscribe?: () => void;  // subscribe returns function directly
+  private coreUnsubscribe?: () => void; // subscribe returns function directly
   private _isRunning = false;
   private runningSignal = signal<boolean>(false);
   private agentSignal = signal<AbstractAgent | undefined>(undefined);
 
-  constructor(@Inject(CopilotKitService) private readonly copilotkit: CopilotKitService) {}
+  constructor(
+    @Inject(CopilotKitService) private readonly copilotkit: CopilotKitService
+  ) {}
 
   /**
    * The ID of the agent to watch.
@@ -70,7 +72,7 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
    * Alternative input using the directive selector.
    * Allows: [copilotkitAgent]="'agent-id'"
    */
-  @Input('copilotkitAgent') 
+  @Input("copilotkitAgent")
   set directiveAgentId(value: string | undefined) {
     this.agentId = value || undefined;
   }
@@ -102,7 +104,7 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
   /**
    * Two-way binding for running state.
    */
-  @Input() 
+  @Input()
   get running(): boolean {
     return this._isRunning;
   }
@@ -142,7 +144,7 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['agentId'] && !changes['agentId'].firstChange) {
+    if (changes["agentId"] && !changes["agentId"].firstChange) {
       // Agent ID changed, re-setup
       this.cleanupAgentSubscription();
       this.setupAgent();
@@ -157,20 +159,20 @@ export class CopilotkitAgentDirective implements OnInit, OnChanges, OnDestroy {
   private setupAgent(): void {
     const effectiveAgentId = this.agentId ?? DEFAULT_AGENT_ID;
     this.agent = this.copilotkit.getAgent(effectiveAgentId);
-    
+
     // Update signals
     this.agentSignal.set(this.agent);
-    
+
     // Emit initial agent
     this.agentChange.emit(this.agent);
-    
+
     // Subscribe to agent events
     this.subscribeToAgent();
   }
 
   private subscribeToAgent(): void {
     this.cleanupAgentSubscription();
-    
+
     if (this.agent) {
       this.agentSubscription = this.agent.subscribe({
         onMessagesChanged: (params) => {

@@ -17,29 +17,31 @@ The directive approach is ideal for template-driven context management.
 #### Basic Usage
 
 ```typescript
-import { Component } from '@angular/core';
-import { CopilotkitAgentContextDirective } from '@copilotkit/angular';
+import { Component } from "@angular/core";
+import { CopilotKitAgentContextDirective } from "@copilotkit/angular";
 
 @Component({
-  selector: 'app-user-profile',
+  selector: "app-user-profile",
   template: `
-    <div copilotkitAgentContext
-         description="User profile data"
-         [value]="userProfile">
+    <div
+      copilotkitAgentContext
+      description="User profile data"
+      [value]="userProfile"
+    >
       <!-- Your component content -->
     </div>
   `,
   standalone: true,
-  imports: [CopilotkitAgentContextDirective]
+  imports: [CopilotKitAgentContextDirective],
 })
 export class UserProfileComponent {
   userProfile = {
     id: 123,
-    name: 'John Doe',
+    name: "John Doe",
     preferences: {
-      theme: 'dark',
-      language: 'en'
-    }
+      theme: "dark",
+      language: "en",
+    },
   };
 }
 ```
@@ -47,29 +49,31 @@ export class UserProfileComponent {
 #### Dynamic Values with Signals
 
 ```typescript
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed } from "@angular/core";
 
 @Component({
-  selector: 'app-counter',
+  selector: "app-counter",
   template: `
-    <div copilotkitAgentContext
-         description="Counter state"
-         [value]="contextValue()">
+    <div
+      copilotkitAgentContext
+      description="Counter state"
+      [value]="contextValue()"
+    >
       <button (click)="increment()">Count: {{ count() }}</button>
     </div>
-  `
+  `,
 })
 export class CounterComponent {
   count = signal(0);
-  
+
   contextValue = computed(() => ({
     count: this.count(),
     doubled: this.count() * 2,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   }));
-  
+
   increment() {
-    this.count.update(c => c + 1);
+    this.count.update((c) => c + 1);
   }
 }
 ```
@@ -77,27 +81,29 @@ export class CounterComponent {
 #### With Observables
 
 ```typescript
-import { Component } from '@angular/core';
-import { interval, map } from 'rxjs';
-import { AsyncPipe } from '@angular/common';
+import { Component } from "@angular/core";
+import { interval, map } from "rxjs";
+import { AsyncPipe } from "@angular/common";
 
 @Component({
-  selector: 'app-live-data',
+  selector: "app-live-data",
   template: `
-    <div copilotkitAgentContext
-         description="Live data stream"
-         [value]="liveData$ | async">
+    <div
+      copilotkitAgentContext
+      description="Live data stream"
+      [value]="liveData$ | async"
+    >
       <!-- Component content -->
     </div>
   `,
-  imports: [AsyncPipe, CopilotkitAgentContextDirective]
+  imports: [AsyncPipe, CopilotKitAgentContextDirective],
 })
 export class LiveDataComponent {
   liveData$ = interval(1000).pipe(
-    map(tick => ({
+    map((tick) => ({
       iteration: tick,
       timestamp: new Date(),
-      data: this.generateData(tick)
+      data: this.generateData(tick),
     }))
   );
 }
@@ -139,17 +145,17 @@ import { addAgentContext, injectCopilotKit } from '@copilotkit/angular';
 export class MyComponent implements OnInit, OnDestroy {
   private copilotkit = injectCopilotKit();
   private cleanupFns: Array<() => void> = [];
-  
+
   ngOnInit() {
     // Add context and store cleanup function
     const cleanup = addAgentContext(this.copilotkit, {
       description: 'Component initialization data',
       value: this.initData
     });
-    
+
     this.cleanupFns.push(cleanup);
   }
-  
+
   ngOnDestroy() {
     // Clean up all contexts
     this.cleanupFns.forEach(fn => fn());
@@ -171,7 +177,7 @@ export class MyComponent implements OnInit {
       description: 'Auto-managed context',
       value: this.data
     });
-    
+
     console.log('Context added with ID:', contextId);
   }
 }
@@ -186,13 +192,13 @@ import { createReactiveContext } from '@copilotkit/angular';
 @Component({...})
 export class ReactiveComponent {
   private settings = signal({ theme: 'light' });
-  
+
   ngOnInit() {
     const context = createReactiveContext(
       'User settings',
       computed(() => this.settings())
     );
-    
+
     // Update context when needed
     this.settings.set({ theme: 'dark' });
     context.update(); // Manually trigger update if needed
@@ -210,11 +216,11 @@ You can have multiple contexts active at the same time:
     <div copilotkitAgentContext
          description="User data"
          [value]="userData">
-      
+
       <div copilotkitAgentContext
            description="Form state"
            [value]="formData">
-        
+
         <div copilotkitAgentContext
              description="UI state"
              [value]="uiState">
@@ -262,12 +268,12 @@ export class ConditionalContextComponent {
 
 ## Comparison with React
 
-| React | Angular |
-|-------|---------|
+| React                           | Angular                                                            |
+| ------------------------------- | ------------------------------------------------------------------ |
 | `useAgentContext(context)` hook | `copilotkitAgentContext` directive or `useAgentContext()` function |
-| Updates via useEffect deps | Updates via `OnChanges` lifecycle |
-| Cleanup in useEffect return | Cleanup in `OnDestroy` lifecycle |
-| Re-renders trigger updates | Signal/Observable changes trigger updates |
+| Updates via useEffect deps      | Updates via `OnChanges` lifecycle                                  |
+| Cleanup in useEffect return     | Cleanup in `OnDestroy` lifecycle                                   |
+| Re-renders trigger updates      | Signal/Observable changes trigger updates                          |
 
 ## TypeScript Support
 
@@ -292,13 +298,13 @@ const myContext: Context = {
 The agent context directive and utilities are fully testable:
 
 ```typescript
-it('should add context on init', () => {
+it("should add context on init", () => {
   const fixture = TestBed.createComponent(MyComponent);
   fixture.detectChanges();
-  
+
   expect(mockCopilotKit.addContext).toHaveBeenCalledWith({
-    description: 'Test context',
-    value: expectedValue
+    description: "Test context",
+    value: expectedValue,
   });
 });
 ```
