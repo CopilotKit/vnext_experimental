@@ -65,7 +65,7 @@
       "dependsOn": ["^build"]
     },
     "storybook:build": {
-      "outputs": ["apps/storybook/storybook-static/**"]
+      "outputs": ["apps/react/storybook/storybook-static/**", "apps/angular/storybook/storybook-static/**"]
     }
   }
 }
