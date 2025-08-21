@@ -64,6 +64,9 @@ export class CopilotChatUserMessageBranchNavigationComponent {
   numberOfBranchesSignal = signal(1);
   
   readonly buttonClass = cn(
+    // Flex centering
+    'inline-flex items-center justify-center',
+    // Cursor
     'cursor-pointer',
     // Background and text
     'p-0 text-[rgb(93,93,93)] hover:bg-[#E8E8E8]',

@@ -4,7 +4,9 @@ import {
   Output,
   EventEmitter,
   signal,
+  computed,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   ViewEncapsulation,
   inject
 } from '@angular/core';
@@ -41,34 +43,37 @@ import { cn } from '../../lib/utils';
 export class CopilotChatUserMessageToolbarButtonComponent {
   @Input() title = '';
   @Input() disabled = false;
-  @Input() inputClass?: string;
+  @Input() set inputClass(value: string | undefined) {
+    this.customClass.set(value);
+  }
   @Output() click = new EventEmitter<MouseEvent>();
   
-  computedClass = signal<string>('');
+  private customClass = signal<string | undefined>(undefined);
   
-  ngOnInit() {
-    this.computedClass.set(
-      cn(
-        'cursor-pointer',
-        // Background and text
-        'p-0 text-[rgb(93,93,93)] hover:bg-[#E8E8E8]',
-        // Dark mode
-        'dark:text-[rgb(243,243,243)] dark:hover:bg-[#303030]',
-        // Shape and sizing
-        'h-8 w-8 rounded-md',
-        // Interactions
-        'transition-colors',
-        // Hover states
-        'hover:text-[rgb(93,93,93)]',
-        'dark:hover:text-[rgb(243,243,243)]',
-        // Focus states
-        'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        // Disabled state
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        this.inputClass
-      )
+  computedClass = computed(() => {
+    return cn(
+      // Flex centering
+      'inline-flex items-center justify-center',
+      // Cursor
+      'cursor-pointer',
+      // Background and text
+      'p-0 text-[rgb(93,93,93)] hover:bg-[#E8E8E8]',
+      // Dark mode
+      'dark:text-[rgb(243,243,243)] dark:hover:bg-[#303030]',
+      // Shape and sizing
+      'h-8 w-8 rounded-md',
+      // Interactions
+      'transition-colors',
+      // Hover states
+      'hover:text-[rgb(93,93,93)]',
+      'dark:hover:text-[rgb(243,243,243)]',
+      // Focus states
+      'focus:outline-none focus:ring-2 focus:ring-offset-2',
+      // Disabled state
+      'disabled:opacity-50 disabled:cursor-not-allowed',
+      this.customClass()
     );
-  }
+  });
   
   handleClick(event: MouseEvent): void {
     if (!this.disabled) {
@@ -118,17 +123,21 @@ export class CopilotChatUserMessageCopyButtonComponent {
     };
   }
   
-  async handleCopy(): Promise<void> {
-    if (this.content) {
-      try {
-        await navigator.clipboard.writeText(this.content);
-        this.copied.set(true);
-        setTimeout(() => this.copied.set(false), 2000);
-        this.click.emit();
-      } catch (err) {
+  handleCopy(): void {
+    if (!this.content) return;
+    
+    // Set copied immediately for instant feedback
+    this.copied.set(true);
+    setTimeout(() => this.copied.set(false), 2000);
+    
+    // Copy to clipboard (fire and forget)
+    navigator.clipboard.writeText(this.content).then(
+      () => this.click.emit(),
+      (err) => {
         console.error('Failed to copy message:', err);
+        this.copied.set(false);
       }
-    }
+    );
   }
 }
 
