@@ -15,7 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 pnpm install
 
-# Run development mode (watch mode for all packages)
+# Run development mode (watch mode for all packages + all Storybook instances)
+# This starts everything: package watchers, React Storybook (6006), Angular Storybook (6007)
 pnpm dev
 
 # Build all packages
@@ -24,6 +25,13 @@ pnpm build
 # Build specific package
 pnpm turbo run build --filter=@copilotkit/react
 ```
+
+**Important:** Always use `pnpm dev` to start the development environment. This command:
+- Starts all package build watchers in development mode
+- Launches React Storybook on port 6006
+- Launches Angular Storybook on port 6007
+- Enables auto-reload on all file changes
+- Runs Tailwind CSS compilation in watch mode
 
 ### Testing & Quality
 

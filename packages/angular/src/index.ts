@@ -73,5 +73,19 @@ export * from "./components/chat/copilot-chat-message-view.types";
 export { CopilotChatMessageViewComponent } from "./components/chat/copilot-chat-message-view.component";
 export { CopilotChatMessageViewCursorComponent } from "./components/chat/copilot-chat-message-view-cursor.component";
 
+// Chat View Components
+export * from "./components/chat/copilot-chat-view.types";
+export { CopilotChatViewComponent } from "./components/chat/copilot-chat-view.component";
+export { CopilotChatViewScrollViewComponent } from "./components/chat/copilot-chat-view-scroll-view.component";
+export { CopilotChatViewScrollToBottomButtonComponent } from "./components/chat/copilot-chat-view-scroll-to-bottom-button.component";
+export { CopilotChatViewFeatherComponent } from "./components/chat/copilot-chat-view-feather.component";
+export { CopilotChatViewInputContainerComponent } from "./components/chat/copilot-chat-view-input-container.component";
+export { CopilotChatViewDisclaimerComponent } from "./components/chat/copilot-chat-view-disclaimer.component";
+
+// Services and Directives for Chat View
+export { ScrollPositionService } from "./services/scroll-position.service";
+export { ResizeObserverService } from "./services/resize-observer.service";
+export { StickToBottomDirective } from "./directives/stick-to-bottom.directive";
+
 // Testing utilities are not exported from the main entry point
 // They should be imported directly from '@copilotkit/angular/testing' if needed

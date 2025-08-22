@@ -1,0 +1,313 @@
+import {
+  Component,
+  Input,
+  ContentChild,
+  TemplateRef,
+  Type,
+  ViewChild,
+  ElementRef,
+  ChangeDetectionStrategy,
+  ViewEncapsulation,
+  signal,
+  computed,
+  OnInit,
+  OnChanges,
+  OnDestroy,
+  AfterViewInit,
+  ViewContainerRef,
+  effect
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { CopilotSlotComponent } from '../../lib/slots/copilot-slot.component';
+import { CopilotChatMessageViewComponent } from './copilot-chat-message-view.component';
+import { CopilotChatInputComponent } from './copilot-chat-input.component';
+import { CopilotChatViewScrollViewComponent } from './copilot-chat-view-scroll-view.component';
+import { CopilotChatViewScrollToBottomButtonComponent } from './copilot-chat-view-scroll-to-bottom-button.component';
+import { CopilotChatViewFeatherComponent } from './copilot-chat-view-feather.component';
+import { CopilotChatViewInputContainerComponent } from './copilot-chat-view-input-container.component';
+import { CopilotChatViewDisclaimerComponent } from './copilot-chat-view-disclaimer.component';
+import { Message } from '@ag-ui/client';
+import { cn } from '../../lib/utils';
+import { ResizeObserverService } from '../../services/resize-observer.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+/**
+ * CopilotChatView component - Angular port of the React component.
+ * A complete chat interface with message feed and input components.
+ * 
+ * @example
+ * ```html
+ * <copilot-chat-view
+ *   [messages]="messages"
+ *   [autoScroll]="true"
+ *   [messageViewProps]="{ assistantMessage: { onThumbsUp: handleThumbsUp } }">
+ * </copilot-chat-view>
+ * ```
+ */
+@Component({
+  selector: 'copilot-chat-view',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotSlotComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent,
+    CopilotChatViewScrollViewComponent,
+    CopilotChatViewScrollToBottomButtonComponent,
+    CopilotChatViewFeatherComponent,
+    CopilotChatViewInputContainerComponent,
+    CopilotChatViewDisclaimerComponent
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  providers: [ResizeObserverService],
+  template: `
+    <!-- Custom layout template support (render prop pattern) -->
+    @if (customLayoutTemplate) {
+      <ng-container *ngTemplateOutlet="customLayoutTemplate; context: layoutContext()"></ng-container>
+    } @else {
+      <!-- Default layout - exact React DOM structure -->
+      <div [class]="computedClass()">
+        <!-- ScrollView -->
+        <copilot-slot
+          [slot]="scrollViewSlot()"
+          [context]="scrollViewContext()"
+          [props]="scrollViewPropsComputed()"
+          [defaultComponent]="defaultScrollViewComponent">
+        </copilot-slot>
+
+        <!-- Feather effect -->
+        <copilot-slot
+          [slot]="featherSlot()"
+          [context]="{}"
+          [props]="featherProps"
+          [defaultComponent]="defaultFeatherComponent">
+        </copilot-slot>
+
+        <!-- Input container -->
+        <div #inputContainer>
+          <copilot-slot
+            [slot]="inputContainerSlot()"
+            [context]="inputContainerContext()"
+            [props]="inputContainerPropsComputed()"
+            [defaultComponent]="defaultInputContainerComponent">
+          </copilot-slot>
+        </div>
+      </div>
+    }
+  `
+})
+export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+  // Core inputs matching React props
+  @Input() messages: Message[] = [];
+  @Input() autoScroll: boolean = true;
+  @Input() inputClass?: string;
+  
+  // MessageView slot inputs
+  @Input() messageViewComponent?: Type<any>;
+  @Input() messageViewTemplate?: TemplateRef<any>;
+  @Input() messageViewClass?: string;
+  @Input() messageViewProps?: any;
+  
+  // ScrollView slot inputs
+  @Input() scrollViewComponent?: Type<any>;
+  @Input() scrollViewTemplate?: TemplateRef<any>;
+  @Input() scrollViewClass?: string;
+  @Input() scrollViewProps?: any;
+  
+  // ScrollToBottomButton slot inputs
+  @Input() scrollToBottomButtonComponent?: Type<any>;
+  @Input() scrollToBottomButtonTemplate?: TemplateRef<any>;
+  @Input() scrollToBottomButtonClass?: string;
+  @Input() scrollToBottomButtonProps?: any;
+  
+  // Input slot inputs
+  @Input() inputComponent?: Type<any>;
+  @Input() inputTemplate?: TemplateRef<any>;
+  @Input() inputProps?: any;
+  
+  // InputContainer slot inputs
+  @Input() inputContainerComponent?: Type<any>;
+  @Input() inputContainerTemplate?: TemplateRef<any>;
+  @Input() inputContainerClass?: string;
+  @Input() inputContainerProps?: any;
+  
+  // Feather slot inputs
+  @Input() featherComponent?: Type<any>;
+  @Input() featherTemplate?: TemplateRef<any>;
+  @Input() featherClass?: string;
+  @Input() featherProps?: any;
+  
+  // Disclaimer slot inputs
+  @Input() disclaimerComponent?: Type<any>;
+  @Input() disclaimerTemplate?: TemplateRef<any>;
+  @Input() disclaimerClass?: string;
+  @Input() disclaimerProps?: any;
+  
+  // Custom layout template (render prop pattern)
+  @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
+  
+  // ViewChild references
+  @ViewChild('inputContainer', { read: ElementRef }) inputContainerRef?: ElementRef<HTMLElement>;
+  
+  // Default components for slots
+  protected readonly defaultScrollViewComponent = CopilotChatViewScrollViewComponent;
+  protected readonly defaultScrollToBottomButtonComponent = CopilotChatViewScrollToBottomButtonComponent;
+  protected readonly defaultInputContainerComponent = CopilotChatViewInputContainerComponent;
+  protected readonly defaultFeatherComponent = CopilotChatViewFeatherComponent;
+  protected readonly defaultDisclaimerComponent = CopilotChatViewDisclaimerComponent;
+  
+  // Signals for reactive state
+  protected messagesSignal = signal<Message[]>([]);
+  protected autoScrollSignal = signal(true);
+  protected inputClassSignal = signal<string | undefined>(undefined);
+  protected inputContainerHeight = signal<number>(0);
+  protected isResizing = signal<boolean>(false);
+  
+  // Computed signals
+  protected computedClass = computed(() => 
+    cn('relative h-full', this.inputClassSignal())
+  );
+  
+  // Slot resolution computed signals
+  protected messageViewSlot = computed(() => 
+    this.messageViewTemplate || this.messageViewComponent || this.messageViewClass
+  );
+  
+  protected scrollViewSlot = computed(() => 
+    this.scrollViewTemplate || this.scrollViewComponent || this.scrollViewClass
+  );
+  
+  protected scrollToBottomButtonSlot = computed(() => 
+    this.scrollToBottomButtonTemplate || this.scrollToBottomButtonComponent || this.scrollToBottomButtonClass
+  );
+  
+  protected inputSlot = computed(() => 
+    this.inputTemplate || this.inputComponent
+  );
+  
+  protected inputContainerSlot = computed(() => 
+    this.inputContainerTemplate || this.inputContainerComponent || this.inputContainerClass
+  );
+  
+  protected featherSlot = computed(() => 
+    this.featherTemplate || this.featherComponent || this.featherClass
+  );
+  
+  protected disclaimerSlot = computed(() => 
+    this.disclaimerTemplate || this.disclaimerComponent || this.disclaimerClass
+  );
+  
+  // Context objects for slots
+  protected scrollViewContext = computed(() => ({
+    autoScroll: this.autoScrollSignal(),
+    scrollToBottomButton: this.scrollToBottomButtonSlot(),
+    scrollToBottomButtonProps: this.scrollToBottomButtonProps,
+    inputContainerHeight: this.inputContainerHeight(),
+    isResizing: this.isResizing(),
+    messages: this.messagesSignal(),
+    messageView: this.messageViewSlot(),
+    messageViewProps: this.messageViewProps
+  }));
+  
+  protected scrollViewPropsComputed = computed(() => ({
+    ...this.scrollViewProps,
+    autoScroll: this.autoScrollSignal(),
+    inputContainerHeight: this.inputContainerHeight(),
+    isResizing: this.isResizing()
+  }));
+  
+  protected inputContainerContext = computed(() => ({
+    input: this.inputSlot(),
+    inputProps: this.inputProps,
+    disclaimer: this.disclaimerSlot(),
+    disclaimerProps: this.disclaimerProps
+  }));
+  
+  protected inputContainerPropsComputed = computed(() => ({
+    ...this.inputContainerProps
+  }));
+  
+  // Layout context for custom templates (render prop pattern)
+  protected layoutContext = computed(() => ({
+    messageView: this.messageViewSlot(),
+    input: this.inputSlot(),
+    scrollView: this.scrollViewSlot(),
+    scrollToBottomButton: this.scrollToBottomButtonSlot(),
+    feather: this.featherSlot(),
+    inputContainer: this.inputContainerSlot(),
+    disclaimer: this.disclaimerSlot()
+  }));
+  
+  private destroy$ = new Subject<void>();
+  private resizeTimeoutRef?: number;
+  
+  constructor(
+    private resizeObserverService: ResizeObserverService
+  ) {
+    // Set up effect to handle resize state timeout
+    effect(() => {
+      const resizing = this.isResizing();
+      if (resizing && this.resizeTimeoutRef) {
+        clearTimeout(this.resizeTimeoutRef);
+        this.resizeTimeoutRef = undefined;
+      }
+    });
+  }
+  
+  ngOnInit(): void {
+    // Initialize signals with input values
+    this.messagesSignal.set(this.messages);
+    this.autoScrollSignal.set(this.autoScroll);
+    this.inputClassSignal.set(this.inputClass);
+  }
+  
+  ngOnChanges(): void {
+    // Update signals when inputs change
+    this.messagesSignal.set(this.messages);
+    this.autoScrollSignal.set(this.autoScroll);
+    this.inputClassSignal.set(this.inputClass);
+  }
+  
+  ngAfterViewInit(): void {
+    // Set up input container height monitoring
+    if (this.inputContainerRef) {
+      // Set initial height
+      const initialHeight = this.inputContainerRef.nativeElement.offsetHeight;
+      this.inputContainerHeight.set(initialHeight);
+      
+      // Monitor resize
+      this.resizeObserverService.observeElement(this.inputContainerRef, 0, 250)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(state => {
+          const newHeight = state.height;
+          
+          // Update height and set resizing state
+          if (newHeight !== this.inputContainerHeight()) {
+            this.inputContainerHeight.set(newHeight);
+            this.isResizing.set(true);
+            
+            // Clear existing timeout
+            if (this.resizeTimeoutRef) {
+              clearTimeout(this.resizeTimeoutRef);
+            }
+            
+            // Set isResizing to false after a short delay
+            this.resizeTimeoutRef = window.setTimeout(() => {
+              this.isResizing.set(false);
+              this.resizeTimeoutRef = undefined;
+            }, 250);
+          }
+        });
+    }
+  }
+  
+  ngOnDestroy(): void {
+    if (this.resizeTimeoutRef) {
+      clearTimeout(this.resizeTimeoutRef);
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
