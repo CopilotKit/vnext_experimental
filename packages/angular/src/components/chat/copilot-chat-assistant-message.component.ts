@@ -326,6 +326,10 @@ import { cn } from '../../lib/utils';
       color: #e6c07b;
     }
 
+    .dark .hljs-params {
+      color: #abb2bf; /* same as regular text */
+    }
+
     .dark .hljs-emphasis {
       font-style: italic;
     }

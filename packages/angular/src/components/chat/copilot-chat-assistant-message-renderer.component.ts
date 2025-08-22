@@ -50,9 +50,9 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       color: #000000;
     }
 
-    copilot-chat-assistant-message-renderer .dark code:not(pre code) {
-      background-color: rgb(64, 64, 64);
-      color: #e1e4e8;
+    .dark copilot-chat-assistant-message-renderer code:not(pre code) {
+      background-color: #171717; /* same as code blocks */
+      color: rgb(248, 250, 252); /* text-foreground in dark mode */
     }
 
     /* Code block container */
@@ -63,7 +63,7 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       border-radius: 1rem;
     }
     
-    copilot-chat-assistant-message-renderer .dark .code-block-container {
+    .dark copilot-chat-assistant-message-renderer .code-block-container {
       background-color: #171717;
     }
 
@@ -81,7 +81,7 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       color: rgba(115, 115, 115, 1);
     }
 
-    copilot-chat-assistant-message-renderer .dark .code-block-language {
+    .dark copilot-chat-assistant-message-renderer .code-block-language {
       color: white;
     }
 
@@ -98,7 +98,7 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       transition: opacity 0.2s;
     }
 
-    copilot-chat-assistant-message-renderer .dark .code-block-copy-button {
+    .dark copilot-chat-assistant-message-renderer .code-block-copy-button {
       color: white;
     }
 
@@ -122,6 +122,10 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       background-color: transparent;
       border-radius: 1rem;
     }
+    
+    .dark copilot-chat-assistant-message-renderer pre {
+      background-color: transparent;
+    }
 
     copilot-chat-assistant-message-renderer pre code {
       background-color: transparent;
@@ -136,7 +140,7 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       color: rgb(56, 58, 66);
     }
     
-    copilot-chat-assistant-message-renderer .dark .hljs {
+    .dark copilot-chat-assistant-message-renderer .hljs {
       background: transparent;
       color: #abb2bf;
     }
