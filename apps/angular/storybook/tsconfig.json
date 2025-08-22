@@ -13,20 +13,12 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
-    "declaration": false,
     "useDefineForClassFields": false,
     "paths": {
       "@copilotkit/angular": ["../../../packages/angular/src/index.ts"],
       "@copilotkit/angular/*": ["../../../packages/angular/src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".storybook/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
