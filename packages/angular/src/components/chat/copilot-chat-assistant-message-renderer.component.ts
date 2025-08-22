@@ -388,12 +388,25 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
         newStates.set(blockId, true);
         this.copyStateSignal.set(newStates);
         
-        // Reset after 2 seconds
-        setTimeout(() => {
-          const states = new Map(this.copyStateSignal());
-          states.set(blockId, false);
-          this.copyStateSignal.set(states);
-        }, 2000);
+        // Update the button in the DOM
+        const button = this.elementRef.nativeElement.querySelector(`[data-code-block-id="${blockId}"]`);
+        if (button) {
+          const originalHTML = button.innerHTML;
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>${this.labels.assistantMessageToolbarCopyCodeCopiedLabel}</span>
+          `;
+          button.setAttribute('aria-label', `${this.labels.assistantMessageToolbarCopyCodeCopiedLabel} code`);
+          
+          // Reset after 2 seconds
+          setTimeout(() => {
+            const states = new Map(this.copyStateSignal());
+            states.set(blockId, false);
+            this.copyStateSignal.set(states);
+            button.innerHTML = originalHTML;
+            button.setAttribute('aria-label', `${this.labels.assistantMessageToolbarCopyCodeLabel} code`);
+          }, 2000);
+        }
       },
       (err) => {
         console.error('Failed to copy code:', err);
