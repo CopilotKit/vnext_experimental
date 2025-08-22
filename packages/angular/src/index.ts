@@ -68,5 +68,10 @@ export {
 } from "./components/chat/copilot-chat-assistant-message-buttons.component";
 export { CopilotChatAssistantMessageToolbarComponent } from "./components/chat/copilot-chat-assistant-message-toolbar.component";
 
+// Chat Message View Components
+export * from "./components/chat/copilot-chat-message-view.types";
+export { CopilotChatMessageViewComponent } from "./components/chat/copilot-chat-message-view.component";
+export { CopilotChatMessageViewCursorComponent } from "./components/chat/copilot-chat-message-view-cursor.component";
+
 // Testing utilities are not exported from the main entry point
 // They should be imported directly from '@copilotkit/angular/testing' if needed
