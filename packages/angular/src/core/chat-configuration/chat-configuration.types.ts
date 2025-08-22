@@ -1,7 +1,27 @@
 import { InjectionToken } from '@angular/core';
 
+// Type for chat labels
+export interface CopilotChatLabels {
+  chatInputPlaceholder: string;
+  chatInputToolbarStartTranscribeButtonLabel: string;
+  chatInputToolbarCancelTranscribeButtonLabel: string;
+  chatInputToolbarFinishTranscribeButtonLabel: string;
+  chatInputToolbarAddButtonLabel: string;
+  chatInputToolbarToolsButtonLabel: string;
+  assistantMessageToolbarCopyCodeLabel: string;
+  assistantMessageToolbarCopyCodeCopiedLabel: string;
+  assistantMessageToolbarCopyMessageLabel: string;
+  assistantMessageToolbarThumbsUpLabel: string;
+  assistantMessageToolbarThumbsDownLabel: string;
+  assistantMessageToolbarReadAloudLabel: string;
+  assistantMessageToolbarRegenerateLabel: string;
+  userMessageToolbarCopyMessageLabel: string;
+  userMessageToolbarEditMessageLabel: string;
+  chatDisclaimerText: string;
+}
+
 // Default labels constant
-export const COPILOT_CHAT_DEFAULT_LABELS = {
+export const COPILOT_CHAT_DEFAULT_LABELS: CopilotChatLabels = {
   chatInputPlaceholder: "Type a message...",
   chatInputToolbarStartTranscribeButtonLabel: "Transcribe",
   chatInputToolbarCancelTranscribeButtonLabel: "Cancel",
@@ -18,10 +38,7 @@ export const COPILOT_CHAT_DEFAULT_LABELS = {
   userMessageToolbarCopyMessageLabel: "Copy",
   userMessageToolbarEditMessageLabel: "Edit",
   chatDisclaimerText: "AI can make mistakes. Please verify important information.",
-} as const;
-
-// Type for chat labels
-export type CopilotChatLabels = typeof COPILOT_CHAT_DEFAULT_LABELS;
+};
 
 // Configuration interface
 export interface CopilotChatConfiguration {

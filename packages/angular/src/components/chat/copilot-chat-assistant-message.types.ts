@@ -47,4 +47,4 @@ export interface CopilotChatAssistantMessageOnRegenerateProps {
 }
 
 // Re-export for convenience
-export { AssistantMessage };
+export type { AssistantMessage };

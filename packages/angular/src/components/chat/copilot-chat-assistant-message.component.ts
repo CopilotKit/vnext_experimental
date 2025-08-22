@@ -57,7 +57,7 @@ import { cn } from '../../lib/utils';
   template: `
     <div 
       [class]="computedClass()"
-      [attr.data-message-id]="message.id">
+      [attr.data-message-id]="message?.id">
       
       <!-- Markdown Renderer -->
       @if (markdownRendererTemplate || markdownRendererSlot) {
@@ -68,7 +68,7 @@ import { cn } from '../../lib/utils';
         </copilot-slot>
       } @else {
         <copilot-chat-assistant-message-renderer
-          [content]="message.content || ''"
+          [content]="message?.content || ''"
           [inputClass]="markdownRendererProps?.className || markdownRendererProps?.class">
         </copilot-chat-assistant-message-renderer>
       }
@@ -93,7 +93,7 @@ import { cn } from '../../lib/utils';
                 </copilot-slot>
               } @else {
                 <copilot-chat-assistant-message-copy-button
-                  [content]="message.content"
+                  [content]="message?.content"
                   [inputClass]="copyButtonProps?.className || copyButtonProps?.class"
                   (click)="handleCopy()">
                 </copilot-chat-assistant-message-copy-button>
