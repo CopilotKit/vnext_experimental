@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
 import { WithSlots, renderSlot } from "@/lib/slots";
-import { completePartialMarkdown } from "@/lib/markdown";
+import { completePartialMarkdown } from "@copilotkit/core";
 
 export type CopilotChatAssistantMessageProps = WithSlots<
   {
