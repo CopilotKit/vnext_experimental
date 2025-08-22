@@ -378,14 +378,18 @@ export const WithToolbarButtons: Story = {
       }
     },
     template: `
-      <copilot-chat-assistant-message
-        [message]="message"
-        [toolbarVisible]="toolbarVisible"
-        (thumbsUp)="onThumbsUp($event)"
-        (thumbsDown)="onThumbsDown($event)"
-        (readAloud)="onReadAloud($event)"
-        (regenerate)="onRegenerate($event)">
-      </copilot-chat-assistant-message>
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
+        <div style="width: 100%; max-width: 640px;">
+          <copilot-chat-assistant-message
+            [message]="message"
+            [toolbarVisible]="toolbarVisible"
+            (thumbsUp)="onThumbsUp($event)"
+            (thumbsDown)="onThumbsDown($event)"
+            (readAloud)="onReadAloud($event)"
+            (regenerate)="onRegenerate($event)">
+          </copilot-chat-assistant-message>
+        </div>
+      </div>
     `
   })
 };
@@ -402,29 +406,33 @@ export const WithAdditionalToolbarItems: Story = {
       onCustom2: () => alert('Custom button 2 clicked!')
     },
     template: `
-      <copilot-chat-assistant-message 
-        [message]="message"
-        [toolbarVisible]="true"
-        (thumbsUp)="onThumbsUp($event)"
-        (thumbsDown)="onThumbsDown($event)"
-        (readAloud)="onReadAloud($event)"
-        (regenerate)="onRegenerate($event)"
-        [additionalToolbarItems]="additionalItems">
-        <ng-template #additionalItems>
-          <button 
-            class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
-            (click)="onCustom1()"
-            title="Custom Action 1">
-            📌
-          </button>
-          <button 
-            class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
-            (click)="onCustom2()"
-            title="Custom Action 2">
-            ❤️
-          </button>
-        </ng-template>
-      </copilot-chat-assistant-message>
+      <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 16px;">
+        <div style="width: 100%; max-width: 640px;">
+          <copilot-chat-assistant-message 
+            [message]="message"
+            [toolbarVisible]="true"
+            (thumbsUp)="onThumbsUp($event)"
+            (thumbsDown)="onThumbsDown($event)"
+            (readAloud)="onReadAloud($event)"
+            (regenerate)="onRegenerate($event)"
+            [additionalToolbarItems]="additionalItems">
+            <ng-template #additionalItems>
+              <button 
+                class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                (click)="onCustom1()"
+                title="Custom Action 1">
+                📌
+              </button>
+              <button 
+                class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                (click)="onCustom2()"
+                title="Custom Action 2">
+                ❤️
+              </button>
+            </ng-template>
+          </copilot-chat-assistant-message>
+        </div>
+      </div>
     `
   })
 };
