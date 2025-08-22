@@ -201,16 +201,37 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
   private updateContent(): void {
     if (!this.markdownContainer) return;
     const container = this.markdownContainer.nativeElement;
-    container.innerHTML = this.renderedHtml();
+    const html = this.renderedHtml();
+    container.innerHTML = html;
   }
   
+  private codeBlocksMap = new Map<string, string>();
+  
   private renderMarkdown(content: string): string {
+    // Clear the code blocks map for new render
+    this.codeBlocksMap.clear();
+    
     // Configure marked with custom renderer
     const renderer = new CustomRenderer((code, language) => {
       const blockId = this.generateBlockId(code);
-      const highlighted = language 
-        ? hljs.highlight(code, { language }).value
-        : hljs.highlightAuto(code).value;
+      // Store the raw code in our map
+      this.codeBlocksMap.set(blockId, code);
+      
+      let highlighted: string;
+      try {
+        if (language) {
+          // Try to highlight with specific language
+          const result = hljs.highlight(code, { language });
+          highlighted = result.value;
+        } else {
+          // Auto-detect language
+          const result = hljs.highlightAuto(code);
+          highlighted = result.value;
+        }
+      } catch (e) {
+        // If highlighting fails, use plain text
+        highlighted = this.escapeHtml(code);
+      }
       
       const copied = this.copyStateSignal().get(blockId) || false;
       const copyLabel = copied 
@@ -224,7 +245,6 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
             <button 
               class="code-block-copy-button" 
               data-code-block-id="${blockId}"
-              data-code-content="${this.escapeHtml(code)}"
               aria-label="${copyLabel} code">
               ${copied ? 
                 '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' :
@@ -307,10 +327,13 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
     if (copyButton) {
       event.preventDefault();
       const blockId = copyButton.getAttribute('data-code-block-id');
-      const codeContent = copyButton.getAttribute('data-code-content');
       
-      if (blockId && codeContent) {
-        this.copyCodeBlock(blockId, this.unescapeHtml(codeContent));
+      if (blockId) {
+        // Get the raw code from our map instead of from DOM
+        const code = this.codeBlocksMap.get(blockId);
+        if (code) {
+          this.copyCodeBlock(blockId, code);
+        }
       }
     }
   }
@@ -351,11 +374,5 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-  }
-  
-  private unescapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.innerHTML = text;
-    return div.textContent || '';
   }
 }
