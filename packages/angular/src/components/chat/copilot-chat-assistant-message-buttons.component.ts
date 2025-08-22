@@ -49,8 +49,8 @@ export class CopilotChatAssistantMessageToolbarButtonComponent {
   
   computedClass = computed(() => {
     return cn(
-      // Flex centering
-      'inline-flex items-center justify-center',
+      // Flex centering with gap (from React button base styles)
+      'inline-flex items-center justify-center gap-2',
       // Cursor
       'cursor-pointer',
       // Background and text
@@ -68,6 +68,10 @@ export class CopilotChatAssistantMessageToolbarButtonComponent {
       'focus:outline-none focus:ring-2 focus:ring-offset-2',
       // Disabled state
       'disabled:opacity-50 disabled:cursor-not-allowed',
+      // SVG styling from React Button component
+      '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+      // Ensure proper sizing
+      'shrink-0',
       this.customClass()
     );
   });
