@@ -1,3 +1,0 @@
-- document middleware OSS
-- document middleware cloud
-  - the different types, i.e. RunAgent, GetAgents, GetInfo

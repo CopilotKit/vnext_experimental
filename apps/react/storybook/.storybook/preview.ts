@@ -13,6 +13,16 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    docs: {
+      // Canvas (bottom) code panel behavior
+      canvas: { sourceState: 'shown' }, // Show source code by default
+      // Enable the separate Code panel in Docs tab
+      codePanel: true,
+      // Configure source display
+      source: {
+        type: 'dynamic', // Update snippet as args/Controls change
+      },
+    },
   },
   decorators: [
     withThemeByClassName({

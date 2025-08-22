@@ -13,6 +13,14 @@ const preview: Preview = {
     },
     docs: {
       toc: true,
+      // Canvas (bottom) code panel behavior
+      canvas: { sourceState: 'shown' }, // Show source code by default
+      // Enable the separate Code panel in Docs tab
+      codePanel: true,
+      // Configure source display
+      source: {
+        type: 'dynamic', // Update snippet as args/Controls change
+      },
     },
   },
   decorators: [

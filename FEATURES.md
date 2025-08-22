@@ -1,3 +1,0 @@
-- middleware for before and after request
-  - can be used in cloud to have webhooks
-  - log errors that occur in before middleware, handler, and after middleware

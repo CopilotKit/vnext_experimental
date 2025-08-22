@@ -289,6 +289,14 @@ const codeBlocksTestMessage: AssistantMessage = {
 const meta: Meta<CopilotChatAssistantMessageComponent> = {
   title: 'UI/CopilotChatAssistantMessage',
   component: CopilotChatAssistantMessageComponent,
+  parameters: {
+    docs: {
+      source: {
+        language: 'html',
+        type: 'dynamic',
+      },
+    },
+  },
   decorators: [
     moduleMetadata({
       imports: [
