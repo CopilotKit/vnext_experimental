@@ -182,141 +182,160 @@ import { cn } from '../../lib/utils';
       width: 100%;
     }
 
-    /* Light mode highlight.js theme (GitHub style) */
+    /* Atom One Light theme for highlight.js */
     .hljs {
-      color: #24292e;
+      color: rgb(56, 58, 66);
       background: transparent;
     }
 
     .hljs-comment,
     .hljs-quote {
-      color: #6a737d;
+      color: #a0a1a7;
+      font-style: italic;
     }
 
-    .hljs-keyword,
-    .hljs-selector-tag,
-    .hljs-literal,
-    .hljs-title,
-    .hljs-section,
     .hljs-doctag,
-    .hljs-type,
+    .hljs-formula,
+    .hljs-keyword {
+      color: #a626a4;
+    }
+
+    .hljs-deletion,
     .hljs-name,
-    .hljs-strong {
-      color: #d73a49;
-      font-weight: bold;
-    }
-
-    .hljs-string,
-    .hljs-number,
-    .hljs-regexp,
-    .hljs-meta .hljs-meta-string,
-    .hljs-template-tag,
-    .hljs-template-variable {
-      color: #032f62;
-    }
-
+    .hljs-section,
+    .hljs-selector-tag,
     .hljs-subst {
-      color: #24292e;
+      color: #e45649;
     }
 
-    .hljs-function,
-    .hljs-title.function_,
-    .hljs-built_in {
-      color: #6f42c1;
+    .hljs-literal {
+      color: #0184bb;
     }
 
-    .hljs-symbol,
-    .hljs-bullet,
-    .hljs-link {
-      color: #005cc5;
-    }
-
-    .hljs-meta,
+    .hljs-addition,
     .hljs-attribute,
-    .hljs-variable,
+    .hljs-meta .hljs-string,
+    .hljs-regexp,
+    .hljs-string {
+      color: #50a14f;
+    }
+
+    .hljs-attr,
+    .hljs-number,
+    .hljs-selector-attr,
+    .hljs-selector-class,
+    .hljs-selector-pseudo,
+    .hljs-template-variable,
+    .hljs-type,
+    .hljs-variable {
+      color: #986801;
+    }
+
     .hljs-params {
-      color: #e36209;
+      color: rgb(56, 58, 66);
     }
 
-    .hljs-attr {
-      color: #6f42c1;
+    .hljs-bullet,
+    .hljs-link,
+    .hljs-meta,
+    .hljs-selector-id,
+    .hljs-symbol,
+    .hljs-title {
+      color: #4078f2;
     }
 
-    .hljs-formula {
-      background-color: #f6f8fa;
-    }
-
-    .hljs-deletion {
-      background-color: #ffeef0;
-      color: #d73a49;
-    }
-
-    .hljs-addition {
-      background-color: #f0fff4;
-      color: #22863a;
+    .hljs-built_in,
+    .hljs-class .hljs-title,
+    .hljs-title.class_ {
+      color: #c18401;
     }
 
     .hljs-emphasis {
       font-style: italic;
     }
 
-    /* Dark mode adjustments for highlight.js */
+    .hljs-strong {
+      font-weight: 700;
+    }
+
+    .hljs-link {
+      text-decoration: underline;
+    }
+
+    /* Atom One Dark theme for highlight.js */
     .dark .hljs {
+      color: #abb2bf;
       background: transparent;
-      color: #e1e4e8;
     }
 
     .dark .hljs-comment,
     .dark .hljs-quote {
-      color: #6a737d;
+      color: #5c6370;
+      font-style: italic;
     }
 
-    .dark .hljs-keyword,
-    .dark .hljs-selector-tag,
-    .dark .hljs-addition {
-      color: #f97583;
-    }
-
-    .dark .hljs-number,
-    .dark .hljs-string,
-    .dark .hljs-meta .hljs-meta-string,
-    .dark .hljs-literal,
     .dark .hljs-doctag,
-    .dark .hljs-regexp {
-      color: #79b8ff;
+    .dark .hljs-formula,
+    .dark .hljs-keyword {
+      color: #c678dd;
     }
 
-    .dark .hljs-title,
-    .dark .hljs-section,
+    .dark .hljs-deletion,
     .dark .hljs-name,
-    .dark .hljs-selector-id,
-    .dark .hljs-selector-class {
-      color: #b392f0;
+    .dark .hljs-section,
+    .dark .hljs-selector-tag,
+    .dark .hljs-subst {
+      color: #e06c75;
     }
 
+    .dark .hljs-literal {
+      color: #56b6c2;
+    }
+
+    .dark .hljs-addition,
     .dark .hljs-attribute,
-    .dark .hljs-attr,
-    .dark .hljs-variable,
-    .dark .hljs-template-variable,
-    .dark .hljs-class .hljs-title,
-    .dark .hljs-type {
-      color: #ffab70;
+    .dark .hljs-meta .hljs-string,
+    .dark .hljs-regexp,
+    .dark .hljs-string {
+      color: #98c379;
     }
 
-    .dark .hljs-symbol,
-    .dark .hljs-bullet,
-    .dark .hljs-subst,
-    .dark .hljs-meta,
-    .dark .hljs-meta .hljs-keyword,
+    .dark .hljs-attr,
+    .dark .hljs-number,
     .dark .hljs-selector-attr,
+    .dark .hljs-selector-class,
     .dark .hljs-selector-pseudo,
-    .dark .hljs-link {
-      color: #85e89d;
+    .dark .hljs-template-variable,
+    .dark .hljs-type,
+    .dark .hljs-variable {
+      color: #d19a66;
+    }
+
+    .dark .hljs-bullet,
+    .dark .hljs-link,
+    .dark .hljs-meta,
+    .dark .hljs-selector-id,
+    .dark .hljs-symbol,
+    .dark .hljs-title {
+      color: #61aeee;
     }
 
     .dark .hljs-built_in,
-    .dark .hljs-deletion {
-      color: #f97583;
+    .dark .hljs-class .hljs-title,
+    .dark .hljs-title.class_ {
+      color: #e6c07b;
+    }
+
+    .dark .hljs-emphasis {
+      font-style: italic;
+    }
+
+    .dark .hljs-strong {
+      font-weight: 700;
+    }
+
+    .dark .hljs-link {
+      text-decoration: underline;
     }
   `]
 })

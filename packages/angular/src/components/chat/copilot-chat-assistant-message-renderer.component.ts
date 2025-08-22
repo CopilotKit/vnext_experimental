@@ -47,17 +47,24 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       font-size: 0.875rem;
       font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
       font-weight: 500;
-      color: inherit;
+      color: #000000;
     }
 
     copilot-chat-assistant-message-renderer .dark code:not(pre code) {
       background-color: rgb(64, 64, 64);
+      color: #e1e4e8;
     }
 
     /* Code block container */
     copilot-chat-assistant-message-renderer .code-block-container {
       position: relative;
       margin: 0.25rem 0;
+      background-color: rgb(249, 249, 249);
+      border-radius: 1rem;
+    }
+    
+    copilot-chat-assistant-message-renderer .dark .code-block-container {
+      background-color: #171717;
     }
 
     copilot-chat-assistant-message-renderer .code-block-header {
@@ -113,12 +120,7 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
       padding: 0 1rem 1rem 1rem;
       overflow-x: auto;
       background-color: transparent;
-      border-top: 1px solid rgba(229, 229, 229, 1);
       border-radius: 1rem;
-    }
-
-    copilot-chat-assistant-message-renderer .dark pre {
-      border-top-color: rgba(64, 64, 64, 1);
     }
 
     copilot-chat-assistant-message-renderer pre code {
@@ -131,7 +133,12 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
     /* Highlight.js theme adjustments */
     copilot-chat-assistant-message-renderer .hljs {
       background: transparent;
-      color: inherit;
+      color: rgb(56, 58, 66);
+    }
+    
+    copilot-chat-assistant-message-renderer .dark .hljs {
+      background: transparent;
+      color: #abb2bf;
     }
 
     /* Math equations */
