@@ -30,6 +30,7 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/
     .copilot-tooltip-wrapper {
       position: relative;
       display: inline-block;
+      animation: fadeIn 0.15s ease-in-out;
     }
     
     .copilot-tooltip {
@@ -42,7 +43,6 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/
       white-space: nowrap;
       max-width: 200px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      animation: fadeIn 0.15s ease-in-out;
     }
     
     .copilot-tooltip-arrow {
@@ -134,10 +134,18 @@ export class CopilotTooltipDirective implements OnDestroy {
   
   private overlayRef?: OverlayRef;
   private tooltipTimeout?: number;
+  private originalTitle?: string;
   
   @HostListener('mouseenter')
   onMouseEnter(): void {
     if (!this.tooltipText) return;
+    
+    // Store and remove native title to prevent OS tooltip
+    const element = this.elementRef.nativeElement;
+    if (element.hasAttribute('title')) {
+      this.originalTitle = element.getAttribute('title');
+      element.removeAttribute('title');
+    }
     
     // Clear any existing timeout
     if (this.tooltipTimeout) {
@@ -156,6 +164,12 @@ export class CopilotTooltipDirective implements OnDestroy {
     if (this.tooltipTimeout) {
       clearTimeout(this.tooltipTimeout);
       this.tooltipTimeout = undefined;
+    }
+    
+    // Restore original title if it existed
+    if (this.originalTitle !== undefined) {
+      this.elementRef.nativeElement.setAttribute('title', this.originalTitle);
+      this.originalTitle = undefined;
     }
     
     // Hide tooltip if it's showing
@@ -268,6 +282,10 @@ export class CopilotTooltipDirective implements OnDestroy {
   ngOnDestroy(): void {
     if (this.tooltipTimeout) {
       clearTimeout(this.tooltipTimeout);
+    }
+    // Restore original title if it existed
+    if (this.originalTitle !== undefined) {
+      this.elementRef.nativeElement.setAttribute('title', this.originalTitle);
     }
     this.hide();
   }

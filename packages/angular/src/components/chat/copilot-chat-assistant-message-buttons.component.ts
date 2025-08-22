@@ -27,7 +27,6 @@ import { cn } from '../../lib/utils';
   `,
   host: {
     '[class]': 'computedClass()',
-    '[attr.title]': 'title',
     '[attr.disabled]': 'disabled ? true : null',
     'type': 'button',
     '[attr.aria-label]': 'title'
