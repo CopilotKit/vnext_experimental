@@ -49,7 +49,7 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
 export default meta;
 type Story = StoryObj<CopilotChatMessageViewComponent>;
 
-// Default story with full conversation
+// Default story with full conversation - matches React exactly
 export const Default: Story = {
   parameters: {
     layout: 'fullscreen',
@@ -137,7 +137,7 @@ In this example:
   },
 };
 
-// Story showing cursor animation
+// ShowCursor story - matches React exactly
 export const ShowCursor: Story = {
   parameters: {
     layout: 'fullscreen',
@@ -173,211 +173,6 @@ export const ShowCursor: Story = {
               [messages]="messages"
               [showCursor]="showCursor"
               [assistantMessageProps]="assistantMessageProps">
-            </copilot-chat-message-view>
-          </div>
-        </div>
-      `,
-    };
-  },
-};
-
-// Story with custom classes
-export const CustomClasses: Story = {
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: () => {
-    const messages: Message[] = [
-      {
-        id: 'user-1',
-        content: 'This message has custom styling',
-        role: 'user' as const,
-      },
-      {
-        id: 'assistant-1',
-        content: 'This assistant message also has custom styling!',
-        role: 'assistant' as const,
-      },
-    ];
-
-    return {
-      props: {
-        messages,
-        inputClass: 'bg-gray-50 p-4 rounded-lg',
-        assistantMessageClass: 'text-blue-600',
-        userMessageClass: 'text-green-600',
-        cursorClass: 'bg-red-500',
-        showCursor: true,
-      },
-      template: `
-        <div style="height: 100vh; margin: 0; padding: 0; overflow: auto;">
-          <div style="height: 100%; padding: 20px;">
-            <copilot-chat-message-view
-              [messages]="messages"
-              [inputClass]="inputClass"
-              [assistantMessageClass]="assistantMessageClass"
-              [userMessageClass]="userMessageClass"
-              [cursorClass]="cursorClass"
-              [showCursor]="showCursor">
-            </copilot-chat-message-view>
-          </div>
-        </div>
-      `,
-    };
-  },
-};
-
-// Story with custom layout template
-export const CustomLayout: Story = {
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: () => {
-    const messages: Message[] = [
-      {
-        id: 'user-1',
-        content: 'First user message',
-        role: 'user' as const,
-      },
-      {
-        id: 'assistant-1',
-        content: 'First assistant response',
-        role: 'assistant' as const,
-      },
-      {
-        id: 'user-2',
-        content: 'Second user message',
-        role: 'user' as const,
-      },
-      {
-        id: 'assistant-2',
-        content: 'Second assistant response',
-        role: 'assistant' as const,
-      },
-    ];
-
-    return {
-      props: {
-        messages,
-        showCursor: true,
-      },
-      template: `
-        <div style="height: 100vh; margin: 0; padding: 0; overflow: auto;">
-          <copilot-chat-message-view
-            [messages]="messages"
-            [showCursor]="showCursor">
-            <ng-template #customLayout let-messages="messages" let-showCursor="showCursor" let-messageElements="messageElements">
-              <div style="padding: 20px; background: linear-gradient(to bottom, #f0f0f0, #ffffff);">
-                <h2 style="text-align: center; color: #333; margin-bottom: 20px;">
-                  Custom Chat Layout
-                </h2>
-                <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                  <div style="margin-bottom: 10px; color: #666;">
-                    Total Messages: {{ messages.length }}
-                  </div>
-                  <div style="margin-bottom: 10px; color: #666;">
-                    Cursor Active: {{ showCursor ? 'Yes' : 'No' }}
-                  </div>
-                  <div style="margin-bottom: 20px; color: #666;">
-                    Message Elements: {{ messageElements.length }}
-                  </div>
-                  <div style="border-top: 1px solid #eee; padding-top: 20px;">
-                    <div *ngFor="let msg of messages" style="margin-bottom: 15px; padding: 10px; background: #f9f9f9; border-radius: 5px;">
-                      <strong>{{ msg.role === 'user' ? 'User' : 'Assistant' }}:</strong> {{ msg.content }}
-                    </div>
-                  </div>
-                  <div *ngIf="showCursor" style="text-align: center; margin-top: 20px;">
-                    <span style="display: inline-block; width: 11px; height: 11px; background: #333; border-radius: 50%; animation: pulse 1s infinite;"></span>
-                    <span style="margin-left: 10px; color: #666;">AI is thinking...</span>
-                  </div>
-                </div>
-              </div>
-            </ng-template>
-          </copilot-chat-message-view>
-        </div>
-      `,
-    };
-  },
-};
-
-// Story with empty state
-export const EmptyState: Story = {
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: () => {
-    return {
-      props: {
-        messages: [],
-        showCursor: true,
-      },
-      template: `
-        <div style="height: 100vh; margin: 0; padding: 0; overflow: auto;">
-          <div style="height: 100%; display: flex; align-items: center; justify-content: center;">
-            <div style="text-align: center;">
-              <p style="color: #666; margin-bottom: 20px;">No messages yet. Start a conversation!</p>
-              <copilot-chat-message-view
-                [messages]="messages"
-                [showCursor]="showCursor">
-              </copilot-chat-message-view>
-            </div>
-          </div>
-        </div>
-      `,
-    };
-  },
-};
-
-// Story with long conversation for performance testing
-export const LongConversation: Story = {
-  parameters: {
-    layout: 'fullscreen',
-  },
-  render: () => {
-    const messages: Message[] = [];
-    
-    // Generate 50 message pairs (100 messages total)
-    for (let i = 0; i < 50; i++) {
-      messages.push({
-        id: `user-${i}`,
-        content: `User question ${i + 1}: This is a sample question about topic ${i + 1}. Can you help me understand it better?`,
-        role: 'user' as const,
-      });
-      
-      messages.push({
-        id: `assistant-${i}`,
-        content: `Assistant response ${i + 1}: Of course! Let me explain topic ${i + 1} in detail.
-
-This is a comprehensive response that includes:
-- **Point 1**: Important information about the topic
-- **Point 2**: Additional details and context
-- **Point 3**: Examples and use cases
-
-\`\`\`javascript
-// Example code for topic ${i + 1}
-function example${i + 1}() {
-  console.log('This is example ${i + 1}');
-  return 'Result ${i + 1}';
-}
-\`\`\`
-
-I hope this helps clarify topic ${i + 1} for you!`,
-        role: 'assistant' as const,
-      });
-    }
-
-    return {
-      props: {
-        messages,
-        showCursor: false,
-      },
-      template: `
-        <div style="height: 100vh; margin: 0; padding: 0; overflow: auto;">
-          <div style="padding: 20px;">
-            <h3 style="margin-bottom: 10px;">Performance Test: {{ messages.length }} messages</h3>
-            <copilot-chat-message-view
-              [messages]="messages"
-              [showCursor]="showCursor">
             </copilot-chat-message-view>
           </div>
         </div>
