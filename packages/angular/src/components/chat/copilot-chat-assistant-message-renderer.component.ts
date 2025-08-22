@@ -13,25 +13,12 @@ import {
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import hljs from 'highlight.js';
 import * as katex from 'katex';
 import { completePartialMarkdown } from '@copilotkit/core';
 import { LucideAngularModule, Copy, Check } from 'lucide-angular';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
-
-// Custom renderer for marked to handle code blocks with copy button
-class CustomRenderer extends marked.Renderer {
-  constructor(
-    private onCodeBlock: (code: string, language?: string) => string
-  ) {
-    super();
-  }
-
-  override code({ text, lang }: { text: string; lang?: string; escaped?: boolean }): string {
-    return this.onCodeBlock(text, lang);
-  }
-}
 
 @Component({
   selector: 'copilot-chat-assistant-message-renderer',
@@ -206,66 +193,84 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
   }
   
   private codeBlocksMap = new Map<string, string>();
+  private markedInstance: Marked | null = null;
   
-  private renderMarkdown(content: string): string {
-    // Clear the code blocks map for new render
-    this.codeBlocksMap.clear();
+  private initializeMarked(): void {
+    if (this.markedInstance) return;
     
-    // Configure marked with custom renderer
-    const renderer = new CustomRenderer((code, language) => {
-      const blockId = this.generateBlockId(code);
-      // Store the raw code in our map
-      this.codeBlocksMap.set(blockId, code);
-      
-      let highlighted: string;
-      try {
-        if (language) {
-          // Try to highlight with specific language
-          const result = hljs.highlight(code, { language });
-          highlighted = result.value;
-        } else {
-          // Auto-detect language
-          const result = hljs.highlightAuto(code);
-          highlighted = result.value;
-        }
-      } catch (e) {
-        // If highlighting fails, use plain text
-        highlighted = this.escapeHtml(code);
-      }
-      
-      const copied = this.copyStateSignal().get(blockId) || false;
-      const copyLabel = copied 
-        ? this.labels.assistantMessageToolbarCopyCodeCopiedLabel
-        : this.labels.assistantMessageToolbarCopyCodeLabel;
-      
-      return `
-        <div class="code-block-container">
-          <div class="code-block-header">
-            ${language ? `<span class="code-block-language">${language}</span>` : '<span></span>'}
-            <button 
-              class="code-block-copy-button" 
-              data-code-block-id="${blockId}"
-              aria-label="${copyLabel} code">
-              ${copied ? 
-                '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' :
-                '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.11 0-2-.9-2-2V4c0-1.11.89-2 2-2h10c1.11 0 2 .89 2 2"/></svg>'
-              }
-              <span>${copyLabel}</span>
-            </button>
-          </div>
-          <pre><code class="hljs ${language || ''}">${highlighted}</code></pre>
-        </div>
-      `;
-    });
+    // Store highlighted code blocks temporarily
+    const highlightedBlocks = new Map<string, string>();
     
-    marked.setOptions({
-      renderer,
+    // Create a new Marked instance
+    this.markedInstance = new Marked();
+    
+    // Configure marked options
+    this.markedInstance.setOptions({
       gfm: true,
       breaks: true
     });
     
+    // Add a walkTokens function to process code tokens before rendering
+    this.markedInstance.use({
+      walkTokens: (token: any) => {
+        if (token.type === 'code') {
+          const rawCode = token.text;
+          const lang = token.lang || '';
+          
+          const blockId = this.generateBlockId(rawCode);
+          // Store the raw code in our map for copying
+          this.codeBlocksMap.set(blockId, rawCode);
+          
+          const copied = this.copyStateSignal().get(blockId) || false;
+          const copyLabel = copied 
+            ? this.labels.assistantMessageToolbarCopyCodeCopiedLabel
+            : this.labels.assistantMessageToolbarCopyCodeLabel;
+          
+          // Manually highlight the code
+          const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+          const highlighted = hljs.highlight(rawCode, { language }).value;
+          const codeClass = lang ? `hljs language-${lang}` : 'hljs';
+          
+          // Create the full HTML with header and highlighted code
+          const fullHtml = `
+            <div class="code-block-container">
+              <div class="code-block-header">
+                ${lang ? `<span class="code-block-language">${lang}</span>` : '<span></span>'}
+                <button 
+                  class="code-block-copy-button" 
+                  data-code-block-id="${blockId}"
+                  aria-label="${copyLabel} code">
+                  ${copied ? 
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' :
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.11 0-2-.9-2-2V4c0-1.11.89-2 2-2h10c1.11 0 2 .89 2 2"/></svg>'
+                  }
+                  <span>${copyLabel}</span>
+                </button>
+              </div>
+              <pre><code class="${codeClass}">${highlighted}</code></pre>
+            </div>
+          `;
+          
+          // Store the highlighted HTML
+          highlightedBlocks.set(blockId, fullHtml);
+          
+          // Change the token to an html token to bypass marked's escaping
+          token.type = 'html';
+          token.text = fullHtml;
+        }
+      }
+    });
+  }
+  
+  private renderMarkdown(content: string): string {
+    // Initialize marked if not already done
+    this.initializeMarked();
+    
+    // Clear the code blocks map for new render
+    this.codeBlocksMap.clear();
+    
     // Parse markdown
-    let html = marked.parse(content) as string;
+    let html = this.markedInstance!.parse(content) as string;
     
     // Process math equations
     html = this.processMathEquations(html);
@@ -274,6 +279,26 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
   }
   
   private processMathEquations(html: string): string {
+    // First, temporarily replace code blocks with placeholders to protect them from math processing
+    const codeBlocks: string[] = [];
+    const placeholder = '___CODE_BLOCK_PLACEHOLDER_';
+    
+    // Store code blocks and replace with placeholders
+    html = html.replace(/<pre><code[\s\S]*?<\/code><\/pre>/g, (match) => {
+      const index = codeBlocks.length;
+      codeBlocks.push(match);
+      return `${placeholder}${index}___`;
+    });
+    
+    // Also protect inline code
+    const inlineCode: string[] = [];
+    const inlinePlaceholder = '___INLINE_CODE_PLACEHOLDER_';
+    html = html.replace(/<code>[\s\S]*?<\/code>/g, (match) => {
+      const index = inlineCode.length;
+      inlineCode.push(match);
+      return `${inlinePlaceholder}${index}___`;
+    });
+    
     // Process display math $$ ... $$
     html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, equation) => {
       try {
@@ -290,6 +315,16 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
       } catch {
         return match;
       }
+    });
+    
+    // Restore code blocks
+    codeBlocks.forEach((block, index) => {
+      html = html.replace(`${placeholder}${index}___`, block);
+    });
+    
+    // Restore inline code
+    inlineCode.forEach((code, index) => {
+      html = html.replace(`${inlinePlaceholder}${index}___`, code);
     });
     
     return html;

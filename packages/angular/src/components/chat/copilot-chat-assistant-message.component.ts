@@ -177,12 +177,87 @@ import { cn } from '../../lib/utils';
     /* Import KaTeX styles */
     @import 'katex/dist/katex.min.css';
 
-    /* Import highlight.js theme */
-    @import 'highlight.js/styles/github.css';
-
     :host {
       display: block;
       width: 100%;
+    }
+
+    /* Light mode highlight.js theme (GitHub style) */
+    .hljs {
+      color: #24292e;
+      background: transparent;
+    }
+
+    .hljs-comment,
+    .hljs-quote {
+      color: #6a737d;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag,
+    .hljs-literal,
+    .hljs-title,
+    .hljs-section,
+    .hljs-doctag,
+    .hljs-type,
+    .hljs-name,
+    .hljs-strong {
+      color: #d73a49;
+      font-weight: bold;
+    }
+
+    .hljs-string,
+    .hljs-number,
+    .hljs-regexp,
+    .hljs-meta .hljs-meta-string,
+    .hljs-template-tag,
+    .hljs-template-variable {
+      color: #032f62;
+    }
+
+    .hljs-subst {
+      color: #24292e;
+    }
+
+    .hljs-function,
+    .hljs-title.function_,
+    .hljs-built_in {
+      color: #6f42c1;
+    }
+
+    .hljs-symbol,
+    .hljs-bullet,
+    .hljs-link {
+      color: #005cc5;
+    }
+
+    .hljs-meta,
+    .hljs-attribute,
+    .hljs-variable,
+    .hljs-params {
+      color: #e36209;
+    }
+
+    .hljs-attr {
+      color: #6f42c1;
+    }
+
+    .hljs-formula {
+      background-color: #f6f8fa;
+    }
+
+    .hljs-deletion {
+      background-color: #ffeef0;
+      color: #d73a49;
+    }
+
+    .hljs-addition {
+      background-color: #f0fff4;
+      color: #22863a;
+    }
+
+    .hljs-emphasis {
+      font-style: italic;
     }
 
     /* Dark mode adjustments for highlight.js */
