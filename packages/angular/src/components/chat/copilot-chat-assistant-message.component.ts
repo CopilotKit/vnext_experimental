@@ -74,7 +74,7 @@ import { cn } from '../../lib/utils';
       }
       
       <!-- Toolbar -->
-      @if (toolbarVisible) {
+      <ng-container *ngIf="toolbarVisible">
         @if (toolbarTemplate || toolbarSlot) {
           <copilot-slot
             [slot]="toolbarTemplate || toolbarSlot"
@@ -170,7 +170,7 @@ import { cn } from '../../lib/utils';
             </div>
           </div>
         }
-      }
+      </ng-container>
     </div>
   `,
   styles: [`

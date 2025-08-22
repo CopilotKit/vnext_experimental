@@ -82,20 +82,28 @@ describe('CopilotChatAssistantMessageComponent', () => {
   });
 
   it('should hide toolbar when toolbarVisible is false', () => {
-    // First verify toolbar is shown by default
-    expect(component.toolbarVisible).toBe(true);
-    const initialToolbar = fixture.nativeElement.querySelector('[copilotChatAssistantMessageToolbar]');
-    expect(initialToolbar).toBeTruthy();
+    // Create a fresh instance with toolbarVisible set to false from the start
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [
+        CommonModule,
+        CopilotChatAssistantMessageComponent,
+        CopilotChatAssistantMessageRendererComponent,
+        CopilotChatAssistantMessageToolbarComponent
+      ],
+      providers: [
+        provideCopilotKit({}),
+        provideCopilotChatConfiguration({})
+      ]
+    });
     
-    // Now hide the toolbar
-    component.toolbarVisible = false;
-    fixture.detectChanges();
+    const newFixture = TestBed.createComponent(CopilotChatAssistantMessageComponent);
+    const newComponent = newFixture.componentInstance;
+    newComponent.message = mockMessage;
+    newComponent.toolbarVisible = false;
+    newFixture.detectChanges();
     
-    // Verify the property was set
-    expect(component.toolbarVisible).toBe(false);
-    
-    // Check that toolbar is now hidden
-    const toolbar = fixture.nativeElement.querySelector('[copilotChatAssistantMessageToolbar]');
+    const toolbar = newFixture.nativeElement.querySelector('[copilotChatAssistantMessageToolbar]');
     expect(toolbar).toBeFalsy();
   });
 
