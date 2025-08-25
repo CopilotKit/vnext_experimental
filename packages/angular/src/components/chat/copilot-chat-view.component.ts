@@ -285,7 +285,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     // Set up input container height monitoring
     const measureAndObserve = () => {
       if (!this.inputContainerSlotRef || !this.inputContainerSlotRef.nativeElement) {
-        console.warn('Input container slot ref not available');
         return false;
       }
       
@@ -295,7 +294,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
       const componentElement = slotElement.querySelector('copilot-chat-view-input-container');
       
       if (!componentElement) {
-        console.warn('Could not find input container component in slot');
         return false;
       }
       
@@ -308,7 +306,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
       }
       
       if (!innerDiv) {
-        console.warn('Could not find inner div');
         return false;
       }
       
@@ -316,12 +313,10 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
       const measuredHeight = innerDiv.offsetHeight;
       
       if (measuredHeight === 0) {
-        console.warn('Inner div has 0 height, will retry...');
         return false;
       }
       
       // Success! Set the initial height
-      console.log('Successfully measured input container height:', measuredHeight);
       this.inputContainerHeight.set(measuredHeight);
       this.cdr.detectChanges();
       
@@ -335,7 +330,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
           const newHeight = state.height;
           
           if (newHeight !== this.inputContainerHeight() && newHeight > 0) {
-            console.log('Input container height changed:', newHeight);
             this.inputContainerHeight.set(newHeight);
             this.isResizing.set(true);
             this.cdr.detectChanges();
@@ -366,14 +360,13 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
       const retry = () => {
         attempts++;
         if (measureAndObserve()) {
-          console.log(`Successfully measured on attempt ${attempts}`);
+          // Successfully measured
         } else if (attempts < maxAttempts) {
           // Exponential backoff: 50ms, 100ms, 200ms, 400ms, etc.
           const delay = 50 * Math.pow(2, Math.min(attempts - 1, 4));
-          console.log(`Retrying measurement in ${delay}ms (attempt ${attempts}/${maxAttempts})`);
           setTimeout(retry, delay);
         } else {
-          console.error('Failed to measure input container height after', maxAttempts, 'attempts');
+          // Failed to measure after max attempts
         }
       };
       
