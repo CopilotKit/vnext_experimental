@@ -1,35 +1,27 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Input, ViewChild, TemplateRef } from '@angular/core';
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
   provideCopilotChatConfiguration,
   provideCopilotKit,
-  Message
 } from '@copilotkit/angular';
+import { Message } from '@ag-ui/client';
 
 const meta: Meta<CopilotChatViewComponent> = {
   title: 'UI/CopilotChatView',
   component: CopilotChatViewComponent,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          'A complete chat interface with message feed and input components.',
-      },
-    },
-    layout: 'fullscreen',
-  },
+  tags: ['autodocs'],
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
         CopilotChatViewComponent,
         CopilotChatMessageViewComponent,
-        CopilotChatInputComponent
+        CopilotChatInputComponent,
       ],
       providers: [
         provideCopilotKit({}),
@@ -37,78 +29,57 @@ const meta: Meta<CopilotChatViewComponent> = {
           labels: {
             chatInputPlaceholder: 'Type a message...',
             chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
-            assistantMessageToolbarCopyMessageLabel: 'Copy',
-            assistantMessageToolbarCopyCodeLabel: 'Copy',
-            assistantMessageToolbarCopyCodeCopiedLabel: 'Copied',
-            assistantMessageToolbarThumbsUpLabel: 'Good response',
-            assistantMessageToolbarThumbsDownLabel: 'Bad response',
-            assistantMessageToolbarReadAloudLabel: 'Read aloud',
-            assistantMessageToolbarRegenerateLabel: 'Regenerate',
-            userMessageToolbarCopyMessageLabel: 'Copy',
-            userMessageToolbarEditMessageLabel: 'Edit'
-          }
-        })
+          },
+        }),
       ],
     }),
   ],
+  parameters: {
+    layout: 'fullscreen',
+  },
 };
 
 export default meta;
 type Story = StoryObj<CopilotChatViewComponent>;
 
-// Default story with full conversation - matches React exactly
+// Default story
 export const Default: Story = {
   render: () => {
     const messages: Message[] = [
       {
         id: 'user-1',
-        content: 'Hello! Can you help me understand how React hooks work?',
+        content: 'Hello! How can I integrate CopilotKit with my Angular app?',
         role: 'user' as const,
       },
       {
         id: 'assistant-1',
-        content: `React hooks are functions that let you use state and other React features in functional components. Here are the most common ones:
+        content: `To integrate CopilotKit with your Angular app, follow these steps:
 
-- **useState** - Manages local state
-- **useEffect** - Handles side effects
-- **useContext** - Accesses context values
-- **useCallback** - Memoizes functions
-- **useMemo** - Memoizes values
+1. Install the package:
+\`\`\`bash
+npm install @copilotkit/angular
+\`\`\`
 
-Would you like me to explain any of these in detail?`,
+2. Import and configure in your component:
+\`\`\`typescript
+import { provideCopilotKit } from '@copilotkit/angular';
+
+@Component({
+  providers: [provideCopilotKit({})]
+})
+\`\`\`
+
+3. Use the chat components in your template!`,
         role: 'assistant' as const,
       },
       {
         id: 'user-2',
-        content: 'Yes, could you explain useState with a simple example?',
+        content: 'That looks great! Can I customize the appearance?',
         role: 'user' as const,
       },
       {
         id: 'assistant-2',
-        content: `Absolutely! Here's a simple useState example:
-
-\`\`\`jsx
-import React, { useState } from 'react';
-
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <p>You clicked {count} times</p>
-      <button onClick={() => setCount(count + 1)}>
-        Click me
-      </button>
-    </div>
-  );
-}
-\`\`\`
-
-In this example:
-- \`useState(0)\` initializes the state with value 0
-- It returns an array: \`[currentValue, setterFunction]\`
-- \`count\` is the current state value
-- \`setCount\` is the function to update the state`,
+        content: 'Yes! CopilotKit is highly customizable. You can customize the appearance using Tailwind CSS classes or by providing your own custom components through the slot system.',
         role: 'assistant' as const,
       },
     ];
@@ -118,37 +89,37 @@ In this example:
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
             [messages]="messages"
-            [autoScroll]="true"
-            (assistantMessageThumbsUp)="onThumbsUp($event)"
-            (assistantMessageThumbsDown)="onThumbsDown($event)"
-            (assistantMessageReadAloud)="onReadAloud($event)"
-            (assistantMessageRegenerate)="onRegenerate($event)">
+            [autoScroll]="true">
           </copilot-chat-view>
         </div>
       `,
       props: {
-        messages,
-        onThumbsUp: (event: { message: Message }) => {
-          alert(`Thumbs up for message: ${event.message.id}`);
-        },
-        onThumbsDown: (event: { message: Message }) => {
-          alert(`Thumbs down for message: ${event.message.id}`);
-        },
-        onReadAloud: (event: { message: Message }) => {
-          alert(`Read aloud message: ${event.message.id}`);
-        },
-        onRegenerate: (event: { message: Message }) => {
-          alert(`Regenerate message: ${event.message.id}`);
-        }
+        messages
       },
     };
   },
 };
 
-// Story with manual scroll mode
+// Story with manual scroll
 export const ManualScroll: Story = {
   render: () => {
-    const messages: Message[] = generateManyMessages(50);
+    // Generate many messages to show scroll behavior
+    const messages: Message[] = [];
+    for (let i = 0; i < 20; i++) {
+      if (i % 2 === 0) {
+        messages.push({
+          id: `user-${i}`,
+          content: `User message ${i}: This is a test message to demonstrate scrolling behavior.`,
+          role: 'user' as const,
+        });
+      } else {
+        messages.push({
+          id: `assistant-${i}`,
+          content: `Assistant response ${i}: This is a longer response to demonstrate how the chat interface handles various message lengths and scrolling behavior when there are many messages in the conversation.`,
+          role: 'assistant' as const,
+        });
+      }
+    }
 
     return {
       template: `
@@ -189,12 +160,12 @@ export const CustomDisclaimer: Story = {
     const messages: Message[] = [
       {
         id: 'user-1',
-        content: 'What is TypeScript?',
+        content: 'Hello!',
         role: 'user' as const,
       },
       {
         id: 'assistant-1',
-        content: 'TypeScript is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale.',
+        content: 'Hi there! How can I help you today?',
         role: 'assistant' as const,
       },
     ];
@@ -249,29 +220,28 @@ export const NoFeather: Story = {
   },
 };
 
-// Helper function to generate many messages for testing scroll
-function generateManyMessages(count: number): Message[] {
-  const messages: Message[] = [];
-  for (let i = 0; i < count; i++) {
-    if (i % 2 === 0) {
-      messages.push({
-        id: `user-${i}`,
-        content: `User message ${i}: This is a test message to demonstrate scrolling behavior.`,
-        role: 'user' as const,
-      });
-    } else {
-      messages.push({
-        id: `assistant-${i}`,
-        content: `Assistant response ${i}: This is a longer response to demonstrate how the chat interface handles various message lengths and scrolling behavior when there are many messages in the conversation.`,
-        role: 'assistant' as const,
-      });
-    }
-  }
-  return messages;
-}
+// Story with custom disclaimer component
+@Component({
+  selector: 'custom-disclaimer',
+  standalone: true,
+  template: `
+    <div style="
+      text-align: center;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 14px;
+      margin: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    ">
+      🎨 This chat interface is fully customizable!
+    </div>
+  `
+})
+class CustomDisclaimerComponent {}
 
-// Story with custom template slots
-export const WithTemplateSlots: Story = {
+export const WithCustomDisclaimer: Story = {
   render: () => {
     const messages: Message[] = [
       {
@@ -286,61 +256,198 @@ export const WithTemplateSlots: Story = {
       },
     ];
 
-    @Component({
-      selector: 'story-component',
-      standalone: true,
-      imports: [CommonModule, CopilotChatViewComponent],
+    return {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
             [messages]="messages"
             [autoScroll]="true"
+            [disclaimerComponent]="customDisclaimerComponent"
             (assistantMessageThumbsUp)="onThumbsUp($event)">
-            
-            <!-- Custom send button template -->
-            <ng-template #sendButton let-send="send" let-disabled="disabled">
-              <button 
-                [disabled]="disabled"
-                (click)="send()"
-                style="background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); 
-                       color: white; 
-                       padding: 8px 16px; 
-                       border-radius: 20px; 
-                       border: none;
-                       cursor: pointer;
-                       font-weight: bold;">
-                ✨ Send Message
-              </button>
-            </ng-template>
-            
-            <!-- Custom thumbs up button template -->
-            <ng-template #thumbsUpButton let-onClick="onClick">
-              <button 
-                (click)="onClick()"
-                style="background: #10b981; 
-                       color: white; 
-                       padding: 4px 8px; 
-                       border-radius: 4px; 
-                       border: none;
-                       cursor: pointer;">
-                👍 Like
-              </button>
-            </ng-template>
           </copilot-chat-view>
         </div>
       `,
-    })
-    class StoryComponent {
-      messages = messages;
-      
-      onThumbsUp(event: { message: Message }) {
-        alert(`You liked message: "${event.message.content?.substring(0, 50)}..."`);
-      }
+      props: {
+        messages,
+        customDisclaimerComponent: CustomDisclaimerComponent,
+        onThumbsUp: (event: any) => {
+          console.log('Thumbs up!', event);
+          alert('You liked this message!');
+        }
+      },
+    };
+  },
+};
+
+// Custom input component
+@Component({
+  selector: 'custom-input',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div style="
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 10px;
+    ">
+      <input 
+        type="text"
+        placeholder="💬 Ask me anything..."
+        style="
+          width: 100%;
+          padding: 15px;
+          border: 2px solid white;
+          border-radius: 10px;
+          font-size: 16px;
+          background: rgba(255, 255, 255, 0.9);
+          color: #333;
+          outline: none;
+        "
+        (keyup.enter)="handleSend($event)"
+      />
+      <button 
+        style="
+          margin-top: 10px;
+          padding: 10px 20px;
+          background: white;
+          color: #f5576c;
+          border: none;
+          border-radius: 5px;
+          font-weight: bold;
+          cursor: pointer;
+        "
+        (click)="handleSendClick()">
+        Send Message ✨
+      </button>
+    </div>
+  `,
+})
+class CustomInputComponent {
+  @Input() onSend?: (message: string) => void;
+  
+  handleSend(event: any) {
+    const value = event.target.value;
+    if (value && this.onSend) {
+      this.onSend(value);
+      event.target.value = '';
+    }
+  }
+  
+  handleSendClick() {
+    const input = document.querySelector('input') as HTMLInputElement;
+    if (input?.value && this.onSend) {
+      this.onSend(input.value);
+      input.value = '';
+    }
+  }
+}
+
+export const WithCustomInput: Story = {
+  render: () => {
+    const messages: Message[] = [
+      {
+        id: 'user-1',
+        content: 'Check out this custom input!',
+        role: 'user' as const,
+      },
+      {
+        id: 'assistant-1',
+        content: 'That\'s a beautiful custom input component! The gradient and styling look great.',
+        role: 'assistant' as const,
+      },
+    ];
+
+    return {
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <copilot-chat-view
+            [messages]="messages"
+            [autoScroll]="true"
+            [inputComponent]="customInputComponent">
+          </copilot-chat-view>
+        </div>
+      `,
+      props: {
+        messages,
+        customInputComponent: CustomInputComponent,
+      },
+    };
+  },
+};
+
+// Custom scroll-to-bottom button
+@Component({
+  selector: 'custom-scroll-button',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <button 
+      (click)="handleClick()"
+      style="
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+      "
+      (mouseenter)="onHover(true)"
+      (mouseleave)="onHover(false)"
+      [style.transform]="isHovered ? 'scale(1.1)' : 'scale(1)'">
+      <span style="color: white; font-size: 24px;">⬇️</span>
+    </button>
+  `,
+})
+class CustomScrollButtonComponent {
+  @Input() onClick?: () => void;
+  isHovered = false;
+  
+  handleClick() {
+    if (this.onClick) {
+      this.onClick();
+    }
+  }
+  
+  onHover(state: boolean) {
+    this.isHovered = state;
+  }
+}
+
+export const WithCustomScrollButton: Story = {
+  render: () => {
+    // Generate many messages to show scroll behavior
+    const messages: Message[] = [];
+    for (let i = 0; i < 20; i++) {
+      messages.push({
+        id: `msg-${i}`,
+        content: `Message ${i}: This is a test message to demonstrate the custom scroll button.`,
+        role: i % 2 === 0 ? 'user' : 'assistant',
+      } as Message);
     }
 
     return {
-      component: StoryComponent,
-      props: {},
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <copilot-chat-view
+            [messages]="messages"
+            [autoScroll]="false"
+            [scrollToBottomButtonComponent]="scrollToBottomButtonComponent">
+          </copilot-chat-view>
+        </div>
+      `,
+      props: {
+        messages,
+        scrollToBottomButtonComponent: CustomScrollButtonComponent,
+      },
     };
   },
 };

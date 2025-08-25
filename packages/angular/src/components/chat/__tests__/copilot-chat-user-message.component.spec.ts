@@ -60,14 +60,27 @@ describe('CopilotChatUserMessageComponent', () => {
     expect(copyButton).toBeTruthy();
   });
 
-  it('should show edit button when editMessage event is observed', (done) => {
-    // Subscribe to make it observed
-    component.editMessage.subscribe(() => {});
-    fixture.detectChanges();
+  it('should show edit button when editMessage event is observed', async () => {
+    // Create a fresh component with a subscription
+    const freshFixture = TestBed.createComponent(CopilotChatUserMessageComponent);
+    const freshComponent = freshFixture.componentInstance;
+    const freshElement = freshFixture.nativeElement;
     
-    const editButton = element.querySelector('copilot-chat-user-message-edit-button');
+    // Set required input
+    freshComponent.message = mockMessage;
+    
+    // Subscribe before first change detection
+    const subscription = freshComponent.editMessage.subscribe(() => {});
+    
+    // Now detect changes
+    freshFixture.detectChanges();
+    
+    const editButton = freshElement.querySelector('copilot-chat-user-message-edit-button');
     expect(editButton).toBeTruthy();
-    done();
+    
+    // Clean up
+    subscription.unsubscribe();
+    freshFixture.destroy();
   });
 
   it('should not show edit button when editMessage is not observed', () => {
@@ -159,6 +172,7 @@ describe('CopilotChatUserMessageComponent', () => {
   it('should handle empty message content', () => {
     const emptyMessage = { ...mockMessage, content: undefined };
     component.message = emptyMessage;
+    fixture.componentRef.setInput('message', emptyMessage);
     fixture.detectChanges();
     
     const messageElement = element.querySelector('copilot-chat-user-message-renderer');
@@ -174,6 +188,7 @@ describe('CopilotChatUserMessageComponent', () => {
     };
     
     component.message = multilineMessage;
+    fixture.componentRef.setInput('message', multilineMessage);
     fixture.detectChanges();
     
     const messageElement = element.querySelector('copilot-chat-user-message-renderer');

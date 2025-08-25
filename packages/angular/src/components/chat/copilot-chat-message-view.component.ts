@@ -59,10 +59,10 @@ import { cn } from '../../lib/utils';
               <copilot-chat-assistant-message 
                 [message]="message"
                 [inputClass]="assistantMessageClass"
-                (thumbsUp)="assistantMessageThumbsUp.emit($event)"
-                (thumbsDown)="assistantMessageThumbsDown.emit($event)"
-                (readAloud)="assistantMessageReadAloud.emit($event)"
-                (regenerate)="assistantMessageRegenerate.emit($event)">
+                (thumbsUp)="handleAssistantThumbsUp($event)"
+                (thumbsDown)="handleAssistantThumbsDown($event)"
+                (readAloud)="handleAssistantReadAloud($event)"
+                (regenerate)="handleAssistantRegenerate($event)">
               </copilot-chat-assistant-message>
             }
           } @else if (message.role === 'user') {
@@ -215,5 +215,22 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
     this.messagesSignal.set(this.messages);
     this.showCursorSignal.set(this.showCursor);
     this.inputClassSignal.set(this.inputClass);
+  }
+  
+  // Event handlers - just pass them through
+  handleAssistantThumbsUp(event: { message: Message }): void {
+    this.assistantMessageThumbsUp.emit(event);
+  }
+  
+  handleAssistantThumbsDown(event: { message: Message }): void {
+    this.assistantMessageThumbsDown.emit(event);
+  }
+  
+  handleAssistantReadAloud(event: { message: Message }): void {
+    this.assistantMessageReadAloud.emit(event);
+  }
+  
+  handleAssistantRegenerate(event: { message: Message }): void {
+    this.assistantMessageRegenerate.emit(event);
   }
 }

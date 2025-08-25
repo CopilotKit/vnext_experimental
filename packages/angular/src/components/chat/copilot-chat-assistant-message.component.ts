@@ -99,68 +99,40 @@ import { cn } from '../../lib/utils';
                 </copilot-chat-assistant-message-copy-button>
               }
               
-              <!-- Thumbs up button -->
-              @if (thumbsUp.observed || thumbsUpButtonSlot || thumbsUpButtonTemplate) {
-                @if (thumbsUpButtonTemplate || thumbsUpButtonSlot) {
-                  <copilot-slot
-                    [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
-                    [context]="thumbsUpButtonContext()"
-                    >
-                  </copilot-slot>
-                } @else {
-                  <copilot-chat-assistant-message-thumbs-up-button
-                    [inputClass]="thumbsUpButtonClass"
-                    (click)="handleThumbsUp()">
-                  </copilot-chat-assistant-message-thumbs-up-button>
-                }
+              <!-- Thumbs up button - only show if custom slot provided -->
+              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate) {
+                <copilot-slot
+                  [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
+                  [context]="thumbsUpButtonContext()"
+                  >
+                </copilot-slot>
               }
               
-              <!-- Thumbs down button -->
-              @if (thumbsDown.observed || thumbsDownButtonSlot || thumbsDownButtonTemplate) {
-                @if (thumbsDownButtonTemplate || thumbsDownButtonSlot) {
-                  <copilot-slot
-                    [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
-                    [context]="thumbsDownButtonContext()"
-                    >
-                  </copilot-slot>
-                } @else {
-                  <copilot-chat-assistant-message-thumbs-down-button
-                    [inputClass]="thumbsDownButtonClass"
-                    (click)="handleThumbsDown()">
-                  </copilot-chat-assistant-message-thumbs-down-button>
-                }
+              <!-- Thumbs down button - only show if custom slot provided -->
+              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate) {
+                <copilot-slot
+                  [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
+                  [context]="thumbsDownButtonContext()"
+                  >
+                </copilot-slot>
               }
               
-              <!-- Read aloud button -->
-              @if (readAloud.observed || readAloudButtonSlot || readAloudButtonTemplate) {
-                @if (readAloudButtonTemplate || readAloudButtonSlot) {
-                  <copilot-slot
-                    [slot]="readAloudButtonTemplate || readAloudButtonSlot"
-                    [context]="readAloudButtonContext()"
-                    >
-                  </copilot-slot>
-                } @else {
-                  <copilot-chat-assistant-message-read-aloud-button
-                    [inputClass]="readAloudButtonClass"
-                    (click)="handleReadAloud()">
-                  </copilot-chat-assistant-message-read-aloud-button>
-                }
+              <!-- Read aloud button - only show if custom slot provided -->
+              @if (readAloudButtonSlot || readAloudButtonTemplate) {
+                <copilot-slot
+                  [slot]="readAloudButtonTemplate || readAloudButtonSlot"
+                  [context]="readAloudButtonContext()"
+                  >
+                </copilot-slot>
               }
               
-              <!-- Regenerate button -->
-              @if (regenerate.observed || regenerateButtonSlot || regenerateButtonTemplate) {
-                @if (regenerateButtonTemplate || regenerateButtonSlot) {
-                  <copilot-slot
-                    [slot]="regenerateButtonTemplate || regenerateButtonSlot"
-                    [context]="regenerateButtonContext()"
-                    >
-                  </copilot-slot>
-                } @else {
-                  <copilot-chat-assistant-message-regenerate-button
-                    [inputClass]="regenerateButtonClass"
-                    (click)="handleRegenerate()">
-                  </copilot-chat-assistant-message-regenerate-button>
-                }
+              <!-- Regenerate button - only show if custom slot provided -->
+              @if (regenerateButtonSlot || regenerateButtonTemplate) {
+                <copilot-slot
+                  [slot]="regenerateButtonTemplate || regenerateButtonSlot"
+                  [context]="regenerateButtonContext()"
+                  >
+                </copilot-slot>
               }
               
               <!-- Additional toolbar items -->

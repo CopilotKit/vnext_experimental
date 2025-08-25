@@ -241,13 +241,22 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   }
   
   ngAfterViewInit(): void {
-    if (!this.autoScroll && this.scrollContainer) {
-      // Monitor scroll position for manual mode
-      this.scrollPositionService.monitorScrollPosition(this.scrollContainer, 10)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(state => {
-          this.showScrollButton.set(!state.isAtBottom);
-        });
+    if (!this.autoScroll) {
+      // Wait for the view to be fully rendered after hasMounted is set
+      setTimeout(() => {
+        if (this.scrollContainer) {
+          // Check initial scroll position
+          const initialState = this.scrollPositionService.getScrollState(this.scrollContainer.nativeElement, 10);
+          this.showScrollButton.set(!initialState.isAtBottom);
+          
+          // Monitor scroll position for manual mode
+          this.scrollPositionService.monitorScrollPosition(this.scrollContainer, 10)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(state => {
+              this.showScrollButton.set(!state.isAtBottom);
+            });
+        }
+      }, 100);
     }
   }
   

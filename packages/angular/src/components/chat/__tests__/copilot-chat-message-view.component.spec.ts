@@ -226,25 +226,25 @@ describe('CopilotChatMessageViewComponent', () => {
 
     it('should support custom assistant message props', () => {
       component.messages = [mockAssistantMessage];
-      component.assistantMessageProps = { customProp: 'value' };
+      component.assistantMessageClass = 'custom-class';
       fixture.detectChanges();
       
       // Props are merged and passed to slot system
       expect(component.mergeAssistantProps(mockAssistantMessage)).toEqual({
         message: mockAssistantMessage,
-        customProp: 'value'
+        inputClass: 'custom-class'
       });
     });
 
     it('should support custom user message props', () => {
       component.messages = [mockUserMessage];
-      component.userMessageProps = { customProp: 'value' };
+      component.userMessageClass = 'custom-class';
       fixture.detectChanges();
       
       // Props are merged and passed to slot system
       expect(component.mergeUserProps(mockUserMessage)).toEqual({
         message: mockUserMessage,
-        customProp: 'value'
+        inputClass: 'custom-class'
       });
     });
   });

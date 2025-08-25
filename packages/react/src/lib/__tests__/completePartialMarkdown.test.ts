@@ -1,4 +1,4 @@
-import { completePartialMarkdown } from "../markdown";
+import { completePartialMarkdown } from "@copilotkit/core";
 
 describe("completePartialMarkdown", () => {
   describe("Common streaming cutoff scenarios", () => {
