@@ -92,6 +92,7 @@ import { takeUntil } from 'rxjs/operators';
 
         <!-- Input container -->
         <copilot-slot
+          #inputContainerSlotRef
           [slot]="inputContainerSlot()"
           [context]="inputContainerContext()"
           [props]="inputContainerPropsComputed()"
@@ -151,8 +152,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
   
-  // ViewChild references - get the component which extends ElementRef
-  @ViewChild(CopilotChatViewInputContainerComponent) inputContainerRef?: CopilotChatViewInputContainerComponent;
+  // ViewChild references
+  @ViewChild('inputContainerSlotRef', { read: ElementRef }) inputContainerSlotRef?: ElementRef;
   
   // Default components for slots
   protected readonly defaultScrollViewComponent = CopilotChatViewScrollViewComponent;
@@ -279,63 +280,106 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   }
   
   ngAfterViewInit(): void {
-    // Set a default height initially
-    this.inputContainerHeight.set(104); // Default height
-    this.cdr.detectChanges();
+    // Don't set a default height - measure it dynamically
     
-    // Set up input container height monitoring with a delay to ensure DOM is ready
-    setTimeout(() => {
-      if (this.inputContainerRef && this.inputContainerRef.nativeElement) {
-        // Try to find the absolute positioned div
-        const componentElement = this.inputContainerRef.nativeElement;
-        let innerDiv = componentElement.querySelector('div.absolute') as HTMLElement;
-        
-        // If not found, try to find it directly from the component
-        if (!innerDiv) {
-          innerDiv = componentElement.firstElementChild as HTMLElement;
-        }
-        
-        if (innerDiv && innerDiv.offsetHeight > 0) {
-          // Set initial height
-          const initialHeight = innerDiv.offsetHeight;
-          console.log('Found input container with height:', initialHeight);
-          this.inputContainerHeight.set(initialHeight);
-          this.cdr.detectChanges();
-          
-          // Create an ElementRef wrapper for the inner div
-          const innerDivRef = new ElementRef(innerDiv);
-          
-          // Monitor resize of the inner div
-          this.resizeObserverService.observeElement(innerDivRef, 0, 250)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(state => {
-              const newHeight = state.height;
-              
-              // Update height and set resizing state
-              if (newHeight !== this.inputContainerHeight() && newHeight > 0) {
-                console.log('Input container height changed:', newHeight);
-                this.inputContainerHeight.set(newHeight);
-                this.isResizing.set(true);
-                this.cdr.detectChanges();
-                
-                // Clear existing timeout
-                if (this.resizeTimeoutRef) {
-                  clearTimeout(this.resizeTimeoutRef);
-                }
-                
-                // Set isResizing to false after a short delay
-                this.resizeTimeoutRef = window.setTimeout(() => {
-                  this.isResizing.set(false);
-                  this.resizeTimeoutRef = undefined;
-                  this.cdr.detectChanges();
-                }, 250);
-              }
-            });
-        } else {
-          console.log('Using default input container height');
-        }
+    // Set up input container height monitoring
+    const measureAndObserve = () => {
+      if (!this.inputContainerSlotRef || !this.inputContainerSlotRef.nativeElement) {
+        console.warn('Input container slot ref not available');
+        return false;
       }
-    }, 500); // Larger initial delay
+      
+      // The slot ref points to the copilot-slot element
+      // We need to find the actual input container component inside it
+      const slotElement = this.inputContainerSlotRef.nativeElement;
+      const componentElement = slotElement.querySelector('copilot-chat-view-input-container');
+      
+      if (!componentElement) {
+        console.warn('Could not find input container component in slot');
+        return false;
+      }
+      
+      // Look for the absolute positioned div that contains the input
+      let innerDiv = componentElement.querySelector('div.absolute') as HTMLElement;
+      
+      // If not found by class, try first child
+      if (!innerDiv) {
+        innerDiv = componentElement.firstElementChild as HTMLElement;
+      }
+      
+      if (!innerDiv) {
+        console.warn('Could not find inner div');
+        return false;
+      }
+      
+      // Measure the actual height
+      const measuredHeight = innerDiv.offsetHeight;
+      
+      if (measuredHeight === 0) {
+        console.warn('Inner div has 0 height, will retry...');
+        return false;
+      }
+      
+      // Success! Set the initial height
+      console.log('Successfully measured input container height:', measuredHeight);
+      this.inputContainerHeight.set(measuredHeight);
+      this.cdr.detectChanges();
+      
+      // Create an ElementRef wrapper for ResizeObserver
+      const innerDivRef = new ElementRef(innerDiv);
+      
+      // Set up ResizeObserver to track changes
+      this.resizeObserverService.observeElement(innerDivRef, 0, 250)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(state => {
+          const newHeight = state.height;
+          
+          if (newHeight !== this.inputContainerHeight() && newHeight > 0) {
+            console.log('Input container height changed:', newHeight);
+            this.inputContainerHeight.set(newHeight);
+            this.isResizing.set(true);
+            this.cdr.detectChanges();
+            
+            // Clear existing timeout
+            if (this.resizeTimeoutRef) {
+              clearTimeout(this.resizeTimeoutRef);
+            }
+            
+            // Set isResizing to false after a short delay
+            this.resizeTimeoutRef = window.setTimeout(() => {
+              this.isResizing.set(false);
+              this.resizeTimeoutRef = undefined;
+              this.cdr.detectChanges();
+            }, 250);
+          }
+        });
+      
+      return true;
+    };
+    
+    // Try to measure immediately
+    if (!measureAndObserve()) {
+      // If failed, retry with increasing delays
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      const retry = () => {
+        attempts++;
+        if (measureAndObserve()) {
+          console.log(`Successfully measured on attempt ${attempts}`);
+        } else if (attempts < maxAttempts) {
+          // Exponential backoff: 50ms, 100ms, 200ms, 400ms, etc.
+          const delay = 50 * Math.pow(2, Math.min(attempts - 1, 4));
+          console.log(`Retrying measurement in ${delay}ms (attempt ${attempts}/${maxAttempts})`);
+          setTimeout(retry, delay);
+        } else {
+          console.error('Failed to measure input container height after', maxAttempts, 'attempts');
+        }
+      };
+      
+      // Start retry with first delay
+      setTimeout(retry, 50);
+    }
   }
   
   ngOnDestroy(): void {
