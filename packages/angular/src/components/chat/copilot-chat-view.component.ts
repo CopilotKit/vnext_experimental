@@ -234,7 +234,11 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   }));
   
   protected inputContainerPropsComputed = computed(() => ({
-    ...this.inputContainerProps
+    ...this.inputContainerProps,
+    input: this.inputSlot(),
+    inputProps: this.inputProps,
+    disclaimer: this.disclaimerSlot(),
+    disclaimerProps: this.disclaimerProps
   }));
   
   // Layout context for custom templates (render prop pattern)

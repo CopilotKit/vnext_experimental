@@ -46,15 +46,13 @@ import { cn } from '../../lib/utils';
         </copilot-slot>
       </div>
       
-      <!-- Disclaimer -->
-      @if (disclaimer) {
-        <copilot-slot
-          [slot]="disclaimer"
-          [context]="{}"
-          [props]="disclaimerProps"
-          [defaultComponent]="defaultDisclaimerComponent">
-        </copilot-slot>
-      }
+      <!-- Disclaimer - always rendered like in React -->
+      <copilot-slot
+        [slot]="disclaimer"
+        [context]="{}"
+        [props]="disclaimerProps"
+        [defaultComponent]="defaultDisclaimerComponent">
+      </copilot-slot>
     </div>
   `
 })
