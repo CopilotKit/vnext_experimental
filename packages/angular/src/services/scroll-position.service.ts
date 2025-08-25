@@ -112,7 +112,7 @@ export class ScrollPositionService implements OnDestroy {
   /**
    * Get current scroll state of element
    */
-  getScrollState(element: HTMLElement, threshold: number): ScrollState {
+  public getScrollState(element: HTMLElement, threshold: number): ScrollState {
     const scrollTop = element.scrollTop;
     const scrollHeight = element.scrollHeight;
     const clientHeight = element.clientHeight;

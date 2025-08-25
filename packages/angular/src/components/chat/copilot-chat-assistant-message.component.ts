@@ -99,21 +99,21 @@ import { cn } from '../../lib/utils';
                 </copilot-chat-assistant-message-copy-button>
               }
               
-              <!-- Thumbs up button - only show if custom slot provided -->
-              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate) {
+              <!-- Thumbs up button - show if custom slot provided OR if event is observed -->
+              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || thumbsUp.observed) {
                 <copilot-slot
                   [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
                   [context]="thumbsUpButtonContext()"
-                  >
+                  [defaultComponent]="defaultThumbsUpButtonComponent">
                 </copilot-slot>
               }
               
-              <!-- Thumbs down button - only show if custom slot provided -->
-              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate) {
+              <!-- Thumbs down button - show if custom slot provided OR if event is observed -->
+              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || thumbsDown.observed) {
                 <copilot-slot
                   [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
                   [context]="thumbsDownButtonContext()"
-                  >
+                  [defaultComponent]="defaultThumbsDownButtonComponent">
                 </copilot-slot>
               }
               
@@ -367,6 +367,10 @@ export class CopilotChatAssistantMessageComponent {
       this.customClass()
     );
   });
+  
+  // Default components
+  protected readonly defaultThumbsUpButtonComponent = CopilotChatAssistantMessageThumbsUpButtonComponent;
+  protected readonly defaultThumbsDownButtonComponent = CopilotChatAssistantMessageThumbsDownButtonComponent;
   
   // Context for slots (reactive via signals)
   markdownRendererContext = computed<AssistantMessageMarkdownRendererContext>(() => ({

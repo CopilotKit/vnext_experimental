@@ -94,6 +94,16 @@ function createComponent<T>(
     const instance = componentRef.instance as any;
     for (const key in props) {
       const value = props[key];
+      
+      // Special handling for onClick -> click event mapping
+      if (key === 'onClick' && typeof value === 'function') {
+        // If the component has a 'click' EventEmitter, subscribe to it
+        if (instance.click && instance.click.subscribe) {
+          instance.click.subscribe(value);
+        }
+        continue;
+      }
+      
       // Try multiple naming conventions
       // 1. Try inputXxx format (e.g., toolsMenu -> inputToolsMenu)
       const inputKey = `input${key.charAt(0).toUpperCase()}${key.slice(1)}`;
