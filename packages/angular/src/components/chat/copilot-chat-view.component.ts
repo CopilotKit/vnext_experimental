@@ -32,6 +32,7 @@ import { CopilotChatViewDisclaimerComponent } from './copilot-chat-view-disclaim
 import { Message } from '@ag-ui/client';
 import { cn } from '../../lib/utils';
 import { ResizeObserverService } from '../../services/resize-observer.service';
+import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -64,7 +65,7 @@ import { takeUntil } from 'rxjs/operators';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  providers: [ResizeObserverService],
+  providers: [ResizeObserverService, CopilotChatViewHandlersService],
   template: `
     <!-- Custom layout template support (render prop pattern) -->
     @if (customLayoutTemplate) {
@@ -82,12 +83,6 @@ import { takeUntil } from 'rxjs/operators';
           [messageViewClass]="messageViewClass"
           [scrollToBottomButton]="scrollToBottomButtonSlot()"
           [scrollToBottomButtonClass]="scrollToBottomButtonClass"
-          [hasThumbsUpHandler]="assistantMessageThumbsUp.observed"
-          [hasThumbsDownHandler]="assistantMessageThumbsDown.observed"
-          [hasReadAloudHandler]="assistantMessageReadAloud.observed"
-          [hasRegenerateHandler]="assistantMessageRegenerate.observed"
-          [hasUserCopyHandler]="userMessageCopy.observed"
-          [hasUserEditHandler]="userMessageEdit.observed"
           (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
           (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
           (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -274,7 +269,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   
   constructor(
     private resizeObserverService: ResizeObserverService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private handlers: CopilotChatViewHandlersService
   ) {
     // Set up effect to handle resize state timeout
     effect(() => {
@@ -293,6 +289,14 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     this.inputClassSignal.set(this.inputClass);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
+
+    // Initialize handler availability in the view-scoped service
+    this.handlers.hasAssistantThumbsUpHandler.set(this.assistantMessageThumbsUp.observed);
+    this.handlers.hasAssistantThumbsDownHandler.set(this.assistantMessageThumbsDown.observed);
+    this.handlers.hasAssistantReadAloudHandler.set(this.assistantMessageReadAloud.observed);
+    this.handlers.hasAssistantRegenerateHandler.set(this.assistantMessageRegenerate.observed);
+    this.handlers.hasUserCopyHandler.set(this.userMessageCopy.observed);
+    this.handlers.hasUserEditHandler.set(this.userMessageEdit.observed);
   }
   
   ngOnChanges(): void {
@@ -302,6 +306,14 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     this.inputClassSignal.set(this.inputClass);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
+
+    // Keep handler availability in sync
+    this.handlers.hasAssistantThumbsUpHandler.set(this.assistantMessageThumbsUp.observed);
+    this.handlers.hasAssistantThumbsDownHandler.set(this.assistantMessageThumbsDown.observed);
+    this.handlers.hasAssistantReadAloudHandler.set(this.assistantMessageReadAloud.observed);
+    this.handlers.hasAssistantRegenerateHandler.set(this.assistantMessageRegenerate.observed);
+    this.handlers.hasUserCopyHandler.set(this.userMessageCopy.observed);
+    this.handlers.hasUserEditHandler.set(this.userMessageEdit.observed);
   }
   
   ngAfterViewInit(): void {

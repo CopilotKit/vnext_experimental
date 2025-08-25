@@ -37,6 +37,7 @@ import {
 } from './copilot-chat-assistant-message-buttons.component';
 import { CopilotChatAssistantMessageToolbarComponent } from './copilot-chat-assistant-message-toolbar.component';
 import { cn } from '../../lib/utils';
+import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.service';
 
 @Component({
   selector: 'copilot-chat-assistant-message',
@@ -99,8 +100,8 @@ import { cn } from '../../lib/utils';
                 </copilot-chat-assistant-message-copy-button>
               }
               
-              <!-- Thumbs up button - show if custom slot provided OR if handler available -->
-              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || hasThumbsUpHandler) {
+              <!-- Thumbs up button - show if custom slot provided OR if handler available at top level -->
+              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || handlers.hasAssistantThumbsUpHandler()) {
                 <copilot-slot
                   [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
                   [context]="thumbsUpButtonContext()"
@@ -108,8 +109,8 @@ import { cn } from '../../lib/utils';
                 </copilot-slot>
               }
               
-              <!-- Thumbs down button - show if custom slot provided OR if handler available -->
-              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || hasThumbsDownHandler) {
+              <!-- Thumbs down button - show if custom slot provided OR if handler available at top level -->
+              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || handlers.hasAssistantThumbsDownHandler()) {
                 <copilot-slot
                   [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
                   [context]="thumbsDownButtonContext()"
@@ -351,11 +352,8 @@ export class CopilotChatAssistantMessageComponent {
     this.customClass.set(val);
   }
   
-  // Handler availability flags
-  @Input() hasThumbsUpHandler: boolean = false;
-  @Input() hasThumbsDownHandler: boolean = false;
-  @Input() hasReadAloudHandler: boolean = false;
-  @Input() hasRegenerateHandler: boolean = false;
+  // DI service exposes handler availability scoped to CopilotChatView
+  constructor(public handlers: CopilotChatViewHandlersService) {}
   
   // Output events
   @Output() thumbsUp = new EventEmitter<CopilotChatAssistantMessageOnThumbsUpProps>();

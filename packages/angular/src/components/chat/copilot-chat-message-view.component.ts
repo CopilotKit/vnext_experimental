@@ -59,10 +59,6 @@ import { cn } from '../../lib/utils';
               <copilot-chat-assistant-message 
                 [message]="message"
                 [inputClass]="assistantMessageClass"
-                [hasThumbsUpHandler]="hasThumbsUpHandler"
-                [hasThumbsDownHandler]="hasThumbsDownHandler"
-                [hasReadAloudHandler]="hasReadAloudHandler"
-                [hasRegenerateHandler]="hasRegenerateHandler"
                 (thumbsUp)="handleAssistantThumbsUp($event)"
                 (thumbsDown)="handleAssistantThumbsDown($event)"
                 (readAloud)="handleAssistantReadAloud($event)"
@@ -110,13 +106,7 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   @Input() showCursor = false;
   @Input() inputClass?: string;
   
-  // Handler availability flags
-  @Input() hasThumbsUpHandler: boolean = false;
-  @Input() hasThumbsDownHandler: boolean = false;
-  @Input() hasReadAloudHandler: boolean = false;
-  @Input() hasRegenerateHandler: boolean = false;
-  @Input() hasUserCopyHandler: boolean = false;
-  @Input() hasUserEditHandler: boolean = false;
+  // Handler availability handled via DI service
   
   // Assistant message slot inputs
   @Input() assistantMessageComponent?: Type<any>;

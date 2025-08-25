@@ -77,12 +77,6 @@ import { takeUntil } from 'rxjs/operators';
                   <copilot-chat-message-view
                     [messages]="messages"
                     [inputClass]="messageViewClass"
-                    [hasThumbsUpHandler]="hasThumbsUpHandler"
-                    [hasThumbsDownHandler]="hasThumbsDownHandler"
-                    [hasReadAloudHandler]="hasReadAloudHandler"
-                    [hasRegenerateHandler]="hasRegenerateHandler"
-                    [hasUserCopyHandler]="hasUserCopyHandler"
-                    [hasUserEditHandler]="hasUserEditHandler"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -140,12 +134,6 @@ import { takeUntil } from 'rxjs/operators';
                   <copilot-chat-message-view
                     [messages]="messages"
                     [inputClass]="messageViewClass"
-                    [hasThumbsUpHandler]="hasThumbsUpHandler"
-                    [hasThumbsDownHandler]="hasThumbsDownHandler"
-                    [hasReadAloudHandler]="hasReadAloudHandler"
-                    [hasRegenerateHandler]="hasRegenerateHandler"
-                    [hasUserCopyHandler]="hasUserCopyHandler"
-                    [hasUserEditHandler]="hasUserEditHandler"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -197,13 +185,7 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   @Input() messageView?: any;
   @Input() messageViewClass?: string;
   
-  // Handler availability flags
-  @Input() hasThumbsUpHandler: boolean = false;
-  @Input() hasThumbsDownHandler: boolean = false;
-  @Input() hasReadAloudHandler: boolean = false;
-  @Input() hasRegenerateHandler: boolean = false;
-  @Input() hasUserCopyHandler: boolean = false;
-  @Input() hasUserEditHandler: boolean = false;
+  // Handler availability flags removed in favor of DI service
   
   // Slot inputs
   @Input() scrollToBottomButton?: any;
