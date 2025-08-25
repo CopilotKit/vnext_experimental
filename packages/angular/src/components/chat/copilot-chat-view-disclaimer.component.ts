@@ -32,6 +32,7 @@ export class CopilotChatViewDisclaimerComponent {
   
   private configService = inject(CopilotChatConfigurationService, { optional: true });
   
+  
   // Get disclaimer text from input or configuration
   get disclaimerText(): string {
     if (this.text) {

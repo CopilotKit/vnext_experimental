@@ -40,7 +40,7 @@ import { cn } from '../../lib/utils';
       <div class="max-w-3xl mx-auto py-0 px-4 sm:px-0">
         <copilot-slot
           [slot]="input"
-          [context]="mergedInputContext"
+          [context]="{ className: inputClass }"
           [defaultComponent]="defaultInputComponent">
         </copilot-slot>
       </div>
@@ -48,23 +48,23 @@ import { cn } from '../../lib/utils';
       <!-- Disclaimer - always rendered like in React -->
       <copilot-slot
         [slot]="disclaimer"
-        [context]="disclaimerProps || {}"
+        [context]="{ text: disclaimerText, inputClass: disclaimerClass }"
         [defaultComponent]="defaultDisclaimerComponent">
       </copilot-slot>
     </div>
   `
 })
 export class CopilotChatViewInputContainerComponent extends ElementRef {
-  @Input() inputClass?: string;
+  @Input() inputContainerClass?: string;
   
   // Input slot configuration
   @Input() input?: any;
-  @Input() inputContext?: any;
-  @Input() inputProps?: any;
+  @Input() inputClass?: string;
   
   // Disclaimer slot configuration
   @Input() disclaimer?: any;
-  @Input() disclaimerProps?: any;
+  @Input() disclaimerText?: string;
+  @Input() disclaimerClass?: string;
   
   // Default components
   protected readonly defaultInputComponent = CopilotChatInputComponent;
@@ -74,16 +74,14 @@ export class CopilotChatViewInputContainerComponent extends ElementRef {
     super(elementRef.nativeElement);
   }
   
+  
   // Computed class matching React exactly
   get computedClass(): string {
     return cn(
       'absolute bottom-0 left-0 right-0 z-20',
-      this.inputClass
+      this.inputContainerClass
     );
   }
   
-  // Merged input context
-  get mergedInputContext(): any {
-    return { ...this.inputContext, ...this.inputProps };
-  }
+  // Removed mergedInputContext - no longer needed
 }

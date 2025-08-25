@@ -76,6 +76,7 @@ import { takeUntil } from 'rxjs/operators';
                 } @else {
                   <copilot-chat-message-view
                     [messages]="messages"
+                    [inputClass]="messageViewClass"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -132,6 +133,7 @@ import { takeUntil } from 'rxjs/operators';
                 } @else {
                   <copilot-chat-message-view
                     [messages]="messages"
+                    [inputClass]="messageViewClass"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -181,11 +183,11 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   @Input() inputClass?: string;
   @Input() messages: Message[] = [];
   @Input() messageView?: any;
-  @Input() messageViewProps?: any;
+  @Input() messageViewClass?: string;
   
   // Slot inputs
   @Input() scrollToBottomButton?: any;
-  @Input() scrollToBottomButtonProps?: any;
+  @Input() scrollToBottomButtonClass?: string;
   
   // Output events (bubbled from message view)
   @Output() assistantMessageThumbsUp = new EventEmitter<{ message: Message }>();
@@ -281,14 +283,14 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   
   // Context methods for templates
   messageViewContext(): any {
-    return { messages: this.messages, ...this.messageViewProps };
+    return { messages: this.messages, className: this.messageViewClass };
   }
   
   scrollToBottomContext(): any {
-    return { onClick: this.scrollToBottom.bind(this), ...this.scrollToBottomButtonProps };
+    return { onClick: this.scrollToBottom.bind(this), className: this.scrollToBottomButtonClass };
   }
   
   scrollToBottomFromStickContext(): any {
-    return { onClick: this.scrollToBottomFromStick.bind(this), ...this.scrollToBottomButtonProps };
+    return { onClick: this.scrollToBottomFromStick.bind(this), className: this.scrollToBottomButtonClass };
   }
 }

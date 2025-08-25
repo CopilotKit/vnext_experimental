@@ -101,9 +101,9 @@ export interface ToolbarContext {
               [inputValue]="computedValue()"
               [inputAutoFocus]="computedAutoFocus()"
               [inputDisabled]="computedMode() === 'processing'"
-              [inputClass]="textAreaProps?.className || textAreaProps?.class"
-              [inputMaxRows]="textAreaProps?.maxRows"
-              [inputPlaceholder]="textAreaProps?.placeholder"
+              [inputClass]="textAreaClass"
+              [inputMaxRows]="textAreaMaxRows"
+              [inputPlaceholder]="textAreaPlaceholder"
               (keyDown)="handleKeyDown($event)"
               (valueChange)="handleValueChange($event)"></textarea>
           }
@@ -112,9 +112,9 @@ export interface ToolbarContext {
             [inputValue]="computedValue()"
             [inputAutoFocus]="computedAutoFocus()"
             [inputDisabled]="computedMode() === 'processing'"
-            [inputClass]="textAreaProps?.className || textAreaProps?.class"
-            [inputMaxRows]="textAreaProps?.maxRows"
-            [inputPlaceholder]="textAreaProps?.placeholder"
+            [inputClass]="textAreaClass"
+            [inputMaxRows]="textAreaMaxRows"
+            [inputPlaceholder]="textAreaPlaceholder"
             (keyDown)="handleKeyDown($event)"
             (valueChange)="handleValueChange($event)"></textarea>
         }
@@ -215,8 +215,7 @@ export interface ToolbarContext {
                 <div class="mr-[10px]">
                   <button 
                     type="button"
-                    [class]="sendButtonProps?.className || sendButtonProps?.class || defaultButtonClass"
-                    [style]="sendButtonProps?.style"
+                    [class]="sendButtonClass || defaultButtonClass"
                     [disabled]="!computedValue().trim() || computedMode() === 'processing'"
                     (click)="send()">
                     <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
@@ -257,16 +256,18 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @ContentChild('addFileButton', { read: TemplateRef }) addFileButtonTemplate?: TemplateRef<any>;
   @ContentChild('toolsButton', { read: TemplateRef }) toolsButtonTemplate?: TemplateRef<any>;
   
-  // Props for tweaking default components
-  @Input() sendButtonProps?: any;
-  @Input() toolbarProps?: any;
-  @Input() textAreaProps?: any;
-  @Input() audioRecorderProps?: any;
-  @Input() startTranscribeButtonProps?: any;
-  @Input() cancelTranscribeButtonProps?: any;
-  @Input() finishTranscribeButtonProps?: any;
-  @Input() addFileButtonProps?: any;
-  @Input() toolsButtonProps?: any;
+  // Class inputs for styling default components
+  @Input() sendButtonClass?: string;
+  @Input() toolbarClass?: string;
+  @Input() textAreaClass?: string;
+  @Input() textAreaMaxRows?: number;
+  @Input() textAreaPlaceholder?: string;
+  @Input() audioRecorderClass?: string;
+  @Input() startTranscribeButtonClass?: string;
+  @Input() cancelTranscribeButtonClass?: string;
+  @Input() finishTranscribeButtonClass?: string;
+  @Input() addFileButtonClass?: string;
+  @Input() toolsButtonClass?: string;
   
   // Also support direct component inputs for backward compatibility
   @Input() sendButtonComponent?: Type<any>;
@@ -386,9 +387,9 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     value: this.computedValue(),
     autoFocus: this.computedAutoFocus(),
     disabled: this.computedMode() === 'processing',
-    maxRows: this.textAreaProps?.maxRows,
-    placeholder: this.textAreaProps?.placeholder,
-    className: this.textAreaProps?.className || this.textAreaProps?.class,
+    maxRows: this.textAreaMaxRows,
+    placeholder: this.textAreaPlaceholder,
+    className: this.textAreaClass,
     onKeyDown: (event: KeyboardEvent) => this.handleKeyDown(event),
     onChange: (value: string) => this.handleValueChange(value)
   }));

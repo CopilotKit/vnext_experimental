@@ -69,7 +69,7 @@ import { cn } from '../../lib/utils';
       } @else {
         <copilot-chat-assistant-message-renderer
           [content]="message?.content || ''"
-          [inputClass]="markdownRendererProps?.className || markdownRendererProps?.class">
+          [inputClass]="markdownRendererClass">
         </copilot-chat-assistant-message-renderer>
       }
       
@@ -82,7 +82,7 @@ import { cn } from '../../lib/utils';
             >
           </copilot-slot>
         } @else {
-          <div copilotChatAssistantMessageToolbar [inputClass]="toolbarProps?.className || toolbarProps?.class">
+          <div copilotChatAssistantMessageToolbar [inputClass]="toolbarClass">
             <div class="flex items-center gap-1">
               <!-- Copy button -->
               @if (copyButtonTemplate || copyButtonSlot) {
@@ -94,7 +94,7 @@ import { cn } from '../../lib/utils';
               } @else {
                 <copilot-chat-assistant-message-copy-button
                   [content]="message?.content"
-                  [inputClass]="copyButtonProps?.className || copyButtonProps?.class"
+                  [inputClass]="copyButtonClass"
                   (click)="handleCopy()">
                 </copilot-chat-assistant-message-copy-button>
               }
@@ -109,7 +109,7 @@ import { cn } from '../../lib/utils';
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-thumbs-up-button
-                    [inputClass]="thumbsUpButtonProps?.className || thumbsUpButtonProps?.class"
+                    [inputClass]="thumbsUpButtonClass"
                     (click)="handleThumbsUp()">
                   </copilot-chat-assistant-message-thumbs-up-button>
                 }
@@ -125,7 +125,7 @@ import { cn } from '../../lib/utils';
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-thumbs-down-button
-                    [inputClass]="thumbsDownButtonProps?.className || thumbsDownButtonProps?.class"
+                    [inputClass]="thumbsDownButtonClass"
                     (click)="handleThumbsDown()">
                   </copilot-chat-assistant-message-thumbs-down-button>
                 }
@@ -141,7 +141,7 @@ import { cn } from '../../lib/utils';
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-read-aloud-button
-                    [inputClass]="readAloudButtonProps?.className || readAloudButtonProps?.class"
+                    [inputClass]="readAloudButtonClass"
                     (click)="handleReadAloud()">
                   </copilot-chat-assistant-message-read-aloud-button>
                 }
@@ -157,7 +157,7 @@ import { cn } from '../../lib/utils';
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-regenerate-button
-                    [inputClass]="regenerateButtonProps?.className || regenerateButtonProps?.class"
+                    [inputClass]="regenerateButtonClass"
                     (click)="handleRegenerate()">
                   </copilot-chat-assistant-message-regenerate-button>
                 }
@@ -353,14 +353,14 @@ export class CopilotChatAssistantMessageComponent {
   @ContentChild('readAloudButton', { read: TemplateRef }) readAloudButtonTemplate?: TemplateRef<ReadAloudButtonContext>;
   @ContentChild('regenerateButton', { read: TemplateRef }) regenerateButtonTemplate?: TemplateRef<RegenerateButtonContext>;
   
-  // Props for tweaking default components
-  @Input() markdownRendererProps?: any;
-  @Input() toolbarProps?: any;
-  @Input() copyButtonProps?: any;
-  @Input() thumbsUpButtonProps?: any;
-  @Input() thumbsDownButtonProps?: any;
-  @Input() readAloudButtonProps?: any;
-  @Input() regenerateButtonProps?: any;
+  // Class inputs for styling default components
+  @Input() markdownRendererClass?: string;
+  @Input() toolbarClass?: string;
+  @Input() copyButtonClass?: string;
+  @Input() thumbsUpButtonClass?: string;
+  @Input() thumbsDownButtonClass?: string;
+  @Input() readAloudButtonClass?: string;
+  @Input() regenerateButtonClass?: string;
   
   // Slot inputs for backward compatibility
   @Input() markdownRendererSlot?: Type<any> | TemplateRef<any>;

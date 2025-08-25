@@ -23,19 +23,16 @@ export interface CopilotChatMessageViewProps {
   assistantMessageComponent?: Type<any>;
   assistantMessageTemplate?: TemplateRef<any>;
   assistantMessageClass?: string;
-  assistantMessageProps?: any;
   
   // User message slots
   userMessageComponent?: Type<any>;
   userMessageTemplate?: TemplateRef<any>;
   userMessageClass?: string;
-  userMessageProps?: any;
   
   // Cursor slots
   cursorComponent?: Type<any>;
   cursorTemplate?: TemplateRef<any>;
   cursorClass?: string;
-  cursorProps?: any;
 }
 
 // Re-export for convenience

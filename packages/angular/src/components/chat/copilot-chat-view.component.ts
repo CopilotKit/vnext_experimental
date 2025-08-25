@@ -79,9 +79,9 @@ import { takeUntil } from 'rxjs/operators';
           [isResizing]="isResizing()"
           [messages]="messagesSignal()"
           [messageView]="messageViewSlot()"
-          [messageViewProps]="messageViewProps"
+          [messageViewClass]="messageViewClass"
           [scrollToBottomButton]="scrollToBottomButtonSlot()"
-          [scrollToBottomButtonProps]="scrollToBottomButtonProps"
+          [scrollToBottomButtonClass]="scrollToBottomButtonClass"
           (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
           (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
           (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -93,7 +93,7 @@ import { takeUntil } from 'rxjs/operators';
         <!-- Feather effect -->
         <copilot-slot
           [slot]="featherSlot()"
-          [context]="featherProps"
+          [context]="{ className: featherClass }"
           [defaultComponent]="defaultFeatherComponent">
         </copilot-slot>
 
@@ -101,7 +101,7 @@ import { takeUntil } from 'rxjs/operators';
         <copilot-slot
           #inputContainerSlotRef
           [slot]="inputContainerSlot()"
-          [context]="inputContainerPropsComputed()"
+          [context]="inputContainerContext()"
           [defaultComponent]="defaultInputContainerComponent">
         </copilot-slot>
       </div>
@@ -118,42 +118,36 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   @Input() messageViewComponent?: Type<any>;
   @Input() messageViewTemplate?: TemplateRef<any>;
   @Input() messageViewClass?: string;
-  @Input() messageViewProps?: any;
   
   // ScrollView slot inputs
   @Input() scrollViewComponent?: Type<any>;
   @Input() scrollViewTemplate?: TemplateRef<any>;
   @Input() scrollViewClass?: string;
-  @Input() scrollViewProps?: any;
   
   // ScrollToBottomButton slot inputs
   @Input() scrollToBottomButtonComponent?: Type<any>;
   @Input() scrollToBottomButtonTemplate?: TemplateRef<any>;
   @Input() scrollToBottomButtonClass?: string;
-  @Input() scrollToBottomButtonProps?: any;
   
   // Input slot inputs
   @Input() inputComponent?: Type<any>;
   @Input() inputTemplate?: TemplateRef<any>;
-  @Input() inputProps?: any;
   
   // InputContainer slot inputs
   @Input() inputContainerComponent?: Type<any>;
   @Input() inputContainerTemplate?: TemplateRef<any>;
   @Input() inputContainerClass?: string;
-  @Input() inputContainerProps?: any;
   
   // Feather slot inputs
   @Input() featherComponent?: Type<any>;
   @Input() featherTemplate?: TemplateRef<any>;
   @Input() featherClass?: string;
-  @Input() featherProps?: any;
   
   // Disclaimer slot inputs
   @Input() disclaimerComponent?: Type<any>;
   @Input() disclaimerTemplate?: TemplateRef<any>;
   @Input() disclaimerClass?: string;
-  @Input() disclaimerProps?: any;
+  @Input() disclaimerText?: string;
   
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
@@ -193,6 +187,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   protected messagesSignal = signal<Message[]>([]);
   protected autoScrollSignal = signal(true);
   protected inputClassSignal = signal<string | undefined>(undefined);
+  protected disclaimerTextSignal = signal<string | undefined>(undefined);
+  protected disclaimerClassSignal = signal<string | undefined>(undefined);
   protected inputContainerHeight = signal<number>(0);
   protected isResizing = signal<boolean>(false);
   protected contentPaddingBottom = computed(() => this.inputContainerHeight() + 32);
@@ -235,38 +231,26 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   protected scrollViewContext = computed(() => ({
     autoScroll: this.autoScrollSignal(),
     scrollToBottomButton: this.scrollToBottomButtonSlot(),
-    scrollToBottomButtonProps: this.scrollToBottomButtonProps,
+    scrollToBottomButtonClass: this.scrollToBottomButtonClass,
     inputContainerHeight: this.inputContainerHeight(),
     isResizing: this.isResizing(),
     messages: this.messagesSignal(),
     messageView: this.messageViewSlot(),
-    messageViewProps: this.messageViewProps
+    messageViewClass: this.messageViewClass
   }));
   
-  protected scrollViewPropsComputed = computed(() => ({
-    ...this.scrollViewProps,
-    autoScroll: this.autoScrollSignal(),
-    inputContainerHeight: this.inputContainerHeight(),
-    isResizing: this.isResizing(),
-    messages: this.messagesSignal(),
-    messageView: this.messageViewSlot(),
-    messageViewProps: this.messageViewProps
-  }));
+  // Removed scrollViewPropsComputed - no longer needed
   
   protected inputContainerContext = computed(() => ({
     input: this.inputSlot(),
-    inputProps: this.inputProps,
+    inputClass: this.inputClass,
     disclaimer: this.disclaimerSlot(),
-    disclaimerProps: this.disclaimerProps
+    disclaimerText: this.disclaimerTextSignal(),
+    disclaimerClass: this.disclaimerClassSignal(),
+    inputContainerClass: this.inputContainerClass
   }));
   
-  protected inputContainerPropsComputed = computed(() => ({
-    ...this.inputContainerProps,
-    input: this.inputSlot(),
-    inputProps: this.inputProps,
-    disclaimer: this.disclaimerSlot(),
-    disclaimerProps: this.disclaimerProps
-  }));
+  // Removed inputContainerPropsComputed - no longer needed
   
   // Layout context for custom templates (render prop pattern)
   protected layoutContext = computed(() => ({
@@ -301,6 +285,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
     this.inputClassSignal.set(this.inputClass);
+    this.disclaimerTextSignal.set(this.disclaimerText);
+    this.disclaimerClassSignal.set(this.disclaimerClass);
   }
   
   ngOnChanges(): void {
@@ -308,6 +294,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
     this.inputClassSignal.set(this.inputClass);
+    this.disclaimerTextSignal.set(this.disclaimerText);
+    this.disclaimerClassSignal.set(this.disclaimerClass);
   }
   
   ngAfterViewInit(): void {

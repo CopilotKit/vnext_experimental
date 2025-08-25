@@ -101,9 +101,14 @@ function createComponent<T>(
       if (typeof instance[inputKey] === 'function' || inputKey in instance) {
         // Use the input setter
         instance[inputKey] = value;
-      } else if (key in instance) {
-        // Direct property assignment
-        instance[key] = value;
+      } else {
+        // Always try direct property assignment for @Input() properties
+        // Angular @Input() properties might not be enumerable but still settable
+        try {
+          instance[key] = value;
+        } catch (e) {
+          // Property might not exist or be readonly - silently ignore
+        }
       }
     }
     // Trigger change detection

@@ -61,7 +61,7 @@ import { cn } from '../../lib/utils';
       } @else {
         <copilot-chat-user-message-renderer
           [content]="message.content || ''"
-          [inputClass]="messageRendererProps?.className || messageRendererProps?.class">
+          [inputClass]="messageRendererClass">
         </copilot-chat-user-message-renderer>
       }
       
@@ -73,7 +73,7 @@ import { cn } from '../../lib/utils';
           >
         </copilot-slot>
       } @else {
-        <div copilotChatUserMessageToolbar [inputClass]="toolbarProps?.className || toolbarProps?.class">
+        <div copilotChatUserMessageToolbar [inputClass]="toolbarClass">
           <div class="flex items-center gap-1 justify-end">
             <!-- Additional toolbar items -->
             @if (additionalToolbarItems) {
@@ -90,7 +90,7 @@ import { cn } from '../../lib/utils';
             } @else {
               <copilot-chat-user-message-copy-button
                 [content]="message.content"
-                [inputClass]="copyButtonProps?.className || copyButtonProps?.class"
+                [inputClass]="copyButtonClass"
                 (click)="handleCopy()">
               </copilot-chat-user-message-copy-button>
             }
@@ -105,7 +105,7 @@ import { cn } from '../../lib/utils';
                 </copilot-slot>
               } @else {
                 <copilot-chat-user-message-edit-button
-                  [inputClass]="editButtonProps?.className || editButtonProps?.class"
+                  [inputClass]="editButtonClass"
                   (click)="handleEdit()">
                 </copilot-chat-user-message-edit-button>
               }
@@ -124,7 +124,7 @@ import { cn } from '../../lib/utils';
                   [currentBranch]="branchIndexSignal()"
                   [numberOfBranches]="numberOfBranchesSignal()"
                   [message]="message"
-                  [inputClass]="branchNavigationProps?.className || branchNavigationProps?.class"
+                  [inputClass]="branchNavigationClass"
                   (switchToBranch)="handleSwitchToBranch($event)">
                 </copilot-chat-user-message-branch-navigation>
               }
@@ -150,11 +150,11 @@ export class CopilotChatUserMessageComponent {
   @ContentChild('branchNavigation', { read: TemplateRef }) branchNavigationTemplate?: TemplateRef<BranchNavigationContext>;
   
   // Props for tweaking default components
-  @Input() messageRendererProps?: any;
-  @Input() toolbarProps?: any;
-  @Input() copyButtonProps?: any;
-  @Input() editButtonProps?: any;
-  @Input() branchNavigationProps?: any;
+  @Input() messageRendererClass?: string;
+  @Input() toolbarClass?: string;
+  @Input() copyButtonClass?: string;
+  @Input() editButtonClass?: string;
+  @Input() branchNavigationClass?: string;
   
   // Slot inputs for backward compatibility
   @Input() messageRendererSlot?: Type<any> | TemplateRef<any>;

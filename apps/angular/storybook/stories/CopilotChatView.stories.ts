@@ -205,7 +205,7 @@ export const CustomDisclaimer: Story = {
           <copilot-chat-view
             [messages]="messages"
             [autoScroll]="true"
-            [disclaimerProps]="{ text: 'This is a custom disclaimer message for your chat interface.' }">
+            [disclaimerText]="'This is a custom disclaimer message for your chat interface.'">
           </copilot-chat-view>
         </div>
       `,

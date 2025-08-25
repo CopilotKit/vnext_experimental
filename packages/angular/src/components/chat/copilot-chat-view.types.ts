@@ -13,37 +13,31 @@ export interface CopilotChatViewProps {
   messageViewComponent?: Type<any>;
   messageViewTemplate?: TemplateRef<any>;
   messageViewClass?: string;
-  messageViewProps?: any;
   
   scrollViewComponent?: Type<any>;
   scrollViewTemplate?: TemplateRef<any>;
   scrollViewClass?: string;
-  scrollViewProps?: any;
   
   scrollToBottomButtonComponent?: Type<any>;
   scrollToBottomButtonTemplate?: TemplateRef<any>;
   scrollToBottomButtonClass?: string;
-  scrollToBottomButtonProps?: any;
   
   inputComponent?: Type<any>;
   inputTemplate?: TemplateRef<any>;
   inputClass?: string;
-  inputProps?: any;
   
   inputContainerComponent?: Type<any>;
   inputContainerTemplate?: TemplateRef<any>;
   inputContainerClass?: string;
-  inputContainerProps?: any;
   
   featherComponent?: Type<any>;
   featherTemplate?: TemplateRef<any>;
   featherClass?: string;
-  featherProps?: any;
   
   disclaimerComponent?: Type<any>;
   disclaimerTemplate?: TemplateRef<any>;
   disclaimerClass?: string;
-  disclaimerProps?: any;
+  disclaimerText?: string;
 }
 
 /**

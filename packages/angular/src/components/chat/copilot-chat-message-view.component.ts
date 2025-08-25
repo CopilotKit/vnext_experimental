@@ -87,7 +87,7 @@ import { cn } from '../../lib/utils';
           @if (cursorComponent || cursorTemplate) {
             <copilot-slot
               [slot]="cursorTemplate || cursorComponent"
-              [context]="cursorProps || {}"
+              [context]="{ inputClass: cursorClass }"
               [defaultComponent]="defaultCursorComponent">
             </copilot-slot>
           } @else {
@@ -110,19 +110,16 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   @Input() assistantMessageComponent?: Type<any>;
   @Input() assistantMessageTemplate?: TemplateRef<any>;
   @Input() assistantMessageClass?: string;
-  @Input() assistantMessageProps?: any;
   
   // User message slot inputs
   @Input() userMessageComponent?: Type<any>;
   @Input() userMessageTemplate?: TemplateRef<any>;
   @Input() userMessageClass?: string;
-  @Input() userMessageProps?: any;
   
   // Cursor slot inputs
   @Input() cursorComponent?: Type<any>;
   @Input() cursorTemplate?: TemplateRef<any>;
   @Input() cursorClass?: string;
-  @Input() cursorProps?: any;
   
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
@@ -190,14 +187,14 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   mergeAssistantProps(message: Message) {
     return {
       message,
-      ...this.assistantMessageProps
+      inputClass: this.assistantMessageClass
     };
   }
   
   mergeUserProps(message: Message) {
     return {
       message,
-      ...this.userMessageProps
+      inputClass: this.userMessageClass
     };
   }
   
