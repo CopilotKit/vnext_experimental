@@ -99,8 +99,8 @@ import { cn } from '../../lib/utils';
                 </copilot-chat-assistant-message-copy-button>
               }
               
-              <!-- Thumbs up button - show if custom slot provided OR if event is observed -->
-              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || thumbsUp.observed) {
+              <!-- Thumbs up button - show if custom slot provided OR if handler available -->
+              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || hasThumbsUpHandler) {
                 <copilot-slot
                   [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
                   [context]="thumbsUpButtonContext()"
@@ -108,8 +108,8 @@ import { cn } from '../../lib/utils';
                 </copilot-slot>
               }
               
-              <!-- Thumbs down button - show if custom slot provided OR if event is observed -->
-              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || thumbsDown.observed) {
+              <!-- Thumbs down button - show if custom slot provided OR if handler available -->
+              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || hasThumbsDownHandler) {
                 <copilot-slot
                   [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
                   [context]="thumbsDownButtonContext()"
@@ -350,6 +350,12 @@ export class CopilotChatAssistantMessageComponent {
   @Input() set inputClass(val: string | undefined) {
     this.customClass.set(val);
   }
+  
+  // Handler availability flags
+  @Input() hasThumbsUpHandler: boolean = false;
+  @Input() hasThumbsDownHandler: boolean = false;
+  @Input() hasReadAloudHandler: boolean = false;
+  @Input() hasRegenerateHandler: boolean = false;
   
   // Output events
   @Output() thumbsUp = new EventEmitter<CopilotChatAssistantMessageOnThumbsUpProps>();
