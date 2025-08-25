@@ -65,6 +65,25 @@ pnpm storybook
 pnpm build-storybook
 ```
 
+#### Storybook Story Guidelines
+
+When creating or modifying Storybook stories, especially for Angular components:
+
+1. **Always manually provide source code** - Do not rely on automatic source extraction. Use the `parameters.docs.source` configuration:
+   ```typescript
+   parameters: {
+     docs: {
+       source: {
+         type: 'code',
+         code: `// Your complete example code here`,
+         language: 'typescript', // or 'html'
+       },
+     },
+   },
+   ```
+
+2. **Show complete, working examples** - The code in the source panel should be a complete, copy-pasteable example that shows all necessary imports, component definitions, and event handlers.
+
 ## Architecture Overview
 
 CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI agents. The codebase follows a modular workspace architecture managed by Turbo and pnpm.

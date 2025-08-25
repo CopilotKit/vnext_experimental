@@ -318,8 +318,8 @@ export const WithCustomDisclaimerAndFeedback: Story = {
   parameters: {
     docs: {
       source: {
-        code: `
-// Component definition
+        type: 'code',
+        code: `// Component definition
 import { Component } from '@angular/core';
 
 @Component({
