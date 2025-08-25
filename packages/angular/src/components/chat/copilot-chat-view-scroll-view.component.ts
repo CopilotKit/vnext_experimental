@@ -55,26 +55,28 @@ import { takeUntil } from 'rxjs/operators';
       </div>
     } @else if (!autoScroll) {
       <!-- Manual scroll mode -->
-      <div 
-        #scrollContainer
-        cdkScrollable
-        [class]="computedClass()"
-        class="h-full max-h-full flex flex-col min-h-0 overflow-y-scroll overflow-x-hidden relative">
-        <div #contentContainer class="px-4 sm:px-0">
-          <!-- Content with padding-bottom matching React -->
-          <div [style.padding-bottom.px]="paddingBottom()">
-            <div class="max-w-3xl mx-auto">
-              <copilot-slot
-                [slot]="messageView"
-                [context]="{ messages }"
-                [props]="messageViewProps"
-                [defaultComponent]="defaultMessageViewComponent">
-              </copilot-slot>
+      <div class="h-full max-h-full flex flex-col min-h-0 relative">
+        <div 
+          #scrollContainer
+          cdkScrollable
+          [class]="computedClass()"
+          class="overflow-y-scroll overflow-x-hidden">
+          <div #contentContainer class="px-4 sm:px-0">
+            <!-- Content with padding-bottom matching React -->
+            <div [style.padding-bottom.px]="paddingBottom()">
+              <div class="max-w-3xl mx-auto">
+                <copilot-slot
+                  [slot]="messageView"
+                  [context]="{ messages }"
+                  [props]="messageViewProps"
+                  [defaultComponent]="defaultMessageViewComponent">
+                </copilot-slot>
+              </div>
             </div>
           </div>
         </div>
         
-        <!-- Scroll to bottom button for manual mode -->
+        <!-- Scroll to bottom button for manual mode, OUTSIDE scrollable content -->
         @if (showScrollButton() && !isResizing) {
           <div
             class="absolute inset-x-0 flex justify-center z-10"
@@ -90,34 +92,36 @@ import { takeUntil } from 'rxjs/operators';
       </div>
     } @else {
       <!-- Auto-scroll mode with StickToBottom directive -->
-      <div 
-        #scrollContainer
-        cdkScrollable
-        copilotStickToBottom
-        [enabled]="autoScroll"
-        [threshold]="10"
-        [initialBehavior]="'smooth'"
-        [resizeBehavior]="'smooth'"
-        (isAtBottomChange)="onIsAtBottomChange($event)"
-        [class]="computedClass()"
-        class="h-full max-h-full flex flex-col min-h-0 relative overflow-y-scroll overflow-x-hidden">
-        
-        <!-- Scrollable content wrapper -->
-        <div class="px-4 sm:px-0">
-          <!-- Content with padding-bottom matching React -->
-          <div [style.padding-bottom.px]="paddingBottom()">
-            <div class="max-w-3xl mx-auto">
-              <copilot-slot
-                [slot]="messageView"
-                [context]="{ messages }"
-                [props]="messageViewProps"
-                [defaultComponent]="defaultMessageViewComponent">
-              </copilot-slot>
+      <div class="h-full max-h-full flex flex-col min-h-0 relative">
+        <div 
+          #scrollContainer
+          cdkScrollable
+          copilotStickToBottom
+          [enabled]="autoScroll"
+          [threshold]="10"
+          [initialBehavior]="'smooth'"
+          [resizeBehavior]="'smooth'"
+          (isAtBottomChange)="onIsAtBottomChange($event)"
+          [class]="computedClass()"
+          class="overflow-y-scroll overflow-x-hidden">
+          
+          <!-- Scrollable content wrapper -->
+          <div class="px-4 sm:px-0">
+            <!-- Content with padding-bottom matching React -->
+            <div [style.padding-bottom.px]="paddingBottom()">
+              <div class="max-w-3xl mx-auto">
+                <copilot-slot
+                  [slot]="messageView"
+                  [context]="{ messages }"
+                  [props]="messageViewProps"
+                  [defaultComponent]="defaultMessageViewComponent">
+                </copilot-slot>
+              </div>
             </div>
           </div>
         </div>
         
-        <!-- Scroll to bottom button - hidden during resize -->
+        <!-- Scroll to bottom button - hidden during resize, OUTSIDE scrollable content -->
         @if (!isAtBottom() && !isResizing) {
           <div
             class="absolute inset-x-0 flex justify-center z-10"

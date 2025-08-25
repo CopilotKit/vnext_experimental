@@ -86,6 +86,12 @@ CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI
 
 ## Development Guidelines
 
+### Web Development and UI Testing
+
+- **Always verify UI changes with Playwright MCP when available** - When working on web UI components, especially when matching behavior between frameworks (React/Angular), use Playwright to verify that changes work correctly
+- **Don't stop until functionality is confirmed** - Continue working on UI issues until they are fully resolved and verified with Playwright or other testing tools
+- **Test interactively** - Use Playwright to interact with components (clicking buttons, scrolling, etc.) to ensure they behave as expected
+
 ### Package Management
 
 - Always use `pnpm` for package management (never use `npm`)
