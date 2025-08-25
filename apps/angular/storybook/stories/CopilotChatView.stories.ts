@@ -319,27 +319,48 @@ export const WithCustomDisclaimerAndFeedback: Story = {
     docs: {
       source: {
         code: `
-const messages = [
-  {
-    id: 'user-1',
-    content: 'Hello! Can you help me with TypeScript?',
-    role: 'user'
-  },
-  {
-    id: 'assistant-1',
-    content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
-    role: 'assistant'
-  }
-];
+// Component definition
+import { Component } from '@angular/core';
 
-<copilot-chat-view
-  [messages]="messages"
-  [autoScroll]="true"
-  [disclaimerComponent]="CustomDisclaimerComponent"
-  (assistantMessageThumbsUp)="onThumbsUp($event)"
-  (assistantMessageThumbsDown)="onThumbsDown($event)">
-</copilot-chat-view>`,
-        language: 'html',
+@Component({
+  selector: 'app-chat',
+  template: \`
+    <copilot-chat-view
+      [messages]="messages"
+      [autoScroll]="true"
+      [disclaimerComponent]="customDisclaimerComponent"
+      (assistantMessageThumbsUp)="onThumbsUp($event)"
+      (assistantMessageThumbsDown)="onThumbsDown($event)">
+    </copilot-chat-view>
+  \`
+})
+export class ChatComponent {
+  messages = [
+    {
+      id: 'user-1',
+      content: 'Hello! Can you help me with TypeScript?',
+      role: 'user'
+    },
+    {
+      id: 'assistant-1',
+      content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
+      role: 'assistant'
+    }
+  ];
+  
+  customDisclaimerComponent = CustomDisclaimerComponent;
+  
+  onThumbsUp(event: any) {
+    console.log('Thumbs up!', event);
+    alert('You liked this message!');
+  }
+  
+  onThumbsDown(event: any) {
+    console.log('Thumbs down!', event);
+    alert('You disliked this message!');
+  }
+}`,
+        language: 'typescript',
       },
     },
   },
