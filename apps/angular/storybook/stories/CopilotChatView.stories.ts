@@ -262,8 +262,42 @@ export const WithCustomDisclaimer: Story = {
           <copilot-chat-view
             [messages]="messages"
             [autoScroll]="true"
+            [disclaimerComponent]="customDisclaimerComponent">
+          </copilot-chat-view>
+        </div>
+      `,
+      props: {
+        messages,
+        customDisclaimerComponent: CustomDisclaimerComponent,
+      },
+    };
+  },
+};
+
+export const WithCustomDisclaimerAndFeedback: Story = {
+  render: () => {
+    const messages: Message[] = [
+      {
+        id: 'user-1',
+        content: 'Hello! Can you help me with TypeScript?',
+        role: 'user' as const,
+      },
+      {
+        id: 'assistant-1',
+        content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
+        role: 'assistant' as const,
+      },
+    ];
+
+    return {
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <copilot-chat-view
+            [messages]="messages"
+            [autoScroll]="true"
             [disclaimerComponent]="customDisclaimerComponent"
-            (assistantMessageThumbsUp)="onThumbsUp($event)">
+            (assistantMessageThumbsUp)="onThumbsUp($event)"
+            (assistantMessageThumbsDown)="onThumbsDown($event)">
           </copilot-chat-view>
         </div>
       `,
@@ -273,9 +307,41 @@ export const WithCustomDisclaimer: Story = {
         onThumbsUp: (event: any) => {
           console.log('Thumbs up!', event);
           alert('You liked this message!');
+        },
+        onThumbsDown: (event: any) => {
+          console.log('Thumbs down!', event);  
+          alert('You disliked this message!');
         }
       },
     };
+  },
+  parameters: {
+    docs: {
+      source: {
+        code: `
+const messages = [
+  {
+    id: 'user-1',
+    content: 'Hello! Can you help me with TypeScript?',
+    role: 'user'
+  },
+  {
+    id: 'assistant-1',
+    content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
+    role: 'assistant'
+  }
+];
+
+<copilot-chat-view
+  [messages]="messages"
+  [autoScroll]="true"
+  [disclaimerComponent]="CustomDisclaimerComponent"
+  (assistantMessageThumbsUp)="onThumbsUp($event)"
+  (assistantMessageThumbsDown)="onThumbsDown($event)">
+</copilot-chat-view>`,
+        language: 'html',
+      },
+    },
   },
 };
 
