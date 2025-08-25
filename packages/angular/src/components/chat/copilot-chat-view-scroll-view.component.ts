@@ -99,6 +99,7 @@ import { takeUntil } from 'rxjs/operators';
           copilotStickToBottom
           [enabled]="autoScroll"
           [threshold]="10"
+          [debounceMs]="0"
           [initialBehavior]="'smooth'"
           [resizeBehavior]="'smooth'"
           (isAtBottomChange)="onIsAtBottomChange($event)"
