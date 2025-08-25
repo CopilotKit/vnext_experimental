@@ -7,6 +7,7 @@ import {
   ViewChild,
   ElementRef,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   ViewEncapsulation,
   signal,
   computed,
@@ -70,12 +71,16 @@ import { takeUntil } from 'rxjs/operators';
       <!-- Default layout - exact React DOM structure -->
       <div [class]="computedClass()">
         <!-- ScrollView -->
-        <copilot-slot
-          [slot]="scrollViewSlot()"
-          [context]="scrollViewContext()"
-          [props]="scrollViewPropsComputed()"
-          [defaultComponent]="defaultScrollViewComponent">
-        </copilot-slot>
+        <copilot-chat-view-scroll-view
+          [autoScroll]="autoScrollSignal()"
+          [inputContainerHeight]="inputContainerHeight()"
+          [isResizing]="isResizing()"
+          [messages]="messagesSignal()"
+          [messageView]="messageViewSlot()"
+          [messageViewProps]="messageViewProps"
+          [scrollToBottomButton]="scrollToBottomButtonSlot()"
+          [scrollToBottomButtonProps]="scrollToBottomButtonProps">
+        </copilot-chat-view-scroll-view>
 
         <!-- Feather effect -->
         <copilot-slot
@@ -86,14 +91,12 @@ import { takeUntil } from 'rxjs/operators';
         </copilot-slot>
 
         <!-- Input container -->
-        <div #inputContainer>
-          <copilot-slot
-            [slot]="inputContainerSlot()"
-            [context]="inputContainerContext()"
-            [props]="inputContainerPropsComputed()"
-            [defaultComponent]="defaultInputContainerComponent">
-          </copilot-slot>
-        </div>
+        <copilot-slot
+          [slot]="inputContainerSlot()"
+          [context]="inputContainerContext()"
+          [props]="inputContainerPropsComputed()"
+          [defaultComponent]="defaultInputContainerComponent">
+        </copilot-slot>
       </div>
     }
   `
@@ -148,8 +151,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
   
-  // ViewChild references
-  @ViewChild('inputContainer', { read: ElementRef }) inputContainerRef?: ElementRef<HTMLElement>;
+  // ViewChild references - get the component which extends ElementRef
+  @ViewChild(CopilotChatViewInputContainerComponent) inputContainerRef?: CopilotChatViewInputContainerComponent;
   
   // Default components for slots
   protected readonly defaultScrollViewComponent = CopilotChatViewScrollViewComponent;
@@ -164,6 +167,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   protected inputClassSignal = signal<string | undefined>(undefined);
   protected inputContainerHeight = signal<number>(0);
   protected isResizing = signal<boolean>(false);
+  protected contentPaddingBottom = computed(() => this.inputContainerHeight() + 32);
   
   // Computed signals
   protected computedClass = computed(() => 
@@ -215,7 +219,10 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     ...this.scrollViewProps,
     autoScroll: this.autoScrollSignal(),
     inputContainerHeight: this.inputContainerHeight(),
-    isResizing: this.isResizing()
+    isResizing: this.isResizing(),
+    messages: this.messagesSignal(),
+    messageView: this.messageViewSlot(),
+    messageViewProps: this.messageViewProps
   }));
   
   protected inputContainerContext = computed(() => ({
@@ -244,7 +251,8 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   private resizeTimeoutRef?: number;
   
   constructor(
-    private resizeObserverService: ResizeObserverService
+    private resizeObserverService: ResizeObserverService,
+    private cdr: ChangeDetectorRef
   ) {
     // Set up effect to handle resize state timeout
     effect(() => {
@@ -271,36 +279,63 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   }
   
   ngAfterViewInit(): void {
-    // Set up input container height monitoring
-    if (this.inputContainerRef) {
-      // Set initial height
-      const initialHeight = this.inputContainerRef.nativeElement.offsetHeight;
-      this.inputContainerHeight.set(initialHeight);
-      
-      // Monitor resize
-      this.resizeObserverService.observeElement(this.inputContainerRef, 0, 250)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(state => {
-          const newHeight = state.height;
+    // Set a default height initially
+    this.inputContainerHeight.set(104); // Default height
+    this.cdr.detectChanges();
+    
+    // Set up input container height monitoring with a delay to ensure DOM is ready
+    setTimeout(() => {
+      if (this.inputContainerRef && this.inputContainerRef.nativeElement) {
+        // Try to find the absolute positioned div
+        const componentElement = this.inputContainerRef.nativeElement;
+        let innerDiv = componentElement.querySelector('div.absolute') as HTMLElement;
+        
+        // If not found, try to find it directly from the component
+        if (!innerDiv) {
+          innerDiv = componentElement.firstElementChild as HTMLElement;
+        }
+        
+        if (innerDiv && innerDiv.offsetHeight > 0) {
+          // Set initial height
+          const initialHeight = innerDiv.offsetHeight;
+          console.log('Found input container with height:', initialHeight);
+          this.inputContainerHeight.set(initialHeight);
+          this.cdr.detectChanges();
           
-          // Update height and set resizing state
-          if (newHeight !== this.inputContainerHeight()) {
-            this.inputContainerHeight.set(newHeight);
-            this.isResizing.set(true);
-            
-            // Clear existing timeout
-            if (this.resizeTimeoutRef) {
-              clearTimeout(this.resizeTimeoutRef);
-            }
-            
-            // Set isResizing to false after a short delay
-            this.resizeTimeoutRef = window.setTimeout(() => {
-              this.isResizing.set(false);
-              this.resizeTimeoutRef = undefined;
-            }, 250);
-          }
-        });
-    }
+          // Create an ElementRef wrapper for the inner div
+          const innerDivRef = new ElementRef(innerDiv);
+          
+          // Monitor resize of the inner div
+          this.resizeObserverService.observeElement(innerDivRef, 0, 250)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(state => {
+              const newHeight = state.height;
+              
+              // Update height and set resizing state
+              if (newHeight !== this.inputContainerHeight() && newHeight > 0) {
+                console.log('Input container height changed:', newHeight);
+                this.inputContainerHeight.set(newHeight);
+                this.isResizing.set(true);
+                this.cdr.detectChanges();
+                
+                // Clear existing timeout
+                if (this.resizeTimeoutRef) {
+                  clearTimeout(this.resizeTimeoutRef);
+                }
+                
+                // Set isResizing to false after a short delay
+                this.resizeTimeoutRef = window.setTimeout(() => {
+                  this.isResizing.set(false);
+                  this.resizeTimeoutRef = undefined;
+                  this.cdr.detectChanges();
+                }, 250);
+              }
+            });
+        } else {
+          console.log('Using default input container height');
+        }
+      }
+    }, 500); // Larger initial delay
   }
   
   ngOnDestroy(): void {

@@ -42,3 +42,4 @@ storybook-static
 
 # Angular
 .angular/
+.playwright-mcp/

@@ -12,7 +12,8 @@ import {
   AfterViewInit,
   OnDestroy,
   inject,
-  PLATFORM_ID
+  PLATFORM_ID,
+  ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
@@ -60,8 +61,8 @@ import { takeUntil } from 'rxjs/operators';
         [class]="computedClass()"
         class="h-full max-h-full flex flex-col min-h-0 overflow-y-scroll overflow-x-hidden relative">
         <div #contentContainer class="px-4 sm:px-0">
-          <!-- Message view content -->
-          <div [style.paddingBottom.px]="inputContainerHeight + 32">
+          <!-- Content with padding-bottom matching React -->
+          <div [style.padding-bottom.px]="paddingBottom()">
             <div class="max-w-3xl mx-auto">
               <copilot-slot
                 [slot]="messageView"
@@ -77,7 +78,7 @@ import { takeUntil } from 'rxjs/operators';
         @if (showScrollButton() && !isResizing) {
           <div
             class="absolute inset-x-0 flex justify-center z-10"
-            [style.bottom.px]="inputContainerHeight + 16">
+            [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
               [context]="{ onClick: scrollToBottom.bind(this) }"
@@ -99,24 +100,19 @@ import { takeUntil } from 'rxjs/operators';
         [resizeBehavior]="'smooth'"
         (isAtBottomChange)="onIsAtBottomChange($event)"
         [class]="computedClass()"
-        class="h-full max-h-full flex flex-col min-h-0 relative">
+        class="h-full max-h-full flex flex-col min-h-0 relative overflow-y-scroll overflow-x-hidden">
         
-        <!-- Scrollable content -->
-        <div 
-          #contentContainer 
-          data-stick-to-bottom-content
-          class="overflow-y-scroll overflow-x-hidden">
-          <div class="px-4 sm:px-0">
-            <!-- Message view content -->
-            <div [style.paddingBottom.px]="inputContainerHeight + 32">
-              <div class="max-w-3xl mx-auto">
-                <copilot-slot
-                  [slot]="messageView"
-                  [context]="{ messages }"
-                  [props]="messageViewProps"
-                  [defaultComponent]="defaultMessageViewComponent">
-                </copilot-slot>
-              </div>
+        <!-- Scrollable content wrapper -->
+        <div class="px-4 sm:px-0">
+          <!-- Content with padding-bottom matching React -->
+          <div [style.padding-bottom.px]="paddingBottom()">
+            <div class="max-w-3xl mx-auto">
+              <copilot-slot
+                [slot]="messageView"
+                [context]="{ messages }"
+                [props]="messageViewProps"
+                [defaultComponent]="defaultMessageViewComponent">
+              </copilot-slot>
             </div>
           </div>
         </div>
@@ -125,7 +121,7 @@ import { takeUntil } from 'rxjs/operators';
         @if (!isAtBottom() && !isResizing) {
           <div
             class="absolute inset-x-0 flex justify-center z-10"
-            [style.bottom.px]="inputContainerHeight + 16">
+            [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
               [context]="{ onClick: scrollToBottomFromStick.bind(this) }"
@@ -139,15 +135,28 @@ import { takeUntil } from 'rxjs/operators';
   `
 })
 export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
-  @Input() messages: Message[] = [];
+  private cdr = inject(ChangeDetectorRef);
+  
   @Input() autoScroll: boolean = true;
-  @Input() inputContainerHeight: number = 0;
+  
+  private _inputContainerHeight: number = 0;
+  @Input() 
+  set inputContainerHeight(value: number) {
+    this._inputContainerHeight = value;
+    this.inputContainerHeightSignal.set(value);
+    this.cdr.markForCheck();
+  }
+  get inputContainerHeight(): number {
+    return this._inputContainerHeight;
+  }
+  
   @Input() isResizing: boolean = false;
   @Input() inputClass?: string;
-  
-  // Slot inputs
+  @Input() messages: Message[] = [];
   @Input() messageView?: any;
   @Input() messageViewProps?: any;
+  
+  // Slot inputs
   @Input() scrollToBottomButton?: any;
   @Input() scrollToBottomButtonProps?: any;
   
@@ -164,6 +173,8 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   protected hasMounted = signal(false);
   protected showScrollButton = signal(false);
   protected isAtBottom = signal(true);
+  protected inputContainerHeightSignal = signal(0);
+  protected paddingBottom = computed(() => this.inputContainerHeightSignal() + 32);
   
   // Computed class
   protected computedClass = computed(() => 
@@ -186,6 +197,10 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   
   ngOnChanges(): void {
     // Update signals when inputs change
+    // Force change detection when inputContainerHeight changes
+    if (this.inputContainerHeight !== undefined) {
+      this.cdr.detectChanges();
+    }
   }
   
   ngAfterViewInit(): void {

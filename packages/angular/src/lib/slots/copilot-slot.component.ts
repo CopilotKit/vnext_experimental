@@ -8,6 +8,7 @@ import {
   SimpleChanges,
   Inject,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -59,8 +60,11 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
   @ViewChild('slotContainer', { read: ViewContainerRef, static: true }) 
   private slotContainer!: ViewContainerRef;
   
+  private componentRef?: any;
+  
   constructor(
-    @Inject(ViewContainerRef) private viewContainer: ViewContainerRef
+    @Inject(ViewContainerRef) private viewContainer: ViewContainerRef,
+    private cdr: ChangeDetectorRef
   ) {}
   
   ngOnInit(): void {
@@ -68,7 +72,15 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
   }
   
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['slot'] || changes['props'] || changes['context']) {
+    if (changes['slot']) {
+      // Slot changed, need to re-render completely
+      this.renderSlot();
+    } else if ((changes['props'] || changes['context']) && this.componentRef) {
+      // Just props/context changed, update existing component
+      this.updateComponentProps();
+      this.cdr.detectChanges();
+    } else if (changes['props'] || changes['context']) {
+      // No component ref yet, render the slot
       this.renderSlot();
     }
   }
@@ -80,11 +92,13 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
   private renderSlot(): void {
     // Skip if it's a template (handled by ngTemplateOutlet)
     if (this.slot && this.isTemplate(this.slot)) {
+      this.componentRef = null;
       return;
     }
     
     // Clear previous content
     this.slotContainer.clear();
+    this.componentRef = null;
     
     // Skip if no slot and no default component
     if (!this.slot && !this.defaultComponent) {
@@ -93,11 +107,33 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
     
     // Use the utility to render other slot types
     if (this.slot || this.defaultComponent) {
-      renderSlot(this.slotContainer, {
+      this.componentRef = renderSlot(this.slotContainer, {
         slot: this.slot,
         defaultComponent: this.defaultComponent!,
         props: { ...this.context, ...this.props }
       });
+    }
+  }
+  
+  private updateComponentProps(): void {
+    if (!this.componentRef || !this.componentRef.instance) {
+      return;
+    }
+    
+    const props = { ...this.context, ...this.props };
+    const instance = this.componentRef.instance as any;
+    
+    // Update props on the existing component instance
+    for (const key in props) {
+      const value = props[key];
+      if (key in instance) {
+        instance[key] = value;
+      }
+    }
+    
+    // Trigger change detection
+    if (this.componentRef.changeDetectorRef) {
+      this.componentRef.changeDetectorRef.detectChanges();
     }
   }
 }
