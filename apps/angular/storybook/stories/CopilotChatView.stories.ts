@@ -589,3 +589,175 @@ export const WithCustomScrollButton: Story = {
     };
   },
 };
+
+// Story demonstrating custom disclaimer styling with classes
+// Provide a minimal custom component so the nested CSS selectors apply
+@Component({
+  selector: 'custom-styled-disclaimer',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div [class]="'text-center text-xs py-3 px-4 max-w-3xl mx-auto ' + (inputClass || '')">
+      <span class="custom-disclaimer-icon">✨</span>
+      <span class="custom-disclaimer-text">{{ text }}</span>
+    </div>
+  `,
+})
+class CustomStyledDisclaimerComponent {
+  @Input() inputClass?: string;
+  @Input() text?: string;
+}
+export const WithCustomDisclaimerStyling: Story = {
+  render: () => {
+    const messages: Message[] = [
+      {
+        id: 'user-1',
+        content: 'Hello! Can you help me with styling?',
+        role: 'user' as const,
+      },
+      {
+        id: 'assistant-1',
+        content: `Absolutely! I can help you with CSS styling, design patterns, and UI/UX best practices. What specific styling challenge are you working on?`,
+        role: 'assistant' as const,
+      },
+    ];
+
+    return {
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <style>
+            .custom-disclaimer {
+              background: linear-gradient(90deg, #FF6B6B 0%, #4ECDC4 50%, #45B7D1 100%);
+              color: white;
+              font-weight: 600;
+              font-size: 14px;
+              padding: 16px 24px;
+              margin: 12px 20px;
+              border-radius: 12px;
+              text-align: center;
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+              animation: pulse 3s ease-in-out infinite;
+              position: relative;
+              overflow: hidden;
+            }
+            
+            .custom-disclaimer::before {
+              content: '';
+              position: absolute;
+              top: -50%;
+              left: -50%;
+              width: 200%;
+              height: 200%;
+              background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+              );
+              transform: rotate(45deg);
+              animation: shimmer 3s infinite;
+            }
+            
+            @keyframes pulse {
+              0%, 100% {
+                transform: scale(1);
+              }
+              50% {
+                transform: scale(1.02);
+              }
+            }
+            
+            @keyframes shimmer {
+              0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+              }
+              100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+              }
+            }
+            
+            .custom-disclaimer-text {
+              position: relative;
+              z-index: 1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+            }
+            
+            .custom-disclaimer-icon {
+              font-size: 20px;
+              animation: bounce 2s infinite;
+            }
+            
+            @keyframes bounce {
+              0%, 100% {
+                transform: translateY(0);
+              }
+              50% {
+                transform: translateY(-5px);
+              }
+            }
+          </style>
+          
+          <copilot-chat-view
+            [messages]="messages"
+            [autoScroll]="true"
+            [disclaimerComponent]="customDisclaimerComponent"
+            [disclaimerClass]="'custom-disclaimer'"
+            [disclaimerText]="customDisclaimerText">
+          </copilot-chat-view>
+        </div>
+      `,
+      props: {
+        messages,
+        customDisclaimerComponent: CustomStyledDisclaimerComponent,
+        customDisclaimerText: '✨ Styled with custom CSS classes - AI responses may need verification ✨',
+      },
+    };
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `// Add the CSS globally (e.g., apps/angular/storybook/.storybook/preview.css)
+// .custom-disclaimer { background: linear-gradient(90deg, #FF6B6B 0%, #4ECDC4 50%, #45B7D1 100%); /* ... */ }
+// .custom-disclaimer::before { /* shimmer */ }
+// .custom-disclaimer-text { /* layout */ }
+// .custom-disclaimer-icon { /* bounce */ }
+
+// Custom disclaimer component to match the CSS structure
+@Component({
+  selector: 'custom-styled-disclaimer',
+  standalone: true,
+  imports: [CommonModule],
+  template: \`
+    <div class="text-center text-xs py-3 px-4 max-w-3xl mx-auto custom-disclaimer">
+      <span class="custom-disclaimer-icon">✨</span>
+      <span class="custom-disclaimer-text">{{ text }}</span>
+    </div>
+  \`,
+})
+class CustomStyledDisclaimerComponent {
+  @Input() text?: string;
+}
+
+// Usage in your template
+// In your component TS:
+//   customDisclaimerComponent = CustomStyledDisclaimerComponent;
+//   customDisclaimerText = '✨ Styled with custom CSS classes - AI responses may need verification ✨';
+// In your template HTML:
+// <copilot-chat-view
+//   [messages]="messages"
+//   [autoScroll]="true"
+//   [disclaimerComponent]="customDisclaimerComponent"
+//   [disclaimerText]="customDisclaimerText">
+// </copilot-chat-view>`
+      }
+    }
+  }
+};
+
+
+
+// Removed debug story: WithCustomDisclaimerStructured and its component

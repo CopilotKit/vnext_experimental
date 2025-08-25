@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class CopilotChatViewHandlersService {
   // Assistant message handler availability
   hasAssistantThumbsUpHandler = signal(false);
@@ -12,4 +12,3 @@ export class CopilotChatViewHandlersService {
   hasUserCopyHandler = signal(false);
   hasUserEditHandler = signal(false);
 }
-
