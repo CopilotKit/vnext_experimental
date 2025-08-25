@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   ContentChild,
   TemplateRef,
   Type,
@@ -50,14 +52,17 @@ import { cn } from '../../lib/utils';
             @if (assistantMessageComponent || assistantMessageTemplate) {
               <copilot-slot
                 [slot]="assistantMessageTemplate || assistantMessageComponent"
-                [context]="{ message }"
-                [props]="mergeAssistantProps(message)"
+                [context]="mergeAssistantProps(message)"
                 [defaultComponent]="defaultAssistantComponent">
               </copilot-slot>
             } @else {
               <copilot-chat-assistant-message 
                 [message]="message"
-                [inputClass]="assistantMessageClass">
+                [inputClass]="assistantMessageClass"
+                (thumbsUp)="assistantMessageThumbsUp.emit($event)"
+                (thumbsDown)="assistantMessageThumbsDown.emit($event)"
+                (readAloud)="assistantMessageReadAloud.emit($event)"
+                (regenerate)="assistantMessageRegenerate.emit($event)">
               </copilot-chat-assistant-message>
             }
           } @else if (message.role === 'user') {
@@ -65,8 +70,7 @@ import { cn } from '../../lib/utils';
             @if (userMessageComponent || userMessageTemplate) {
               <copilot-slot
                 [slot]="userMessageTemplate || userMessageComponent"
-                [context]="{ message }"
-                [props]="mergeUserProps(message)"
+                [context]="mergeUserProps(message)"
                 [defaultComponent]="defaultUserComponent">
               </copilot-slot>
             } @else {
@@ -83,8 +87,7 @@ import { cn } from '../../lib/utils';
           @if (cursorComponent || cursorTemplate) {
             <copilot-slot
               [slot]="cursorTemplate || cursorComponent"
-              [context]="{}"
-              [props]="cursorProps"
+              [context]="cursorProps || {}"
               [defaultComponent]="defaultCursorComponent">
             </copilot-slot>
           } @else {
@@ -123,6 +126,14 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
+  
+  // Output events (bubbled from child components)
+  @Output() assistantMessageThumbsUp = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageThumbsDown = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageReadAloud = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageRegenerate = new EventEmitter<{ message: Message }>();
+  @Output() userMessageCopy = new EventEmitter<{ message: Message }>();
+  @Output() userMessageEdit = new EventEmitter<{ message: Message }>();
   
   // Default components for slots
   protected readonly defaultAssistantComponent = CopilotChatAssistantMessageComponent;

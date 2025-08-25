@@ -56,7 +56,7 @@ import { cn } from '../../lib/utils';
         <copilot-slot
           [slot]="messageRendererTemplate || messageRendererSlot"
           [context]="messageRendererContext()"
-          [props]="messageRendererProps">
+          >
         </copilot-slot>
       } @else {
         <copilot-chat-user-message-renderer
@@ -70,7 +70,7 @@ import { cn } from '../../lib/utils';
         <copilot-slot
           [slot]="toolbarTemplate || toolbarSlot"
           [context]="toolbarContext()"
-          [props]="toolbarProps">
+          >
         </copilot-slot>
       } @else {
         <div copilotChatUserMessageToolbar [inputClass]="toolbarProps?.className || toolbarProps?.class">
@@ -85,7 +85,7 @@ import { cn } from '../../lib/utils';
               <copilot-slot
                 [slot]="copyButtonTemplate || copyButtonSlot"
                 [context]="copyButtonContext()"
-                [props]="copyButtonProps">
+                >
               </copilot-slot>
             } @else {
               <copilot-chat-user-message-copy-button
@@ -101,7 +101,7 @@ import { cn } from '../../lib/utils';
                 <copilot-slot
                   [slot]="editButtonTemplate || editButtonSlot"
                   [context]="editButtonContext()"
-                  [props]="editButtonProps">
+                  >
                 </copilot-slot>
               } @else {
                 <copilot-chat-user-message-edit-button
@@ -117,7 +117,7 @@ import { cn } from '../../lib/utils';
                 <copilot-slot
                   [slot]="branchNavigationTemplate || branchNavigationSlot"
                   [context]="branchNavigationContext()"
-                  [props]="branchNavigationProps">
+                  >
                 </copilot-slot>
               } @else {
                 <copilot-chat-user-message-branch-navigation
@@ -157,11 +157,11 @@ export class CopilotChatUserMessageComponent {
   @Input() branchNavigationProps?: any;
   
   // Slot inputs for backward compatibility
-  @Input() messageRendererSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() copyButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() editButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() branchNavigationSlot?: Type<any> | TemplateRef<any> | string;
+  @Input() messageRendererSlot?: Type<any> | TemplateRef<any>;
+  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
+  @Input() copyButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() editButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() branchNavigationSlot?: Type<any> | TemplateRef<any>;
   
   // Regular inputs
   @Input() message!: UserMessage;

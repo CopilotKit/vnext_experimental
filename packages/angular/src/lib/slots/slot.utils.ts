@@ -43,16 +43,7 @@ export function renderSlot<T = any>(
   const effectiveSlot = slot ?? defaultComponent;
   const effectiveInjector = injector ?? viewContainer.injector;
   
-  if (typeof effectiveSlot === 'string') {
-    // String: CSS class for default component
-    return createComponentWithClass(
-      viewContainer,
-      defaultComponent,
-      effectiveSlot,
-      props,
-      effectiveInjector
-    );
-  } else if (effectiveSlot instanceof TemplateRef) {
+  if (effectiveSlot instanceof TemplateRef) {
     // TemplateRef: render template
     return viewContainer.createEmbeddedView(effectiveSlot, {
       $implicit: props ?? {},
@@ -74,14 +65,6 @@ export function renderSlot<T = any>(
       props,
       effectiveInjector
     ) : null;
-  } else if (typeof effectiveSlot === 'object') {
-    // Object: property overrides for default component
-    return createComponent(
-      viewContainer,
-      defaultComponent,
-      { ...props, ...effectiveSlot },
-      effectiveInjector
-    );
   }
   
   // Default: render default component
@@ -130,25 +113,6 @@ function createComponent<T>(
   return componentRef;
 }
 
-/**
- * Creates a component with a CSS class applied.
- */
-function createComponentWithClass<T>(
-  viewContainer: ViewContainerRef,
-  component: Type<T>,
-  cssClass: string,
-  props?: Partial<T>,
-  injector?: Injector
-): ComponentRef<T> {
-  const componentRef = createComponent(viewContainer, component, props, injector);
-  
-  if (componentRef.location.nativeElement) {
-    const element = componentRef.location.nativeElement as HTMLElement;
-    element.className = cssClass;
-  }
-  
-  return componentRef;
-}
 
 /**
  * Checks if a value is a component type.
@@ -183,10 +147,7 @@ export function isDirectiveType(value: any): boolean {
  * Checks if a value is a valid slot value.
  */
 export function isSlotValue(value: any): value is SlotValue {
-  return typeof value === 'string' ||
-         value instanceof TemplateRef ||
-         isComponentType(value) ||
-         (typeof value === 'object' && value !== null);
+  return value instanceof TemplateRef || isComponentType(value);
 }
 
 /**
@@ -200,13 +161,6 @@ export function normalizeSlotValue<T = any>(
     return { component: defaultComponent };
   }
   
-  if (typeof value === 'string') {
-    return { 
-      component: defaultComponent, 
-      class: value 
-    };
-  }
-  
   if (value instanceof TemplateRef) {
     return { template: value };
   }
@@ -215,11 +169,7 @@ export function normalizeSlotValue<T = any>(
     return { component: value as Type<T> };
   }
   
-  // Object with props
-  return { 
-    component: defaultComponent,
-    props: value as Partial<T>
-  };
+  return { component: defaultComponent };
 }
 
 /**
@@ -327,8 +277,6 @@ export function createSlotRenderer<T>(
       if (entry) {
         if (entry.component) slot = entry.component;
         else if (entry.template) slot = entry.template;
-        else if (entry.class) slot = entry.class;
-        props = { ...props, ...entry.props };
       }
     }
     

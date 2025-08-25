@@ -119,22 +119,26 @@ In this example:
           <copilot-chat-view
             [messages]="messages"
             [autoScroll]="true"
-            [messageViewProps]="{
-              assistantMessage: {
-                onThumbsUp: onThumbsUp,
-                onThumbsDown: onThumbsDown
-              }
-            }">
+            (assistantMessageThumbsUp)="onThumbsUp($event)"
+            (assistantMessageThumbsDown)="onThumbsDown($event)"
+            (assistantMessageReadAloud)="onReadAloud($event)"
+            (assistantMessageRegenerate)="onRegenerate($event)">
           </copilot-chat-view>
         </div>
       `,
       props: {
         messages,
-        onThumbsUp: () => {
-          alert('thumbsUp');
+        onThumbsUp: (event: { message: Message }) => {
+          alert(`Thumbs up for message: ${event.message.id}`);
         },
-        onThumbsDown: () => {
-          alert('thumbsDown');
+        onThumbsDown: (event: { message: Message }) => {
+          alert(`Thumbs down for message: ${event.message.id}`);
+        },
+        onReadAloud: (event: { message: Message }) => {
+          alert(`Read aloud message: ${event.message.id}`);
+        },
+        onRegenerate: (event: { message: Message }) => {
+          alert(`Regenerate message: ${event.message.id}`);
         }
       },
     };
@@ -265,3 +269,78 @@ function generateManyMessages(count: number): Message[] {
   }
   return messages;
 }
+
+// Story with custom template slots
+export const WithTemplateSlots: Story = {
+  render: () => {
+    const messages: Message[] = [
+      {
+        id: 'user-1',
+        content: 'Hello! Can you help me with TypeScript?',
+        role: 'user' as const,
+      },
+      {
+        id: 'assistant-1',
+        content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
+        role: 'assistant' as const,
+      },
+    ];
+
+    @Component({
+      selector: 'story-component',
+      standalone: true,
+      imports: [CommonModule, CopilotChatViewComponent],
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <copilot-chat-view
+            [messages]="messages"
+            [autoScroll]="true"
+            (assistantMessageThumbsUp)="onThumbsUp($event)">
+            
+            <!-- Custom send button template -->
+            <ng-template #sendButton let-send="send" let-disabled="disabled">
+              <button 
+                [disabled]="disabled"
+                (click)="send()"
+                style="background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); 
+                       color: white; 
+                       padding: 8px 16px; 
+                       border-radius: 20px; 
+                       border: none;
+                       cursor: pointer;
+                       font-weight: bold;">
+                ✨ Send Message
+              </button>
+            </ng-template>
+            
+            <!-- Custom thumbs up button template -->
+            <ng-template #thumbsUpButton let-onClick="onClick">
+              <button 
+                (click)="onClick()"
+                style="background: #10b981; 
+                       color: white; 
+                       padding: 4px 8px; 
+                       border-radius: 4px; 
+                       border: none;
+                       cursor: pointer;">
+                👍 Like
+              </button>
+            </ng-template>
+          </copilot-chat-view>
+        </div>
+      `,
+    })
+    class StoryComponent {
+      messages = messages;
+      
+      onThumbsUp(event: { message: Message }) {
+        alert(`You liked message: "${event.message.content?.substring(0, 50)}..."`);
+      }
+    }
+
+    return {
+      component: StoryComponent,
+      props: {},
+    };
+  },
+};

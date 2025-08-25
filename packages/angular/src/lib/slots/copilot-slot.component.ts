@@ -16,18 +16,14 @@ import { renderSlot } from './slot.utils';
 import { Type } from '@angular/core';
 
 /**
+ * @internal - This component is for internal use only.
  * Simple slot component for rendering custom content or defaults.
- * Supports templates, components, CSS classes, and property overrides.
+ * Supports templates and components only.
  * 
  * @example
  * ```html
  * <!-- With template -->
  * <copilot-slot [slot]="sendButtonTemplate" [context]="buttonContext">
- *   <button class="default-btn">Default</button>
- * </copilot-slot>
- * 
- * <!-- With props for tweaking default -->
- * <copilot-slot [props]="{ className: 'custom' }">
  *   <button class="default-btn">Default</button>
  * </copilot-slot>
  * ```
@@ -52,9 +48,8 @@ import { Type } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CopilotSlotComponent implements OnInit, OnChanges {
-  @Input() slot?: TemplateRef<any> | Type<any> | string | Record<string, any>;
+  @Input() slot?: TemplateRef<any> | Type<any>;
   @Input() context?: any;
-  @Input() props?: any;
   @Input() defaultComponent?: Type<any>;
   
   @ViewChild('slotContainer', { read: ViewContainerRef, static: true }) 
@@ -75,11 +70,11 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
     if (changes['slot']) {
       // Slot changed, need to re-render completely
       this.renderSlot();
-    } else if ((changes['props'] || changes['context']) && this.componentRef) {
-      // Just props/context changed, update existing component
+    } else if (changes['context'] && this.componentRef) {
+      // Just context changed, update existing component
       this.updateComponentProps();
       this.cdr.detectChanges();
-    } else if (changes['props'] || changes['context']) {
+    } else if (changes['context']) {
       // No component ref yet, render the slot
       this.renderSlot();
     }
@@ -110,7 +105,7 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
       this.componentRef = renderSlot(this.slotContainer, {
         slot: this.slot,
         defaultComponent: this.defaultComponent!,
-        props: { ...this.context, ...this.props }
+        props: this.context
       });
     }
   }
@@ -120,14 +115,16 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
       return;
     }
     
-    const props = { ...this.context, ...this.props };
+    const props = this.context;
     const instance = this.componentRef.instance as any;
     
     // Update props on the existing component instance
-    for (const key in props) {
-      const value = props[key];
-      if (key in instance) {
-        instance[key] = value;
+    if (props) {
+      for (const key in props) {
+        const value = props[key];
+        if (key in instance) {
+          instance[key] = value;
+        }
       }
     }
     

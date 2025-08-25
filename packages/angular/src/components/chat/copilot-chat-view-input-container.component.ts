@@ -40,8 +40,7 @@ import { cn } from '../../lib/utils';
       <div class="max-w-3xl mx-auto py-0 px-4 sm:px-0">
         <copilot-slot
           [slot]="input"
-          [context]="inputContext"
-          [props]="inputProps"
+          [context]="mergedInputContext"
           [defaultComponent]="defaultInputComponent">
         </copilot-slot>
       </div>
@@ -49,8 +48,7 @@ import { cn } from '../../lib/utils';
       <!-- Disclaimer - always rendered like in React -->
       <copilot-slot
         [slot]="disclaimer"
-        [context]="{}"
-        [props]="disclaimerProps"
+        [context]="disclaimerProps || {}"
         [defaultComponent]="defaultDisclaimerComponent">
       </copilot-slot>
     </div>
@@ -82,5 +80,10 @@ export class CopilotChatViewInputContainerComponent extends ElementRef {
       'absolute bottom-0 left-0 right-0 z-20',
       this.inputClass
     );
+  }
+  
+  // Merged input context
+  get mergedInputContext(): any {
+    return { ...this.inputContext, ...this.inputProps };
   }
 }

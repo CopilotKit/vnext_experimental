@@ -78,7 +78,7 @@ export interface ToolbarContext {
           <copilot-slot 
             [slot]="audioRecorderTemplate || audioRecorderSlot"
             [context]="audioRecorderContext()"
-            [props]="audioRecorderProps">
+            >
           </copilot-slot>
         } @else {
           <copilot-chat-audio-recorder
@@ -93,7 +93,7 @@ export interface ToolbarContext {
             <copilot-slot
               [slot]="textAreaSlot"
               [context]="textAreaContext()"
-              [props]="textAreaProps">
+              >
             </copilot-slot>
           } @else {
             <!-- Fallback for directive slots -->
@@ -125,7 +125,7 @@ export interface ToolbarContext {
         <copilot-slot
           [slot]="toolbarTemplate || toolbarSlot"
           [context]="toolbarContext()"
-          [props]="toolbarProps">
+          >
         </copilot-slot>
       } @else {
         <div copilotChatToolbar>
@@ -135,7 +135,7 @@ export interface ToolbarContext {
                 <copilot-slot
                   [slot]="addFileButtonTemplate || addFileButtonSlot"
                   [context]="addFileContext()"
-                  [props]="addFileButtonProps">
+                  >
                 </copilot-slot>
               } @else {
                 <copilot-chat-add-file-button
@@ -149,7 +149,7 @@ export interface ToolbarContext {
                 <copilot-slot
                   [slot]="toolsButtonTemplate || toolsButtonSlot"
                   [context]="toolsContext()"
-                  [props]="toolsButtonProps">
+                  >
                 </copilot-slot>
               } @else {
                 <copilot-chat-tools-menu
@@ -169,7 +169,7 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot"
                     [context]="cancelTranscribeContext()"
-                    [props]="cancelTranscribeButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-cancel-transcribe-button
@@ -182,7 +182,7 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonSlot"
                     [context]="finishTranscribeContext()"
-                    [props]="finishTranscribeButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-finish-transcribe-button
@@ -196,7 +196,7 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="startTranscribeButtonTemplate || startTranscribeButtonSlot"
                     [context]="startTranscribeContext()"
-                    [props]="startTranscribeButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-start-transcribe-button
@@ -209,7 +209,7 @@ export interface ToolbarContext {
                 <copilot-slot
                   [slot]="sendButtonTemplate || sendButtonSlot || sendButtonComponent"
                   [context]="sendButtonContext()"
-                  [props]="sendButtonProps">
+                  >
                 </copilot-slot>
               } @else {
                 <div class="mr-[10px]">
@@ -273,15 +273,15 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @Input() toolbarComponent?: Type<any>;
   
   // Old slot inputs for backward compatibility
-  @Input() sendButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() textAreaSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() audioRecorderSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() startTranscribeButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() cancelTranscribeButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() finishTranscribeButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() addFileButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() toolsButtonSlot?: Type<any> | TemplateRef<any> | string;
+  @Input() sendButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
+  @Input() textAreaSlot?: Type<any> | TemplateRef<any>;
+  @Input() audioRecorderSlot?: Type<any> | TemplateRef<any>;
+  @Input() startTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() cancelTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() finishTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() addFileButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() toolsButtonSlot?: Type<any> | TemplateRef<any>;
   
   // Regular inputs
   @Input() set mode(val: CopilotChatInputMode | undefined) {

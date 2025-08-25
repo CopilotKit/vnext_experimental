@@ -69,14 +69,16 @@ describe('Slot Utilities', () => {
       expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
     });
 
-    it('should apply CSS class when string provided', () => {
+    it('should render default component when string slot is no longer supported', () => {
+      // String slots are no longer supported - should render default component
       const ref = renderSlot(viewContainer, {
-        slot: 'fancy-style',
+        slot: 'fancy-style' as any, // Type assertion needed since strings are no longer valid
         defaultComponent: DefaultComponent
       });
 
       expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.className).toBe('fancy-style');
+      // Should render default component, not apply class
+      expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
     });
 
     it('should apply props to component', () => {
@@ -122,15 +124,17 @@ describe('Slot Utilities', () => {
       expect(span.textContent).toBe('Template Content');
     });
 
-    it('should treat object as prop overrides', () => {
+    it('should render default component when object slot is no longer supported', () => {
+      // Object slots are no longer supported - should render default component
       const ref = renderSlot(viewContainer, {
-        slot: { text: 'Overridden' },
+        slot: { text: 'Overridden' } as any, // Type assertion needed since objects are no longer valid
         defaultComponent: DefaultComponent
       });
 
       expect(ref).toBeTruthy();
       if ('instance' in ref!) {
-        expect(ref.instance.text).toBe('Overridden');
+        // Should use default text, not override
+        expect(ref.instance.text).toBe('Default');
       }
     });
   });
@@ -162,10 +166,12 @@ describe('Slot Utilities', () => {
 
   describe('isSlotValue', () => {
     it('should accept valid slot values', () => {
-      expect(isSlotValue('css-class')).toBe(true);
-      expect(isSlotValue({ prop: 'value' })).toBe(true);
+      // Only components and templates are valid now
       expect(isSlotValue(DefaultComponent)).toBe(true);
       expect(isSlotValue(CustomComponent)).toBe(true);
+      // Strings and objects are no longer valid slot values
+      expect(isSlotValue('css-class')).toBe(false);
+      expect(isSlotValue({ prop: 'value' })).toBe(false);
     });
 
     it('should reject invalid slot values', () => {
@@ -175,11 +181,10 @@ describe('Slot Utilities', () => {
   });
 
   describe('normalizeSlotValue', () => {
-    it('should normalize string to class config', () => {
-      const result = normalizeSlotValue('custom-class', DefaultComponent);
+    it('should return default component for string (no longer supported)', () => {
+      const result = normalizeSlotValue('custom-class' as any, DefaultComponent);
       expect(result).toEqual({
-        component: DefaultComponent,
-        class: 'custom-class'
+        component: DefaultComponent
       });
     });
 
@@ -190,12 +195,11 @@ describe('Slot Utilities', () => {
       });
     });
 
-    it('should normalize object to props config', () => {
+    it('should return default component for object (no longer supported)', () => {
       const props = { text: 'Test' };
-      const result = normalizeSlotValue(props, DefaultComponent);
+      const result = normalizeSlotValue(props as any, DefaultComponent);
       expect(result).toEqual({
-        component: DefaultComponent,
-        props
+        component: DefaultComponent
       });
     });
 
@@ -212,7 +216,7 @@ describe('Slot Utilities', () => {
       const config = createSlotConfig(
         {
           button: CustomComponent,
-          toolbar: 'toolbar-class'
+          toolbar: 'toolbar-class' as any // String no longer supported but test the behavior
         },
         {
           button: DefaultComponent,
@@ -223,9 +227,9 @@ describe('Slot Utilities', () => {
       expect(config.get('button')).toEqual({
         component: CustomComponent
       });
+      // String slots no longer supported - should use default
       expect(config.get('toolbar')).toEqual({
-        component: DefaultComponent,
-        class: 'toolbar-class'
+        component: DefaultComponent
       });
     });
 

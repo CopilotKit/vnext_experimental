@@ -2,21 +2,19 @@ import { Type, TemplateRef, InjectionToken } from '@angular/core';
 
 /**
  * Represents a value that can be used as a slot override.
- * Can be a component type, template reference, CSS class string, or property overrides.
+ * Can be a component type or template reference only.
+ * @internal - This type is for internal use only
  */
 export type SlotValue<T = any> = 
   | Type<T>
-  | TemplateRef<T>
-  | string
-  | Partial<T>;
+  | TemplateRef<T>;
 
 /**
  * Configuration for a slot
+ * @internal - This interface is for internal use only
  */
 export interface SlotConfig<T = any> {
   value?: SlotValue<T>;
-  props?: Partial<T>;
-  class?: string;
   default?: Type<T>;
 }
 
@@ -31,12 +29,11 @@ export interface SlotContext<T = any> {
 
 /**
  * Slot registry entry
+ * @internal - This interface is for internal use only
  */
 export interface SlotRegistryEntry<T = any> {
   component?: Type<T>;
   template?: TemplateRef<T>;
-  class?: string;
-  props?: Partial<T>;
 }
 
 /**

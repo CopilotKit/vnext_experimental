@@ -116,15 +116,15 @@ export interface CopilotChatToolbarProps {
  * Slot configuration for chat input
  */
 export interface CopilotChatInputSlots {
-  textArea?: Type<any> | TemplateRef<any> | string;
-  sendButton?: Type<any> | TemplateRef<any> | string;
-  startTranscribeButton?: Type<any> | TemplateRef<any> | string;
-  cancelTranscribeButton?: Type<any> | TemplateRef<any> | string;
-  finishTranscribeButton?: Type<any> | TemplateRef<any> | string;
-  addFileButton?: Type<any> | TemplateRef<any> | string;
-  toolsButton?: Type<any> | TemplateRef<any> | string;
-  toolbar?: Type<any> | TemplateRef<any> | string;
-  audioRecorder?: Type<any> | TemplateRef<any> | string;
+  textArea?: Type<any> | TemplateRef<any>;
+  sendButton?: Type<any> | TemplateRef<any>;
+  startTranscribeButton?: Type<any> | TemplateRef<any>;
+  cancelTranscribeButton?: Type<any> | TemplateRef<any>;
+  finishTranscribeButton?: Type<any> | TemplateRef<any>;
+  addFileButton?: Type<any> | TemplateRef<any>;
+  toolsButton?: Type<any> | TemplateRef<any>;
+  toolbar?: Type<any> | TemplateRef<any>;
+  audioRecorder?: Type<any> | TemplateRef<any>;
 }
 
 /**

@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   ContentChild,
   TemplateRef,
   Type,
@@ -79,14 +81,19 @@ import { takeUntil } from 'rxjs/operators';
           [messageView]="messageViewSlot()"
           [messageViewProps]="messageViewProps"
           [scrollToBottomButton]="scrollToBottomButtonSlot()"
-          [scrollToBottomButtonProps]="scrollToBottomButtonProps">
+          [scrollToBottomButtonProps]="scrollToBottomButtonProps"
+          (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
+          (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
+          (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
+          (assistantMessageRegenerate)="assistantMessageRegenerate.emit($event)"
+          (userMessageCopy)="userMessageCopy.emit($event)"
+          (userMessageEdit)="userMessageEdit.emit($event)">
         </copilot-chat-view-scroll-view>
 
         <!-- Feather effect -->
         <copilot-slot
           [slot]="featherSlot()"
-          [context]="{}"
-          [props]="featherProps"
+          [context]="featherProps"
           [defaultComponent]="defaultFeatherComponent">
         </copilot-slot>
 
@@ -94,8 +101,7 @@ import { takeUntil } from 'rxjs/operators';
         <copilot-slot
           #inputContainerSlotRef
           [slot]="inputContainerSlot()"
-          [context]="inputContainerContext()"
-          [props]="inputContainerPropsComputed()"
+          [context]="inputContainerPropsComputed()"
           [defaultComponent]="defaultInputContainerComponent">
         </copilot-slot>
       </div>
@@ -152,6 +158,27 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Custom layout template (render prop pattern)
   @ContentChild('customLayout') customLayoutTemplate?: TemplateRef<any>;
   
+  // Named template slots for deep customization
+  @ContentChild('sendButton') sendButtonTemplate?: TemplateRef<any>;
+  @ContentChild('toolbar') toolbarTemplate?: TemplateRef<any>;
+  @ContentChild('textArea') textAreaTemplate?: TemplateRef<any>;
+  @ContentChild('audioRecorder') audioRecorderTemplate?: TemplateRef<any>;
+  @ContentChild('assistantMessageMarkdownRenderer') assistantMessageMarkdownRendererTemplate?: TemplateRef<any>;
+  @ContentChild('thumbsUpButton') thumbsUpButtonTemplate?: TemplateRef<any>;
+  @ContentChild('thumbsDownButton') thumbsDownButtonTemplate?: TemplateRef<any>;
+  @ContentChild('readAloudButton') readAloudButtonTemplate?: TemplateRef<any>;
+  @ContentChild('regenerateButton') regenerateButtonTemplate?: TemplateRef<any>;
+  
+  // Output events for assistant message actions (bubbled from child components)
+  @Output() assistantMessageThumbsUp = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageThumbsDown = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageReadAloud = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageRegenerate = new EventEmitter<{ message: Message }>();
+  
+  // Output events for user message actions (if applicable)
+  @Output() userMessageCopy = new EventEmitter<{ message: Message }>();
+  @Output() userMessageEdit = new EventEmitter<{ message: Message }>();
+  
   // ViewChild references
   @ViewChild('inputContainerSlotRef', { read: ElementRef }) inputContainerSlotRef?: ElementRef;
   
@@ -177,15 +204,15 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   
   // Slot resolution computed signals
   protected messageViewSlot = computed(() => 
-    this.messageViewTemplate || this.messageViewComponent || this.messageViewClass
+    this.messageViewTemplate || this.messageViewComponent
   );
   
   protected scrollViewSlot = computed(() => 
-    this.scrollViewTemplate || this.scrollViewComponent || this.scrollViewClass
+    this.scrollViewTemplate || this.scrollViewComponent
   );
   
   protected scrollToBottomButtonSlot = computed(() => 
-    this.scrollToBottomButtonTemplate || this.scrollToBottomButtonComponent || this.scrollToBottomButtonClass
+    this.scrollToBottomButtonTemplate || this.scrollToBottomButtonComponent
   );
   
   protected inputSlot = computed(() => 
@@ -193,15 +220,15 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   );
   
   protected inputContainerSlot = computed(() => 
-    this.inputContainerTemplate || this.inputContainerComponent || this.inputContainerClass
+    this.inputContainerTemplate || this.inputContainerComponent
   );
   
   protected featherSlot = computed(() => 
-    this.featherTemplate || this.featherComponent || this.featherClass
+    this.featherTemplate || this.featherComponent
   );
   
   protected disclaimerSlot = computed(() => 
-    this.disclaimerTemplate || this.disclaimerComponent || this.disclaimerClass
+    this.disclaimerTemplate || this.disclaimerComponent
   );
   
   // Context objects for slots

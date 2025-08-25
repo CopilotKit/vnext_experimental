@@ -10,9 +10,10 @@ export * from "./utils/frontend-tool.utils";
 export * from "./utils/agent.utils";
 export * from "./utils/human-in-the-loop.utils";
 export * from "./utils/chat-config.utils";
-export * from "./lib/slots/slot.types";
-export * from "./lib/slots/slot.utils";
-export { CopilotSlotComponent } from "./lib/slots/copilot-slot.component";
+// Slot utilities are internal only, not exported
+// export * from "./lib/slots/slot.types";
+// export * from "./lib/slots/slot.utils";
+// export { CopilotSlotComponent } from "./lib/slots/copilot-slot.component";
 export { CopilotTooltipDirective } from "./lib/directives/tooltip.directive";
 export { CopilotKitConfigDirective } from "./directives/copilotkit-config.directive";
 export { CopilotKitAgentContextDirective } from "./directives/copilotkit-agent-context.directive";

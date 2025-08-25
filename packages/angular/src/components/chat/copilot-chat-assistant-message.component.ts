@@ -64,7 +64,7 @@ import { cn } from '../../lib/utils';
         <copilot-slot
           [slot]="markdownRendererTemplate || markdownRendererSlot"
           [context]="markdownRendererContext()"
-          [props]="markdownRendererProps">
+          >
         </copilot-slot>
       } @else {
         <copilot-chat-assistant-message-renderer
@@ -79,7 +79,7 @@ import { cn } from '../../lib/utils';
           <copilot-slot
             [slot]="toolbarTemplate || toolbarSlot"
             [context]="toolbarContext()"
-            [props]="toolbarProps">
+            >
           </copilot-slot>
         } @else {
           <div copilotChatAssistantMessageToolbar [inputClass]="toolbarProps?.className || toolbarProps?.class">
@@ -89,7 +89,7 @@ import { cn } from '../../lib/utils';
                 <copilot-slot
                   [slot]="copyButtonTemplate || copyButtonSlot"
                   [context]="copyButtonContext()"
-                  [props]="copyButtonProps">
+                  >
                 </copilot-slot>
               } @else {
                 <copilot-chat-assistant-message-copy-button
@@ -105,7 +105,7 @@ import { cn } from '../../lib/utils';
                   <copilot-slot
                     [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
                     [context]="thumbsUpButtonContext()"
-                    [props]="thumbsUpButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-thumbs-up-button
@@ -121,7 +121,7 @@ import { cn } from '../../lib/utils';
                   <copilot-slot
                     [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
                     [context]="thumbsDownButtonContext()"
-                    [props]="thumbsDownButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-thumbs-down-button
@@ -137,7 +137,7 @@ import { cn } from '../../lib/utils';
                   <copilot-slot
                     [slot]="readAloudButtonTemplate || readAloudButtonSlot"
                     [context]="readAloudButtonContext()"
-                    [props]="readAloudButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-read-aloud-button
@@ -153,7 +153,7 @@ import { cn } from '../../lib/utils';
                   <copilot-slot
                     [slot]="regenerateButtonTemplate || regenerateButtonSlot"
                     [context]="regenerateButtonContext()"
-                    [props]="regenerateButtonProps">
+                    >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-assistant-message-regenerate-button
@@ -363,13 +363,13 @@ export class CopilotChatAssistantMessageComponent {
   @Input() regenerateButtonProps?: any;
   
   // Slot inputs for backward compatibility
-  @Input() markdownRendererSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() copyButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() thumbsUpButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() thumbsDownButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() readAloudButtonSlot?: Type<any> | TemplateRef<any> | string;
-  @Input() regenerateButtonSlot?: Type<any> | TemplateRef<any> | string;
+  @Input() markdownRendererSlot?: Type<any> | TemplateRef<any>;
+  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
+  @Input() copyButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() thumbsUpButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() thumbsDownButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() readAloudButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() regenerateButtonSlot?: Type<any> | TemplateRef<any>;
   
   // Regular inputs
   @Input() message!: AssistantMessage;

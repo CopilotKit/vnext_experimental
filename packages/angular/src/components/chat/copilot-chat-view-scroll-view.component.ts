@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   ViewChild,
   ElementRef,
   ChangeDetectionStrategy,
@@ -65,12 +67,23 @@ import { takeUntil } from 'rxjs/operators';
             <!-- Content with padding-bottom matching React -->
             <div [style.padding-bottom.px]="paddingBottom()">
               <div class="max-w-3xl mx-auto">
-                <copilot-slot
-                  [slot]="messageView"
-                  [context]="{ messages }"
-                  [props]="messageViewProps"
-                  [defaultComponent]="defaultMessageViewComponent">
-                </copilot-slot>
+                @if (messageView) {
+                  <copilot-slot
+                    [slot]="messageView"
+                    [context]="messageViewContext()"
+                    [defaultComponent]="defaultMessageViewComponent">
+                  </copilot-slot>
+                } @else {
+                  <copilot-chat-message-view
+                    [messages]="messages"
+                    (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
+                    (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
+                    (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
+                    (assistantMessageRegenerate)="assistantMessageRegenerate.emit($event)"
+                    (userMessageCopy)="userMessageCopy.emit($event)"
+                    (userMessageEdit)="userMessageEdit.emit($event)">
+                  </copilot-chat-message-view>
+                }
               </div>
             </div>
           </div>
@@ -83,8 +96,7 @@ import { takeUntil } from 'rxjs/operators';
             [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
-              [context]="{ onClick: scrollToBottom.bind(this) }"
-              [props]="scrollToBottomButtonProps"
+              [context]="scrollToBottomContext()"
               [defaultComponent]="defaultScrollToBottomButtonComponent">
             </copilot-slot>
           </div>
@@ -111,12 +123,23 @@ import { takeUntil } from 'rxjs/operators';
             <!-- Content with padding-bottom matching React -->
             <div [style.padding-bottom.px]="paddingBottom()">
               <div class="max-w-3xl mx-auto">
-                <copilot-slot
-                  [slot]="messageView"
-                  [context]="{ messages }"
-                  [props]="messageViewProps"
-                  [defaultComponent]="defaultMessageViewComponent">
-                </copilot-slot>
+                @if (messageView) {
+                  <copilot-slot
+                    [slot]="messageView"
+                    [context]="messageViewContext()"
+                    [defaultComponent]="defaultMessageViewComponent">
+                  </copilot-slot>
+                } @else {
+                  <copilot-chat-message-view
+                    [messages]="messages"
+                    (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
+                    (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
+                    (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
+                    (assistantMessageRegenerate)="assistantMessageRegenerate.emit($event)"
+                    (userMessageCopy)="userMessageCopy.emit($event)"
+                    (userMessageEdit)="userMessageEdit.emit($event)">
+                  </copilot-chat-message-view>
+                }
               </div>
             </div>
           </div>
@@ -129,8 +152,7 @@ import { takeUntil } from 'rxjs/operators';
             [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
-              [context]="{ onClick: scrollToBottomFromStick.bind(this) }"
-              [props]="scrollToBottomButtonProps"
+              [context]="scrollToBottomFromStickContext()"
               [defaultComponent]="defaultScrollToBottomButtonComponent">
             </copilot-slot>
           </div>
@@ -164,6 +186,14 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   // Slot inputs
   @Input() scrollToBottomButton?: any;
   @Input() scrollToBottomButtonProps?: any;
+  
+  // Output events (bubbled from message view)
+  @Output() assistantMessageThumbsUp = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageThumbsDown = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageReadAloud = new EventEmitter<{ message: Message }>();
+  @Output() assistantMessageRegenerate = new EventEmitter<{ message: Message }>();
+  @Output() userMessageCopy = new EventEmitter<{ message: Message }>();
+  @Output() userMessageEdit = new EventEmitter<{ message: Message }>();
   
   // ViewChild references
   @ViewChild('scrollContainer', { read: ElementRef }) scrollContainer?: ElementRef<HTMLElement>;
@@ -247,5 +277,18 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+  
+  // Context methods for templates
+  messageViewContext(): any {
+    return { messages: this.messages, ...this.messageViewProps };
+  }
+  
+  scrollToBottomContext(): any {
+    return { onClick: this.scrollToBottom.bind(this), ...this.scrollToBottomButtonProps };
+  }
+  
+  scrollToBottomFromStickContext(): any {
+    return { onClick: this.scrollToBottomFromStick.bind(this), ...this.scrollToBottomButtonProps };
   }
 }
