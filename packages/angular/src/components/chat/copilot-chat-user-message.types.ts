@@ -22,12 +22,12 @@ export interface MessageRendererContext {
 }
 
 export interface CopyButtonContext {
-  onClick: () => void;
+  content?: string;
   copied?: boolean;
 }
 
 export interface EditButtonContext {
-  onClick: () => void;
+  // Empty context - click handled via outputs map
 }
 
 export interface BranchNavigationContext {

@@ -16,7 +16,9 @@
     "useDefineForClassFields": false,
     "paths": {
       "@copilotkit/angular": ["../../../packages/angular/src/index.ts"],
-      "@copilotkit/angular/*": ["../../../packages/angular/src/*"]
+      "@copilotkit/angular/*": ["../../../packages/angular/src/*"],
+      "@copilotkit/core": ["../../../packages/core/src/index.ts"],
+      "@copilotkit/shared": ["../../../packages/shared/src/index.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".storybook/**/*"],

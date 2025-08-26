@@ -10,23 +10,23 @@ export interface AssistantMessageToolbarContext {
 }
 
 export interface AssistantMessageCopyButtonContext {
-  onClick: () => void;
+  content?: string;
 }
 
 export interface ThumbsUpButtonContext {
-  onClick?: () => void;
+  // Empty context - click handled via outputs map
 }
 
 export interface ThumbsDownButtonContext {
-  onClick?: () => void;
+  // Empty context - click handled via outputs map
 }
 
 export interface ReadAloudButtonContext {
-  onClick?: () => void;
+  // Empty context - click handled via outputs map
 }
 
 export interface RegenerateButtonContext {
-  onClick?: () => void;
+  // Empty context - click handled via outputs map
 }
 
 // Event handler props

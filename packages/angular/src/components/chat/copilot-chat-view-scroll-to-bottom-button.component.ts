@@ -37,31 +37,11 @@ export class CopilotChatViewScrollToBottomButtonComponent {
   @Input() inputClass?: string;
   @Input() disabled: boolean = false;
   
-  // Support both EventEmitter and function callback patterns
-  private _onClick?: (() => void) | EventEmitter<void>;
-  @Output() onClickEmitter = new EventEmitter<void>();
-  
-  @Input()
-  set onClick(value: (() => void) | EventEmitter<void>) {
-    this._onClick = value;
-  }
-  
-  get onClick(): (() => void) | EventEmitter<void> {
-    return this._onClick || this.onClickEmitter;
-  }
+  // Simple, idiomatic Angular output
+  @Output() clicked = new EventEmitter<void>();
   
   // Icon reference
   protected readonly ChevronDown = ChevronDown;
-  
-  // Type guard to check if value is a function
-  private isFunction(value: any): value is (() => void) {
-    return typeof value === 'function';
-  }
-  
-  // Type guard to check if value is an EventEmitter
-  private isEventEmitter(value: any): value is EventEmitter<void> {
-    return value && typeof value.emit === 'function';
-  }
   
   // Computed class matching React exactly
   get computedClass(): string {
@@ -87,20 +67,7 @@ export class CopilotChatViewScrollToBottomButtonComponent {
   
   handleClick(): void {
     if (!this.disabled) {
-      // Handle both function and EventEmitter patterns
-      const handler = this._onClick;
-      if (handler) {
-        if (this.isFunction(handler)) {
-          // It's a regular function
-          handler();
-        } else if (this.isEventEmitter(handler)) {
-          // It's an EventEmitter
-          handler.emit();
-        }
-      } else {
-        // Fall back to default EventEmitter
-        this.onClickEmitter.emit();
-      }
+      this.clicked.emit();
     }
   }
 }

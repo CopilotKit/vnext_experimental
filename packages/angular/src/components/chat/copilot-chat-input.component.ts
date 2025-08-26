@@ -121,7 +121,8 @@ export interface ToolbarContext {
               @if (addFileButtonTemplate || addFileButtonComponent) {
                 <copilot-slot
                   [slot]="addFileButtonTemplate || addFileButtonComponent"
-                  [context]="addFileContext()"
+                  [context]="{ inputDisabled: computedMode() === 'transcribe' }"
+                  [outputs]="{ click: handleAddFile.bind(this) }"
                   [defaultComponent]="CopilotChatAddFileButtonComponent"
                   >
                 </copilot-slot>
@@ -157,7 +158,8 @@ export interface ToolbarContext {
                 @if (cancelTranscribeButtonTemplate || cancelTranscribeButtonComponent) {
                   <copilot-slot
                     [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonComponent"
-                    [context]="cancelTranscribeContext()"
+                    [context]="{}"
+                    [outputs]="{ click: handleCancelTranscribe.bind(this) }"
                     [defaultComponent]="CopilotChatCancelTranscribeButtonComponent"
                     >
                   </copilot-slot>
@@ -171,7 +173,8 @@ export interface ToolbarContext {
                 @if (finishTranscribeButtonTemplate || finishTranscribeButtonComponent) {
                   <copilot-slot
                     [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonComponent"
-                    [context]="finishTranscribeContext()"
+                    [context]="{}"
+                    [outputs]="{ click: handleFinishTranscribe.bind(this) }"
                     [defaultComponent]="CopilotChatFinishTranscribeButtonComponent"
                     >
                   </copilot-slot>
@@ -186,7 +189,8 @@ export interface ToolbarContext {
                 @if (startTranscribeButtonTemplate || startTranscribeButtonComponent) {
                   <copilot-slot
                     [slot]="startTranscribeButtonTemplate || startTranscribeButtonComponent"
-                    [context]="startTranscribeContext()"
+                    [context]="{}"
+                    [outputs]="{ click: handleStartTranscribe.bind(this) }"
                     [defaultComponent]="CopilotChatStartTranscribeButtonComponent"
                     >
                   </copilot-slot>
@@ -393,22 +397,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     inputShowControls: true
   }));
   
-  startTranscribeContext = computed(() => ({
-    onClick: () => this.handleStartTranscribe()
-  }));
-  
-  cancelTranscribeContext = computed(() => ({
-    onClick: () => this.handleCancelTranscribe()
-  }));
-  
-  finishTranscribeContext = computed(() => ({
-    onClick: () => this.handleFinishTranscribe()
-  }));
-  
-  addFileContext = computed(() => ({
-    onClick: () => this.handleAddFile(),
-    inputDisabled: this.computedMode() === 'transcribe'
-  }));
+  // Button contexts removed - now using outputs map for click handlers
   
   toolsContext = computed(() => ({
     inputToolsMenu: this.computedToolsMenu(),

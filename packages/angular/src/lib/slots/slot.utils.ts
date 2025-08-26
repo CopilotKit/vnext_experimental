@@ -51,14 +51,19 @@ export function renderSlot<T = any>(
       props: props ?? {}
     } as any);
   } else if (isComponentType(effectiveSlot)) {
-    // Component type
-    return createComponent(
-      viewContainer,
-      effectiveSlot as Type<T>,
-      props,
-      effectiveInjector,
-      outputs
-    );
+    // Component type - wrap in try/catch for safety
+    try {
+      return createComponent(
+        viewContainer,
+        effectiveSlot as Type<T>,
+        props,
+        effectiveInjector,
+        outputs
+      );
+    } catch (error) {
+      console.warn('Failed to create component:', effectiveSlot, error);
+      // Fall through to default component
+    }
   }
   
   // Default: render default component if provided
@@ -94,13 +99,21 @@ function createComponent<T>(
   }
   
   if (outputs) {
-    // Wire up output event handlers
+    // Wire up output event handlers with proper cleanup
     const instance = componentRef.instance as any;
+    const subscriptions: any[] = [];
+    
     for (const [eventName, handler] of Object.entries(outputs)) {
       if (instance[eventName]?.subscribe) {
-        instance[eventName].subscribe(handler);
+        const subscription = instance[eventName].subscribe(handler);
+        subscriptions.push(subscription);
       }
     }
+    
+    // Register cleanup on component destroy
+    componentRef.onDestroy(() => {
+      subscriptions.forEach(sub => sub.unsubscribe());
+    });
   }
   
   // Trigger change detection
@@ -112,21 +125,12 @@ function createComponent<T>(
 
 /**
  * Checks if a value is a component type.
- * We only accept proper component types, not directives.
+ * Strict check: only functions with prototype and constructor.
  */
 export function isComponentType(value: any): boolean {
-  if (typeof value !== 'function') {
-    return false;
-  }
-  
-  // Arrow functions don't have prototype
-  if (!value.prototype) {
-    return false;
-  }
-  
-  // Simple heuristic: if it's a function with a prototype, assume it could be a component
-  // This avoids using private Angular APIs
-  return true;
+  return typeof value === 'function' && 
+         !!value.prototype && 
+         value.prototype.constructor === value;
 }
 
 /**
@@ -204,13 +208,12 @@ export function createSlotConfig<T extends Record<string, Type<any>>>(
  * })
  * ```
  */
-export function provideSlots(slots: Record<string, SlotValue>) {
+export function provideSlots(slots: Record<string, Type<any>>) {
   const slotMap = new Map<string, SlotRegistryEntry>();
   
+  // Only accept component types in DI (templates lack view context)
   for (const [key, value] of Object.entries(slots)) {
-    if (value instanceof TemplateRef) {
-      slotMap.set(key, { template: value });
-    } else if (isComponentType(value)) {
+    if (isComponentType(value)) {
       slotMap.set(key, { component: value as Type<any> });
     }
   }

@@ -86,7 +86,8 @@ import { cn } from '../../lib/utils';
             @if (copyButtonTemplate || copyButtonComponent) {
               <copilot-slot
                 [slot]="copyButtonTemplate || copyButtonComponent"
-                [context]="copyButtonContext()"
+                [context]="{ content: message?.content || '' }"
+                [outputs]="{ click: handleCopy.bind(this) }"
                 [defaultComponent]="CopilotChatUserMessageCopyButtonComponent"
                 >
               </copilot-slot>
@@ -103,7 +104,8 @@ import { cn } from '../../lib/utils';
               @if (editButtonTemplate || editButtonComponent) {
                 <copilot-slot
                   [slot]="editButtonTemplate || editButtonComponent"
-                  [context]="editButtonContext()"
+                  [context]="{}"
+                  [outputs]="{ click: handleEdit.bind(this) }"
                   [defaultComponent]="CopilotChatUserMessageEditButtonComponent"
                   >
                 </copilot-slot>
@@ -215,13 +217,7 @@ export class CopilotChatUserMessageComponent {
     content: this.message?.content || ''
   }));
   
-  copyButtonContext = computed<CopyButtonContext>(() => ({
-    onClick: () => this.handleCopy()
-  }));
-  
-  editButtonContext = computed<EditButtonContext>(() => ({
-    onClick: () => this.handleEdit()
-  }));
+  // Button contexts removed - now using outputs map for click handlers
   
   branchNavigationContext = computed<BranchNavigationContext>(() => ({
     currentBranch: this.branchIndexSignal(),

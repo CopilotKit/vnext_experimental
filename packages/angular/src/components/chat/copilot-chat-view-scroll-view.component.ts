@@ -99,7 +99,7 @@ import { takeUntil } from 'rxjs/operators';
               [slot]="scrollToBottomButton"
               [context]="scrollToBottomContext()"
               [defaultComponent]="defaultScrollToBottomButtonComponent"
-              [outputs]="{ onClickEmitter: scrollToBottom.bind(this) }">
+              [outputs]="{ clicked: scrollToBottom.bind(this) }">
             </copilot-slot>
           </div>
         }
@@ -157,7 +157,7 @@ import { takeUntil } from 'rxjs/operators';
               [slot]="scrollToBottomButton"
               [context]="scrollToBottomFromStickContext()"
               [defaultComponent]="defaultScrollToBottomButtonComponent"
-              [outputs]="{ onClickEmitter: scrollToBottomFromStick.bind(this) }">
+              [outputs]="{ clicked: scrollToBottomFromStick.bind(this) }">
             </copilot-slot>
           </div>
         }
@@ -300,10 +300,10 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   }
   
   scrollToBottomContext(): any {
-    return { onClick: this.scrollToBottom.bind(this), className: this.scrollToBottomButtonClass };
+    return { className: this.scrollToBottomButtonClass };
   }
   
   scrollToBottomFromStickContext(): any {
-    return { onClick: this.scrollToBottomFromStick.bind(this), className: this.scrollToBottomButtonClass };
+    return { className: this.scrollToBottomButtonClass };
   }
 }
