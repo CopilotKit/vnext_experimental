@@ -6,11 +6,13 @@ import {
   SimpleChanges,
   ChangeDetectionStrategy,
   ViewEncapsulation,
-  inject,
   signal,
   effect,
   ChangeDetectorRef,
-  Signal
+  Signal,
+  Injector,
+  runInInjectionContext,
+  Optional
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotChatViewComponent } from './copilot-chat-view.component';
@@ -48,9 +50,12 @@ export class CopilotChatComponent implements OnInit, OnChanges {
   @Input() agentId?: string;
   @Input() threadId?: string;
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
-  private copilotKitService = inject(CopilotKitService);
-  private cdr = inject(ChangeDetectorRef);
+  constructor(
+    @Optional() private chatConfig: CopilotChatConfigurationService | null,
+    private copilotKitService: CopilotKitService,
+    private cdr: ChangeDetectorRef,
+    private injector: Injector,
+  ) {}
   
   // Signals from watchAgent - using direct references instead of assignment
   protected agent: Signal<any> = signal<any>(null);
@@ -83,10 +88,13 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     const agentId = this.agentId || DEFAULT_AGENT_ID;
     
     // Use watchAgent utility to get reactive agent and isRunning signals
-    this.agentWatcher = watchAgent(agentId);
-    // Store references to the signals directly
-    this.agent = this.agentWatcher.agent;
-    this.isRunning = this.agentWatcher.isRunning;
+    // watchAgent uses inject() internally; call within an injection context
+    runInInjectionContext(this.injector, () => {
+      this.agentWatcher = watchAgent(agentId);
+      // Store references to the signals directly
+      this.agent = this.agentWatcher.agent;
+      this.isRunning = this.agentWatcher.isRunning;
+    });
     
     // Set thread ID on the agent
     // React to agent availability like React's useEffect([threadId, agent])

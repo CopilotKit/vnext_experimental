@@ -7,14 +7,17 @@ import { CopilotKitConfigDirective, CopilotChatComponent } from '@copilotkit/ang
   imports: [CopilotKitConfigDirective, CopilotChatComponent],
   template: `
     <div
-      style="height: 100vh; margin: 0; padding: 0; overflow: hidden;"
-      [copilotkitConfig]="{runtimeUrl: runtimeUrl}"
+      [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
+      style="font-family: system-ui, sans-serif; padding: 24px; display: block;"
     >
-      <copilot-chat [threadId]="'xyz'"></copilot-chat>
+      <h1>Hello, Angular Demo</h1>
+      <p>If you can see this, the Angular demo shell is working.</p>
+      <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 16px;">
+        <copilot-chat [threadId]="'xyz'"></copilot-chat>
+      </div>
     </div>
   `,
 })
 export class AppComponent {
   runtimeUrl = 'http://localhost:3001/api/copilotkit';
 }
-

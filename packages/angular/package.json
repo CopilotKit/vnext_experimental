@@ -2,19 +2,19 @@
   "name": "@copilotkit/angular",
   "version": "0.0.1",
   "description": "Angular library for CopilotKit",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/fesm2022/copilotkit-angular.mjs",
+  "module": "dist/fesm2022/copilotkit-angular.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/fesm2022/copilotkit-angular.mjs",
+      "default": "./dist/fesm2022/copilotkit-angular.mjs"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.mjs",
-      "require": "./dist/testing/index.js"
+      "default": "./dist/testing/index.mjs"
     },
     "./styles.css": "./dist/styles.css"
   },

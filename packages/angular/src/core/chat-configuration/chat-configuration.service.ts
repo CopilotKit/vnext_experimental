@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional, signal, DestroyRef } from '@angular/core';
+import { Injectable, Inject, Optional, signal } from '@angular/core';
 import { 
   CopilotChatConfiguration, 
   CopilotChatLabels,
@@ -35,8 +35,7 @@ export class CopilotChatConfigurationService {
   readonly inputValue: ReturnType<typeof signal<string | undefined>>['asReadonly'] extends () => infer R ? R : never;
   
   constructor(
-    @Optional() @Inject(COPILOT_CHAT_INITIAL_CONFIG) private readonly initialConfig: CopilotChatConfiguration | null,
-    private readonly destroyRef: DestroyRef
+    @Optional() @Inject(COPILOT_CHAT_INITIAL_CONFIG) private readonly initialConfig: CopilotChatConfiguration | null
   ) {
     // Initialize state signals
     this._labels = signal<CopilotChatLabels>(

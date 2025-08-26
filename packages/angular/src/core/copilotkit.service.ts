@@ -4,7 +4,6 @@ import {
   signal,
   computed,
   effect,
-  DestroyRef,
   untracked,
 } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
@@ -25,7 +24,6 @@ import { AbstractAgent } from "@ag-ui/client";
 export class CopilotKitService {
   private readonly initialRenderers: Record<string, ToolCallRender<unknown>>;
   private readonly initialConfig: Partial<CopilotKitCoreConfig>;
-  private readonly destroyRef: DestroyRef;
 
   // Core instance - created once
   readonly copilotkit: CopilotKitCore;
@@ -64,12 +62,10 @@ export class CopilotKitService {
 
   constructor(
     @Inject(COPILOTKIT_INITIAL_RENDERERS) initialRenderers: Record<string, ToolCallRender<unknown>>,
-    @Inject(COPILOTKIT_INITIAL_CONFIG) initialConfig: Partial<CopilotKitCoreConfig>,
-    @Inject(DestroyRef) destroyRef: DestroyRef
+    @Inject(COPILOTKIT_INITIAL_CONFIG) initialConfig: Partial<CopilotKitCoreConfig>
   ) {
     this.initialRenderers = initialRenderers;
     this.initialConfig = initialConfig;
-    this.destroyRef = destroyRef;
     
     // Initialize core instance
     this.copilotkit = new CopilotKitCore({
@@ -170,9 +166,7 @@ export class CopilotKitService {
       },
     });
 
-    if (this.destroyRef) {
-      this.destroyRef.onDestroy(() => unsubscribe());
-    }
+    // Root service lives for app lifetime; unsubscribe not needed.
   }
 
   /**

@@ -9,4 +9,3 @@ export const appConfig: ApplicationConfig = {
     provideCopilotChatConfiguration({}),
   ],
 };
-
