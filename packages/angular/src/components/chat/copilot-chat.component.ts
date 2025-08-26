@@ -17,9 +17,8 @@ import { CopilotChatViewComponent } from './copilot-chat-view.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
 import { CopilotKitService } from '../../core/copilotkit.service';
 import { watchAgent, type AgentWatchResult } from '../../utils/agent.utils';
-import { randomUUID } from '@copilotkit/shared';
-import { Message } from '@ag-ui/client';
 import { DEFAULT_AGENT_ID, randomUUID } from '@copilotkit/shared';
+import { Message } from '@ag-ui/client';
 
 /**
  * CopilotChat component - Angular equivalent of React's <CopilotChat>
