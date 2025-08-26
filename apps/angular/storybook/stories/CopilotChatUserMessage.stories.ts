@@ -104,11 +104,89 @@ const meta: Meta<CopilotChatUserMessageComponent> = {
 export default meta;
 type Story = StoryObj<CopilotChatUserMessageComponent>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'user-1',
+    content: 'Hello! Can you help me build an Angular component?',
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    console.log('Edit message:', event);
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
+};
 
 export const LongMessage: Story = {
   args: {
     message: longMessage,
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'long-user-message',
+    content: \`I need help with creating a complex Angular component that handles user authentication. Here are my requirements:
+
+1. The component should have login and signup forms
+2. It needs to integrate with Firebase Auth
+3. Should handle form validation
+4. Must be responsive and work on mobile
+5. Include forgot password functionality
+6. Support social login (Google, GitHub)
+
+Can you help me implement this step by step? I'm particularly struggling with the form validation and state management parts.\`,
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    console.log('Edit message:', event);
+  }
+}`,
+        language: 'typescript',
+      },
+    },
   },
 };
 
@@ -117,12 +195,78 @@ export const WithEditButton: Story = {
     message: simpleMessage,
     editMessage: () => alert("Edit message clicked!"),
   },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'simple-user-message',
+    content: 'Hello! Can you help me build an Angular component?',
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    alert('Edit message clicked!');
+    console.log('Edit message:', event);
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const WithoutEditButton: Story = {
   args: {
     message: simpleMessage,
     editMessage: undefined,
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'simple-user-message',
+    content: 'Hello! Can you help me build an Angular component?',
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  // No edit handler - edit button won't appear
+}`,
+        language: 'typescript',
+      },
+    },
   },
 };
 
@@ -131,12 +275,98 @@ export const CodeRelatedMessage: Story = {
     message: codeMessage,
     editMessage: () => alert("Edit code message clicked!"),
   },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'code-user-message',
+    content: \`I'm getting this error in my Angular app:
+
+TypeError: Cannot read property 'map' of undefined
+
+The error happens in this component:
+
+@Component({
+  selector: 'app-user-list',
+  template: \\\`
+    <div *ngFor="let user of users">
+      {{ user.name }}
+    </div>
+  \\\`
+})
+export class UserListComponent {
+  @Input() users: User[];
+}
+
+How can I fix this?\`,
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    alert('Edit code message clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const ShortQuestion: Story = {
   args: {
     message: shortMessage,
     editMessage: () => console.log("Edit short message clicked!"),
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <copilot-chat-user-message
+      [message]="message"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  message: UserMessage = {
+    id: 'short-user-message',
+    content: "What's the difference between signals and observables in Angular?",
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    console.log('Edit short message clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
   },
 };
 
@@ -173,6 +403,66 @@ export const WithAdditionalToolbarItems: Story = {
       </div>
     `,
   }),
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatUserMessageComponent],
+  template: \`
+    <ng-template #additionalItems>
+      <button
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+        (click)="onCustomAction1()"
+        title="Custom Action 1">
+        📎
+      </button>
+      <button
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+        (click)="onCustomAction2()"
+        title="Custom Action 2">
+        🔄
+      </button>
+    </ng-template>
+    
+    <copilot-chat-user-message
+      [message]="message"
+      [additionalToolbarItems]="additionalItems"
+      (editMessage)="onEditMessage($event)">
+    </copilot-chat-user-message>
+  \`
+})
+export class ChatComponent {
+  @ViewChild('additionalItems') additionalItems!: TemplateRef<any>;
+  
+  message: UserMessage = {
+    id: 'simple-user-message',
+    content: 'Hello! Can you help me build an Angular component?',
+    role: 'user',
+    timestamp: new Date(),
+  };
+  
+  onEditMessage(event: any): void {
+    console.log('Edit clicked!');
+  }
+  
+  onCustomAction1(): void {
+    alert('Custom button 1 clicked!');
+  }
+  
+  onCustomAction2(): void {
+    alert('Custom button 2 clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const CustomAppearance: Story = {

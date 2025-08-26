@@ -253,6 +253,60 @@ export const Default: Story = {
       description: {
         story: "The default chat input with all standard features enabled.",
       },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent, provideCopilotChatConfiguration } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  providers: [
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+      }
+    })
+  ],
+  template: \`
+    <copilot-chat-input
+      (submitMessage)="onSubmitMessage($event)"
+      (valueChange)="onValueChange($event)"
+      (addFile)="onAddFile()"
+      (startTranscribe)="onStartTranscribe()"
+      (cancelTranscribe)="onCancelTranscribe()"
+      (finishTranscribe)="onFinishTranscribe()">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+  
+  onValueChange(value: string): void {
+    console.log('Value changed:', value);
+  }
+  
+  onAddFile(): void {
+    console.log('Add file clicked');
+  }
+  
+  onStartTranscribe(): void {
+    console.log('Started transcription');
+  }
+  
+  onCancelTranscribe(): void {
+    console.log('Cancelled transcription');
+  }
+  
+  onFinishTranscribe(): void {
+    console.log('Finished transcription');
+  }
+}`,
+        language: 'typescript',
+      },
     },
   },
 };
@@ -319,6 +373,67 @@ toolsMenu: [
 \`\`\`
         `,
       },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent, ToolsMenuItem } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      [toolsMenu]="toolsMenu"
+      (submitMessage)="onSubmitMessage($event)">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  toolsMenu: (ToolsMenuItem | '-')[] = [
+    {
+      label: 'Do X',
+      action: () => {
+        console.log('Do X clicked');
+        alert('Action: Do X was clicked!');
+      },
+    },
+    {
+      label: 'Do Y',
+      action: () => {
+        console.log('Do Y clicked');
+        alert('Action: Do Y was clicked!');
+      },
+    },
+    '-', // Separator
+    {
+      label: 'Advanced',
+      items: [
+        {
+          label: 'Do Advanced X',
+          action: () => {
+            console.log('Do Advanced X clicked');
+            alert('Advanced Action: Do Advanced X was clicked!');
+          },
+        },
+        '-',
+        {
+          label: 'Do Advanced Y',
+          action: () => {
+            console.log('Do Advanced Y clicked');
+            alert('Advanced Action: Do Advanced Y was clicked!');
+          },
+        },
+      ],
+    },
+  ];
+  
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
+      },
     },
   },
 };
@@ -345,6 +460,40 @@ Emits:
 - \`(cancelTranscribe)\` - Recording cancelled
 - \`(finishTranscribe)\` - Recording completed
         `,
+      },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      mode="transcribe"
+      [autoFocus]="false"
+      (startTranscribe)="onStartTranscribe()"
+      (cancelTranscribe)="onCancelTranscribe()"
+      (finishTranscribe)="onFinishTranscribe()">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  onStartTranscribe(): void {
+    console.log('Recording started');
+  }
+  
+  onCancelTranscribe(): void {
+    console.log('Recording cancelled');
+  }
+  
+  onFinishTranscribe(): void {
+    console.log('Recording finished');
+  }
+}`,
+        language: 'typescript',
       },
     },
   },
@@ -413,6 +562,62 @@ The template receives:
 - \`send\`: Function to trigger message submission
 - \`disabled\`: Boolean indicating if sending is allowed
         `,
+      },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+// Custom send button component
+@Component({
+  selector: 'custom-send-button',
+  standalone: true,
+  template: \`
+    <button
+      [disabled]="disabled"
+      (click)="handleClick()"
+      class="rounded-full w-10 h-10 bg-purple-500 text-white hover:bg-purple-600 transition-colors mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      aria-label="Send message">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mx-auto">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      </svg>
+    </button>
+  \`,
+})
+export class CustomSendButtonComponent {
+  @Input() disabled = false;
+  @Output() click = new EventEmitter<void>();
+  
+  handleClick(): void {
+    if (!this.disabled) {
+      this.click.emit();
+    }
+  }
+}
+
+// Main component using the custom send button
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent, CustomSendButtonComponent],
+  template: \`
+    <copilot-chat-input
+      (submitMessage)="onSubmitMessage($event)">
+      <ng-template #sendButton let-send="send" let-disabled="disabled">
+        <custom-send-button 
+          [disabled]="disabled" 
+          (click)="send()">
+        </custom-send-button>
+      </ng-template>
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
       },
     },
   },
@@ -490,6 +695,61 @@ These items appear in the toolbar area next to the default buttons.
 Note: The template is passed as an input property, not as content projection.
         `,
       },
+      source: {
+        type: 'code',
+        code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <ng-template #additionalItems>
+      <button
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-2"
+        (click)="onCustomAction()"
+        title="Custom Action">
+        ⭐
+      </button>
+      <button
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-1"
+        (click)="onAnotherAction()"
+        title="Another Custom Action">
+        🔖
+      </button>
+    </ng-template>
+    
+    <copilot-chat-input
+      [additionalToolbarItems]="additionalItems"
+      (submitMessage)="onSubmitMessage($event)"
+      (addFile)="onAddFile()">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  @ViewChild('additionalItems') additionalItems!: TemplateRef<any>;
+  
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+  
+  onAddFile(): void {
+    console.log('Add file clicked');
+  }
+  
+  onCustomAction(): void {
+    console.log('Custom action clicked!');
+    alert('Custom action clicked!');
+  }
+  
+  onAnotherAction(): void {
+    console.log('Another custom action clicked!');
+    alert('Another custom action clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
     },
   },
 };
@@ -519,6 +779,36 @@ Useful for:
 - Template messages
         `,
       },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      [value]="initialMessage"
+      (valueChange)="onValueChange($event)"
+      (submitMessage)="onSubmitMessage($event)">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  initialMessage = 'Hello, this is a prefilled message!';
+  
+  onValueChange(value: string): void {
+    console.log('Value changed:', value);
+  }
+  
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
+      },
     },
   },
 };
@@ -542,6 +832,39 @@ Features:
 - Maintains scroll position
 - Respects maxRows configuration
         `,
+      },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      [value]="multilineMessage"
+      (valueChange)="onValueChange($event)"
+      (submitMessage)="onSubmitMessage($event)">
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  multilineMessage = 
+    'This is a longer message that will cause the textarea to expand.\\n\\n' +
+    'It has multiple lines to demonstrate the auto-resize functionality.\\n\\n' +
+    'The textarea will grow up to the maxRows limit.';
+  
+  onValueChange(value: string): void {
+    console.log('Value changed:', value);
+  }
+  
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
       },
     },
   },
@@ -636,6 +959,52 @@ This example shows:
 - Box shadow for depth
         `,
       },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      inputClass="custom-chat-input"
+      (submitMessage)="onSubmitMessage($event)">
+    </copilot-chat-input>
+  \`,
+  styles: [\`
+    :host ::ng-deep .custom-chat-input {
+      border: 2px solid #4f46e5 !important;
+      border-radius: 12px !important;
+      background: linear-gradient(to right, #f3f4f6, #ffffff) !important;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+      padding: 12px !important;
+    }
+    
+    :host ::ng-deep .custom-chat-input textarea {
+      font-family: 'Monaco', 'Consolas', monospace !important;
+      font-size: 14px !important;
+      color: #1e293b !important;
+    }
+    
+    :host ::ng-deep .custom-chat-input button {
+      transition: all 0.3s ease !important;
+    }
+    
+    :host ::ng-deep .custom-chat-input button:hover {
+      transform: scale(1.05) !important;
+    }
+  \`]
+})
+export class ChatComponent {
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
+      },
     },
   },
 };
@@ -692,6 +1061,36 @@ The most flexible approach - use ng-template to completely control the send butt
 - Can use any Angular directives
 - Perfect for complex custom components
         `,
+      },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatInputComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatInputComponent],
+  template: \`
+    <copilot-chat-input
+      (submitMessage)="onSubmitMessage($event)">
+      <ng-template #sendButton let-send="send" let-disabled="disabled">
+        <button 
+          (click)="send()" 
+          [disabled]="disabled"
+          class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 transition-all">
+          Send 🎯
+        </button>
+      </ng-template>
+    </copilot-chat-input>
+  \`
+})
+export class ChatComponent {
+  onSubmitMessage(message: string): void {
+    console.log('Message submitted:', message);
+  }
+}`,
+        language: 'typescript',
       },
     },
   },

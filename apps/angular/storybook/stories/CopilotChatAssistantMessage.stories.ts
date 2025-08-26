@@ -354,14 +354,115 @@ export const Default: Story = {
   args: {
     message: simpleMessage,
     toolbarVisible: true
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatAssistantMessageComponent } from '@copilotkit/angular';
+import { AssistantMessage } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatAssistantMessageComponent],
+  template: \`
+    <copilot-chat-assistant-message
+      [message]="message"
+      [toolbarVisible]="true"
+      (thumbsUp)="onThumbsUp($event)"
+      (thumbsDown)="onThumbsDown($event)"
+      (readAloud)="onReadAloud($event)"
+      (regenerate)="onRegenerate($event)">
+    </copilot-chat-assistant-message>
+  \`
+})
+export class ChatComponent {
+  message: AssistantMessage = {
+    id: 'simple-message',
+    content: 'Hello! How can I help you today?',
+    role: 'assistant',
+  };
+  
+  onThumbsUp(event: any): void {
+    console.log('Thumbs up clicked!');
   }
+  
+  onThumbsDown(event: any): void {
+    console.log('Thumbs down clicked!');
+  }
+  
+  onReadAloud(event: any): void {
+    console.log('Read aloud clicked!');
+  }
+  
+  onRegenerate(event: any): void {
+    console.log('Regenerate clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const TestAllMarkdownFeatures: Story = {
   args: {
     message: markdownTestMessage,
     toolbarVisible: true
-  }
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatAssistantMessageComponent } from '@copilotkit/angular';
+import { AssistantMessage } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatAssistantMessageComponent],
+  template: \`
+    <copilot-chat-assistant-message
+      [message]="message"
+      [toolbarVisible]="true">
+    </copilot-chat-assistant-message>
+  \`
+})
+export class ChatComponent {
+  message: AssistantMessage = {
+    id: 'test-message',
+    content: \`# Markdown Test Message
+
+This message tests various markdown features including **bold**, *italic*, and \\\`inline code\\\`.
+
+## Code Blocks
+
+\\\`\\\`\\\`javascript
+function greet(name) {
+  console.log(\\\`Hello, \\${name}!\\\`);
+  return \\\`Welcome, \\${name}\\\`;
+}
+\\\`\\\`\\\`
+
+## Links and Tables
+
+- [External link](https://example.com)
+
+| Feature | Supported | Notes |
+|---------|-----------|-------|
+| Headers | ✅ | All levels |
+| Lists | ✅ | Nested support |
+| Code | ✅ | Syntax highlighting |\`,
+    role: 'assistant',
+  };
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const WithToolbarButtons: Story = {
@@ -399,7 +500,57 @@ export const WithToolbarButtons: Story = {
         </div>
       </div>
     `
-  })
+  }),
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatAssistantMessageComponent } from '@copilotkit/angular';
+import { AssistantMessage } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatAssistantMessageComponent],
+  template: \`
+    <copilot-chat-assistant-message
+      [message]="message"
+      [toolbarVisible]="true"
+      (thumbsUp)="onThumbsUp($event)"
+      (thumbsDown)="onThumbsDown($event)"
+      (readAloud)="onReadAloud($event)"
+      (regenerate)="onRegenerate($event)">
+    </copilot-chat-assistant-message>
+  \`
+})
+export class ChatComponent {
+  message: AssistantMessage = {
+    id: 'simple-message',
+    content: 'Hello! How can I help you today?',
+    role: 'assistant',
+  };
+  
+  onThumbsUp(event: any): void {
+    alert('Thumbs up clicked!');
+  }
+  
+  onThumbsDown(event: any): void {
+    alert('Thumbs down clicked!');
+  }
+  
+  onReadAloud(event: any): void {
+    alert('Read aloud clicked!');
+  }
+  
+  onRegenerate(event: any): void {
+    alert('Regenerate clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const WithAdditionalToolbarItems: Story = {
@@ -442,12 +593,145 @@ export const WithAdditionalToolbarItems: Story = {
         </div>
       </div>
     `
-  })
+  }),
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
+import { CopilotChatAssistantMessageComponent } from '@copilotkit/angular';
+import { AssistantMessage } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatAssistantMessageComponent],
+  template: \`
+    <ng-template #additionalItems>
+      <button 
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+        (click)="onCustom1()"
+        title="Custom Action 1">
+        📌
+      </button>
+      <button 
+        class="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+        (click)="onCustom2()"
+        title="Custom Action 2">
+        ❤️
+      </button>
+    </ng-template>
+    
+    <copilot-chat-assistant-message
+      [message]="message"
+      [toolbarVisible]="true"
+      [additionalToolbarItems]="additionalItems"
+      (thumbsUp)="onThumbsUp($event)"
+      (thumbsDown)="onThumbsDown($event)"
+      (readAloud)="onReadAloud($event)"
+      (regenerate)="onRegenerate($event)">
+    </copilot-chat-assistant-message>
+  \`
+})
+export class ChatComponent {
+  @ViewChild('additionalItems') additionalItems!: TemplateRef<any>;
+  
+  message: AssistantMessage = {
+    id: 'simple-message',
+    content: 'Hello! How can I help you today?',
+    role: 'assistant',
+  };
+  
+  onThumbsUp(event: any): void {
+    console.log('Thumbs up clicked!');
+  }
+  
+  onThumbsDown(event: any): void {
+    console.log('Thumbs down clicked!');
+  }
+  
+  onReadAloud(event: any): void {
+    console.log('Read aloud clicked!');
+  }
+  
+  onRegenerate(event: any): void {
+    console.log('Regenerate clicked!');
+  }
+  
+  onCustom1(): void {
+    alert('Custom button 1 clicked!');
+  }
+  
+  onCustom2(): void {
+    alert('Custom button 2 clicked!');
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 export const CodeBlocksWithLanguages: Story = {
   args: {
     message: codeBlocksTestMessage,
     toolbarVisible: true
+  },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatAssistantMessageComponent } from '@copilotkit/angular';
+import { AssistantMessage } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatAssistantMessageComponent],
+  template: \`
+    <copilot-chat-assistant-message
+      [message]="message"
+      [toolbarVisible]="true">
+    </copilot-chat-assistant-message>
+  \`
+})
+export class ChatComponent {
+  message: AssistantMessage = {
+    id: 'msg-code-blocks-test',
+    content: \`# Code Blocks Test
+
+## JavaScript Example
+\\\`\\\`\\\`javascript
+const authenticateUser = async (email, password) => {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error:', error);
+    return null;
   }
+};
+\\\`\\\`\\\`
+
+## Python Example
+\\\`\\\`\\\`python
+import pandas as pd
+
+def process_user_data(csv_file):
+    df = pd.read_csv(csv_file)
+    df['age'] = pd.to_numeric(df['age'], errors='coerce')
+    return df
+\\\`\\\`\\\`\`,
+    role: 'assistant',
+  };
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };

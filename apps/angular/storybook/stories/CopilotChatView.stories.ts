@@ -44,6 +44,70 @@ type Story = StoryObj<CopilotChatViewComponent>;
 
 // Default story
 export const Default: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatViewComponent, Message } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [autoScroll]="true">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ChatComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Hello! How can I integrate CopilotKit with my Angular app?',
+      role: 'user',
+    },
+    {
+      id: 'assistant-1',
+      content: \`To integrate CopilotKit with your Angular app, follow these steps:
+
+1. Install the package:
+\\\`\\\`\\\`bash
+npm install @copilotkit/angular
+\\\`\\\`\\\`
+
+2. Import and configure in your component:
+\\\`\\\`\\\`typescript
+import { provideCopilotKit } from '@copilotkit/angular';
+
+@Component({
+  providers: [provideCopilotKit({})]
+})
+\\\`\\\`\\\`
+
+3. Use the chat components in your template!\`,
+      role: 'assistant',
+    },
+    {
+      id: 'user-2',
+      content: 'That looks great! Can I customize the appearance?',
+      role: 'user',
+    },
+    {
+      id: 'assistant-2',
+      content: 'Yes! CopilotKit is highly customizable. You can customize the appearance using Tailwind CSS classes or by providing your own custom components through the slot system.',
+      role: 'assistant',
+    },
+  ];
+}`,
+        language: 'typescript',
+      },
+    },
+  },
   render: () => {
     const messages: Message[] = [
       {
@@ -102,6 +166,53 @@ import { provideCopilotKit } from '@copilotkit/angular';
 
 // Story with manual scroll
 export const ManualScroll: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatViewComponent, Message } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [autoScroll]="false">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ChatComponent {
+  messages: Message[] = this.generateManyMessages();
+  
+  generateManyMessages(): Message[] {
+    const messages: Message[] = [];
+    for (let i = 0; i < 20; i++) {
+      if (i % 2 === 0) {
+        messages.push({
+          id: \`user-\${i}\`,
+          content: \`User message \${i}: This is a test message to demonstrate scrolling behavior.\`,
+          role: 'user',
+        });
+      } else {
+        messages.push({
+          id: \`assistant-\${i}\`,
+          content: \`Assistant response \${i}: This is a longer response to demonstrate how the chat interface handles various message lengths and scrolling behavior when there are many messages in the conversation.\`,
+          role: 'assistant',
+        });
+      }
+    }
+    return messages;
+  }
+}`,
+        language: 'typescript',
+      },
+    },
+  },
   render: () => {
     // Generate many messages to show scroll behavior
     const messages: Message[] = [];
@@ -152,10 +263,76 @@ export const EmptyState: Story = {
       props: {},
     };
   },
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatViewComponent } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="[]"
+        [autoScroll]="true">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ChatComponent {
+  // Empty messages array to show initial state
+}`,
+        language: 'typescript',
+      },
+    },
+  },
 };
 
 // Story with custom disclaimer
 export const CustomDisclaimer: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatViewComponent, Message } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [autoScroll]="true"
+        [disclaimerText]="'This is a custom disclaimer message for your chat interface.'">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ChatComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Hello!',
+      role: 'user',
+    },
+    {
+      id: 'assistant-1',
+      content: 'Hi there! How can I help you today?',
+      role: 'assistant',
+    },
+  ];
+}`,
+        language: 'typescript',
+      },
+    },
+  },
   render: () => {
     const messages: Message[] = [
       {
@@ -189,6 +366,45 @@ export const CustomDisclaimer: Story = {
 
 // Story without feather effect
 export const NoFeather: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CopilotChatViewComponent, Message } from '@copilotkit/angular';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [autoScroll]="true"
+        [featherComponent]="null">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ChatComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Hello!',
+      role: 'user',
+    },
+    {
+      id: 'assistant-1',
+      content: 'Hi there! How can I help you today?',
+      role: 'assistant',
+    },
+  ];
+}`,
+        language: 'typescript',
+      },
+    },
+  },
   render: () => {
     const messages: Message[] = [
       {
