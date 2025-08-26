@@ -14,7 +14,6 @@ import { Message } from '@ag-ui/client';
 const meta: Meta<CopilotChatViewComponent> = {
   title: 'UI/CopilotChatView',
   component: CopilotChatViewComponent,
-  tags: ['autodocs'],
   decorators: [
     moduleMetadata({
       imports: [
