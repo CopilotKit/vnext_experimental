@@ -35,7 +35,8 @@ This plan applies the best, simplest, and most idiomatic Angular approach withou
 
 ## Implementation Steps
 
-1) Slot utils and types
+1. Slot utils and types
+
 - `RenderSlotOptions<T>`: `props?: Partial<T>`, `outputs?: Record<string, (e:any)=>void>`.
 - `renderSlot(...)` tries TemplateRef → component via `createComponent(...)` (inside try/catch) → fallback to default or null.
 - `createComponent(...)`: use `setInput` for inputs; wire outputs subscriptions and register `componentRef.onDestroy(() => sub.unsubscribe())`.
@@ -43,19 +44,23 @@ This plan applies the best, simplest, and most idiomatic Angular approach withou
 - `provideSlots(...)`: accept `Record<string, Type<any>>`, return a `Map` entry per key; optionally `multi: true`.
 - `createSlotRenderer(...)`: accept `outputs` and thread them through to `renderSlot(...)`.
 
-2) Slot wrapper component
+2. Slot wrapper component
+
 - `CopilotSlotComponent` accepts `@Input() slot?: TemplateRef | Type`, `@Input() context?: any`, `@Input() outputs?: Record<string,fn>`, `@Input() defaultComponent?: Type`.
 - For component slots, call `renderSlot(...)` with `props: context` and `outputs`.
 
-3) Button-like components
+3. Button-like components
+
 - Replace any `onClick` input and `onClickEmitter` output with a single `@Output() clicked`.
 - Internally emit `clicked` in the `(click)` handler.
 
-4) Host components
+4. Host components
+
 - Update all places where components are used as slots to pass `[outputs]` with `clicked` (or template event bindings if template is used).
 - Remove all references to legacy props/events.
 
-5) Stories and unit tests
+5. Stories and unit tests
+
 - Update stories to the new API (no `...Slot`; no hybrid inputs; use `[outputs]` or templates).
 - Replace DOM manipulation in stories with Angular bindings.
 - Update tests for `SLOT_CONFIG` Map, output wiring via `outputs`, and button `clicked` events.
@@ -68,14 +73,17 @@ This plan applies the best, simplest, and most idiomatic Angular approach withou
 ## Tailored Feedback on Latest WIP Commit
 
 Commit `b792f71` (“wip”) touched:
+
 - slot utils/types, `copilot-slot.component.ts`, `copilotkit-tool-render.component.ts`, chat components, stories, and tests.
 
 What’s good
+
 - Introduced `outputs` map into slot rendering. This aligns with explicit output wiring and removes heuristics.
 - Switched to `setInput` for component inputs (idiomatic and change-detection friendly).
 - Moved toward Map-based `SLOT_CONFIG`.
 
 What to improve to stay maximally idiomatic
+
 - Standardize outputs:
   - Replace special names like `onClickEmitter` with a single `@Output() clicked`. Update call sites to `[outputs]="{ clicked: ... }"`.
   - Drop hybrid `onClick` input handling from button components.
@@ -105,4 +113,3 @@ What to improve to stay maximally idiomatic
   - Replace `[outputs]="{ onClickEmitter: ... }"` with `[outputs]="{ clicked: ... }"` after component update.
 
 This brings the WIP in line with the no-backcompat, maximally idiomatic plan while keeping the current refactor momentum.
-

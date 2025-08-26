@@ -35,8 +35,9 @@ import { cn } from '../../lib/utils';
 })
 export class CopilotChatViewScrollToBottomButtonComponent {
   @Input() inputClass?: string;
-  @Input() className?: string;  // Support both className and inputClass
   @Input() disabled: boolean = false;
+  // Support function-style click handler via slot context
+  @Input() onClick?: () => void;
   
   // Simple, idiomatic Angular output
   @Output() clicked = new EventEmitter<void>();
@@ -61,13 +62,17 @@ export class CopilotChatViewScrollToBottomButtonComponent {
       'transition-colors',
       // Focus states
       'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-      // Custom classes - support both className and inputClass
-      this.className || this.inputClass
+      // Custom classes
+      this.inputClass
     );
   }
   
   handleClick(): void {
     if (!this.disabled) {
+      // Call input handler if provided (slot-style)
+      if (this.onClick) {
+        this.onClick();
+      }
       this.clicked.emit();
     }
   }

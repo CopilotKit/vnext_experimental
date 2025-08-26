@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="
+    <div [class]="inputClass" style="
       background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       padding: 20px;
       border-radius: 15px;
@@ -48,6 +48,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class CustomInputComponent {
   @Input() onSend?: (message: string) => void;
+  @Input() inputClass?: string;
   @Input() className?: string;
   
   inputValue = '';

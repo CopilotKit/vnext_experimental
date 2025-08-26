@@ -7,7 +7,6 @@ import { Message } from '@ag-ui/client';
 export interface CopilotChatViewProps {
   messages?: Message[];
   autoScroll?: boolean;
-  className?: string;
   
   // Slot configurations
   messageViewComponent?: Type<any>;
@@ -24,7 +23,6 @@ export interface CopilotChatViewProps {
   
   inputComponent?: Type<any>;
   inputTemplate?: TemplateRef<any>;
-  inputClass?: string;
   
   inputContainerComponent?: Type<any>;
   inputContainerTemplate?: TemplateRef<any>;

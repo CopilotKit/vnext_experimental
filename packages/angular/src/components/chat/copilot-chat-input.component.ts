@@ -293,10 +293,8 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @Input() set inputClass(val: string | undefined) {
     this.customClass.set(val);
   }
-  @Input() set className(val: string | undefined) {
-    // Support both className and inputClass
-    this.customClass.set(val);
-  }
+  // Note: Prefer host `class` for styling this component;
+  // keep only `inputClass` to style the internal wrapper if needed.
   @Input() additionalToolbarItems?: TemplateRef<any>;
   
   // Output events
@@ -392,7 +390,7 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     disabled: this.computedMode() === 'processing',
     maxRows: this.textAreaMaxRows,
     placeholder: this.textAreaPlaceholder,
-    className: this.textAreaClass,
+    inputClass: this.textAreaClass,
     onKeyDown: (event: KeyboardEvent) => this.handleKeyDown(event),
     onChange: (value: string) => this.handleValueChange(value)
   }));

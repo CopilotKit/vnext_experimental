@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
     <button 
       type="button"
       (click)="handleClick()"
+      [class]="inputClass"
       [class.hover]="isHovered"
       (mouseenter)="isHovered = true"
       (mouseleave)="isHovered = false"
@@ -42,6 +43,7 @@ import { CommonModule } from '@angular/common';
 })
 export class CustomScrollButtonComponent {
   @Input() onClick?: () => void;
+  @Input() inputClass?: string;
   @Input() className?: string;
   @Output() clicked = new EventEmitter<void>();
   

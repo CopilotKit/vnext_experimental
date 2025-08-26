@@ -4,7 +4,7 @@ import { Component, Input } from '@angular/core';
   selector: 'custom-disclaimer',
   standalone: true,
   template: `
-    <div style="
+    <div [class]="inputClass" style="
       text-align: center;
       padding: 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

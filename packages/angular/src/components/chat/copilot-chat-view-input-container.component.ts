@@ -40,7 +40,7 @@ import { cn } from '../../lib/utils';
       <div class="max-w-3xl mx-auto py-0 px-4 sm:px-0">
         <copilot-slot
           [slot]="input"
-          [context]="{ className: inputClass }"
+          [context]="{ inputClass: inputClass }"
           [defaultComponent]="defaultInputComponent">
         </copilot-slot>
       </div>

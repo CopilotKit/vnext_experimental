@@ -94,7 +94,7 @@ import { takeUntil } from 'rxjs/operators';
         <!-- Feather effect -->
         <copilot-slot
           [slot]="featherSlot()"
-          [context]="{ className: featherClass }"
+          [context]="{ inputClass: featherClass }"
           [defaultComponent]="defaultFeatherComponent">
         </copilot-slot>
 
@@ -113,7 +113,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Core inputs matching React props
   @Input() messages: Message[] = [];
   @Input() autoScroll: boolean = true;
-  @Input() inputClass?: string;
   
   // MessageView slot inputs
   @Input() messageViewComponent?: Type<any>;
@@ -187,7 +186,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Signals for reactive state
   protected messagesSignal = signal<Message[]>([]);
   protected autoScrollSignal = signal(true);
-  protected inputClassSignal = signal<string | undefined>(undefined);
   protected disclaimerTextSignal = signal<string | undefined>(undefined);
   protected disclaimerClassSignal = signal<string | undefined>(undefined);
   protected inputContainerHeight = signal<number>(0);
@@ -195,9 +193,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   protected contentPaddingBottom = computed(() => this.inputContainerHeight() + 32);
   
   // Computed signals
-  protected computedClass = computed(() => 
-    cn('relative h-full', this.inputClassSignal())
-  );
+  protected computedClass = computed(() => cn('relative h-full'));
   
   // Slot resolution computed signals
   protected messageViewSlot = computed(() => 
@@ -244,7 +240,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   
   protected inputContainerContext = computed(() => ({
     input: this.inputSlot(),
-    inputClass: this.inputClass,
     disclaimer: this.disclaimerSlot(),
     disclaimerText: this.disclaimerTextSignal(),
     disclaimerClass: this.disclaimerClassSignal(),
@@ -286,7 +281,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     // Initialize signals with input values
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
-    this.inputClassSignal.set(this.inputClass);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
 
@@ -303,7 +297,6 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     // Update signals when inputs change
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
-    this.inputClassSignal.set(this.inputClass);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
 

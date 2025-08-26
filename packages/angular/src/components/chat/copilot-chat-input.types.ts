@@ -47,8 +47,7 @@ export interface CopilotChatTextareaProps {
   disabled?: boolean;
   onChange?: (value: string) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
-  className?: string;
-  class?: string; // Support both naming conventions
+  inputClass?: string;
   style?: any;
   rows?: number;
   cols?: number;
@@ -63,8 +62,7 @@ export interface CopilotChatTextareaProps {
 export interface CopilotChatButtonProps {
   disabled?: boolean;
   onClick?: () => void;
-  className?: string;
-  class?: string; // Support both naming conventions
+  inputClass?: string;
   style?: any;
   type?: 'button' | 'submit' | 'reset';
   ariaLabel?: string;
@@ -93,8 +91,7 @@ export interface CopilotChatToolsButtonProps extends CopilotChatButtonProps {
  * Props for audio recorder
  */
 export interface CopilotChatAudioRecorderProps {
-  className?: string;
-  class?: string; // Support both naming conventions
+  inputClass?: string;
   style?: any;
   onStateChange?: (state: AudioRecorderState) => void;
   showControls?: boolean;
@@ -105,8 +102,7 @@ export interface CopilotChatAudioRecorderProps {
  * Props for toolbar
  */
 export interface CopilotChatToolbarProps {
-  className?: string;
-  class?: string; // Support both naming conventions
+  inputClass?: string;
   style?: any;
   position?: 'top' | 'bottom';
   alignment?: 'left' | 'center' | 'right' | 'space-between';

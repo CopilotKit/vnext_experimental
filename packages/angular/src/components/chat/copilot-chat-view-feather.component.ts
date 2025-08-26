@@ -27,7 +27,6 @@ import { cn } from '../../lib/utils';
 })
 export class CopilotChatViewFeatherComponent {
   @Input() inputClass?: string;
-  @Input() className?: string;  // Support both className and inputClass
   @Input() style?: { [key: string]: any };
   
   // Computed class matching React exactly
@@ -41,8 +40,8 @@ export class CopilotChatViewFeatherComponent {
       'from-white via-white to-transparent',
       // Dark mode colors
       'dark:from-[rgb(33,33,33)] dark:via-[rgb(33,33,33)]',
-      // Custom classes - support both className and inputClass
-      this.className || this.inputClass
+      // Custom classes
+      this.inputClass
     );
   }
 }

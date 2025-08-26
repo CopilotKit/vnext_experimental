@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
@@ -62,7 +62,11 @@ export const ThumbsUpDown: Story = {
         </div>
       `
     })
-    class CustomDisclaimerComponent {}
+    class CustomDisclaimerComponent {
+      // Accept slot-provided inputs to avoid NG0303
+      @Input() text?: string;
+      @Input() inputClass?: string;
+    }
 
     const messages: Message[] = [
       {

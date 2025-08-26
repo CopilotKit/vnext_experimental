@@ -300,19 +300,19 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   
   // Context methods for templates
   messageViewContext(): any {
-    return { messages: this.messages, className: this.messageViewClass };
+    return { messages: this.messages, inputClass: this.messageViewClass };
   }
   
   scrollToBottomContext(): any {
     return { 
-      className: this.scrollToBottomButtonClass,
+      inputClass: this.scrollToBottomButtonClass,
       onClick: () => this.scrollToBottom()
     };
   }
   
   scrollToBottomFromStickContext(): any {
     return { 
-      className: this.scrollToBottomButtonClass,
+      inputClass: this.scrollToBottomButtonClass,
       onClick: () => this.scrollToBottomFromStick()
     };
   }
