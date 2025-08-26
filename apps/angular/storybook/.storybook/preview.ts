@@ -20,6 +20,18 @@ const preview: Preview = {
       // Configure source display
       source: {
         type: 'dynamic', // Update snippet as args/Controls change
+        // Ensure the code pane reflects the actual story template
+        transform: (src: string, ctx: any) => {
+          try {
+            // Prefer the currently rendered story function
+            const storyResult = (ctx?.storyFn || ctx?.originalStoryFn)?.(ctx?.args || {});
+            if (storyResult && typeof storyResult === 'object' && 'template' in storyResult) {
+              return (storyResult as any).template as string;
+            }
+          } catch {}
+          // Fallback to Storybook’s generated source
+          return src;
+        },
       },
     },
   },
