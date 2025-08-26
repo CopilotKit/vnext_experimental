@@ -86,8 +86,7 @@ import { provideCopilotKit } from '@copilotkit/angular';
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
-            [messages]="messages"
-            [autoScroll]="true">
+            [messages]="messages">
           </copilot-chat-view>
         </div>
       `,
@@ -142,8 +141,7 @@ export const EmptyState: Story = {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
-            [messages]="[]"
-            [autoScroll]="true">
+            [messages]="[]">
           </copilot-chat-view>
         </div>
       `,

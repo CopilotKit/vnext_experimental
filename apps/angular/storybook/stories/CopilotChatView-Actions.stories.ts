@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
+import { moduleMetadata, applicationConfig } from '@storybook/angular';
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
@@ -41,9 +41,9 @@ const meta: Meta<CopilotChatViewComponent> = {
 export default meta;
 type Story = StoryObj<CopilotChatViewComponent>;
 
-// Custom disclaimer component
+// Custom disclaimer component (defined outside for reuse but will be visible in source)
 @Component({
-  selector: 'custom-disclaimer',
+  selector: 'custom-disclaimer-for-actions',
   standalone: true,
   template: `
     <div style="
@@ -67,11 +67,19 @@ class CustomDisclaimerComponent {}
   selector: 'story-with-feedback',
   standalone: true,
   imports: [CommonModule, CopilotChatViewComponent],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
+      },
+    }),
+  ],
   template: `
     <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
       <copilot-chat-view
         [messages]="messages"
-        [autoScroll]="true"
         [disclaimerComponent]="customDisclaimerComponent"
         (assistantMessageThumbsUp)="onThumbsUp($event)"
         (assistantMessageThumbsDown)="onThumbsDown($event)">
@@ -107,22 +115,14 @@ class StoryWithFeedbackComponent {
 }
 
 export const ThumbsUpDown: Story = {
-  decorators: [
-    moduleMetadata({
-      imports: [CommonModule, CopilotChatViewComponent, StoryWithFeedbackComponent],
-      providers: [
-        provideCopilotKit({}),
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
-          },
-        }),
-      ],
-    }),
-  ],
   render: () => ({
     template: `<story-with-feedback></story-with-feedback>`,
-    props: {}
+    props: {},
   }),
+  decorators: [
+    moduleMetadata({
+      declarations: [StoryWithFeedbackComponent, CustomDisclaimerComponent],
+      imports: [CommonModule, CopilotChatViewComponent],
+    }),
+  ],
 };

@@ -62,7 +62,6 @@ export const CustomDisclaimerText: Story = {
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
             [messages]="messages"
-            [autoScroll]="true"
             [disclaimerText]="'This is a custom disclaimer message for your chat interface.'">
           </copilot-chat-view>
         </div>
@@ -74,22 +73,6 @@ export const CustomDisclaimerText: Story = {
   },
 };
 
-// Custom disclaimer component to match the CSS structure
-@Component({
-  selector: 'custom-styled-disclaimer',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div [class]="'text-center text-xs py-3 px-4 max-w-3xl mx-auto ' + (inputClass || '')">
-      <span class="custom-disclaimer-icon">✨</span>
-      <span class="custom-disclaimer-text">{{ text }}</span>
-    </div>
-  `,
-})
-class CustomStyledDisclaimerComponent {
-  @Input() inputClass?: string;
-  @Input() text?: string;
-}
 
 export const AnimatedDisclaimer: Story = {
   render: () => {
@@ -186,17 +169,13 @@ export const AnimatedDisclaimer: Story = {
           
           <copilot-chat-view
             [messages]="messages"
-            [autoScroll]="true"
-            [disclaimerComponent]="customDisclaimerComponent"
             [disclaimerClass]="'custom-disclaimer'"
-            [disclaimerText]="customDisclaimerText">
+            [disclaimerText]="'✨ Styled with custom CSS classes - AI responses may need verification ✨'">
           </copilot-chat-view>
         </div>
       `,
       props: {
         messages,
-        customDisclaimerComponent: CustomStyledDisclaimerComponent,
-        customDisclaimerText: '✨ Styled with custom CSS classes - AI responses may need verification ✨',
       },
     };
   },

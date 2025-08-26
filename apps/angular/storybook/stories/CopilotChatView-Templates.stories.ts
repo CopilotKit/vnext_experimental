@@ -60,8 +60,7 @@ export const ComingSoon: Story = {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
-            [messages]="messages"
-            [autoScroll]="true">
+            [messages]="messages">
           </copilot-chat-view>
         </div>
       `,
