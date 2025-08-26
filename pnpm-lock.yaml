@@ -35,6 +35,9 @@ importers:
       '@angular/animations':
         specifier: ^19.0.0
         version: 19.2.14(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))
+      '@angular/cdk':
+        specifier: ^19.0.0
+        version: 19.2.19(@angular/common@19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1))(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)
       '@angular/common':
         specifier: ^19.0.0
         version: 19.2.14(@angular/core@19.2.14(rxjs@7.8.1)(zone.js@0.15.1))(rxjs@7.8.1)

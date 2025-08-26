@@ -11,6 +11,8 @@ import {
   ChangeDetectorRef,
   Signal,
   Injector,
+  inject,
+  EnvironmentInjector,
   runInInjectionContext,
   Optional
 } from '@angular/core';
@@ -55,8 +57,44 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     private copilotKitService: CopilotKitService,
     private cdr: ChangeDetectorRef,
     private injector: Injector,
-  ) {}
+    private envInjector: EnvironmentInjector,
+  ) {
+    // Create the agent watcher effect inside a guaranteed injection context
+    runInInjectionContext(this.envInjector, () => {
+      effect(() => {
+        const desiredAgentId = this.inputAgentId() || DEFAULT_AGENT_ID;
+
+        // Tear down previous watcher if agent id changes
+        if (this.agentWatcher?.unsubscribe) {
+          this.agentWatcher.unsubscribe();
+          this.agentWatcher = undefined;
+          this.hasConnectedOnce = false;
+        }
+
+        // Setup watcher for desired agent
+        this.agentWatcher = watchAgent(desiredAgentId);
+        this.agent = this.agentWatcher.agent;
+        this.isRunning = this.agentWatcher.isRunning;
+
+        const a = this.agent();
+        if (!a) return;
+
+        // Apply thread id
+        a.threadId = this.inputThreadId() || this.generatedThreadId;
+
+        // Connect once when agent appears
+        if (!this.hasConnectedOnce) {
+          this.hasConnectedOnce = true;
+          this.connectToAgent(a);
+        }
+      });
+    });
+  }
   
+  // Input mirrors as signals (so effects in constructor can react to changes)
+  private inputAgentId = signal<string | undefined>(undefined);
+  private inputThreadId = signal<string | undefined>(undefined);
+
   // Signals from watchAgent - using direct references instead of assignment
   protected agent: Signal<any> = signal<any>(null);
   protected isRunning: Signal<boolean> = signal<boolean>(false);
@@ -67,49 +105,24 @@ export class CopilotChatComponent implements OnInit, OnChanges {
   private hasConnectedOnce = false;
   
   ngOnInit(): void {
-    this.setupAgent();
+    // Initialize input signals
+    this.inputAgentId.set(this.agentId);
+    this.inputThreadId.set(this.threadId);
     this.setupChatHandlers();
   }
   
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['agentId'] || changes['threadId']) {
-      this.setupAgent();
-    }
+    if (changes['agentId']) this.inputAgentId.set(this.agentId);
+    if (changes['threadId']) this.inputThreadId.set(this.threadId);
   }
   
-  private setupAgent(): void {
-    // Clean up previous watcher
-    if (this.agentWatcher?.unsubscribe) {
-      this.agentWatcher.unsubscribe();
-    }
-    // Allow a fresh connect on new agent/thread
-    this.hasConnectedOnce = false;
-    
-    const agentId = this.agentId || DEFAULT_AGENT_ID;
-    
-    // Use watchAgent utility to get reactive agent and isRunning signals
-    // watchAgent uses inject() internally; call within an injection context
-    runInInjectionContext(this.injector, () => {
-      this.agentWatcher = watchAgent(agentId);
-      // Store references to the signals directly
-      this.agent = this.agentWatcher.agent;
-      this.isRunning = this.agentWatcher.isRunning;
-    });
-    
-    // Set thread ID on the agent
-    // React to agent availability like React's useEffect([threadId, agent])
-    effect(() => {
-      const a = this.agent();
-      if (!a) return;
-      // Set threadId whenever agent becomes available
-      a.threadId = this.threadId || this.generatedThreadId;
-      // Connect once when agent appears
-      if (!this.hasConnectedOnce) {
-        this.hasConnectedOnce = true;
-        this.connectToAgent(a);
-      }
-    });
-  }
+  private setupAgent(): void {}
+
+  // Create effects in constructor injection context
+  // - Watches agentId/threadId signals
+  // - Manages watcher lifecycle and initial connection
+  // Effect created in constructor
+
   
   private async connectToAgent(agent: any): Promise<void> {
     if (!agent) return;
