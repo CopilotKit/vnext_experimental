@@ -93,7 +93,7 @@ import { takeUntil } from 'rxjs/operators';
         <!-- Scroll to bottom button for manual mode, OUTSIDE scrollable content -->
         @if (showScrollButton() && !isResizing) {
           <div
-            class="absolute inset-x-0 flex justify-center z-10"
+            class="absolute inset-x-0 flex justify-center z-30"
             [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
@@ -151,7 +151,7 @@ import { takeUntil } from 'rxjs/operators';
         <!-- Scroll to bottom button - hidden during resize, OUTSIDE scrollable content -->
         @if (!isAtBottom() && !isResizing) {
           <div
-            class="absolute inset-x-0 flex justify-center z-10"
+            class="absolute inset-x-0 flex justify-center z-30"
             [style.bottom.px]="inputContainerHeightSignal() + 16">
             <copilot-slot
               [slot]="scrollToBottomButton"
@@ -304,10 +304,16 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   }
   
   scrollToBottomContext(): any {
-    return { className: this.scrollToBottomButtonClass };
+    return { 
+      className: this.scrollToBottomButtonClass,
+      onClick: () => this.scrollToBottom()
+    };
   }
   
   scrollToBottomFromStickContext(): any {
-    return { className: this.scrollToBottomButtonClass };
+    return { 
+      className: this.scrollToBottomButtonClass,
+      onClick: () => this.scrollToBottomFromStick()
+    };
   }
 }

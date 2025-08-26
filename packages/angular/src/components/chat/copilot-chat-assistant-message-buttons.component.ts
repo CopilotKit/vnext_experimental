@@ -90,7 +90,7 @@ export class CopilotChatAssistantMessageToolbarButtonComponent {
       [title]="title || labels.assistantMessageToolbarCopyMessageLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (clicked)="handleCopy($event)">
+      (click)="handleCopy($event)">
       @if (copied()) {
         <lucide-angular [img]="CheckIcon" [size]="18"></lucide-angular>
       } @else {
@@ -150,7 +150,7 @@ export class CopilotChatAssistantMessageCopyButtonComponent {
       [title]="title || labels.assistantMessageToolbarThumbsUpLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (clicked)="handleClick($event)">
+      (click)="handleClick($event)">
       <lucide-angular [img]="ThumbsUpIcon" [size]="18"></lucide-angular>
     </button>
   `
@@ -191,7 +191,7 @@ export class CopilotChatAssistantMessageThumbsUpButtonComponent {
       [title]="title || labels.assistantMessageToolbarThumbsDownLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (clicked)="handleClick($event)">
+      (click)="handleClick($event)">
       <lucide-angular [img]="ThumbsDownIcon" [size]="18"></lucide-angular>
     </button>
   `
@@ -232,7 +232,7 @@ export class CopilotChatAssistantMessageThumbsDownButtonComponent {
       [title]="title || labels.assistantMessageToolbarReadAloudLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (clicked)="handleClick($event)">
+      (click)="handleClick($event)">
       <lucide-angular [img]="Volume2Icon" [size]="20"></lucide-angular>
     </button>
   `
@@ -273,7 +273,7 @@ export class CopilotChatAssistantMessageReadAloudButtonComponent {
       [title]="title || labels.assistantMessageToolbarRegenerateLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (clicked)="handleClick($event)">
+      (click)="handleClick($event)">
       <lucide-angular [img]="RefreshCwIcon" [size]="18"></lucide-angular>
     </button>
   `

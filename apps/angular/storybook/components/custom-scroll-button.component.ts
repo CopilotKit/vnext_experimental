@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <button 
+      type="button"
       (click)="handleClick()"
       [class.hover]="isHovered"
       (mouseenter)="isHovered = true"
@@ -22,13 +23,15 @@ import { CommonModule } from '@angular/common';
         border: 3px solid white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         cursor: pointer;
+        pointer-events: auto;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: transform 0.2s;
+        z-index: 1000;
       "
       [style.transform]="isHovered ? 'scale(1.1)' : 'scale(1)'">
-      <span style="color: white; font-size: 24px;">⬇️</span>
+      <span style="color: white; font-size: 24px; pointer-events: none;">⬇️</span>
     </button>
   `,
   styles: [`
