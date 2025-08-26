@@ -121,8 +121,7 @@ export const ThumbsUpDown: Story = {
   }),
   decorators: [
     moduleMetadata({
-      declarations: [StoryWithFeedbackComponent, CustomDisclaimerComponent],
-      imports: [CommonModule, CopilotChatViewComponent],
+      imports: [CommonModule, CopilotChatViewComponent, StoryWithFeedbackComponent, CustomDisclaimerComponent],
     }),
   ],
 };
