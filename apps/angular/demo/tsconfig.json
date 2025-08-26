@@ -8,6 +8,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noPropertyAccessFromIndexSignature": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@copilotkit/angular": ["../../../packages/angular/src/index.ts"],
       "@copilotkit/angular/*": ["../../../packages/angular/src/*"],

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --filter='@copilotkit/*' --filter='!@copilotkit/angular-demo' --filter=storybook --filter=storybook-angular --filter=demo --concurrency=15",
+    "dev": "turbo run dev --filter='@copilotkit/*' --filter=storybook --filter=storybook-angular --filter=demo --filter='@copilotkit/angular-demo' --concurrency=15",
     "dev:packages": "turbo run dev --filter=@copilotkit/*",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",

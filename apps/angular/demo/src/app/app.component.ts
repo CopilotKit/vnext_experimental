@@ -8,8 +8,7 @@ import { CopilotKitConfigDirective, CopilotChatComponent } from '@copilotkit/ang
   template: `
     <div
       style="height: 100vh; margin: 0; padding: 0; overflow: hidden;"
-      copilotkitConfig
-      [runtimeUrl]="runtimeUrl"
+      [copilotkitConfig]="{runtimeUrl: runtimeUrl}"
     >
       <copilot-chat [threadId]="'xyz'"></copilot-chat>
     </div>
