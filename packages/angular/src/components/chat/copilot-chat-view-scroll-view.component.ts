@@ -77,6 +77,7 @@ import { takeUntil } from 'rxjs/operators';
                   <copilot-chat-message-view
                     [messages]="messages"
                     [inputClass]="messageViewClass"
+                    [showCursor]="showCursor"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -135,6 +136,7 @@ import { takeUntil } from 'rxjs/operators';
                   <copilot-chat-message-view
                     [messages]="messages"
                     [inputClass]="messageViewClass"
+                    [showCursor]="showCursor"
                     (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
                     (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
                     (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -186,6 +188,7 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   @Input() messages: Message[] = [];
   @Input() messageView?: any;
   @Input() messageViewClass?: string;
+  @Input() showCursor: boolean = false;
   
   // Handler availability flags removed in favor of DI service
   
@@ -300,7 +303,7 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   
   // Context methods for templates
   messageViewContext(): any {
-    return { messages: this.messages, inputClass: this.messageViewClass };
+    return { messages: this.messages, inputClass: this.messageViewClass, showCursor: this.showCursor };
   }
   
   scrollToBottomContext(): any {

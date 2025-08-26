@@ -83,6 +83,7 @@ import { takeUntil } from 'rxjs/operators';
           [messageViewClass]="messageViewClass"
           [scrollToBottomButton]="scrollToBottomButtonSlot()"
           [scrollToBottomButtonClass]="scrollToBottomButtonClass"
+          [showCursor]="showCursorSignal()"
           (assistantMessageThumbsUp)="assistantMessageThumbsUp.emit($event)"
           (assistantMessageThumbsDown)="assistantMessageThumbsDown.emit($event)"
           (assistantMessageReadAloud)="assistantMessageReadAloud.emit($event)"
@@ -113,6 +114,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Core inputs matching React props
   @Input() messages: Message[] = [];
   @Input() autoScroll: boolean = true;
+  @Input() showCursor: boolean = false;
   
   // MessageView slot inputs
   @Input() messageViewComponent?: Type<any>;
@@ -186,6 +188,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
   // Signals for reactive state
   protected messagesSignal = signal<Message[]>([]);
   protected autoScrollSignal = signal(true);
+  protected showCursorSignal = signal(false);
   protected disclaimerTextSignal = signal<string | undefined>(undefined);
   protected disclaimerClassSignal = signal<string | undefined>(undefined);
   protected inputContainerHeight = signal<number>(0);
@@ -281,6 +284,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     // Initialize signals with input values
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
+    this.showCursorSignal.set(this.showCursor);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
 
@@ -297,6 +301,7 @@ export class CopilotChatViewComponent implements OnInit, OnChanges, AfterViewIni
     // Update signals when inputs change
     this.messagesSignal.set(this.messages);
     this.autoScrollSignal.set(this.autoScroll);
+    this.showCursorSignal.set(this.showCursor);
     this.disclaimerTextSignal.set(this.disclaimerText);
     this.disclaimerClassSignal.set(this.disclaimerClass);
 

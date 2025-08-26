@@ -83,6 +83,9 @@ export { CopilotChatViewFeatherComponent } from "./components/chat/copilot-chat-
 export { CopilotChatViewInputContainerComponent } from "./components/chat/copilot-chat-view-input-container.component";
 export { CopilotChatViewDisclaimerComponent } from "./components/chat/copilot-chat-view-disclaimer.component";
 
+// Main Chat Component
+export { CopilotChatComponent } from "./components/chat/copilot-chat.component";
+
 // Services and Directives for Chat View
 export { ScrollPositionService } from "./services/scroll-position.service";
 export { ResizeObserverService } from "./services/resize-observer.service";

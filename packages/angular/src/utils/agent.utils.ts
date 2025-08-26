@@ -1,9 +1,12 @@
 import { DestroyRef, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CopilotKitService } from '../core/copilotkit.service';
-import { AgentWatchResult, AgentSubscriptionCallbacks } from '../core/copilotkit.types';
+import { AgentSubscriptionCallbacks, AgentWatchResult } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
 import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
+
+// Re-export for convenience
+export type { AgentWatchResult } from '../core/copilotkit.types';
 
 /**
  * Watches an agent and provides reactive signals for its state.
