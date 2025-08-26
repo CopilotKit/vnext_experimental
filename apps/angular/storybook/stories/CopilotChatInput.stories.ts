@@ -1239,7 +1239,7 @@ Use a standalone Angular component within the template slot.
 
 **Component requirements:**
 - Must accept \`disabled\` input
-- Must emit \`click\` event
+- Should emit \`clicked\` (preferred) or \`click\` event
 - Should be standalone or properly imported
         `,
       },

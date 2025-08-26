@@ -48,7 +48,7 @@ export const ThumbsUpDown: Story = {
       selector: 'custom-disclaimer',
       standalone: true,
       template: `
-        <div style="
+        <div [class]="inputClass" style="
           text-align: center;
           padding: 12px;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

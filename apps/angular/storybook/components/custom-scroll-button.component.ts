@@ -44,7 +44,6 @@ import { CommonModule } from '@angular/common';
 export class CustomScrollButtonComponent {
   @Input() onClick?: () => void;
   @Input() inputClass?: string;
-  @Input() className?: string;
   @Output() clicked = new EventEmitter<void>();
   
   isHovered = false;

@@ -49,7 +49,6 @@ import { FormsModule } from '@angular/forms';
 export class CustomInputComponent {
   @Input() onSend?: (message: string) => void;
   @Input() inputClass?: string;
-  @Input() className?: string;
   
   inputValue = '';
   

@@ -431,7 +431,8 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   cancelTranscribeButtonOutputs = { clicked: () => this.handleCancelTranscribe() };
   finishTranscribeButtonOutputs = { clicked: () => this.handleFinishTranscribe() };
   startTranscribeButtonOutputs = { clicked: () => this.handleStartTranscribe() };
-  sendButtonOutputs = { clicked: () => this.send() };
+  // Support both `clicked` (idiomatic in our slots) and `click` (legacy)
+  sendButtonOutputs = { clicked: () => this.send(), click: () => this.send() };
   
   ngAfterViewInit(): void {
     // Auto-focus if needed
