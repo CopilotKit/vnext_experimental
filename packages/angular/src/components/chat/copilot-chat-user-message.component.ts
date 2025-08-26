@@ -218,8 +218,8 @@ export class CopilotChatUserMessageComponent {
   }));
   
   // Output maps for slots
-  copyButtonOutputs = { clicked: this.handleCopy.bind(this) };
-  editButtonOutputs = { clicked: this.handleEdit.bind(this) };
+  copyButtonOutputs = { clicked: () => this.handleCopy() };
+  editButtonOutputs = { clicked: () => this.handleEdit() };
   
   branchNavigationContext = computed<BranchNavigationContext>(() => ({
     currentBranch: this.branchIndexSignal(),

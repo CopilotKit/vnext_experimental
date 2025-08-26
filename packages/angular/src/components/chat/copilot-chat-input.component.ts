@@ -429,11 +429,11 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   }
   
   // Output maps for slots
-  addFileButtonOutputs = { clicked: this.handleAddFile.bind(this) };
-  cancelTranscribeButtonOutputs = { clicked: this.handleCancelTranscribe.bind(this) };
-  finishTranscribeButtonOutputs = { clicked: this.handleFinishTranscribe.bind(this) };
-  startTranscribeButtonOutputs = { clicked: this.handleStartTranscribe.bind(this) };
-  sendButtonOutputs = { clicked: this.send.bind(this) };
+  addFileButtonOutputs = { clicked: () => this.handleAddFile() };
+  cancelTranscribeButtonOutputs = { clicked: () => this.handleCancelTranscribe() };
+  finishTranscribeButtonOutputs = { clicked: () => this.handleFinishTranscribe() };
+  startTranscribeButtonOutputs = { clicked: () => this.handleStartTranscribe() };
+  sendButtonOutputs = { clicked: () => this.send() };
   
   ngAfterViewInit(): void {
     // Auto-focus if needed

@@ -400,11 +400,11 @@ export class CopilotChatAssistantMessageComponent {
   }));
   
   // Output maps for slots
-  copyButtonOutputs = { clicked: this.handleCopy.bind(this) };
-  thumbsUpButtonOutputs = { clicked: this.handleThumbsUp.bind(this) };
-  thumbsDownButtonOutputs = { clicked: this.handleThumbsDown.bind(this) };
-  readAloudButtonOutputs = { clicked: this.handleReadAloud.bind(this) };
-  regenerateButtonOutputs = { clicked: this.handleRegenerate.bind(this) };
+  copyButtonOutputs = { clicked: () => this.handleCopy() };
+  thumbsUpButtonOutputs = { clicked: () => this.handleThumbsUp() };
+  thumbsDownButtonOutputs = { clicked: () => this.handleThumbsDown() };
+  readAloudButtonOutputs = { clicked: () => this.handleReadAloud() };
+  regenerateButtonOutputs = { clicked: () => this.handleRegenerate() };
   
   toolbarContext = computed<AssistantMessageToolbarContext>(() => ({
     children: null // Will be populated by the toolbar content

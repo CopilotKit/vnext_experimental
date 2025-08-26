@@ -295,8 +295,8 @@ export class CopilotChatViewScrollViewComponent implements OnInit, OnChanges, Af
   }
   
   // Output maps for slots
-  scrollToBottomOutputs = { clicked: this.scrollToBottom.bind(this) };
-  scrollToBottomFromStickOutputs = { clicked: this.scrollToBottomFromStick.bind(this) };
+  scrollToBottomOutputs = { clicked: () => this.scrollToBottom() };
+  scrollToBottomFromStickOutputs = { clicked: () => this.scrollToBottomFromStick() };
   
   // Context methods for templates
   messageViewContext(): any {
