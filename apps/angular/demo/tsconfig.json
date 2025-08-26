@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": false,
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "@copilotkit/angular": ["../../../packages/angular/src/index.ts"],
+      "@copilotkit/angular/*": ["../../../packages/angular/src/*"],
+      "@copilotkit/core": ["../../../packages/core/src/index.ts"],
+      "@copilotkit/shared": ["../../../packages/shared/src/index.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

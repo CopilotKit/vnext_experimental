@@ -8,6 +8,7 @@ import {
   ViewEncapsulation,
   inject,
   signal,
+  effect,
   ChangeDetectorRef,
   Signal
 } from '@angular/core';
@@ -17,8 +18,8 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
 import { CopilotKitService } from '../../core/copilotkit.service';
 import { watchAgent, type AgentWatchResult } from '../../utils/agent.utils';
 import { randomUUID } from '@copilotkit/shared';
-import { Message, EventType } from '@ag-ui/client';
-import { Subscription } from 'rxjs';
+import { Message } from '@ag-ui/client';
+import { DEFAULT_AGENT_ID, randomUUID } from '@copilotkit/shared';
 
 /**
  * CopilotChat component - Angular equivalent of React's <CopilotChat>
@@ -58,8 +59,8 @@ export class CopilotChatComponent implements OnInit, OnChanges {
   protected showCursor = signal<boolean>(false);
   
   private generatedThreadId: string = randomUUID();
-  private currentSubscription?: Subscription;
   private agentWatcher?: AgentWatchResult;
+  private hasConnectedOnce = false;
   
   ngOnInit(): void {
     this.setupAgent();
@@ -77,8 +78,10 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     if (this.agentWatcher?.unsubscribe) {
       this.agentWatcher.unsubscribe();
     }
+    // Allow a fresh connect on new agent/thread
+    this.hasConnectedOnce = false;
     
-    const agentId = this.agentId || 'default';
+    const agentId = this.agentId || DEFAULT_AGENT_ID;
     
     // Use watchAgent utility to get reactive agent and isRunning signals
     this.agentWatcher = watchAgent(agentId);
@@ -87,13 +90,18 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     this.isRunning = this.agentWatcher.isRunning;
     
     // Set thread ID on the agent
-    const agent = this.agent();
-    if (agent) {
-      agent.threadId = this.threadId || this.generatedThreadId;
-      
-      // Perform initial connection
-      this.connectToAgent(agent);
-    }
+    // React to agent availability like React's useEffect([threadId, agent])
+    effect(() => {
+      const a = this.agent();
+      if (!a) return;
+      // Set threadId whenever agent becomes available
+      a.threadId = this.threadId || this.generatedThreadId;
+      // Connect once when agent appears
+      if (!this.hasConnectedOnce) {
+        this.hasConnectedOnce = true;
+        this.connectToAgent(a);
+      }
+    });
   }
   
   private async connectToAgent(agent: any): Promise<void> {
@@ -101,28 +109,23 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     
     this.showCursor.set(true);
     this.cdr.markForCheck();
-    
+
     try {
       await agent.runAgent(
         { forwardedProps: { __copilotkitConnect: true } },
         {
-          next: (event: any) => {
-            if (event.type === EventType.TEXT_MESSAGE_CHUNK || 
-                event.type === EventType.TOOL_CALL_CHUNK) {
-              this.showCursor.set(true);
-            }
-            this.cdr.markForCheck();
-          },
-          complete: () => {
+          onTextMessageStartEvent: () => {
             this.showCursor.set(false);
             this.cdr.markForCheck();
           },
-          error: () => {
+          onToolCallStartEvent: () => {
             this.showCursor.set(false);
             this.cdr.markForCheck();
-          }
+          },
         }
       );
+      this.showCursor.set(false);
+      this.cdr.markForCheck();
     } catch (error) {
       console.error('Failed to connect to agent:', error);
       this.showCursor.set(false);
@@ -142,9 +145,9 @@ export class CopilotChatComponent implements OnInit, OnChanges {
       const userMessage: Message = {
         id: randomUUID(),
         role: 'user',
-        content: value
+        content: value,
       };
-      agent.messages.push(userMessage);
+      agent.addMessage(userMessage);
       
       // Clear the input
       this.chatConfig!.setInputValue('');
@@ -153,31 +156,27 @@ export class CopilotChatComponent implements OnInit, OnChanges {
       this.showCursor.set(true);
       this.cdr.markForCheck();
       
-      // Run the agent
-      if (this.currentSubscription) {
-        this.currentSubscription.unsubscribe();
-      }
-      
-      this.currentSubscription = agent.runAgent({}).subscribe({
-        next: (event: any) => {
-          if (event.type === EventType.TEXT_MESSAGE_CHUNK || 
-              event.type === EventType.TOOL_CALL_CHUNK) {
-            this.showCursor.set(true);
+      // Run the agent with named subscriber callbacks
+      try {
+        await agent.runAgent(
+          {},
+          {
+            onTextMessageStartEvent: () => {
+              this.showCursor.set(false);
+              this.cdr.markForCheck();
+            },
+            onToolCallStartEvent: () => {
+              this.showCursor.set(false);
+              this.cdr.markForCheck();
+            },
           }
-          this.cdr.markForCheck();
-        },
-        complete: () => {
-          this.showCursor.set(false);
-          this.currentSubscription = undefined;
-          this.cdr.markForCheck();
-        },
-        error: (error: any) => {
-          console.error('Agent run error:', error);
-          this.showCursor.set(false);
-          this.currentSubscription = undefined;
-          this.cdr.markForCheck();
-        }
-      });
+        );
+      } catch (error) {
+        console.error('Agent run error:', error);
+      } finally {
+        this.showCursor.set(false);
+        this.cdr.markForCheck();
+      }
     });
     
     // Handle input value changes (optional)
@@ -187,9 +186,6 @@ export class CopilotChatComponent implements OnInit, OnChanges {
   }
   
   ngOnDestroy(): void {
-    if (this.currentSubscription) {
-      this.currentSubscription.unsubscribe();
-    }
     if (this.agentWatcher?.unsubscribe) {
       this.agentWatcher.unsubscribe();
     }

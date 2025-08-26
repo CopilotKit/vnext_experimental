@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Source globs for tailwind v4 */
+@source "./**/*.{ts,html}";
+@source "../../../packages/angular/src/**/*.{ts,html}";
+
+/* Bring in CopilotKit Angular global styles (prose, theme vars) */
+@import url("../../../../packages/angular/src/styles/globals.css");
+

@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkit/runtime";
-import { OpenAIAgent } from "./openai.js";
+import { OpenAIAgent } from "./openai";
 
 const runtime = new CopilotRuntime({
   agents: { default: new OpenAIAgent() },

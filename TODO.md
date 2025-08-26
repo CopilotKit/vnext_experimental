@@ -229,59 +229,39 @@ Purpose: Small standalone component to replicate React’s <CopilotChat> behavio
 2.3 Export the component
 - Update packages/angular/src/index.ts to export `CopilotChatComponent` so storybook/apps can import it.
 
-3) Live Storybook Demo (Angular) using the Hono server
+3) Standalone Angular Demo App (outside Storybook)
 
-3.1 Add a live story
-- File: apps/angular/storybook/stories/CopilotChat-Live.stories.ts
-- Minimal story content:
+We recommend creating a minimal Angular app under apps/angular/demo that renders <copilot-chat> full-screen and points to the Hono server. Because this repo isn’t currently set up as an Angular CLI root workspace, the most practical path is to add a tiny single-app workspace under apps/angular/demo with its own angular.json. Keep this self-contained and avoid touching the monorepo root.
 
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
-import {
-  CopilotChatComponent,
-  provideCopilotKit,
-  provideCopilotChatConfiguration,
-  CopilotKitConfigDirective,
-} from '@copilotkit/angular';
+3.1 Structure
+- apps/angular/demo/
+  - package.json
+  - angular.json
+  - tsconfig.json, tsconfig.app.json
+  - src/main.ts
+  - src/app/app.component.ts
+  - src/app/app.config.ts
+  - src/index.html
+  - src/styles.css (import @copilotkit/angular/src/styles/globals.css)
 
-const meta: Meta<CopilotChatComponent> = {
-  title: 'Live/CopilotChat',
-  component: CopilotChatComponent,
-  decorators: [
-    moduleMetadata({
-      imports: [CommonModule, CopilotChatComponent, CopilotKitConfigDirective],
-      providers: [
-        provideCopilotKit({}),
-        provideCopilotChatConfiguration({})
-      ],
-    }),
-  ],
-  parameters: { layout: 'fullscreen' },
-};
-export default meta;
-type Story = StoryObj<CopilotChatComponent>;
+3.2 Minimal contents
+- package.json scripts: { "start": "ng serve", "build": "ng build" }
+- angular.json: single application project named "angular-demo" with builder @angular-devkit/build-angular:browser and dev-server.
+- src/index.html: a basic body with <app-root></app-root> and <base href="/">.
+- src/styles.css: `@import "@copilotkit/angular/src/styles/globals.css";`
+- src/app/app.config.ts: provideCopilotKit() + provideCopilotChatConfiguration()
+- src/app/app.component.ts (standalone):
+  - Template:
+    <div style="height:100vh;overflow:hidden" copilotkitConfig [runtimeUrl]="'http://localhost:3001/api/copilotkit'">
+      <copilot-chat [threadId]="'xyz'"></copilot-chat>
+    </div>
+- src/main.ts: bootstrapApplication(AppComponent, { providers: [importProvidersFrom(BrowserModule), ...from app.config] })
 
-export const Default: Story = {
-  render: () => ({
-    template: `
-      <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;"
-           copilotkitConfig
-           [runtimeUrl]="'http://localhost:3001/api/copilotkit'">
-        <copilot-chat [threadId]="'xyz'"></copilot-chat>
-      </div>
-    `,
-    props: {},
-  }),
-};
+3.3 Run the demo
+- Terminal A:
+  - cd apps/angular/demo-server && pnpm dev
+- Terminal B:
+  - cd apps/angular/demo && pnpm install && pnpm start
+- Open http://localhost:4200 and chat.
 
-3.2 Run the live demo
-- Terminal A (server):
-  - cd apps/angular/demo-server
-  - pnpm dev
-- Terminal B (storybook):
-  - pnpm --filter storybook-angular dev
-- Open the "Live/CopilotChat" story in Storybook and chat.
-
-That’s it — this mirrors the React demo with a minimal Node server and Angular container, no proxies and no extra infrastructure.
-
+Note: Keeping the demo app self-contained under apps/angular/demo avoids changing the repo’s root Angular configuration and ensures a clean separation from Storybook.
