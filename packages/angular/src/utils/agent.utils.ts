@@ -1,5 +1,4 @@
 import { DestroyRef, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AgentSubscriptionCallbacks, AgentWatchResult } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
@@ -32,9 +31,24 @@ export type { AgentWatchResult } from '../core/copilotkit.types';
  * }
  * ```
  */
-export function watchAgent(agentId?: string): AgentWatchResult {
-  const service = inject(CopilotKitService);
-  const destroyRef = inject(DestroyRef);
+export function watchAgent(
+  agentId?: string,
+  service?: CopilotKitService,
+  destroyRef?: DestroyRef
+): AgentWatchResult {
+  // If services not provided, try to inject them
+  if (!service || !destroyRef) {
+    try {
+      service = service || inject(CopilotKitService);
+      destroyRef = destroyRef || inject(DestroyRef);
+    } catch (e) {
+      // If we're not in an injection context, throw a more helpful error
+      throw new Error(
+        'watchAgent() must be called from an injection context or with service and destroyRef parameters. ' +
+        'Call it in a constructor, field initializer, or wrap with runInInjectionContext().'
+      );
+    }
+  }
   
   const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
   
@@ -102,15 +116,11 @@ export function watchAgent(agentId?: string): AgentWatchResult {
   
   destroyRef.onDestroy(unsubscribe);
   
-  // Create Observable versions
-  const agent$ = toObservable(agentSignal);
-  const isRunning$ = toObservable(isRunningSignal);
-  
   return {
     agent: agentSignal.asReadonly(),
     isRunning: isRunningSignal.asReadonly(),
-    agent$,
-    isRunning$,
+    agent$: null as any, // Removed due to injection context issues
+    isRunning$: null as any, // Removed due to injection context issues
     unsubscribe,
   };
 }

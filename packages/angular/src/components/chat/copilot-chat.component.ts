@@ -14,7 +14,8 @@ import {
   inject,
   EnvironmentInjector,
   runInInjectionContext,
-  Optional
+  Optional,
+  DestroyRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotChatViewComponent } from './copilot-chat-view.component';
@@ -52,6 +53,8 @@ export class CopilotChatComponent implements OnInit, OnChanges {
   @Input() agentId?: string;
   @Input() threadId?: string;
   
+  private destroyRef = inject(DestroyRef);
+  
   constructor(
     @Optional() private chatConfig: CopilotChatConfigurationService | null,
     private copilotKitService: CopilotKitService,
@@ -59,35 +62,37 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     private injector: Injector,
     private envInjector: EnvironmentInjector,
   ) {
-    // Create the agent watcher effect inside a guaranteed injection context
-    runInInjectionContext(this.envInjector, () => {
-      effect(() => {
-        const desiredAgentId = this.inputAgentId() || DEFAULT_AGENT_ID;
+    // Store the services for use in the effect
+    const service = this.copilotKitService;
+    const destroyRef = this.destroyRef;
+    
+    // Create the agent watcher effect
+    effect(() => {
+      const desiredAgentId = this.inputAgentId() || DEFAULT_AGENT_ID;
 
-        // Tear down previous watcher if agent id changes
-        if (this.agentWatcher?.unsubscribe) {
-          this.agentWatcher.unsubscribe();
-          this.agentWatcher = undefined;
-          this.hasConnectedOnce = false;
-        }
+      // Tear down previous watcher if agent id changes
+      if (this.agentWatcher?.unsubscribe) {
+        this.agentWatcher.unsubscribe();
+        this.agentWatcher = undefined;
+        this.hasConnectedOnce = false;
+      }
 
-        // Setup watcher for desired agent
-        this.agentWatcher = watchAgent(desiredAgentId);
-        this.agent = this.agentWatcher.agent;
-        this.isRunning = this.agentWatcher.isRunning;
+      // Setup watcher for desired agent - pass services explicitly
+      this.agentWatcher = watchAgent(desiredAgentId, service, destroyRef);
+      this.agent = this.agentWatcher.agent;
+      this.isRunning = this.agentWatcher.isRunning;
 
-        const a = this.agent();
-        if (!a) return;
+      const a = this.agent();
+      if (!a) return;
 
-        // Apply thread id
-        a.threadId = this.inputThreadId() || this.generatedThreadId;
+      // Apply thread id
+      a.threadId = this.inputThreadId() || this.generatedThreadId;
 
-        // Connect once when agent appears
-        if (!this.hasConnectedOnce) {
-          this.hasConnectedOnce = true;
-          this.connectToAgent(a);
-        }
-      });
+      // Connect once when agent appears
+      if (!this.hasConnectedOnce) {
+        this.hasConnectedOnce = true;
+        this.connectToAgent(a);
+      }
     });
   }
   
