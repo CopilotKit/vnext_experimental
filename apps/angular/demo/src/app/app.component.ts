@@ -8,13 +8,9 @@ import { CopilotKitConfigDirective, CopilotChatComponent } from '@copilotkit/ang
   template: `
     <div
       [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
-      style="font-family: system-ui, sans-serif; padding: 24px; display: block;"
+      style="height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; display: block;"
     >
-      <h1>Hello, Angular Demo</h1>
-      <p>If you can see this, the Angular demo shell is working.</p>
-      <div style="margin-top: 16px; border-top: 1px solid #ddd; padding-top: 16px;">
-        <copilot-chat [threadId]="'xyz'"></copilot-chat>
-      </div>
+      <copilot-chat [threadId]="'xyz'"></copilot-chat>
     </div>
   `,
 })
