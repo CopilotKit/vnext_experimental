@@ -5,6 +5,7 @@ import { CopilotChatMessageViewComponent } from '../copilot-chat-message-view.co
 import { CopilotChatMessageViewCursorComponent } from '../copilot-chat-message-view-cursor.component';
 import { CopilotChatAssistantMessageComponent } from '../copilot-chat-assistant-message.component';
 import { CopilotChatUserMessageComponent } from '../copilot-chat-user-message.component';
+import { CopilotChatViewHandlersService } from '../copilot-chat-view-handlers.service';
 import { provideCopilotKit } from '../../../core/copilotkit.providers';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { Message, AssistantMessage, UserMessage } from '@ag-ui/client';
@@ -43,7 +44,8 @@ describe('CopilotChatMessageViewComponent', () => {
       ],
       providers: [
         provideCopilotKit({}),
-        provideCopilotChatConfiguration({})
+        provideCopilotChatConfiguration({}),
+        CopilotChatViewHandlersService
       ]
     }).compileComponents();
 

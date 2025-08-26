@@ -44,12 +44,13 @@ export interface RenderSlotOptions<T = any> {
   defaultComponent: Type<T>;
   props?: T;
   injector?: any;
+  outputs?: Record<string, (event: any) => void>;
 }
 
 /**
  * Injection token for slot configuration
  */
-export const SLOT_CONFIG = new InjectionToken<Map<string, SlotRegistryEntry>>('SLOT_CONFIG');
+export const SLOT_CONFIG = new InjectionToken<ReadonlyMap<string, SlotRegistryEntry>>('SLOT_CONFIG');
 
 /**
  * Type for components with slots

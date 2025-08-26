@@ -51,6 +51,7 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
   @Input() slot?: TemplateRef<any> | Type<any>;
   @Input() context?: any;
   @Input() defaultComponent?: Type<any>;
+  @Input() outputs?: Record<string, (event: any) => void>;
   
   @ViewChild('slotContainer', { read: ViewContainerRef, static: true }) 
   private slotContainer!: ViewContainerRef;
@@ -105,7 +106,8 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
       this.componentRef = renderSlot(this.slotContainer, {
         slot: this.slot,
         defaultComponent: this.defaultComponent!,
-        props: this.context
+        props: this.context,
+        outputs: this.outputs
       });
     }
   }
@@ -116,15 +118,12 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
     }
     
     const props = this.context;
-    const instance = this.componentRef.instance as any;
     
-    // Update props on the existing component instance
+    // Update props using setInput
     if (props) {
       for (const key in props) {
         const value = props[key];
-        if (key in instance) {
-          instance[key] = value;
-        }
+        this.componentRef.setInput(key, value);
       }
     }
     

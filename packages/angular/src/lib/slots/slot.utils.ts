@@ -26,7 +26,8 @@ import { SlotValue, RenderSlotOptions, SlotRegistryEntry, SLOT_CONFIG } from './
  *     renderSlot(this.container, {
  *       slot: this.buttonOverride,
  *       defaultComponent: DefaultButton,
- *       props: { text: 'Click me' }
+ *       props: { text: 'Click me' },
+ *       outputs: { click: (event) => this.handleClick(event) }
  *     });
  *   }
  * }
@@ -36,7 +37,7 @@ export function renderSlot<T = any>(
   viewContainer: ViewContainerRef,
   options: RenderSlotOptions<T>
 ): ComponentRef<T> | EmbeddedViewRef<T> | null {
-  const { slot, defaultComponent, props, injector } = options;
+  const { slot, defaultComponent, props, injector, outputs } = options;
   
   viewContainer.clear();
   
@@ -55,25 +56,19 @@ export function renderSlot<T = any>(
       viewContainer,
       effectiveSlot as Type<T>,
       props,
-      effectiveInjector
+      effectiveInjector,
+      outputs
     );
-  } else if (isDirectiveType(effectiveSlot)) {
-    // Directive type - cannot be rendered directly, use default
-    return defaultComponent ? createComponent(
-      viewContainer,
-      defaultComponent,
-      props,
-      effectiveInjector
-    ) : null;
   }
   
-  // Default: render default component
-  return createComponent(
+  // Default: render default component if provided
+  return defaultComponent ? createComponent(
     viewContainer,
     defaultComponent,
     props,
-    effectiveInjector
-  );
+    effectiveInjector,
+    outputs
+  ) : null;
 }
 
 /**
@@ -83,47 +78,33 @@ function createComponent<T>(
   viewContainer: ViewContainerRef,
   component: Type<T>,
   props?: Partial<T>,
-  injector?: Injector
+  injector?: Injector,
+  outputs?: Record<string, (event: any) => void>
 ): ComponentRef<T> {
   const componentRef = viewContainer.createComponent(component, {
     injector
   });
   
   if (props) {
-    // Apply props to component instance
-    const instance = componentRef.instance as any;
+    // Apply props using setInput
     for (const key in props) {
       const value = props[key];
-      
-      // Special handling for onClick -> click event mapping
-      if (key === 'onClick' && typeof value === 'function') {
-        // If the component has a 'click' EventEmitter, subscribe to it
-        if (instance.click && instance.click.subscribe) {
-          instance.click.subscribe(value);
-        }
-        continue;
-      }
-      
-      // Try multiple naming conventions
-      // 1. Try inputXxx format (e.g., toolsMenu -> inputToolsMenu)
-      const inputKey = `input${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-      
-      if (typeof instance[inputKey] === 'function' || inputKey in instance) {
-        // Use the input setter
-        instance[inputKey] = value;
-      } else {
-        // Always try direct property assignment for @Input() properties
-        // Angular @Input() properties might not be enumerable but still settable
-        try {
-          instance[key] = value;
-        } catch (e) {
-          // Property might not exist or be readonly - silently ignore
-        }
+      componentRef.setInput(key, value);
+    }
+  }
+  
+  if (outputs) {
+    // Wire up output event handlers
+    const instance = componentRef.instance as any;
+    for (const [eventName, handler] of Object.entries(outputs)) {
+      if (instance[eventName]?.subscribe) {
+        instance[eventName].subscribe(handler);
       }
     }
-    // Trigger change detection
-    componentRef.changeDetectorRef.detectChanges();
   }
+  
+  // Trigger change detection
+  componentRef.changeDetectorRef.detectChanges();
   
   return componentRef;
 }
@@ -131,6 +112,7 @@ function createComponent<T>(
 
 /**
  * Checks if a value is a component type.
+ * We only accept proper component types, not directives.
  */
 export function isComponentType(value: any): boolean {
   if (typeof value !== 'function') {
@@ -142,20 +124,9 @@ export function isComponentType(value: any): boolean {
     return false;
   }
   
-  // Check for Angular component marker
-  return !!(value.ɵcmp || Object.prototype.hasOwnProperty.call(value, 'ɵcmp'));
-}
-
-/**
- * Checks if a value is a directive type.
- */
-export function isDirectiveType(value: any): boolean {
-  if (typeof value !== 'function') {
-    return false;
-  }
-  
-  // Check for Angular directive marker
-  return !!(value.ɵdir || Object.prototype.hasOwnProperty.call(value, 'ɵdir'));
+  // Simple heuristic: if it's a function with a prototype, assume it could be a component
+  // This avoids using private Angular APIs
+  return true;
 }
 
 /**
@@ -227,16 +198,26 @@ export function createSlotConfig<T extends Record<string, Type<any>>>(
  *   providers: [
  *     provideSlots({
  *       sendButton: CustomSendButton,
- *       toolbar: 'custom-class'
+ *       toolbar: CustomToolbar
  *     })
  *   ]
  * })
  * ```
  */
 export function provideSlots(slots: Record<string, SlotValue>) {
+  const slotMap = new Map<string, SlotRegistryEntry>();
+  
+  for (const [key, value] of Object.entries(slots)) {
+    if (value instanceof TemplateRef) {
+      slotMap.set(key, { template: value });
+    } else if (isComponentType(value)) {
+      slotMap.set(key, { component: value as Type<any> });
+    }
+  }
+  
   return {
     provide: SLOT_CONFIG,
-    useValue: slots
+    useValue: slotMap
   };
 }
 
@@ -250,12 +231,12 @@ export function provideSlots(slots: Record<string, SlotValue>) {
  *   slots = getSlotConfig();
  *   
  *   ngOnInit() {
- *     const sendButton = this.slots.get('sendButton');
+ *     const sendButton = this.slots?.get('sendButton');
  *   }
  * }
  * ```
  */
-export function getSlotConfig(): Map<string, SlotRegistryEntry> | null {
+export function getSlotConfig(): ReadonlyMap<string, SlotRegistryEntry> | null {
   return inject(SLOT_CONFIG, { optional: true });
 }
 
@@ -284,7 +265,8 @@ export function createSlotRenderer<T>(
   return (
     viewContainer: ViewContainerRef,
     slot?: SlotValue<T>,
-    props?: Partial<T>
+    props?: Partial<T>,
+    outputs?: Record<string, (event: any) => void>
   ) => {
     // Check DI for overrides if slot name provided
     if (slotName && !slot && config) {
@@ -298,7 +280,8 @@ export function createSlotRenderer<T>(
     return renderSlot(viewContainer, {
       slot,
       defaultComponent,
-      props
+      props,
+      outputs
     });
   };
 }

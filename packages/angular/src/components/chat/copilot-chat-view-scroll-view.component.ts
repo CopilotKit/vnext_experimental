@@ -98,7 +98,8 @@ import { takeUntil } from 'rxjs/operators';
             <copilot-slot
               [slot]="scrollToBottomButton"
               [context]="scrollToBottomContext()"
-              [defaultComponent]="defaultScrollToBottomButtonComponent">
+              [defaultComponent]="defaultScrollToBottomButtonComponent"
+              [outputs]="{ onClickEmitter: scrollToBottom.bind(this) }">
             </copilot-slot>
           </div>
         }
@@ -155,7 +156,8 @@ import { takeUntil } from 'rxjs/operators';
             <copilot-slot
               [slot]="scrollToBottomButton"
               [context]="scrollToBottomFromStickContext()"
-              [defaultComponent]="defaultScrollToBottomButtonComponent">
+              [defaultComponent]="defaultScrollToBottomButtonComponent"
+              [outputs]="{ onClickEmitter: scrollToBottomFromStick.bind(this) }">
             </copilot-slot>
           </div>
         }

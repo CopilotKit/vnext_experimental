@@ -52,10 +52,11 @@ import { cn } from '../../lib/utils';
       [attr.data-message-id]="message.id">
       
       <!-- Message Renderer -->
-      @if (messageRendererTemplate || messageRendererSlot) {
+      @if (messageRendererTemplate || messageRendererComponent) {
         <copilot-slot
-          [slot]="messageRendererTemplate || messageRendererSlot"
+          [slot]="messageRendererTemplate || messageRendererComponent"
           [context]="messageRendererContext()"
+          [defaultComponent]="CopilotChatUserMessageRendererComponent"
           >
         </copilot-slot>
       } @else {
@@ -66,10 +67,11 @@ import { cn } from '../../lib/utils';
       }
       
       <!-- Toolbar -->
-      @if (toolbarTemplate || toolbarSlot) {
+      @if (toolbarTemplate || toolbarComponent) {
         <copilot-slot
-          [slot]="toolbarTemplate || toolbarSlot"
+          [slot]="toolbarTemplate || toolbarComponent"
           [context]="toolbarContext()"
+          [defaultComponent]="CopilotChatUserMessageToolbarComponent"
           >
         </copilot-slot>
       } @else {
@@ -81,10 +83,11 @@ import { cn } from '../../lib/utils';
             }
             
             <!-- Copy button -->
-            @if (copyButtonTemplate || copyButtonSlot) {
+            @if (copyButtonTemplate || copyButtonComponent) {
               <copilot-slot
-                [slot]="copyButtonTemplate || copyButtonSlot"
+                [slot]="copyButtonTemplate || copyButtonComponent"
                 [context]="copyButtonContext()"
+                [defaultComponent]="CopilotChatUserMessageCopyButtonComponent"
                 >
               </copilot-slot>
             } @else {
@@ -97,10 +100,11 @@ import { cn } from '../../lib/utils';
             
             <!-- Edit button -->
             @if (editMessage.observed) {
-              @if (editButtonTemplate || editButtonSlot) {
+              @if (editButtonTemplate || editButtonComponent) {
                 <copilot-slot
-                  [slot]="editButtonTemplate || editButtonSlot"
+                  [slot]="editButtonTemplate || editButtonComponent"
                   [context]="editButtonContext()"
+                  [defaultComponent]="CopilotChatUserMessageEditButtonComponent"
                   >
                 </copilot-slot>
               } @else {
@@ -113,10 +117,11 @@ import { cn } from '../../lib/utils';
             
             <!-- Branch navigation -->
             @if (showBranchNavigation()) {
-              @if (branchNavigationTemplate || branchNavigationSlot) {
+              @if (branchNavigationTemplate || branchNavigationComponent) {
                 <copilot-slot
-                  [slot]="branchNavigationTemplate || branchNavigationSlot"
+                  [slot]="branchNavigationTemplate || branchNavigationComponent"
                   [context]="branchNavigationContext()"
+                  [defaultComponent]="CopilotChatUserMessageBranchNavigationComponent"
                   >
                 </copilot-slot>
               } @else {
@@ -156,12 +161,12 @@ export class CopilotChatUserMessageComponent {
   @Input() editButtonClass?: string;
   @Input() branchNavigationClass?: string;
   
-  // Slot inputs for backward compatibility
-  @Input() messageRendererSlot?: Type<any> | TemplateRef<any>;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
-  @Input() copyButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() editButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() branchNavigationSlot?: Type<any> | TemplateRef<any>;
+  // Component inputs for overrides
+  @Input() messageRendererComponent?: Type<any>;
+  @Input() toolbarComponent?: Type<any>;
+  @Input() copyButtonComponent?: Type<any>;
+  @Input() editButtonComponent?: Type<any>;
+  @Input() branchNavigationComponent?: Type<any>;
   
   // Regular inputs
   @Input() message!: UserMessage;
@@ -184,6 +189,13 @@ export class CopilotChatUserMessageComponent {
   branchIndexSignal = signal(0);
   numberOfBranchesSignal = signal(1);
   customClass = signal<string | undefined>(undefined);
+  
+  // Default components
+  CopilotChatUserMessageRendererComponent = CopilotChatUserMessageRendererComponent;
+  CopilotChatUserMessageToolbarComponent = CopilotChatUserMessageToolbarComponent;
+  CopilotChatUserMessageCopyButtonComponent = CopilotChatUserMessageCopyButtonComponent;
+  CopilotChatUserMessageEditButtonComponent = CopilotChatUserMessageEditButtonComponent;
+  CopilotChatUserMessageBranchNavigationComponent = CopilotChatUserMessageBranchNavigationComponent;
   
   // Computed values
   showBranchNavigation = computed(() => {

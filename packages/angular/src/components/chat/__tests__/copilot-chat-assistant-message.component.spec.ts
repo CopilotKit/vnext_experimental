@@ -11,6 +11,7 @@ import {
   CopilotChatAssistantMessageRegenerateButtonComponent
 } from '../copilot-chat-assistant-message-buttons.component';
 import { CopilotChatAssistantMessageToolbarComponent } from '../copilot-chat-assistant-message-toolbar.component';
+import { CopilotChatViewHandlersService } from '../copilot-chat-view-handlers.service';
 import { provideCopilotKit } from '../../../core/copilotkit.providers';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { AssistantMessage } from '@ag-ui/client';
@@ -49,7 +50,8 @@ describe('CopilotChatAssistantMessageComponent', () => {
             assistantMessageToolbarReadAloudLabel: 'Read',
             assistantMessageToolbarRegenerateLabel: 'Regenerate'
           }
-        })
+        }),
+        CopilotChatViewHandlersService
       ]
     }).compileComponents();
 

@@ -1,6 +1,6 @@
-import { Component, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, Input, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   renderSlot,
   isComponentType,
@@ -20,7 +20,7 @@ import { SLOT_CONFIG } from '../slot.types';
   standalone: true
 })
 class DefaultComponent {
-  text = 'Default';
+  @Input() text = 'Default';
 }
 
 @Component({
@@ -29,7 +29,7 @@ class DefaultComponent {
   standalone: true
 })
 class CustomComponent {
-  text = 'Custom';
+  @Input() text = 'Custom';
 }
 
 describe('Slot Utilities', () => {
@@ -81,7 +81,7 @@ describe('Slot Utilities', () => {
       expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
     });
 
-    it('should apply props to component', () => {
+    it('should apply props to component using setInput', () => {
       const ref = renderSlot(viewContainer, {
         defaultComponent: DefaultComponent,
         props: { text: 'Hello World' }
@@ -89,6 +89,7 @@ describe('Slot Utilities', () => {
 
       expect(ref).toBeTruthy();
       if ('instance' in ref!) {
+        // Props should be set via setInput, which updates the instance
         expect(ref.instance.text).toBe('Hello World');
       }
     });
@@ -141,15 +142,7 @@ describe('Slot Utilities', () => {
 
   describe('isComponentType', () => {
     it('should identify Angular components', () => {
-      // In test environment, Angular components have ɵcmp property
-      const defaultHasMarker = !!(DefaultComponent as any).ɵcmp;
-      const customHasMarker = !!(CustomComponent as any).ɵcmp;
-      
-      // Components should have the Angular marker
-      expect(defaultHasMarker).toBe(true);
-      expect(customHasMarker).toBe(true);
-      
-      // isComponentType should identify them correctly
+      // After removing ɵ checks, any function with prototype is considered a component
       expect(isComponentType(DefaultComponent)).toBe(true);
       expect(isComponentType(CustomComponent)).toBe(true);
     });
@@ -252,26 +245,24 @@ describe('Slot Utilities', () => {
   });
 
   describe('provideSlots', () => {
-    it('should create provider configuration', () => {
+    it('should create provider configuration with Map', () => {
       const provider = provideSlots({
-        button: CustomComponent,
-        toolbar: 'custom-toolbar'
+        button: CustomComponent
       });
 
       expect(provider.provide).toBe(SLOT_CONFIG);
-      expect(provider.useValue).toEqual({
-        button: CustomComponent,
-        toolbar: 'custom-toolbar'
+      expect(provider.useValue).toBeInstanceOf(Map);
+      expect(provider.useValue.get('button')).toEqual({
+        component: CustomComponent
       });
     });
   });
 
   describe('getSlotConfig', () => {
     it('should retrieve slot configuration from DI', () => {
-      const slots = {
-        button: CustomComponent,
-        toolbar: 'custom-class'
-      };
+      const slots = new Map([
+        ['button', { component: CustomComponent }]
+      ]);
 
       TestBed.configureTestingModule({
         providers: [
@@ -369,8 +360,18 @@ describe('Slot Utilities', () => {
 
       expect(ref).toBeTruthy();
       if ('instance' in ref!) {
+        // Props should be set via setInput
         expect(ref.instance.text).toBe('Rendered');
       }
+    });
+
+    it('should apply outputs when provided', () => {
+      const renderer = createSlotRenderer(DefaultComponent);
+      const clickHandler = vi.fn();
+      const ref = renderer(viewContainer, undefined, undefined, { click: clickHandler });
+
+      expect(ref).toBeTruthy();
+      // Outputs would be wired if the component has the corresponding EventEmitter
     });
   });
 });

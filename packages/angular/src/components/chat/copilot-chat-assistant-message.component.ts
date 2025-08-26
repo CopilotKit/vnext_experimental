@@ -9,7 +9,9 @@ import {
   computed,
   Type,
   ChangeDetectionStrategy,
-  ViewEncapsulation
+  ViewEncapsulation,
+  Optional,
+  Inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotComponent } from '../../lib/slots/copilot-slot.component';
@@ -61,10 +63,11 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
       [attr.data-message-id]="message?.id">
       
       <!-- Markdown Renderer -->
-      @if (markdownRendererTemplate || markdownRendererSlot) {
+      @if (markdownRendererTemplate || markdownRendererComponent) {
         <copilot-slot
-          [slot]="markdownRendererTemplate || markdownRendererSlot"
+          [slot]="markdownRendererTemplate || markdownRendererComponent"
           [context]="markdownRendererContext()"
+          [defaultComponent]="CopilotChatAssistantMessageRendererComponent"
           >
         </copilot-slot>
       } @else {
@@ -76,20 +79,23 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
       
       <!-- Toolbar -->
       <ng-container *ngIf="toolbarVisible">
-        @if (toolbarTemplate || toolbarSlot) {
+        @if (toolbarTemplate || toolbarComponent) {
           <copilot-slot
-            [slot]="toolbarTemplate || toolbarSlot"
+            [slot]="toolbarTemplate || toolbarComponent"
             [context]="toolbarContext()"
+            [defaultComponent]="CopilotChatAssistantMessageToolbarComponent"
             >
           </copilot-slot>
         } @else {
           <div copilotChatAssistantMessageToolbar [inputClass]="toolbarClass">
             <div class="flex items-center gap-1">
               <!-- Copy button -->
-              @if (copyButtonTemplate || copyButtonSlot) {
+              @if (copyButtonTemplate || copyButtonComponent) {
                 <copilot-slot
-                  [slot]="copyButtonTemplate || copyButtonSlot"
+                  [slot]="copyButtonTemplate || copyButtonComponent"
                   [context]="copyButtonContext()"
+                  [defaultComponent]="CopilotChatAssistantMessageCopyButtonComponent"
+                  [outputs]="{ click: handleCopy.bind(this) }"
                   >
                 </copilot-slot>
               } @else {
@@ -101,37 +107,41 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
               }
               
               <!-- Thumbs up button - show if custom slot provided OR if handler available at top level -->
-              @if (thumbsUpButtonSlot || thumbsUpButtonTemplate || handlers.hasAssistantThumbsUpHandler()) {
+              @if (thumbsUpButtonComponent || thumbsUpButtonTemplate || handlers.hasAssistantThumbsUpHandler()) {
                 <copilot-slot
-                  [slot]="thumbsUpButtonTemplate || thumbsUpButtonSlot"
+                  [slot]="thumbsUpButtonTemplate || thumbsUpButtonComponent"
                   [context]="thumbsUpButtonContext()"
-                  [defaultComponent]="defaultThumbsUpButtonComponent">
+                  [defaultComponent]="defaultThumbsUpButtonComponent"
+                  [outputs]="{ click: handleThumbsUp.bind(this) }">
                 </copilot-slot>
               }
               
               <!-- Thumbs down button - show if custom slot provided OR if handler available at top level -->
-              @if (thumbsDownButtonSlot || thumbsDownButtonTemplate || handlers.hasAssistantThumbsDownHandler()) {
+              @if (thumbsDownButtonComponent || thumbsDownButtonTemplate || handlers.hasAssistantThumbsDownHandler()) {
                 <copilot-slot
-                  [slot]="thumbsDownButtonTemplate || thumbsDownButtonSlot"
+                  [slot]="thumbsDownButtonTemplate || thumbsDownButtonComponent"
                   [context]="thumbsDownButtonContext()"
-                  [defaultComponent]="defaultThumbsDownButtonComponent">
+                  [defaultComponent]="defaultThumbsDownButtonComponent"
+                  [outputs]="{ click: handleThumbsDown.bind(this) }">
                 </copilot-slot>
               }
               
               <!-- Read aloud button - only show if custom slot provided -->
-              @if (readAloudButtonSlot || readAloudButtonTemplate) {
+              @if (readAloudButtonComponent || readAloudButtonTemplate) {
                 <copilot-slot
-                  [slot]="readAloudButtonTemplate || readAloudButtonSlot"
+                  [slot]="readAloudButtonTemplate || readAloudButtonComponent"
                   [context]="readAloudButtonContext()"
+                  [outputs]="{ click: handleReadAloud.bind(this) }"
                   >
                 </copilot-slot>
               }
               
               <!-- Regenerate button - only show if custom slot provided -->
-              @if (regenerateButtonSlot || regenerateButtonTemplate) {
+              @if (regenerateButtonComponent || regenerateButtonTemplate) {
                 <copilot-slot
-                  [slot]="regenerateButtonTemplate || regenerateButtonSlot"
+                  [slot]="regenerateButtonTemplate || regenerateButtonComponent"
                   [context]="regenerateButtonContext()"
+                  [outputs]="{ click: handleRegenerate.bind(this) }"
                   >
                 </copilot-slot>
               }
@@ -335,14 +345,14 @@ export class CopilotChatAssistantMessageComponent {
   @Input() readAloudButtonClass?: string;
   @Input() regenerateButtonClass?: string;
   
-  // Slot inputs for backward compatibility
-  @Input() markdownRendererSlot?: Type<any> | TemplateRef<any>;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
-  @Input() copyButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() thumbsUpButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() thumbsDownButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() readAloudButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() regenerateButtonSlot?: Type<any> | TemplateRef<any>;
+  // Component inputs for overrides
+  @Input() markdownRendererComponent?: Type<any>;
+  @Input() toolbarComponent?: Type<any>;
+  @Input() copyButtonComponent?: Type<any>;
+  @Input() thumbsUpButtonComponent?: Type<any>;
+  @Input() thumbsDownButtonComponent?: Type<any>;
+  @Input() readAloudButtonComponent?: Type<any>;
+  @Input() regenerateButtonComponent?: Type<any>;
   
   // Regular inputs
   @Input() message!: AssistantMessage;
@@ -353,7 +363,12 @@ export class CopilotChatAssistantMessageComponent {
   }
   
   // DI service exposes handler availability scoped to CopilotChatView
-  constructor(public handlers: CopilotChatViewHandlersService) {}
+  // Make it optional with a default fallback for testing
+  handlers: CopilotChatViewHandlersService;
+  
+  constructor(@Optional() @Inject(CopilotChatViewHandlersService) handlers?: CopilotChatViewHandlersService | null) {
+    this.handlers = handlers || new CopilotChatViewHandlersService();
+  }
   
   // Output events
   @Output() thumbsUp = new EventEmitter<CopilotChatAssistantMessageOnThumbsUpProps>();
@@ -375,6 +390,9 @@ export class CopilotChatAssistantMessageComponent {
   // Default components
   protected readonly defaultThumbsUpButtonComponent = CopilotChatAssistantMessageThumbsUpButtonComponent;
   protected readonly defaultThumbsDownButtonComponent = CopilotChatAssistantMessageThumbsDownButtonComponent;
+  protected readonly CopilotChatAssistantMessageRendererComponent = CopilotChatAssistantMessageRendererComponent;
+  protected readonly CopilotChatAssistantMessageToolbarComponent = CopilotChatAssistantMessageToolbarComponent;
+  protected readonly CopilotChatAssistantMessageCopyButtonComponent = CopilotChatAssistantMessageCopyButtonComponent;
   
   // Context for slots (reactive via signals)
   markdownRendererContext = computed<AssistantMessageMarkdownRendererContext>(() => ({

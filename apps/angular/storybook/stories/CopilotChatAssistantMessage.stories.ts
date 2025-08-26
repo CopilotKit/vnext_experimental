@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
+import { fn } from '@storybook/test';
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import {
@@ -330,10 +331,10 @@ const meta: Meta<CopilotChatAssistantMessageComponent> = {
   args: {
     message: simpleMessage,
     toolbarVisible: true,
-    thumbsUp: () => console.log('Thumbs up clicked!'),
-    thumbsDown: () => console.log('Thumbs down clicked!'),
-    readAloud: () => console.log('Read aloud clicked!'),
-    regenerate: () => console.log('Regenerate clicked!')
+    thumbsUp: fn(),
+    thumbsDown: fn(),
+    readAloud: fn(),
+    regenerate: fn()
   },
   argTypes: {
     message: {

@@ -118,19 +118,19 @@ export class CopilotKitToolRenderComponent implements OnChanges, AfterViewInit {
     // Create the component
     this.componentRef = this.container.createComponent(componentClass);
 
-    // Set inputs on the component
-    const instance = this.componentRef.instance;
-
-    // Check if component expects individual inputs or a single props object
-    if ("name" in instance || "args" in instance || "status" in instance) {
-      // Component expects individual inputs
-      Object.assign(instance, props);
-    } else if ("props" in instance) {
-      // Component expects a single props object
-      instance.props = props;
-    } else {
-      // Try setting properties directly
-      Object.assign(instance, props);
+    // Set inputs on the component using setInput
+    // Try setting a single 'props' input first
+    try {
+      this.componentRef.setInput('props', props);
+    } catch (e) {
+      // If props input doesn't exist, try setting individual inputs
+      for (const [key, value] of Object.entries(props)) {
+        try {
+          this.componentRef.setInput(key, value);
+        } catch (inputError) {
+          // Input might not exist on the component, skip it
+        }
+      }
     }
 
     // Trigger change detection

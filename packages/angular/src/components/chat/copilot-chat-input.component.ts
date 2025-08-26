@@ -74,10 +74,11 @@ export interface ToolbarContext {
     <div [class]="computedClass()">
       <!-- Main input area: either textarea or audio recorder -->
       @if (computedMode() === 'transcribe') {
-        @if (audioRecorderTemplate || audioRecorderSlot) {
+        @if (audioRecorderTemplate || audioRecorderComponent) {
           <copilot-slot 
-            [slot]="audioRecorderTemplate || audioRecorderSlot"
+            [slot]="audioRecorderTemplate || audioRecorderComponent"
             [context]="audioRecorderContext()"
+            [defaultComponent]="defaultAudioRecorder"
             >
           </copilot-slot>
         } @else {
@@ -86,27 +87,12 @@ export interface ToolbarContext {
           </copilot-chat-audio-recorder>
         }
       } @else {
-        @if (textAreaTemplate || textAreaSlot) {
-          @if (textAreaTemplate) {
-            <ng-container *ngTemplateOutlet="textAreaTemplate; context: textAreaContext()"></ng-container>
-          } @else if (!isDirective(textAreaSlot)) {
-            <copilot-slot
-              [slot]="textAreaSlot"
-              [context]="textAreaContext()"
-              >
-            </copilot-slot>
-          } @else {
-            <!-- Fallback for directive slots -->
-            <textarea copilotChatTextarea
-              [inputValue]="computedValue()"
-              [inputAutoFocus]="computedAutoFocus()"
-              [inputDisabled]="computedMode() === 'processing'"
-              [inputClass]="textAreaClass"
-              [inputMaxRows]="textAreaMaxRows"
-              [inputPlaceholder]="textAreaPlaceholder"
-              (keyDown)="handleKeyDown($event)"
-              (valueChange)="handleValueChange($event)"></textarea>
-          }
+        @if (textAreaTemplate || textAreaComponent) {
+          <copilot-slot
+            [slot]="textAreaTemplate || textAreaComponent"
+            [context]="textAreaContext()"
+            >
+          </copilot-slot>
         } @else {
           <textarea copilotChatTextarea
             [inputValue]="computedValue()"
@@ -121,20 +107,22 @@ export interface ToolbarContext {
       }
       
       <!-- Toolbar -->
-      @if (toolbarTemplate || toolbarSlot) {
+      @if (toolbarTemplate || toolbarComponent) {
         <copilot-slot
-          [slot]="toolbarTemplate || toolbarSlot"
+          [slot]="toolbarTemplate || toolbarComponent"
           [context]="toolbarContext()"
+          [defaultComponent]="CopilotChatToolbarComponent"
           >
         </copilot-slot>
       } @else {
         <div copilotChatToolbar>
           <div class="flex items-center">
             @if (addFile.observed) {
-              @if (addFileButtonTemplate || addFileButtonSlot) {
+              @if (addFileButtonTemplate || addFileButtonComponent) {
                 <copilot-slot
-                  [slot]="addFileButtonTemplate || addFileButtonSlot"
+                  [slot]="addFileButtonTemplate || addFileButtonComponent"
                   [context]="addFileContext()"
+                  [defaultComponent]="CopilotChatAddFileButtonComponent"
                   >
                 </copilot-slot>
               } @else {
@@ -145,10 +133,11 @@ export interface ToolbarContext {
               }
             }
             @if (computedToolsMenu().length > 0) {
-              @if (toolsButtonTemplate || toolsButtonSlot) {
+              @if (toolsButtonTemplate || toolsButtonComponent) {
                 <copilot-slot
-                  [slot]="toolsButtonTemplate || toolsButtonSlot"
+                  [slot]="toolsButtonTemplate || toolsButtonComponent"
                   [context]="toolsContext()"
+                  [defaultComponent]="CopilotChatToolsMenuComponent"
                   >
                 </copilot-slot>
               } @else {
@@ -165,10 +154,11 @@ export interface ToolbarContext {
           <div class="flex items-center">
             @if (computedMode() === 'transcribe') {
               @if (cancelTranscribe.observed) {
-                @if (cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot) {
+                @if (cancelTranscribeButtonTemplate || cancelTranscribeButtonComponent) {
                   <copilot-slot
-                    [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonSlot"
+                    [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonComponent"
                     [context]="cancelTranscribeContext()"
+                    [defaultComponent]="CopilotChatCancelTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
@@ -178,10 +168,11 @@ export interface ToolbarContext {
                 }
               }
               @if (finishTranscribe.observed) {
-                @if (finishTranscribeButtonTemplate || finishTranscribeButtonSlot) {
+                @if (finishTranscribeButtonTemplate || finishTranscribeButtonComponent) {
                   <copilot-slot
-                    [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonSlot"
+                    [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonComponent"
                     [context]="finishTranscribeContext()"
+                    [defaultComponent]="CopilotChatFinishTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
@@ -192,10 +183,11 @@ export interface ToolbarContext {
               }
             } @else {
               @if (startTranscribe.observed) {
-                @if (startTranscribeButtonTemplate || startTranscribeButtonSlot) {
+                @if (startTranscribeButtonTemplate || startTranscribeButtonComponent) {
                   <copilot-slot
-                    [slot]="startTranscribeButtonTemplate || startTranscribeButtonSlot"
+                    [slot]="startTranscribeButtonTemplate || startTranscribeButtonComponent"
                     [context]="startTranscribeContext()"
+                    [defaultComponent]="CopilotChatStartTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
@@ -205,10 +197,11 @@ export interface ToolbarContext {
                 }
               }
               <!-- Send button with slot -->
-              @if (sendButtonTemplate || sendButtonSlot || sendButtonComponent) {
+              @if (sendButtonTemplate || sendButtonComponent) {
                 <copilot-slot
-                  [slot]="sendButtonTemplate || sendButtonSlot || sendButtonComponent"
+                  [slot]="sendButtonTemplate || sendButtonComponent"
                   [context]="sendButtonContext()"
+                  [outputs]="{ click: send.bind(this) }"
                   >
                 </copilot-slot>
               } @else {
@@ -269,20 +262,16 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   @Input() addFileButtonClass?: string;
   @Input() toolsButtonClass?: string;
   
-  // Also support direct component inputs for backward compatibility
+  // Component inputs for overrides
   @Input() sendButtonComponent?: Type<any>;
   @Input() toolbarComponent?: Type<any>;
-  
-  // Old slot inputs for backward compatibility
-  @Input() sendButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() toolbarSlot?: Type<any> | TemplateRef<any>;
-  @Input() textAreaSlot?: Type<any> | TemplateRef<any>;
-  @Input() audioRecorderSlot?: Type<any> | TemplateRef<any>;
-  @Input() startTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() cancelTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() finishTranscribeButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() addFileButtonSlot?: Type<any> | TemplateRef<any>;
-  @Input() toolsButtonSlot?: Type<any> | TemplateRef<any>;
+  @Input() textAreaComponent?: Type<any>;
+  @Input() audioRecorderComponent?: Type<any>;
+  @Input() startTranscribeButtonComponent?: Type<any>;
+  @Input() cancelTranscribeButtonComponent?: Type<any>;
+  @Input() finishTranscribeButtonComponent?: Type<any>;
+  @Input() addFileButtonComponent?: Type<any>;
+  @Input() toolsButtonComponent?: Type<any>;
   
   // Regular inputs
   @Input() set mode(val: CopilotChatInputMode | undefined) {
@@ -344,6 +333,12 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   // Note: CopilotChatTextareaComponent uses attribute selector but is a component
   defaultAudioRecorder = CopilotChatAudioRecorderComponent;
   defaultSendButton: any = null; // Will be set to avoid circular dependency
+  CopilotChatToolbarComponent = CopilotChatToolbarComponent;
+  CopilotChatAddFileButtonComponent = CopilotChatAddFileButtonComponent;
+  CopilotChatToolsMenuComponent = CopilotChatToolsMenuComponent;
+  CopilotChatCancelTranscribeButtonComponent = CopilotChatCancelTranscribeButtonComponent;
+  CopilotChatFinishTranscribeButtonComponent = CopilotChatFinishTranscribeButtonComponent;
+  CopilotChatStartTranscribeButtonComponent = CopilotChatStartTranscribeButtonComponent;
   
   // Computed values
   computedMode = computed(() => this.modeSignal());
@@ -440,10 +435,6 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     });
   }
   
-  // Helper to check if a value is a directive (has ɵdir marker)
-  isDirective(value: any): boolean {
-    return !!(value?.ɵdir || Object.prototype.hasOwnProperty.call(value, 'ɵdir'));
-  }
   
   ngAfterViewInit(): void {
     // Auto-focus if needed

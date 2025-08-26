@@ -103,7 +103,8 @@ const meta: Meta<CopilotChatInputComponent> = {
             [toolsMenu]="toolsMenu"
             [value]="value"
             [autoFocus]="autoFocus"
-            [sendButtonSlot]="sendButtonSlot"
+            [sendButtonComponent]="sendButtonComponent"
+            [sendButtonTemplate]="sendButtonTemplate"
             [additionalToolbarItems]="additionalToolbarItems"
             (submitMessage)="submitMessage($event)"
             (startTranscribe)="startTranscribe()"
@@ -220,10 +221,17 @@ See individual stories below for detailed examples of each customization approac
         category: "Features",
       },
     },
-    sendButtonSlot: {
-      description: "Custom send button component or template",
+    sendButtonComponent: {
+      description: "Custom send button component",
       table: {
-        type: { summary: "Component | TemplateRef" },
+        type: { summary: "Type<any>" },
+        category: "Customization",
+      },
+    },
+    sendButtonTemplate: {
+      description: "Custom send button template",
+      table: {
+        type: { summary: "TemplateRef<any>" },
         category: "Customization",
       },
     },
@@ -1240,7 +1248,7 @@ Use a standalone Angular component within the template slot.
 };
 
 export const SlotDirectComponent: Story = {
-  name: "Slot: Direct Component (Legacy)",
+  name: "Slot: Direct Component",
   decorators: [
     moduleMetadata({
       imports: [
@@ -1271,12 +1279,12 @@ export const SlotDirectComponent: Story = {
 SendButton = RocketSendButtonComponent;
 
 // In template:
-&lt;copilot-chat-input [sendButtonSlot]="SendButton"&gt;
+&lt;copilot-chat-input [sendButtonComponent]="SendButton"&gt;
 &lt;/copilot-chat-input&gt;</pre>
         
         <div style="margin-top: 20px;">
           <copilot-chat-input
-            [sendButtonSlot]="SendButton"
+            [sendButtonComponent]="SendButton"
             (submitMessage)="submitMessage($event)"
             (addFile)="addFile()">
           </copilot-chat-input>
