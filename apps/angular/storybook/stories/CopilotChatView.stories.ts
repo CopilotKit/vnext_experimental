@@ -82,16 +82,30 @@ import { provideCopilotKit } from '@copilotkit/angular';
       },
     ];
 
+    const onThumbsUp = (event: any) => {
+      alert('Thumbs up! You liked this message.');
+      console.log('Thumbs up event:', event);
+    };
+
+    const onThumbsDown = (event: any) => {
+      alert('Thumbs down! You disliked this message.');
+      console.log('Thumbs down event:', event);
+    };
+
     return {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
           <copilot-chat-view
-            [messages]="messages">
+            [messages]="messages"
+            (assistantMessageThumbsUp)="onThumbsUp($event)"
+            (assistantMessageThumbsDown)="onThumbsDown($event)">
           </copilot-chat-view>
         </div>
       `,
       props: {
-        messages
+        messages,
+        onThumbsUp,
+        onThumbsDown
       },
     };
   },

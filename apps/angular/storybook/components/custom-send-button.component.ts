@@ -17,11 +17,11 @@ import { CommonModule } from '@angular/common';
 })
 export class CustomSendButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   handleClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }

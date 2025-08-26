@@ -122,14 +122,14 @@ export interface ToolbarContext {
                 <copilot-slot
                   [slot]="addFileButtonTemplate || addFileButtonComponent"
                   [context]="{ inputDisabled: computedMode() === 'transcribe' }"
-                  [outputs]="{ click: handleAddFile.bind(this) }"
+                  [outputs]="addFileButtonOutputs"
                   [defaultComponent]="CopilotChatAddFileButtonComponent"
                   >
                 </copilot-slot>
               } @else {
                 <copilot-chat-add-file-button
                   [disabled]="computedMode() === 'transcribe'"
-                  (click)="handleAddFile()">
+                  (clicked)="handleAddFile()">
                 </copilot-chat-add-file-button>
               }
             }
@@ -159,13 +159,13 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="cancelTranscribeButtonTemplate || cancelTranscribeButtonComponent"
                     [context]="{}"
-                    [outputs]="{ click: handleCancelTranscribe.bind(this) }"
+                    [outputs]="cancelTranscribeButtonOutputs"
                     [defaultComponent]="CopilotChatCancelTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-cancel-transcribe-button
-                    (click)="handleCancelTranscribe()">
+                    (clicked)="handleCancelTranscribe()">
                   </copilot-chat-cancel-transcribe-button>
                 }
               }
@@ -174,13 +174,13 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="finishTranscribeButtonTemplate || finishTranscribeButtonComponent"
                     [context]="{}"
-                    [outputs]="{ click: handleFinishTranscribe.bind(this) }"
+                    [outputs]="finishTranscribeButtonOutputs"
                     [defaultComponent]="CopilotChatFinishTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-finish-transcribe-button
-                    (click)="handleFinishTranscribe()">
+                    (clicked)="handleFinishTranscribe()">
                   </copilot-chat-finish-transcribe-button>
                 }
               }
@@ -190,13 +190,13 @@ export interface ToolbarContext {
                   <copilot-slot
                     [slot]="startTranscribeButtonTemplate || startTranscribeButtonComponent"
                     [context]="{}"
-                    [outputs]="{ click: handleStartTranscribe.bind(this) }"
+                    [outputs]="startTranscribeButtonOutputs"
                     [defaultComponent]="CopilotChatStartTranscribeButtonComponent"
                     >
                   </copilot-slot>
                 } @else {
                   <copilot-chat-start-transcribe-button
-                    (click)="handleStartTranscribe()">
+                    (clicked)="handleStartTranscribe()">
                   </copilot-chat-start-transcribe-button>
                 }
               }
@@ -205,7 +205,7 @@ export interface ToolbarContext {
                 <copilot-slot
                   [slot]="sendButtonTemplate || sendButtonComponent"
                   [context]="sendButtonContext()"
-                  [outputs]="{ click: send.bind(this) }"
+                  [outputs]="sendButtonOutputs"
                   >
                 </copilot-slot>
               } @else {
@@ -214,7 +214,7 @@ export interface ToolbarContext {
                     type="button"
                     [class]="sendButtonClass || defaultButtonClass"
                     [disabled]="!computedValue().trim() || computedMode() === 'processing'"
-                    (click)="send()">
+                    (clicked)="send()">
                     <lucide-angular [img]="ArrowUpIcon" [size]="18"></lucide-angular>
                   </button>
                 </div>
@@ -291,6 +291,10 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     this.valueSignal.set(val || '');
   }
   @Input() set inputClass(val: string | undefined) {
+    this.customClass.set(val);
+  }
+  @Input() set className(val: string | undefined) {
+    // Support both className and inputClass
     this.customClass.set(val);
   }
   @Input() additionalToolbarItems?: TemplateRef<any>;
@@ -424,6 +428,12 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     });
   }
   
+  // Output maps for slots
+  addFileButtonOutputs = { clicked: this.handleAddFile.bind(this) };
+  cancelTranscribeButtonOutputs = { clicked: this.handleCancelTranscribe.bind(this) };
+  finishTranscribeButtonOutputs = { clicked: this.handleFinishTranscribe.bind(this) };
+  startTranscribeButtonOutputs = { clicked: this.handleStartTranscribe.bind(this) };
+  sendButtonOutputs = { clicked: this.send.bind(this) };
   
   ngAfterViewInit(): void {
     // Auto-focus if needed

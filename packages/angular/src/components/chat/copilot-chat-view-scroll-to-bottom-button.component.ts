@@ -35,6 +35,7 @@ import { cn } from '../../lib/utils';
 })
 export class CopilotChatViewScrollToBottomButtonComponent {
   @Input() inputClass?: string;
+  @Input() className?: string;  // Support both className and inputClass
   @Input() disabled: boolean = false;
   
   // Simple, idiomatic Angular output
@@ -60,8 +61,8 @@ export class CopilotChatViewScrollToBottomButtonComponent {
       'transition-colors',
       // Focus states
       'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-      // Custom classes
-      this.inputClass
+      // Custom classes - support both className and inputClass
+      this.className || this.inputClass
     );
   }
   

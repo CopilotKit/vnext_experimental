@@ -87,7 +87,7 @@ import { cn } from '../../lib/utils';
               <copilot-slot
                 [slot]="copyButtonTemplate || copyButtonComponent"
                 [context]="{ content: message?.content || '' }"
-                [outputs]="{ click: handleCopy.bind(this) }"
+                [outputs]="copyButtonOutputs"
                 [defaultComponent]="CopilotChatUserMessageCopyButtonComponent"
                 >
               </copilot-slot>
@@ -95,7 +95,7 @@ import { cn } from '../../lib/utils';
               <copilot-chat-user-message-copy-button
                 [content]="message.content"
                 [inputClass]="copyButtonClass"
-                (click)="handleCopy()">
+                (clicked)="handleCopy()">
               </copilot-chat-user-message-copy-button>
             }
             
@@ -105,14 +105,14 @@ import { cn } from '../../lib/utils';
                 <copilot-slot
                   [slot]="editButtonTemplate || editButtonComponent"
                   [context]="{}"
-                  [outputs]="{ click: handleEdit.bind(this) }"
+                  [outputs]="editButtonOutputs"
                   [defaultComponent]="CopilotChatUserMessageEditButtonComponent"
                   >
                 </copilot-slot>
               } @else {
                 <copilot-chat-user-message-edit-button
                   [inputClass]="editButtonClass"
-                  (click)="handleEdit()">
+                  (clicked)="handleEdit()">
                 </copilot-chat-user-message-edit-button>
               }
             }
@@ -217,7 +217,9 @@ export class CopilotChatUserMessageComponent {
     content: this.message?.content || ''
   }));
   
-  // Button contexts removed - now using outputs map for click handlers
+  // Output maps for slots
+  copyButtonOutputs = { clicked: this.handleCopy.bind(this) };
+  editButtonOutputs = { clicked: this.handleEdit.bind(this) };
   
   branchNavigationContext = computed<BranchNavigationContext>(() => ({
     currentBranch: this.branchIndexSignal(),

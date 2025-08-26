@@ -95,14 +95,14 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
                   [slot]="copyButtonTemplate || copyButtonComponent"
                   [context]="{ content: message?.content || '' }"
                   [defaultComponent]="CopilotChatAssistantMessageCopyButtonComponent"
-                  [outputs]="{ click: handleCopy.bind(this) }"
+                  [outputs]="copyButtonOutputs"
                   >
                 </copilot-slot>
               } @else {
                 <copilot-chat-assistant-message-copy-button
                   [content]="message?.content"
                   [inputClass]="copyButtonClass"
-                  (click)="handleCopy()">
+                  (clicked)="handleCopy()">
                 </copilot-chat-assistant-message-copy-button>
               }
               
@@ -112,7 +112,7 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
                   [slot]="thumbsUpButtonTemplate || thumbsUpButtonComponent"
                   [context]="{}"
                   [defaultComponent]="defaultThumbsUpButtonComponent"
-                  [outputs]="{ click: handleThumbsUp.bind(this) }">
+                  [outputs]="thumbsUpButtonOutputs">
                 </copilot-slot>
               }
               
@@ -122,7 +122,7 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
                   [slot]="thumbsDownButtonTemplate || thumbsDownButtonComponent"
                   [context]="{}"
                   [defaultComponent]="defaultThumbsDownButtonComponent"
-                  [outputs]="{ click: handleThumbsDown.bind(this) }">
+                  [outputs]="thumbsDownButtonOutputs">
                 </copilot-slot>
               }
               
@@ -131,7 +131,7 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
                 <copilot-slot
                   [slot]="readAloudButtonTemplate || readAloudButtonComponent"
                   [context]="{}"
-                  [outputs]="{ click: handleReadAloud.bind(this) }"
+                  [outputs]="readAloudButtonOutputs"
                   >
                 </copilot-slot>
               }
@@ -141,7 +141,7 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
                 <copilot-slot
                   [slot]="regenerateButtonTemplate || regenerateButtonComponent"
                   [context]="{}"
-                  [outputs]="{ click: handleRegenerate.bind(this) }"
+                  [outputs]="regenerateButtonOutputs"
                   >
                 </copilot-slot>
               }
@@ -399,7 +399,12 @@ export class CopilotChatAssistantMessageComponent {
     content: this.message?.content || ''
   }));
   
-  // Button contexts removed - now using outputs map for click handlers
+  // Output maps for slots
+  copyButtonOutputs = { clicked: this.handleCopy.bind(this) };
+  thumbsUpButtonOutputs = { clicked: this.handleThumbsUp.bind(this) };
+  thumbsDownButtonOutputs = { clicked: this.handleThumbsDown.bind(this) };
+  readAloudButtonOutputs = { clicked: this.handleReadAloud.bind(this) };
+  regenerateButtonOutputs = { clicked: this.handleRegenerate.bind(this) };
   
   toolbarContext = computed<AssistantMessageToolbarContext>(() => ({
     children: null // Will be populated by the toolbar content

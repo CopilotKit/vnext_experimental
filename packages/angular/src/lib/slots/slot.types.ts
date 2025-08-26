@@ -42,7 +42,7 @@ export interface SlotRegistryEntry<T = any> {
 export interface RenderSlotOptions<T = any> {
   slot?: SlotValue<T>;
   defaultComponent: Type<T>;
-  props?: T;
+  props?: Partial<T>;
   injector?: any;
   outputs?: Record<string, (event: any) => void>;
 }

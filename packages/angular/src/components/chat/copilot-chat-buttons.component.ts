@@ -92,14 +92,14 @@ const chatInputToolbarSecondary = cn(
 })
 export class CopilotChatSendButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly ArrowUpIcon = ArrowUp;
   buttonClass = cn(buttonBase, chatInputToolbarPrimary);
   
   onClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -126,7 +126,7 @@ export class CopilotChatSendButtonComponent {
 })
 export class CopilotChatStartTranscribeButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
@@ -139,7 +139,7 @@ export class CopilotChatStartTranscribeButtonComponent {
   
   onClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -166,7 +166,7 @@ export class CopilotChatStartTranscribeButtonComponent {
 })
 export class CopilotChatCancelTranscribeButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
@@ -179,7 +179,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
   
   onClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -206,7 +206,7 @@ export class CopilotChatCancelTranscribeButtonComponent {
 })
 export class CopilotChatFinishTranscribeButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
@@ -219,7 +219,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
   
   onClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -246,7 +246,7 @@ export class CopilotChatFinishTranscribeButtonComponent {
 })
 export class CopilotChatAddFileButtonComponent {
   @Input() disabled = false;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
   
@@ -259,7 +259,7 @@ export class CopilotChatAddFileButtonComponent {
   
   onClick(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -291,7 +291,7 @@ export class CopilotChatToolbarButtonComponent {
   customClass = signal('');
   title = signal('');
   
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   computedClass = computed(() => {
     const variantClass = this.variant() === 'primary' 
@@ -302,7 +302,7 @@ export class CopilotChatToolbarButtonComponent {
   
   onClick(): void {
     if (!this.disabled()) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }

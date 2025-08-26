@@ -124,29 +124,6 @@ export const CustomInputTemplate: Story = {
       }
     };
 
-    const onInputFocus = (event: FocusEvent) => {
-      const input = event.target as HTMLInputElement;
-      input.style.borderColor = 'rgba(255, 255, 255, 0.8)';
-      input.style.transform = 'scale(1.02)';
-    };
-
-    const onInputBlur = (event: FocusEvent) => {
-      const input = event.target as HTMLInputElement;
-      input.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-      input.style.transform = 'scale(1)';
-    };
-
-    const onButtonHover = (event: MouseEvent, isHover: boolean) => {
-      const button = event.target as HTMLButtonElement;
-      if (isHover) {
-        button.style.transform = 'translateY(-2px)';
-        button.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.15)';
-      } else {
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-      }
-    };
-
     return {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
@@ -180,8 +157,6 @@ export const CustomInputTemplate: Story = {
                     transition: all 0.3s ease;
                   "
                   (keyup.enter)="sendMessage(messageInput, onSend)"
-                  (focus)="onInputFocus($event)"
-                  (blur)="onInputBlur($event)"
                 />
                 <button 
                   style="
@@ -196,9 +171,7 @@ export const CustomInputTemplate: Story = {
                     transition: all 0.3s ease;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                   "
-                  (click)="sendMessage(messageInput, onSend)"
-                  (mouseenter)="onButtonHover($event, true)"
-                  (mouseleave)="onButtonHover($event, false)">
+                  (click)="sendMessage(messageInput, onSend)">
                   Send
                 </button>
               </div>
@@ -222,9 +195,6 @@ export const CustomInputTemplate: Story = {
       props: {
         messages,
         sendMessage,
-        onInputFocus,
-        onInputBlur,
-        onButtonHover,
       },
     };
   },
@@ -244,18 +214,9 @@ export const CustomScrollButtonTemplate: Story = {
       } as Message);
     }
 
+    // Simple click handler without DOM manipulation
     const handleScroll = (onClick: () => void) => {
-      // Add a smooth animation effect before scrolling
-      const button = document.querySelector('button') as HTMLElement;
-      if (button) {
-        button.style.animation = 'pulse 0.5s ease-out';
-      }
       onClick();
-      setTimeout(() => {
-        if (button) {
-          button.style.animation = '';
-        }
-      }, 500);
     };
 
     return {
@@ -284,8 +245,7 @@ export const CustomScrollButtonTemplate: Story = {
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 z-index: 1000;
               "
-              [style.transform]="isHovered ? 'scale(1.15) rotate(360deg)' : 'scale(1) rotate(0deg)'"
-              [style.opacity]="isHovered ? '1' : '0.9'">
+              [style.transform]="isHovered ? 'scale(1.15) rotate(360deg)' : 'scale(1) rotate(0deg)'">
               <div style="
                 display: flex;
                 flex-direction: column;

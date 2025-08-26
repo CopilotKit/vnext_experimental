@@ -90,7 +90,7 @@ export class CopilotChatAssistantMessageToolbarButtonComponent {
       [title]="title || labels.assistantMessageToolbarCopyMessageLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (click)="handleCopy($event)">
+      (clicked)="handleCopy($event)">
       @if (copied()) {
         <lucide-angular [img]="CheckIcon" [size]="18"></lucide-angular>
       } @else {
@@ -104,7 +104,7 @@ export class CopilotChatAssistantMessageCopyButtonComponent {
   @Input() disabled = false;
   @Input() inputClass?: string;
   @Input() content?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly CopyIcon = Copy;
   readonly CheckIcon = Check;
@@ -128,7 +128,7 @@ export class CopilotChatAssistantMessageCopyButtonComponent {
     
     // Copy to clipboard (fire and forget)
     navigator.clipboard.writeText(this.content).then(
-      () => this.click.emit(),
+      () => this.clicked.emit(),
       (err) => {
         console.error('Failed to copy message:', err);
         this.copied.set(false);
@@ -150,7 +150,7 @@ export class CopilotChatAssistantMessageCopyButtonComponent {
       [title]="title || labels.assistantMessageToolbarThumbsUpLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (click)="handleClick($event)">
+      (clicked)="handleClick($event)">
       <lucide-angular [img]="ThumbsUpIcon" [size]="18"></lucide-angular>
     </button>
   `
@@ -159,7 +159,7 @@ export class CopilotChatAssistantMessageThumbsUpButtonComponent {
   @Input() title?: string;
   @Input() disabled = false;
   @Input() inputClass?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly ThumbsUpIcon = ThumbsUp;
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -173,7 +173,7 @@ export class CopilotChatAssistantMessageThumbsUpButtonComponent {
   handleClick(event?: Event): void {
     event?.stopPropagation();
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -191,7 +191,7 @@ export class CopilotChatAssistantMessageThumbsUpButtonComponent {
       [title]="title || labels.assistantMessageToolbarThumbsDownLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (click)="handleClick($event)">
+      (clicked)="handleClick($event)">
       <lucide-angular [img]="ThumbsDownIcon" [size]="18"></lucide-angular>
     </button>
   `
@@ -200,7 +200,7 @@ export class CopilotChatAssistantMessageThumbsDownButtonComponent {
   @Input() title?: string;
   @Input() disabled = false;
   @Input() inputClass?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly ThumbsDownIcon = ThumbsDown;
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -214,7 +214,7 @@ export class CopilotChatAssistantMessageThumbsDownButtonComponent {
   handleClick(event?: Event): void {
     event?.stopPropagation();
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -232,7 +232,7 @@ export class CopilotChatAssistantMessageThumbsDownButtonComponent {
       [title]="title || labels.assistantMessageToolbarReadAloudLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (click)="handleClick($event)">
+      (clicked)="handleClick($event)">
       <lucide-angular [img]="Volume2Icon" [size]="20"></lucide-angular>
     </button>
   `
@@ -241,7 +241,7 @@ export class CopilotChatAssistantMessageReadAloudButtonComponent {
   @Input() title?: string;
   @Input() disabled = false;
   @Input() inputClass?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly Volume2Icon = Volume2;
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -255,7 +255,7 @@ export class CopilotChatAssistantMessageReadAloudButtonComponent {
   handleClick(event?: Event): void {
     event?.stopPropagation();
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }
@@ -273,7 +273,7 @@ export class CopilotChatAssistantMessageReadAloudButtonComponent {
       [title]="title || labels.assistantMessageToolbarRegenerateLabel"
       [disabled]="disabled"
       [inputClass]="inputClass"
-      (click)="handleClick($event)">
+      (clicked)="handleClick($event)">
       <lucide-angular [img]="RefreshCwIcon" [size]="18"></lucide-angular>
     </button>
   `
@@ -282,7 +282,7 @@ export class CopilotChatAssistantMessageRegenerateButtonComponent {
   @Input() title?: string;
   @Input() disabled = false;
   @Input() inputClass?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly RefreshCwIcon = RefreshCw;
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -296,7 +296,7 @@ export class CopilotChatAssistantMessageRegenerateButtonComponent {
   handleClick(event?: Event): void {
     event?.stopPropagation();
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }

@@ -101,7 +101,7 @@ export class CopilotChatUserMessageCopyButtonComponent {
   @Input() disabled = false;
   @Input() inputClass?: string;
   @Input() content?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly CopyIcon = Copy;
   readonly CheckIcon = Check;
@@ -124,7 +124,7 @@ export class CopilotChatUserMessageCopyButtonComponent {
     
     // Copy to clipboard (fire and forget)
     navigator.clipboard.writeText(this.content).then(
-      () => this.click.emit(),
+      () => this.clicked.emit(),
       (err) => {
         console.error('Failed to copy message:', err);
         this.copied.set(false);
@@ -155,7 +155,7 @@ export class CopilotChatUserMessageEditButtonComponent {
   @Input() title?: string;
   @Input() disabled = false;
   @Input() inputClass?: string;
-  @Output() click = new EventEmitter<void>();
+  @Output() clicked = new EventEmitter<void>();
   
   readonly EditIcon = Edit;
   private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
@@ -168,7 +168,7 @@ export class CopilotChatUserMessageEditButtonComponent {
   
   handleEdit(): void {
     if (!this.disabled) {
-      this.click.emit();
+      this.clicked.emit();
     }
   }
 }

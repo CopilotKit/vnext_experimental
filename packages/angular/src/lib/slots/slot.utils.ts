@@ -125,12 +125,11 @@ function createComponent<T>(
 
 /**
  * Checks if a value is a component type.
- * Strict check: only functions with prototype and constructor.
+ * Simplified check - rely on try/catch for actual validation.
  */
 export function isComponentType(value: any): boolean {
-  return typeof value === 'function' && 
-         !!value.prototype && 
-         value.prototype.constructor === value;
+  // Arrow functions and regular functions without a prototype are not components
+  return typeof value === 'function' && !!value.prototype;
 }
 
 /**
