@@ -38,13 +38,6 @@ export function watchAgent(
   destroyRef?: DestroyRef,
   injector?: Injector
 ): AgentWatchResult {
-  // Debug marker to confirm rebuilt library is loaded
-  // eslint-disable-next-line no-console
-  console.log('[CopilotKit Angular] watchAgent init', {
-    ts: new Date().toISOString(),
-    hasService: !!service,
-    hasDestroyRef: !!destroyRef,
-  });
   // Require explicit services to avoid accidental injection in reactive contexts
   if (!service || !destroyRef) {
     throw new Error(
