@@ -12,8 +12,6 @@ import {
   Signal,
   Injector,
   inject,
-  EnvironmentInjector,
-  runInInjectionContext,
   Optional,
   DestroyRef
 } from '@angular/core';
@@ -60,7 +58,6 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     private copilotKitService: CopilotKitService,
     private cdr: ChangeDetectorRef,
     private injector: Injector,
-    private envInjector: EnvironmentInjector,
   ) {
     // Store the services for use in the effect
     const service = this.copilotKitService;
@@ -78,7 +75,7 @@ export class CopilotChatComponent implements OnInit, OnChanges {
       }
 
       // Setup watcher for desired agent - pass services explicitly
-      this.agentWatcher = watchAgent(desiredAgentId, service, destroyRef);
+      this.agentWatcher = watchAgent(desiredAgentId, service, destroyRef, this.injector);
       this.agent = this.agentWatcher.agent;
       this.isRunning = this.agentWatcher.isRunning;
 
@@ -121,13 +118,6 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     if (changes['threadId']) this.inputThreadId.set(this.threadId);
   }
   
-  private setupAgent(): void {}
-
-  // Create effects in constructor injection context
-  // - Watches agentId/threadId signals
-  // - Manages watcher lifecycle and initial connection
-  // Effect created in constructor
-
   
   private async connectToAgent(agent: any): Promise<void> {
     if (!agent) return;
@@ -205,7 +195,7 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     });
     
     // Handle input value changes (optional)
-    this.chatConfig.setChangeHandler((value: string) => {
+    this.chatConfig.setChangeHandler(() => {
       // Keep input state if needed
     });
   }

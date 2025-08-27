@@ -1,4 +1,5 @@
-import { DestroyRef, inject, signal } from '@angular/core';
+import { DestroyRef, inject, signal, runInInjectionContext, Injector } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AgentSubscriptionCallbacks, AgentWatchResult } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
@@ -34,17 +35,19 @@ export type { AgentWatchResult } from '../core/copilotkit.types';
 export function watchAgent(
   agentId?: string,
   service?: CopilotKitService,
-  destroyRef?: DestroyRef
+  destroyRef?: DestroyRef,
+  injector?: Injector
 ): AgentWatchResult {
   // If services not provided, try to inject them
   if (!service || !destroyRef) {
     try {
       service = service || inject(CopilotKitService);
       destroyRef = destroyRef || inject(DestroyRef);
+      injector = injector || inject(Injector);
     } catch (e) {
       // If we're not in an injection context, throw a more helpful error
       throw new Error(
-        'watchAgent() must be called from an injection context or with service and destroyRef parameters. ' +
+        'watchAgent() must be called from an injection context or with service, destroyRef, and injector parameters. ' +
         'Call it in a constructor, field initializer, or wrap with runInInjectionContext().'
       );
     }
@@ -116,11 +119,32 @@ export function watchAgent(
   
   destroyRef.onDestroy(unsubscribe);
   
+  // Create Observable versions within injection context
+  let agent$: any;
+  let isRunning$: any;
+  
+  if (injector) {
+    runInInjectionContext(injector, () => {
+      agent$ = toObservable(agentSignal);
+      isRunning$ = toObservable(isRunningSignal);
+    });
+  } else {
+    // Fallback if injector not available - try direct conversion
+    try {
+      agent$ = toObservable(agentSignal);
+      isRunning$ = toObservable(isRunningSignal);
+    } catch {
+      // If this fails, provide empty observables
+      agent$ = undefined;
+      isRunning$ = undefined;
+    }
+  }
+  
   return {
     agent: agentSignal.asReadonly(),
     isRunning: isRunningSignal.asReadonly(),
-    agent$: null as any, // Removed due to injection context issues
-    isRunning$: null as any, // Removed due to injection context issues
+    agent$,
+    isRunning$,
     unsubscribe,
   };
 }
