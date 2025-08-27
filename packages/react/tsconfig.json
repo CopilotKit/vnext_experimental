@@ -6,7 +6,15 @@
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@copilotkit/core": [
+        "../core/dist/index.d.ts",
+        "../core/src/index.ts"
+      ],
+      "@copilotkit/shared": [
+        "../shared/dist/index.d.ts",
+        "../shared/src/index.ts"
+      ]
     },
     "types": ["vitest/globals"]
   },

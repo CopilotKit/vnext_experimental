@@ -12,7 +12,7 @@
       "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^build", "^check-types"]
     },
     "test": {
       "dependsOn": ["^build"],
@@ -54,19 +54,39 @@
     },
     "demo#dev": {
       "cache": false,
-      "persistent": true,
-      "dependsOn": ["@copilotkit/react#build:css"]
+      "persistent": true
+    },
+    "@copilotkit/angular-demo#dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "@copilotkit/angular-demo-server#dev": {
+      "cache": false,
+      "persistent": true
     },
     "storybook:dev": {
-      "cache": false,
-      "dependsOn": ["^build"]
+      "cache": false
     },
     "storybook": {
       "cache": false,
       "dependsOn": ["^build"]
     },
+    "storybook-angular#dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "storybook#dev": {
+      "cache": false,
+      "persistent": true
+    },
     "storybook:build": {
       "outputs": ["apps/react/storybook/storybook-static/**", "apps/angular/storybook/storybook-static/**"]
+    }
+    ,
+    "clean": {
+      "cache": false,
+      "persistent": false,
+      "dependsOn": ["^clean"]
     }
   }
 }

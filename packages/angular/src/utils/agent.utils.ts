@@ -1,5 +1,5 @@
-import { DestroyRef, inject, signal, runInInjectionContext, Injector } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { DestroyRef, inject, signal, Injector } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AgentSubscriptionCallbacks, AgentWatchResult } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
@@ -38,19 +38,19 @@ export function watchAgent(
   destroyRef?: DestroyRef,
   injector?: Injector
 ): AgentWatchResult {
-  // If services not provided, try to inject them
+  // Debug marker to confirm rebuilt library is loaded
+  // eslint-disable-next-line no-console
+  console.log('[CopilotKit Angular] watchAgent init', {
+    ts: new Date().toISOString(),
+    hasService: !!service,
+    hasDestroyRef: !!destroyRef,
+  });
+  // Require explicit services to avoid accidental injection in reactive contexts
   if (!service || !destroyRef) {
-    try {
-      service = service || inject(CopilotKitService);
-      destroyRef = destroyRef || inject(DestroyRef);
-      injector = injector || inject(Injector);
-    } catch (e) {
-      // If we're not in an injection context, throw a more helpful error
-      throw new Error(
-        'watchAgent() must be called from an injection context or with service, destroyRef, and injector parameters. ' +
-        'Call it in a constructor, field initializer, or wrap with runInInjectionContext().'
-      );
-    }
+    throw new Error(
+      'watchAgent() requires CopilotKitService and DestroyRef parameters. ' +
+      'Call it from a constructor/field initializer and pass both explicitly.'
+    );
   }
   
   const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
@@ -58,11 +58,14 @@ export function watchAgent(
   // Create reactive signals
   const agentSignal = signal<AbstractAgent | undefined>(undefined);
   const isRunningSignal = signal<boolean>(false);
+  const agentSubject = new BehaviorSubject<AbstractAgent | undefined>(undefined);
+  const isRunningSubject = new BehaviorSubject<boolean>(false);
   
   // Get initial agent
   const updateAgent = () => {
     const agent = service.copilotkit.getAgent(effectiveAgentId);
     agentSignal.set(agent);
+    agentSubject.next(agent);
     return agent;
   };
   
@@ -81,19 +84,24 @@ export function watchAgent(
         onMessagesChanged() {
           // Force update of the agent signal to trigger reactivity
           agentSignal.set(currentAgent);
+          agentSubject.next(currentAgent);
         },
         onStateChanged() {
           // Force update of the agent signal to trigger reactivity
           agentSignal.set(currentAgent);
+          agentSubject.next(currentAgent);
         },
         onRunInitialized() {
           isRunningSignal.set(true);
+          isRunningSubject.next(true);
         },
         onRunFinalized() {
           isRunningSignal.set(false);
+          isRunningSubject.next(false);
         },
         onRunFailed() {
           isRunningSignal.set(false);
+          isRunningSubject.next(false);
         },
       });
     }
@@ -115,30 +123,15 @@ export function watchAgent(
   const unsubscribe = () => {
     agentSubscription?.unsubscribe();
     coreUnsubscribe();  // subscribe returns a function directly
+    agentSubject.complete();
+    isRunningSubject.complete();
   };
   
   destroyRef.onDestroy(unsubscribe);
   
-  // Create Observable versions within injection context
-  let agent$: any;
-  let isRunning$: any;
-  
-  if (injector) {
-    runInInjectionContext(injector, () => {
-      agent$ = toObservable(agentSignal);
-      isRunning$ = toObservable(isRunningSignal);
-    });
-  } else {
-    // Fallback if injector not available - try direct conversion
-    try {
-      agent$ = toObservable(agentSignal);
-      isRunning$ = toObservable(isRunningSignal);
-    } catch {
-      // If this fails, provide empty observables
-      agent$ = undefined;
-      isRunning$ = undefined;
-    }
-  }
+  // Expose Observables without creating nested effects
+  const agent$ = agentSubject.asObservable();
+  const isRunning$ = isRunningSubject.asObservable();
   
   return {
     agent: agentSignal.asReadonly(),

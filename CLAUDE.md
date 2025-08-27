@@ -15,23 +15,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 pnpm install
 
-# Run development mode (watch mode for all packages + all Storybook instances)
-# This starts everything: package watchers, React Storybook (6006), Angular Storybook (6007)
-pnpm dev
-
 # Build all packages
 pnpm build
 
 # Build specific package
 pnpm turbo run build --filter=@copilotkit/react
+
+# Clean all dist outputs
+pnpm clean
 ```
 
-**Important:** Always use `pnpm dev` to start the development environment. This command:
-- Starts all package build watchers in development mode
-- Launches React Storybook on port 6006
-- Launches Angular Storybook on port 6007
-- Enables auto-reload on all file changes
-- Runs Tailwind CSS compilation in watch mode
+**Development Workflow - Run Order (Important):**
+
+1. **Always start package compilers first:**
+   ```bash
+   pnpm dev  # Watches and compiles libraries only
+   ```
+   - Includes: @copilotkit/core, @copilotkit/shared, @copilotkit/runtime, @copilotkit/react, @copilotkit/angular
+   - Produces dist and styles.css with hot reload for dependent apps
+   - Wait for this to be ready before starting apps
+
+2. **Then run demos/storybooks/docs in separate terminals as needed:**
+   ```bash
+   # Angular demo + backend server
+   pnpm demo:angular
+   # Frontend: apps/angular/demo (ng serve on port 4200)
+   # Backend: apps/angular/demo-server (Hono API on port 3001)
+
+   # Angular Storybook
+   pnpm storybook:angular
+   # Port 6007 with --no-open flag
+
+   # React demo (Next.js)
+   pnpm demo:react
+   # Port 3000
+
+   # React Storybook
+   pnpm storybook:react
+   # Port 6006 with --no-open flag
+
+   # Documentation site
+   pnpm docs
+   # Mintlify on port 4000
+   ```
+
+**Important Notes:**
+- Demos and storybooks depend on `pnpm dev` for compiled outputs
+- No upstream builds for apps - they rely on the watch mode from `pnpm dev`
+- All apps have hot reload enabled
 
 ### Testing & Quality
 
