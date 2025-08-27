@@ -6,7 +6,8 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "dev": "ng serve"
+    "dev": "ng serve",
+    "clean": "rimraf dist .angular"
   },
   "dependencies": {
     "@angular/cdk": "^19.0.0",
