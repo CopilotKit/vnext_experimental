@@ -154,8 +154,20 @@ import { CopilotChatConfigurationService } from '../../core/chat-configuration/c
   `]
 })
 export class CopilotChatAssistantMessageRendererComponent implements OnChanges, AfterViewInit {
-  @Input() content = '';
+  private _content = '';
+  @Input() 
+  set content(value: string) {
+    console.log('Setting content in renderer:', value);
+    this._content = value;
+    this.contentSignal.set(value);
+  }
+  get content(): string {
+    return this._content;
+  }
+  
   @Input() inputClass?: string;
+  
+  private contentSignal = signal<string>('');
   
   @ViewChild('markdownContainer', { static: false }) markdownContainer?: ElementRef<HTMLDivElement>;
   
@@ -167,7 +179,12 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
   private copyStateSignal = signal(new Map<string, boolean>());
   
   renderedHtml = computed(() => {
-    const completedMarkdown = completePartialMarkdown(this.content);
+    const currentContent = this.contentSignal();
+    console.log('Renderer computing with content:', currentContent);
+    // Temporarily skip completePartialMarkdown to debug
+    // const completedMarkdown = completePartialMarkdown(currentContent);
+    const completedMarkdown = currentContent;
+    console.log('Completed markdown:', completedMarkdown);
     return this.renderMarkdown(completedMarkdown);
   });
   
@@ -274,6 +291,7 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
   }
   
   private renderMarkdown(content: string): string {
+    console.log('renderMarkdown input:', content);
     // Initialize marked if not already done
     this.initializeMarked();
     
@@ -282,9 +300,11 @@ export class CopilotChatAssistantMessageRendererComponent implements OnChanges, 
     
     // Parse markdown
     let html = this.markedInstance!.parse(content) as string;
+    console.log('Marked output:', html);
     
     // Process math equations
     html = this.processMathEquations(html);
+    console.log('Final HTML:', html);
     
     return html;
   }

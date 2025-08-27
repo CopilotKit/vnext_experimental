@@ -48,8 +48,9 @@ export function watchAgent(
   
   const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
   
-  // Create reactive signals
+  // Create reactive signals - use a version counter to force updates
   const agentSignal = signal<AbstractAgent | undefined>(undefined);
+  const agentVersionSignal = signal<number>(0);
   const isRunningSignal = signal<boolean>(false);
   const agentSubject = new BehaviorSubject<AbstractAgent | undefined>(undefined);
   const isRunningSubject = new BehaviorSubject<boolean>(false);
@@ -75,12 +76,14 @@ export function watchAgent(
     if (currentAgent) {
       agentSubscription = currentAgent.subscribe({
         onMessagesChanged() {
-          // Force update of the agent signal to trigger reactivity
+          // Increment version to force signal update
+          agentVersionSignal.update(v => v + 1);
           agentSignal.set(currentAgent);
           agentSubject.next(currentAgent);
         },
         onStateChanged() {
-          // Force update of the agent signal to trigger reactivity
+          // Increment version to force signal update
+          agentVersionSignal.update(v => v + 1);
           agentSignal.set(currentAgent);
           agentSubject.next(currentAgent);
         },

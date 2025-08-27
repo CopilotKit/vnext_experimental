@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
-import { CopilotKitConfigDirective, CopilotChatComponent } from '@copilotkit/angular';
+import { Component } from "@angular/core";
+import {
+  CopilotKitConfigDirective,
+  CopilotChatComponent,
+} from "@copilotkit/angular";
 
 @Component({
-  selector: 'app-root',
+  selector: "app-root",
   standalone: true,
   imports: [CopilotKitConfigDirective, CopilotChatComponent],
   template: `
@@ -10,10 +13,10 @@ import { CopilotKitConfigDirective, CopilotChatComponent } from '@copilotkit/ang
       [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
       style="height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; display: block;"
     >
-      <copilot-chat [threadId]="'xyz'"></copilot-chat>
+      <copilot-chat></copilot-chat>
     </div>
   `,
 })
 export class AppComponent {
-  runtimeUrl = 'http://localhost:3001/api/copilotkit';
+  runtimeUrl = "http://localhost:3001/api/copilotkit";
 }
