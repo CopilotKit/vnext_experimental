@@ -3,10 +3,10 @@ import { InMemoryAgentRunner } from "@copilotkit/runtime";
 import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 
+const SETUP_DEFAULT_AGENT = false;
+
 const runtime = new CopilotRuntime({
-  agents: {
-    default: new OpenAIAgent(),
-  },
+  agents: SETUP_DEFAULT_AGENT ? { default: new OpenAIAgent() } : {},
   runner: new InMemoryAgentRunner(),
 });
 
