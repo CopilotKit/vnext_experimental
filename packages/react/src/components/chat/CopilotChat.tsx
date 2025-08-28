@@ -37,7 +37,11 @@ export function CopilotChat({
     };
     if (agent) {
       agent.threadId = threadId;
-      connect();
+      if ("isCopilotKitAgent" in agent) {
+        connect();
+      } else {
+        setShowCursor(false);
+      }
     }
     return () => {};
   }, [threadId, agent]);
