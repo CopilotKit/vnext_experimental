@@ -1,6 +1,9 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { provideCopilotKit, provideCopilotChatConfiguration } from '@copilotkit/angular';
+import { ApplicationConfig, importProvidersFrom } from "@angular/core";
+import { BrowserModule } from "@angular/platform-browser";
+import {
+  provideCopilotKit,
+  provideCopilotChatConfiguration,
+} from "@copilotkit/angular";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -9,7 +12,8 @@ export const appConfig: ApplicationConfig = {
     provideCopilotChatConfiguration({
       labels: {
         chatInputPlaceholder: "Ask me anything...",
-        chatDisclaimerText: "CopilotKit Angular Demo - AI responses may need verification.",
+        chatDisclaimerText:
+          "CopilotKit Angular Demo - AI responses may need verification.",
       },
     }),
   ],

@@ -64,7 +64,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   @Output() valueChange = new EventEmitter<string>();
   @Output() keyDown = new EventEmitter<KeyboardEvent>();
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   // Signals for reactive state
   value = signal<string>('');
@@ -77,9 +77,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   
   // Computed values
   placeholder = computed(() => {
-    return this.customPlaceholder() || 
-           this.chatConfig?.labels().chatInputPlaceholder || 
-           'Type a message...';
+    return this.customPlaceholder() || this.chatConfig.labels().chatInputPlaceholder;
   });
   
   computedClass = computed(() => {
@@ -101,7 +99,7 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   constructor() {
     // Effect to sync value with chat configuration if available
     effect(() => {
-      const configValue = this.chatConfig?.inputValue();
+      const configValue = this.chatConfig.inputValue();
       if (configValue !== undefined && !this.customPlaceholder()) {
         this.value.set(configValue);
       }

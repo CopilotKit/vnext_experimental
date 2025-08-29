@@ -139,7 +139,7 @@ export class CopilotChatToolsMenuComponent {
     this.customClass.set(val);
   }
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   toolsMenu = signal<(ToolsMenuItem | '-')[]>([]);
   disabled = signal<boolean>(false);
@@ -147,9 +147,7 @@ export class CopilotChatToolsMenuComponent {
   
   hasItems = computed(() => this.toolsMenu().length > 0);
   
-  label = computed(() => {
-    return this.chatConfig?.labels().chatInputToolbarToolsButtonLabel || 'Tools';
-  });
+  label = computed(() => this.chatConfig.labels().chatInputToolbarToolsButtonLabel);
   
   buttonClass = computed(() => {
     const baseClasses = cn(

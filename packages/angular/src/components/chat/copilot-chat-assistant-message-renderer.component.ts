@@ -179,9 +179,7 @@ export class CopilotChatAssistantMessageRendererComponent
   @ViewChild("markdownContainer", { static: false })
   markdownContainer?: ElementRef<HTMLDivElement>;
 
-  private chatConfig = inject(CopilotChatConfigurationService, {
-    optional: true,
-  });
+  private chatConfig = inject(CopilotChatConfigurationService);
   private elementRef = inject(ElementRef);
 
   // Track copy states for code blocks
@@ -195,12 +193,7 @@ export class CopilotChatAssistantMessageRendererComponent
   });
 
   get labels() {
-    return (
-      this.chatConfig?.labels() || {
-        assistantMessageToolbarCopyCodeLabel: "Copy",
-        assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
-      }
-    );
+    return this.chatConfig.labels();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

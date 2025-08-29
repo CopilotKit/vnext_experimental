@@ -110,12 +110,10 @@ export class CopilotChatAssistantMessageCopyButtonComponent {
   readonly CheckIcon = Check;
   
   copied = signal(false);
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      assistantMessageToolbarCopyMessageLabel: 'Copy'
-    };
+    return this.chatConfig.labels();
   }
   
   handleCopy(event?: Event): void {
@@ -162,12 +160,10 @@ export class CopilotChatAssistantMessageThumbsUpButtonComponent {
   @Output() clicked = new EventEmitter<void>();
   
   readonly ThumbsUpIcon = ThumbsUp;
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      assistantMessageToolbarThumbsUpLabel: 'Good response'
-    };
+    return this.chatConfig.labels();
   }
   
   handleClick(event?: Event): void {
@@ -203,12 +199,10 @@ export class CopilotChatAssistantMessageThumbsDownButtonComponent {
   @Output() clicked = new EventEmitter<void>();
   
   readonly ThumbsDownIcon = ThumbsDown;
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      assistantMessageToolbarThumbsDownLabel: 'Bad response'
-    };
+    return this.chatConfig.labels();
   }
   
   handleClick(event?: Event): void {
@@ -244,12 +238,10 @@ export class CopilotChatAssistantMessageReadAloudButtonComponent {
   @Output() clicked = new EventEmitter<void>();
   
   readonly Volume2Icon = Volume2;
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      assistantMessageToolbarReadAloudLabel: 'Read aloud'
-    };
+    return this.chatConfig.labels();
   }
   
   handleClick(event?: Event): void {
@@ -285,12 +277,10 @@ export class CopilotChatAssistantMessageRegenerateButtonComponent {
   @Output() clicked = new EventEmitter<void>();
   
   readonly RefreshCwIcon = RefreshCw;
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      assistantMessageToolbarRegenerateLabel: 'Regenerate'
-    };
+    return this.chatConfig.labels();
   }
   
   handleClick(event?: Event): void {

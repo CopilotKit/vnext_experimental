@@ -128,13 +128,13 @@ export class CopilotChatStartTranscribeButtonComponent {
   @Input() disabled = false;
   @Output() clicked = new EventEmitter<void>();
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   readonly MicIcon = Mic;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-2');
   
   get label(): string {
-    return this.chatConfig?.labels().chatInputToolbarStartTranscribeButtonLabel || 'Start recording';
+    return this.chatConfig.labels().chatInputToolbarStartTranscribeButtonLabel;
   }
   
   onClick(): void {
@@ -168,13 +168,13 @@ export class CopilotChatCancelTranscribeButtonComponent {
   @Input() disabled = false;
   @Output() clicked = new EventEmitter<void>();
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   readonly XIcon = X;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-2');
   
   get label(): string {
-    return this.chatConfig?.labels().chatInputToolbarCancelTranscribeButtonLabel || 'Cancel recording';
+    return this.chatConfig.labels().chatInputToolbarCancelTranscribeButtonLabel;
   }
   
   onClick(): void {
@@ -208,13 +208,13 @@ export class CopilotChatFinishTranscribeButtonComponent {
   @Input() disabled = false;
   @Output() clicked = new EventEmitter<void>();
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   readonly CheckIcon = Check;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'mr-[10px]');
   
   get label(): string {
-    return this.chatConfig?.labels().chatInputToolbarFinishTranscribeButtonLabel || 'Finish recording';
+    return this.chatConfig.labels().chatInputToolbarFinishTranscribeButtonLabel;
   }
   
   onClick(): void {
@@ -248,13 +248,13 @@ export class CopilotChatAddFileButtonComponent {
   @Input() disabled = false;
   @Output() clicked = new EventEmitter<void>();
   
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   readonly PlusIcon = Plus;
   buttonClass = cn(buttonBase, chatInputToolbarSecondary, 'ml-2');
   
   get label(): string {
-    return this.chatConfig?.labels().chatInputToolbarAddButtonLabel || 'Add file';
+    return this.chatConfig.labels().chatInputToolbarAddButtonLabel;
   }
   
   onClick(): void {

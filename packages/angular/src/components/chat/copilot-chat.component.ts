@@ -14,10 +14,12 @@ import {
   Injector,
   runInInjectionContext,
   Optional,
+  SkipSelf,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotChatViewComponent } from './copilot-chat-view.component';
 import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
+import { COPILOT_CHAT_INITIAL_CONFIG, CopilotChatConfiguration } from '../../core/chat-configuration/chat-configuration.types';
 import { watchAgent } from '../../utils/agent.utils';
 import { AgentWatchResult } from '../../core/copilotkit.types';
 import { DEFAULT_AGENT_ID, randomUUID } from '@copilotkit/shared';
@@ -38,6 +40,19 @@ import { Message, AbstractAgent } from '@ag-ui/client';
   imports: [CommonModule, CopilotChatViewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  providers: [
+    {
+      provide: CopilotChatConfigurationService,
+      deps: [
+        [new Optional(), new SkipSelf(), CopilotChatConfigurationService],
+        [new Optional(), COPILOT_CHAT_INITIAL_CONFIG],
+      ],
+      useFactory: (
+        parent: CopilotChatConfigurationService | null,
+        initial: CopilotChatConfiguration | null
+      ) => parent ?? new CopilotChatConfigurationService(initial ?? null),
+    },
+  ],
   template: `
     <copilot-chat-view 
       [messages]="messages()" 

@@ -30,9 +30,7 @@ export class CopilotChatViewDisclaimerComponent {
   @Input() inputClass?: string;
   @Input() text?: string;
 
-  private configService = inject(CopilotChatConfigurationService, {
-    optional: true,
-  });
+  private configService = inject(CopilotChatConfigurationService);
 
   // Get disclaimer text from input or configuration
   get disclaimerText(): string {
@@ -40,8 +38,7 @@ export class CopilotChatViewDisclaimerComponent {
       return this.text;
     }
 
-    const labels = this.configService?.labels();
-    return labels?.chatDisclaimerText || 'AI can make mistakes. Please verify important information.';
+    return this.configService.labels().chatDisclaimerText;
   }
 
   // Computed class matching React exactly

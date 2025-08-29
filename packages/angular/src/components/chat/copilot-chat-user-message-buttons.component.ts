@@ -107,12 +107,10 @@ export class CopilotChatUserMessageCopyButtonComponent {
   readonly CheckIcon = Check;
   
   copied = signal(false);
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      userMessageToolbarCopyMessageLabel: 'Copy'
-    };
+    return this.chatConfig.labels();
   }
   
   handleCopy(): void {
@@ -158,12 +156,10 @@ export class CopilotChatUserMessageEditButtonComponent {
   @Output() clicked = new EventEmitter<void>();
   
   readonly EditIcon = Edit;
-  private chatConfig = inject(CopilotChatConfigurationService, { optional: true });
+  private chatConfig = inject(CopilotChatConfigurationService);
   
   get labels() {
-    return this.chatConfig?.labels() || {
-      userMessageToolbarEditMessageLabel: 'Edit'
-    };
+    return this.chatConfig.labels();
   }
   
   handleEdit(): void {
