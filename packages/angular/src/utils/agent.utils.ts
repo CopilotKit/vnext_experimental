@@ -1,65 +1,59 @@
-import { DestroyRef, inject, signal, Injector } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { DestroyRef, inject, signal, computed } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AgentSubscriptionCallbacks, AgentWatchResult } from '../core/copilotkit.types';
 import { AbstractAgent } from '@ag-ui/client';
 import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
-
-// Re-export for convenience
-export type { AgentWatchResult } from '../core/copilotkit.types';
 
 /**
  * Watches an agent and provides reactive signals for its state.
  * Must be called within an injection context.
  * Automatically cleans up when the component/service is destroyed.
  * 
- * @param agentId - Optional agent ID (defaults to DEFAULT_AGENT_ID)
- * @returns Object with agent and isRunning signals
+ * @param config - Optional configuration with agentId
+ * @returns Object with agent, messages, and isRunning signals plus observables
  * 
  * @example
  * ```typescript
  * export class MyComponent {
  *   // Automatically tracks agent state
- *   agentState = watchAgent('my-agent');
+ *   agentState = watchAgent({ agentId: 'my-agent' });
  *   
  *   constructor() {
  *     effect(() => {
- *       const agent = this.agentState.agent();
+ *       const messages = this.agentState.messages();
  *       const isRunning = this.agentState.isRunning();
- *       console.log('Agent running:', isRunning);
+ *       console.log('Messages:', messages.length, 'Running:', isRunning);
  *     });
  *   }
  * }
  * ```
  */
-export function watchAgent(
-  agentId?: string,
-  service?: CopilotKitService,
-  destroyRef?: DestroyRef,
-  injector?: Injector
-): AgentWatchResult {
-  // Require explicit services to avoid accidental injection in reactive contexts
-  if (!service || !destroyRef) {
-    throw new Error(
-      'watchAgent() requires CopilotKitService and DestroyRef parameters. ' +
-      'Call it from a constructor/field initializer and pass both explicitly.'
-    );
-  }
+export function watchAgent(config?: { agentId?: string }): AgentWatchResult {
+  // Use inject() internally to get required services
+  const service = inject(CopilotKitService);
+  const destroyRef = inject(DestroyRef);
+  const effectiveAgentId = config?.agentId ?? DEFAULT_AGENT_ID;
   
-  const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
-  
-  // Create reactive signals - use a version counter to force updates
+  // Create reactive signals with tick mechanism for reliable updates
   const agentSignal = signal<AbstractAgent | undefined>(undefined);
-  const agentVersionSignal = signal<number>(0);
+  const tick = signal<number>(0);
   const isRunningSignal = signal<boolean>(false);
-  const agentSubject = new BehaviorSubject<AbstractAgent | undefined>(undefined);
-  const isRunningSubject = new BehaviorSubject<boolean>(false);
+  
+  // Create computed messages signal that reacts to tick changes
+  const messages = computed(() => {
+    // Access tick to ensure recomputation
+    tick();
+    const a = agentSignal();
+    if (!a) return [];
+    // Return a shallow clone to ensure change detection
+    return a.messages.map(m => ({ ...m }));
+  });
   
   // Get initial agent
   const updateAgent = () => {
     const agent = service.copilotkit.getAgent(effectiveAgentId);
     agentSignal.set(agent);
-    agentSubject.next(agent);
     return agent;
   };
   
@@ -76,28 +70,21 @@ export function watchAgent(
     if (currentAgent) {
       agentSubscription = currentAgent.subscribe({
         onMessagesChanged() {
-          // Increment version to force signal update
-          agentVersionSignal.update(v => v + 1);
-          agentSignal.set(currentAgent);
-          agentSubject.next(currentAgent);
+          // Increment tick to force recomputation of messages computed
+          tick.update(v => v + 1);
         },
         onStateChanged() {
-          // Increment version to force signal update
-          agentVersionSignal.update(v => v + 1);
-          agentSignal.set(currentAgent);
-          agentSubject.next(currentAgent);
+          // Increment tick to force recomputation
+          tick.update(v => v + 1);
         },
         onRunInitialized() {
           isRunningSignal.set(true);
-          isRunningSubject.next(true);
         },
         onRunFinalized() {
           isRunningSignal.set(false);
-          isRunningSubject.next(false);
         },
         onRunFailed() {
           isRunningSignal.set(false);
-          isRunningSubject.next(false);
         },
       });
     }
@@ -113,26 +100,32 @@ export function watchAgent(
       currentAgent = updateAgent();
       subscribeToAgent();
     },
+    onRuntimeLoadError() {
+      // Also re-check agent on runtime load error to ensure consistency
+      currentAgent = updateAgent();
+      subscribeToAgent();
+    },
   });
   
   // Register cleanup
   const unsubscribe = () => {
     agentSubscription?.unsubscribe();
     coreUnsubscribe();  // subscribe returns a function directly
-    agentSubject.complete();
-    isRunningSubject.complete();
   };
   
   destroyRef.onDestroy(unsubscribe);
   
-  // Expose Observables without creating nested effects
-  const agent$ = agentSubject.asObservable();
-  const isRunning$ = isRunningSubject.asObservable();
+  // Create observables from signals using toObservable
+  const agent$ = toObservable(agentSignal);
+  const isRunning$ = toObservable(isRunningSignal);
+  const messages$ = toObservable(messages);
   
   return {
     agent: agentSignal.asReadonly(),
+    messages: messages,
     isRunning: isRunningSignal.asReadonly(),
     agent$,
+    messages$,
     isRunning$,
     unsubscribe,
   };
@@ -163,6 +156,9 @@ export function getAgent(
   const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
   return service.copilotkit.getAgent(effectiveAgentId);
 }
+
+// Re-export the type for convenience (the actual type is in copilotkit.types)
+export type { AgentWatchResult } from '../core/copilotkit.types';
 
 /**
  * Subscribes to an agent's events with custom callbacks.
@@ -223,21 +219,16 @@ export function subscribeToAgent(
  * This is an alias for watchAgent with a more explicit name.
  * Must be called within an injection context.
  * 
- * @param agentId - Optional agent ID (defaults to DEFAULT_AGENT_ID)
- * @returns Object with agent and isRunning signals
+ * @param config - Optional configuration with agentId
+ * @returns Object with agent, messages, and isRunning signals plus observables
  * 
  * @example
  * ```typescript
  * export class MyComponent {
- *   agentState = registerAgentWatcher('my-agent');
+ *   agentState = registerAgentWatcher({ agentId: 'my-agent' });
  * }
  * ```
  */
-export function registerAgentWatcher(
-  agentId?: string,
-  service?: CopilotKitService,
-  destroyRef?: DestroyRef,
-  injector?: Injector
-): AgentWatchResult {
-  return watchAgent(agentId, service, destroyRef, injector);
+export function registerAgentWatcher(config?: { agentId?: string }): AgentWatchResult {
+  return watchAgent(config);
 }

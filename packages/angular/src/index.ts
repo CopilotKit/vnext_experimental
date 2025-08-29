@@ -7,7 +7,8 @@ export * from "./core/chat-configuration/chat-configuration.providers";
 export * from "./utils/copilotkit.utils";
 export * from "./utils/agent-context.utils";
 export * from "./utils/frontend-tool.utils";
-export * from "./utils/agent.utils";
+// Export all except AgentWatchResult which is already exported from copilotkit.types
+export { watchAgent, getAgent, subscribeToAgent, registerAgentWatcher } from "./utils/agent.utils";
 export * from "./utils/human-in-the-loop.utils";
 export * from "./utils/chat-config.utils";
 // Slot utilities are internal only, not exported

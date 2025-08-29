@@ -126,15 +126,15 @@ describe('Agent Utilities', () => {
       class TestComponent {
         agentState: any;
         agentValue: AbstractAgent | undefined;
+        messagesValue: any[] = [];
         isRunningValue = false;
-        copilotKitService = inject(CopilotKitService);
-        destroyRef = inject(DestroyRef);
 
         constructor() {
-          this.agentState = watchAgent('test-agent', this.copilotKitService, this.destroyRef);
+          this.agentState = watchAgent({ agentId: 'test-agent' });
           // Use effect in constructor (injection context)
           effect(() => {
             this.agentValue = this.agentState.agent();
+            this.messagesValue = this.agentState.messages();
             this.isRunningValue = this.agentState.isRunning();
           });
         }
@@ -145,7 +145,11 @@ describe('Agent Utilities', () => {
 
       expect(fixture.componentInstance.agentState).toBeDefined();
       expect(fixture.componentInstance.agentState.agent).toBeDefined();
+      expect(fixture.componentInstance.agentState.messages).toBeDefined();
       expect(fixture.componentInstance.agentState.isRunning).toBeDefined();
+      expect(fixture.componentInstance.agentState.agent$).toBeDefined();
+      expect(fixture.componentInstance.agentState.messages$).toBeDefined();
+      expect(fixture.componentInstance.agentState.isRunning$).toBeDefined();
     });
 
     it('should cleanup on component destroy', () => {
@@ -156,11 +160,9 @@ describe('Agent Utilities', () => {
       })
       class TestComponent {
         agentState: any;
-        copilotKitService = inject(CopilotKitService);
-        destroyRef = inject(DestroyRef);
         
         constructor() {
-          this.agentState = watchAgent('test-agent', this.copilotKitService, this.destroyRef);
+          this.agentState = watchAgent({ agentId: 'test-agent' });
         }
       }
 
@@ -184,9 +186,7 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        copilotKitService = inject(CopilotKitService);
-        destroyRef = inject(DestroyRef);
-        agentState = watchAgent(undefined, this.copilotKitService, this.destroyRef); // No agent ID
+        agentState = watchAgent(); // No agent ID
       }
 
       const fixture = TestBed.createComponent(TestComponent);
@@ -194,6 +194,7 @@ describe('Agent Utilities', () => {
 
       expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(DEFAULT_AGENT_ID);
     });
+
   });
 
   describe('registerAgentWatcher', () => {
@@ -204,9 +205,7 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        copilotKitService = inject(CopilotKitService);
-        destroyRef = inject(DestroyRef);
-        agentState = registerAgentWatcher('test-agent', this.copilotKitService, this.destroyRef);
+        agentState = registerAgentWatcher({ agentId: 'test-agent' });
       }
 
       const fixture = TestBed.createComponent(TestComponent);
@@ -214,6 +213,7 @@ describe('Agent Utilities', () => {
 
       expect(fixture.componentInstance.agentState).toBeDefined();
       expect(fixture.componentInstance.agentState.agent).toBeDefined();
+      expect(fixture.componentInstance.agentState.messages).toBeDefined();
       expect(fixture.componentInstance.agentState.isRunning).toBeDefined();
       expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith('test-agent');
     });
