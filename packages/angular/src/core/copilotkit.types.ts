@@ -1,4 +1,4 @@
-import { InjectionToken, TemplateRef, Type, Signal, ReadonlySignal } from "@angular/core";
+import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { Observable } from "rxjs";
 import { CopilotKitCoreConfig, CopilotKitCore } from "@copilotkit/core";
 import { AbstractAgent } from "@ag-ui/client";
@@ -67,9 +67,9 @@ export const COPILOTKIT_INITIAL_RENDERERS = new InjectionToken<
 import type { Message } from '@ag-ui/client';
 
 export interface AgentWatchResult {
-  agent: ReadonlySignal<AbstractAgent | undefined>;
-  messages: ReadonlySignal<Message[]>;
-  isRunning: ReadonlySignal<boolean>;
+  agent: Signal<AbstractAgent | undefined>;
+  messages: Signal<Message[]>;
+  isRunning: Signal<boolean>;
   agent$: Observable<AbstractAgent | undefined>;
   messages$: Observable<Message[]>;
   isRunning$: Observable<boolean>;

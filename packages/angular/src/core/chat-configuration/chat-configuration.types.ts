@@ -37,7 +37,8 @@ export const COPILOT_CHAT_DEFAULT_LABELS: CopilotChatLabels = {
   assistantMessageToolbarRegenerateLabel: "Regenerate",
   userMessageToolbarCopyMessageLabel: "Copy",
   userMessageToolbarEditMessageLabel: "Edit",
-  chatDisclaimerText: "AI can make mistakes. Please verify important information.",
+  chatDisclaimerText:
+    "AI can make mistakes. Please verify important information.",
 };
 
 // Configuration interface

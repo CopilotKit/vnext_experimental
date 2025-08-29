@@ -10,7 +10,9 @@ import {
   signal,
   effect,
   ChangeDetectorRef,
-  ReadonlySignal,
+  Signal,
+  Injector,
+  runInInjectionContext,
   Optional,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -52,38 +54,18 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     @Optional() private chatConfig: CopilotChatConfigurationService | null,
     private cdr: ChangeDetectorRef,
+    private injector: Injector,
   ) {
-    // Create the agent watcher effect
+    // Create initial watcher once (constructor is a safe injection context)
+    const initialId = this.agentId ?? DEFAULT_AGENT_ID;
+    this.createWatcher(initialId);
+
+    // Connect once when agent becomes available
     effect(() => {
-      // Only run after initialization to avoid duplicate calls
-      if (!this.isInitialized()) return;
-      
-      const desiredAgentId = this.inputAgentId() || DEFAULT_AGENT_ID;
-
-      // Only recreate watcher if agentId actually changed
-      if (!this.agentWatcher || this.lastAgentId !== desiredAgentId) {
-        // Tear down previous watcher if it exists
-        if (this.agentWatcher?.unsubscribe) {
-          this.agentWatcher.unsubscribe();
-          this.agentWatcher = undefined;
-        }
-
-        // Setup watcher for desired agent - use new API
-        this.agentWatcher = watchAgent({ agentId: desiredAgentId });
-        this.agent = this.agentWatcher.agent;
-        this.messages = this.agentWatcher.messages;
-        this.isRunning = this.agentWatcher.isRunning;
-        this.hasConnectedOnce = false;
-        this.lastAgentId = desiredAgentId;
-      }
-
       const a = this.agent();
       if (!a) return;
-
-      // Apply thread id (this can change without recreating the watcher)
-      a.threadId = this.inputThreadId() || this.generatedThreadId;
-
-      // Connect once when agent appears
+      // Apply thread id when agent is available
+      a.threadId = this.threadId || this.generatedThreadId;
       if (!this.hasConnectedOnce) {
         this.hasConnectedOnce = true;
         this.connectToAgent(a);
@@ -91,15 +73,10 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
   
-  // Input mirrors as signals (so effects in constructor can react to changes)
-  private inputAgentId = signal<string | undefined>(undefined);
-  private inputThreadId = signal<string | undefined>(undefined);
-  private isInitialized = signal<boolean>(false);
-
   // Signals from watchAgent - using direct references instead of assignment
-  protected agent: ReadonlySignal<AbstractAgent | undefined> = signal<AbstractAgent | undefined>(undefined).asReadonly();
-  protected messages: ReadonlySignal<Message[]> = signal<Message[]>([]).asReadonly();
-  protected isRunning: ReadonlySignal<boolean> = signal<boolean>(false).asReadonly();
+  protected agent: Signal<AbstractAgent | undefined> = signal<AbstractAgent | undefined>(undefined).asReadonly() as unknown as Signal<AbstractAgent | undefined>;
+  protected messages: Signal<Message[]> = signal<Message[]>([]).asReadonly() as unknown as Signal<Message[]>;
+  protected isRunning: Signal<boolean> = signal<boolean>(false).asReadonly() as unknown as Signal<boolean>;
   protected showCursor = signal<boolean>(false);
   
   private generatedThreadId: string = randomUUID();
@@ -108,24 +85,20 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
   private lastAgentId?: string;
   
   ngOnInit(): void {
-    // Initialize input signals first
-    this.inputAgentId.set(this.agentId);
-    this.inputThreadId.set(this.threadId);
-    // Then mark as initialized to trigger the effect only once
-    this.isInitialized.set(true);
     this.setupChatHandlers();
   }
   
   ngOnChanges(changes: SimpleChanges): void {
-    // Skip the first change since we handle it in ngOnInit
-    const isFirstChange = (changes['agentId']?.firstChange || changes['threadId']?.firstChange);
-    if (isFirstChange) {
-      return;
+    if (changes['agentId'] && !changes['agentId'].firstChange) {
+      const newId = this.agentId ?? DEFAULT_AGENT_ID;
+      this.createWatcher(newId);
     }
-    
-    // Only update signals after initialization for subsequent changes
-    if (changes['agentId']) this.inputAgentId.set(this.agentId);
-    if (changes['threadId']) this.inputThreadId.set(this.threadId);
+    if (changes['threadId'] && !changes['threadId'].firstChange) {
+      const a = this.agent();
+      if (a) {
+        a.threadId = this.threadId || this.generatedThreadId;
+      }
+    }
   }
   
   
@@ -214,5 +187,22 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     if (this.agentWatcher?.unsubscribe) {
       this.agentWatcher.unsubscribe();
     }
+  }
+
+  private createWatcher(desiredAgentId: string) {
+    // Tear down previous watcher if it exists
+    if (this.agentWatcher?.unsubscribe) {
+      this.agentWatcher.unsubscribe();
+      this.agentWatcher = undefined;
+    }
+    // Setup watcher for desired agent - ensure injection context
+    this.agentWatcher = runInInjectionContext(this.injector, () =>
+      watchAgent({ agentId: desiredAgentId })
+    );
+    this.agent = this.agentWatcher.agent;
+    this.messages = this.agentWatcher.messages;
+    this.isRunning = this.agentWatcher.isRunning;
+    this.hasConnectedOnce = false;
+    this.lastAgentId = desiredAgentId;
   }
 }

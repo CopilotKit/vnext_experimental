@@ -13,7 +13,7 @@ import {
       [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
       style="height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; display: block;"
     >
-      <copilot-chat></copilot-chat>
+      <copilot-chat [threadId]="'123'"></copilot-chat>
     </div>
   `,
 })
