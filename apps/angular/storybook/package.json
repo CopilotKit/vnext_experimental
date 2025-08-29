@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "pnpm --filter @copilotkit/angular run build:css && sleep 1 && storybook dev -c .storybook -p 6007 --no-open",
+    "dev": "pnpm --filter @copilotkit/angular run build:css && sleep 1 && ng run storybook-angular:storybook",
     "build": "ng run storybook-angular:build-storybook",
-    "storybook:dev": "pnpm --filter @copilotkit/angular run build:css && sleep 1 && storybook dev -c .storybook -p 6007 --no-open",
+    "storybook:dev": "pnpm --filter @copilotkit/angular run build:css && sleep 1 && ng run storybook-angular:storybook",
     "storybook:build": "ng run storybook-angular:build-storybook"
   },
   "dependencies": {

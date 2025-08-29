@@ -148,8 +148,8 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     if (!a) return [];
     // Create a deep copy of messages to ensure Angular detects changes
     // This is crucial for streaming where message content updates in place
-    const msgs = a.messages.map(m => ({...m}));
-    console.log(`Update ${triggerValue} - Messages:`, msgs.map(m => ({ role: m.role, content: m.content?.substring(0, 100) })));
+    const msgs = a.messages.map((m: any) => ({...m}));
+    console.log(`Update ${triggerValue} - Messages:`, msgs.map((m: any) => ({ role: m.role, content: m.content?.substring(0, 100) })));
     return msgs;
   });
   
