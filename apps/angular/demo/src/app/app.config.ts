@@ -6,6 +6,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(BrowserModule),
     ...provideCopilotKit({}),
-    provideCopilotChatConfiguration({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: "Ask me anything...",
+        chatDisclaimerText: "CopilotKit Angular Demo - AI responses may need verification.",
+      },
+    }),
   ],
 };
