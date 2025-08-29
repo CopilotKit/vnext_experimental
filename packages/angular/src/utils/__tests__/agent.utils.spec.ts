@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { 
   watchAgent,
@@ -124,11 +124,14 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        agentState = watchAgent('test-agent');
+        agentState: any;
         agentValue: AbstractAgent | undefined;
         isRunningValue = false;
+        copilotKitService = inject(CopilotKitService);
+        destroyRef = inject(DestroyRef);
 
         constructor() {
+          this.agentState = watchAgent('test-agent', this.copilotKitService, this.destroyRef);
           // Use effect in constructor (injection context)
           effect(() => {
             this.agentValue = this.agentState.agent();
@@ -152,7 +155,13 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        agentState = watchAgent('test-agent');
+        agentState: any;
+        copilotKitService = inject(CopilotKitService);
+        destroyRef = inject(DestroyRef);
+        
+        constructor() {
+          this.agentState = watchAgent('test-agent', this.copilotKitService, this.destroyRef);
+        }
       }
 
       const fixture = TestBed.createComponent(TestComponent);
@@ -175,7 +184,9 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        agentState = watchAgent(); // No agent ID
+        copilotKitService = inject(CopilotKitService);
+        destroyRef = inject(DestroyRef);
+        agentState = watchAgent(undefined, this.copilotKitService, this.destroyRef); // No agent ID
       }
 
       const fixture = TestBed.createComponent(TestComponent);
@@ -193,7 +204,9 @@ describe('Agent Utilities', () => {
         providers: [provideCopilotKit({})]
       })
       class TestComponent {
-        agentState = registerAgentWatcher('test-agent');
+        copilotKitService = inject(CopilotKitService);
+        destroyRef = inject(DestroyRef);
+        agentState = registerAgentWatcher('test-agent', this.copilotKitService, this.destroyRef);
       }
 
       const fixture = TestBed.createComponent(TestComponent);

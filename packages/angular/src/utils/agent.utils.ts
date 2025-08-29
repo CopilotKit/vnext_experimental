@@ -233,6 +233,11 @@ export function subscribeToAgent(
  * }
  * ```
  */
-export function registerAgentWatcher(agentId?: string): AgentWatchResult {
-  return watchAgent(agentId);
+export function registerAgentWatcher(
+  agentId?: string,
+  service?: CopilotKitService,
+  destroyRef?: DestroyRef,
+  injector?: Injector
+): AgentWatchResult {
+  return watchAgent(agentId, service, destroyRef, injector);
 }
