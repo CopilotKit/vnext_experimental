@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken } from "@angular/core";
 
 // Type for chat labels
 export interface CopilotChatLabels {
@@ -49,10 +49,8 @@ export interface CopilotChatConfiguration {
 }
 
 // Injection token for initial configuration
-export const COPILOT_CHAT_INITIAL_CONFIG = new InjectionToken<CopilotChatConfiguration>(
-  'COPILOT_CHAT_INITIAL_CONFIG',
-  {
-    providedIn: 'root',
-    factory: () => ({})
-  }
-);
+export const COPILOT_CHAT_INITIAL_CONFIG =
+  new InjectionToken<CopilotChatConfiguration>("COPILOT_CHAT_INITIAL_CONFIG", {
+    providedIn: "root",
+    factory: () => ({}),
+  });
