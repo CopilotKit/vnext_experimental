@@ -1,0 +1,37 @@
+{
+  "name": "@copilotkit/hello-world-wc",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build:css": "pnpm exec tailwindcss -c tailwind.config.cjs -i src/styles.css -o src/tw.css --minify",
+    "build": "pnpm build:css && vite build",
+    "dev": "vite",
+    "clean": "rimraf dist src/tw.css"
+  },
+  "dependencies": {
+    "lit": "^3.3.1",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.4.31",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
+}
