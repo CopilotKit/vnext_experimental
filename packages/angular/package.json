@@ -1,6 +1,6 @@
 {
   "name": "@copilotkitnext/angular",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "Angular library for CopilotKit",
   "main": "dist/fesm2022/copilotkitnext-angular.mjs",
   "module": "dist/fesm2022/copilotkitnext-angular.mjs",
@@ -23,6 +23,7 @@
     "build:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css",
     "dev": "concurrently \"ng-packagr -p ng-package.json --watch\" \"npm run dev:css\"",
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch",
+    "prepublishOnly": "pnpm run build",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "check-types": "tsc --noEmit",

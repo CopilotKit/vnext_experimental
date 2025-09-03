@@ -20,7 +20,9 @@
     "test:coverage": "turbo run test:coverage",
     "storybook": "pnpm storybook:react",
     "storybook:all": "echo 'Run storybooks in separate terminals: pnpm storybook:react | pnpm storybook:angular'",
-    "build-storybook": "turbo run build --filter=storybook --filter=storybook-angular"
+    "build-storybook": "turbo run build --filter=storybook --filter=storybook-angular",
+    "release:dry": "pnpm -r --filter '@copilotkitnext/*' publish --access public --dry-run",
+    "release": "pnpm -r --filter '@copilotkitnext/*' publish --access public"
   },
   "devDependencies": {
     "@storybook/addon-docs": "^9.0.16",

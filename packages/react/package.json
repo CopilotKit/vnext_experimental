@@ -1,7 +1,6 @@
 {
   "name": "@copilotkitnext/react",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
   "description": "React components for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,11 +12,15 @@
     },
     "./styles.css": "./dist/styles.css"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch --minify",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css -m",
     "dev": "concurrently \"npm:dev:css\" \"tsup --watch\"",
     "build": "tsup && npm run build:css",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run",

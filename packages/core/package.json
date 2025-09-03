@@ -1,7 +1,6 @@
 {
   "name": "@copilotkitnext/core",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
   "description": "Core web utilities for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,8 +11,12 @@
       "require": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "pnpm run build",
     "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
