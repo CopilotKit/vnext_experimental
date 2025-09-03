@@ -16,24 +16,24 @@ export function CopilotChat({
   ...props
 }: CopilotChatProps) {
   const { agent } = useAgent({ agentId });
-  const [showCursor, setShowCursor] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   threadId = threadId ?? useMemo(() => randomUUID(), []);
 
   const subscriber = {
-    onTextMessageStartEvent: () => setShowCursor(false),
-    onToolCallStartEvent: () => setShowCursor(false),
+    onTextMessageStartEvent: () => setIsLoading(false),
+    onToolCallStartEvent: () => setIsLoading(false),
   };
 
   useEffect(() => {
     const connect = async () => {
-      setShowCursor(true);
+      setIsLoading(true);
       await agent?.runAgent(
         {
           forwardedProps: { __copilotkitConnect: true },
         },
         subscriber
       );
-      setShowCursor(false);
+      setIsLoading(false);
     };
     if (agent) {
       agent.threadId = threadId;
@@ -55,16 +55,16 @@ export function CopilotChat({
         role: "user",
         content: value,
       });
-      setShowCursor(true);
+      setIsLoading(true);
       await agent?.runAgent({}, subscriber);
-      setShowCursor(false);
+      setIsLoading(false);
     },
     [agent]
   );
 
   const mergedProps = merge(
     {
-      messageView: { showCursor },
+      messageView: { isLoading },
     },
     {
       ...props,

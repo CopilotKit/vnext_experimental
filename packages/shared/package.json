@@ -28,7 +28,8 @@
     "typescript": "5.8.2"
   },
   "dependencies": {
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "partial-json": "^0.1.7"
   },
   "engines": {
     "node": ">=18"

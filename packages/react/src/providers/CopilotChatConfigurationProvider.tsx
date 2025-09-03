@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useState } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 
 // Default labels
 export const CopilotChatDefaultLabels = {

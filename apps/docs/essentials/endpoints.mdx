@@ -36,7 +36,7 @@ const runtime = new CopilotRuntime({
 });
 
 // Create the endpoint handler
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 ```
 
 ## Available Endpoints
@@ -66,7 +66,7 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 export const config = {
   api: {
@@ -76,7 +76,7 @@ export const config = {
 };
 
 // The adapter handles the conversion automatically
-export default copilotKitEndpoint;
+export default copilotkitEndpoint;
 ```
 
 ```typescript Next.js (App Router)
@@ -90,14 +90,14 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 export async function GET(request: Request) {
-  return copilotKitEndpoint(request);
+  return copilotkitEndpoint(request);
 }
 
 export async function POST(request: Request) {
-  return copilotKitEndpoint(request);
+  return copilotkitEndpoint(request);
 }
 ```
 
@@ -113,10 +113,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Create Node server using the adapter directly
-const nodeServer = createServer(copilotKitEndpoint);
+const nodeServer = createServer(copilotkitEndpoint);
 nodeServer.listen(4000, () => {
   console.log("Server running on http://localhost:4000");
 });
@@ -136,10 +136,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Bind adapter to /api/copilotkit endpoint
-app.use("/api/copilotkit", copilotKitEndpoint);
+app.use("/api/copilotkit", copilotkitEndpoint);
 
 app.listen(4000, () => {
   console.log("Running server at http://localhost:4000/api/copilotkit");
@@ -160,13 +160,13 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 app.route({
   url: "/api/copilotkit",
   method: ["GET", "POST", "OPTIONS"],
   handler: (req, reply) =>
-    copilotKitEndpoint.handleNodeRequestAndResponse(req, reply, {
+    copilotkitEndpoint.handleNodeRequestAndResponse(req, reply, {
       req,
       reply,
     }),
@@ -189,11 +189,11 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 app.use(async (ctx) => {
   if (ctx.path.startsWith("/api/copilotkit")) {
-    const response = await copilotKitEndpoint.handleNodeRequestAndResponse(
+    const response = await copilotkitEndpoint.handleNodeRequestAndResponse(
       ctx.request,
       ctx.res,
       ctx
@@ -227,10 +227,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Deno's serve function works directly with the adapter
-Deno.serve(copilotKitEndpoint);
+Deno.serve(copilotkitEndpoint);
 ```
 
 ```javascript Bun
@@ -244,10 +244,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Bun's serve function works directly with the adapter
-const server = Bun.serve(copilotKitEndpoint);
+const server = Bun.serve(copilotkitEndpoint);
 
 console.info(`Server is running on ${server.hostname}:${server.port}`);
 ```
@@ -263,10 +263,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Export as SvelteKit request handlers
-export { copilotKitEndpoint as GET, copilotKitEndpoint as POST };
+export { copilotkitEndpoint as GET, copilotkitEndpoint as POST };
 ```
 
 ```javascript Cloudflare Workers
@@ -280,10 +280,10 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Cloudflare Workers event listener
-self.addEventListener("fetch", copilotKitEndpoint);
+self.addEventListener("fetch", copilotkitEndpoint);
 ```
 
 ```javascript AWS Lambda
@@ -297,7 +297,7 @@ const runtime = new CopilotRuntime({
   },
 });
 
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 export async function handler(event, lambdaContext) {
   const url = new URL(event.path, "http://localhost");
@@ -311,7 +311,7 @@ export async function handler(event, lambdaContext) {
     }
   }
 
-  const response = await copilotKitEndpoint.fetch(
+  const response = await copilotkitEndpoint.fetch(
     url,
     {
       method: event.requestContext.http.method,
@@ -395,12 +395,12 @@ const runtime = new CopilotRuntime({
 ### Error Handling
 
 ```typescript
-const copilotKitEndpoint = createEndpoint(runtime);
+const copilotkitEndpoint = createEndpoint(runtime);
 
 // Wrap with custom error handling
 export async function POST(request: Request) {
   try {
-    return await copilotKitEndpoint(request);
+    return await copilotkitEndpoint(request);
   } catch (error) {
     console.error("CopilotKit endpoint error:", error);
 
@@ -435,7 +435,7 @@ export async function OPTIONS(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const response = await copilotKitEndpoint(request);
+  const response = await copilotkitEndpoint(request);
 
   // Add CORS headers to response
   response.headers.set("Access-Control-Allow-Origin", "*");

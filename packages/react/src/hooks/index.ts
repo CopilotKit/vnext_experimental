@@ -1,2 +1,6 @@
 // React hooks for CopilotKit2
-// Hooks will be added here
+export { useRenderToolCall } from "./use-render-tool-call";
+export { useFrontendTool } from "./use-frontend-tool";
+export { useHumanInTheLoop } from "./use-human-in-the-loop";
+export { useAgent } from "./use-agent";
+export { useAgentContext } from "./use-agent-context";
