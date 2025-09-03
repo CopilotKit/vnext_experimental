@@ -121,7 +121,7 @@ When creating or modifying Storybook stories, especially for Angular components:
 
 ## Architecture Overview
 
-CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI agents. The codebase follows a modular workspace architecture managed by Turbo and pnpm.
+CopilotKit vnext_experimental is a TypeScript-first monorepo built with React components and AI agents. The codebase follows a modular workspace architecture managed by Turbo and pnpm.
 
 ### Package Structure
 

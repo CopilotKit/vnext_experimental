@@ -1,4 +1,4 @@
-# CopilotKit 2.0
+# CopilotKit vnext_experimental
 
 A modern TypeScript-first copilot framework built with React components and AI agents.
 
