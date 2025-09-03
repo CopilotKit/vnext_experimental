@@ -6,7 +6,7 @@ import {
   type AgentRunnerStopRequest,
 } from "./agent-runner";
 import { Observable, ReplaySubject } from "rxjs";
-import { 
+import {
   BaseEvent,
   Message,
   EventType,
@@ -16,7 +16,8 @@ import {
   ToolCallStartEvent,
   ToolCallArgsEvent,
   ToolCallEndEvent,
-  ToolCallResultEvent
+  ToolCallResultEvent,
+  MessagesSnapshotEvent,
 } from "@ag-ui/client";
 import { compactEvents } from "./event-compaction";
 
@@ -42,7 +43,7 @@ class InMemoryEventStore {
 
   /** Current run ID */
   currentRunId: string | null = null;
-  
+
   /** Historic completed runs */
   historicRuns: HistoricRun[] = [];
 }
@@ -137,12 +138,12 @@ export class InMemoryAgentRunner extends AgentRunner {
     // Track seen message IDs and current run events for this run
     const seenMessageIds = new Set<string>();
     const currentRunEvents: BaseEvent[] = [];
-    
+
     // Get all previously seen message IDs from historic runs
     const historicMessageIds = new Set<string>();
     for (const run of store.historicRuns) {
       for (const event of run.events) {
-        if ('messageId' in event && typeof event.messageId === 'string') {
+        if ("messageId" in event && typeof event.messageId === "string") {
           historicMessageIds.add(event.messageId);
         }
       }
@@ -163,10 +164,23 @@ export class InMemoryAgentRunner extends AgentRunner {
       // Get parent run ID for chaining
       const lastRun = store.historicRuns[store.historicRuns.length - 1];
       const parentRunId = lastRun?.runId ?? null;
-      
+
       try {
         await request.agent.runAgent(request.input, {
           onEvent: ({ event }) => {
+            if (event.type === EventType.MESSAGES_SNAPSHOT) {
+              const messagesSnapshotEvent = event as MessagesSnapshotEvent;
+              const fixedMessages = [];
+              const messageIds = new Set<string>();
+              for (const message of messagesSnapshotEvent.messages) {
+                if (messageIds.has(message.id)) {
+                  continue;
+                }
+                fixedMessages.push(message);
+                messageIds.add(message.id);
+              }
+              messagesSnapshotEvent.messages = fixedMessages;
+            }
             runSubject.next(event); // For run() return - only agent events
             nextSubject.next(event); // For connect() / store - all events
             currentRunEvents.push(event); // Accumulate for storage
@@ -184,14 +198,14 @@ export class InMemoryAgentRunner extends AgentRunner {
                 if (!seenMessageIds.has(message.id)) {
                   seenMessageIds.add(message.id);
                   const events = this.convertMessageToEvents(message);
-                  
+
                   // Check if this message is NEW (not in historic runs)
                   const isNewMessage = !historicMessageIds.has(message.id);
-                  
+
                   for (const event of events) {
                     // Always emit to stream for context
                     nextSubject.next(event);
-                    
+
                     // Store if this is a NEW message for this run
                     if (isNewMessage) {
                       currentRunEvents.push(event);
@@ -202,11 +216,12 @@ export class InMemoryAgentRunner extends AgentRunner {
             }
           },
         });
-        
+
         // Store the completed run in memory with ONLY its events
         if (store.currentRunId) {
           // Compact the events before storing (like SQLite does)
           const compactedEvents = compactEvents(currentRunEvents);
+
           store.historicRuns.push({
             threadId: request.threadId,
             runId: store.currentRunId,
@@ -215,7 +230,7 @@ export class InMemoryAgentRunner extends AgentRunner {
             createdAt: Date.now(),
           });
         }
-        
+
         // Complete the run
         store.isRunning = false;
         store.currentRunId = null;
@@ -234,7 +249,7 @@ export class InMemoryAgentRunner extends AgentRunner {
             createdAt: Date.now(),
           });
         }
-        
+
         // Complete the run
         store.isRunning = false;
         store.currentRunId = null;
@@ -276,37 +291,41 @@ export class InMemoryAgentRunner extends AgentRunner {
     for (const run of store.historicRuns) {
       allHistoricEvents.push(...run.events);
     }
-    
+
     // Apply compaction to all historic events together (like SQLite)
     const compactedEvents = compactEvents(allHistoricEvents);
-    
+
     // Emit compacted events and track message IDs
     const emittedMessageIds = new Set<string>();
     for (const event of compactedEvents) {
       connectionSubject.next(event);
-      if ('messageId' in event && typeof event.messageId === 'string') {
+      if ("messageId" in event && typeof event.messageId === "string") {
         emittedMessageIds.add(event.messageId);
       }
     }
-    
+
     // Bridge active run to connection if exists
     if (store.subject && store.isRunning) {
       store.subject.subscribe({
         next: (event) => {
           // Skip message events that we've already emitted from historic
-          if ('messageId' in event && typeof event.messageId === 'string' && emittedMessageIds.has(event.messageId)) {
+          if (
+            "messageId" in event &&
+            typeof event.messageId === "string" &&
+            emittedMessageIds.has(event.messageId)
+          ) {
             return;
           }
           connectionSubject.next(event);
         },
         complete: () => connectionSubject.complete(),
-        error: (err) => connectionSubject.error(err)
+        error: (err) => connectionSubject.error(err),
       });
     } else {
       // No active run, complete after historic events
       connectionSubject.complete();
     }
-    
+
     return connectionSubject.asObservable();
   }
 
