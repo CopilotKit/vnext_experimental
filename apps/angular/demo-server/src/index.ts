@@ -12,11 +12,7 @@ import { LangGraphAgent } from "@ag-ui/langgraph";
 const runtime = new CopilotRuntime({
   agents: {
     // @ts-ignore
-    default: new LangGraphAgent({
-      deploymentUrl: "http://localhost:8123",
-      graphId: "starterAgent",
-      langsmithApiKey: "",
-    }),
+    default: new OpenAIAgent(),
   },
   runner: new InMemoryAgentRunner(),
 });
