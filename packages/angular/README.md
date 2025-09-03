@@ -210,7 +210,7 @@ console.log(
 From the repo root:
 
 1. **Install deps**: `pnpm install`
-2. **Start both demo server and Angular demo app**: `pnpm demo:angular`
+2. **Start both demo server and Angular demo app**: pnpm build && pnpm demo:angular`
    - Frontend: runs on http://localhost:4200
    - Backend: runs on http://localhost:3001/api/copilotkit
 3. **Prerequisite**: Set `OPENAI_API_KEY` in `apps/angular/demo-server/.env` if using the OpenAI demo agent
