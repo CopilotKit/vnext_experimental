@@ -1,84 +1,135 @@
-CopilotKit for Angular
+# CopilotKit for Angular
 
 This package provides native Angular components, directives, and providers to build Copilot chat UIs powered by the CopilotKit runtime and AG-UI agents. It mirrors the React experience with idiomatic Angular APIs.
 
-Quick Start
+## Quick Start
 
-- Install: pnpm add @copilotkitnext/angular
-- Add styles: add `@copilotkitnext/angular/styles.css` to your Angular app styles array (or `@import "@copilotkitnext/angular/styles.css";` in a global stylesheet)
-- Provide CopilotKit: set the runtime URL and optional labels via providers
-- Use the chat: drop `<copilot-chat />` into any template
+1. **Install**: `pnpm add @copilotkitnext/angular`
+2. **Add styles**: Add `@copilotkitnext/angular/styles.css` to your Angular app styles array or `@import "@copilotkitnext/angular/styles.css";` in a global stylesheet
+3. **Provide CopilotKit**: Set the runtime URL and optional labels via providers
+4. **Use the chat**: Drop `<copilot-chat />` into any template
 
-Installation
+## Installation
 
-- Package: install `@copilotkitnext/angular` in your Angular app (Angular 19+)
-  - pnpm: pnpm add @copilotkitnext/angular
-  - npm: npm install @copilotkitnext/angular
-  - yarn: yarn add @copilotkitnext/angular
-- Peer dependencies: ensure these are present (Angular 19)
-  - @angular/core, @angular/common, @angular/cdk, rxjs, tslib
-- Styles: reference the package CSS so the components render correctly
-  - In `angular.json` add: "styles": ["@copilotkitnext/angular/styles.css", ...]
-  - Or in your global stylesheet: `@import "@copilotkitnext/angular/styles.css";`
+### Package Installation
 
-App Wiring (providers)
+Install `@copilotkitnext/angular` in your Angular app (requires Angular 19+):
 
-- Add CopilotKit providers in your application config to set labels and runtime URL
-  - Example (`app.config.ts`):
-    - import { provideCopilotKit, provideCopilotChatConfiguration } from '@copilotkitnext/angular';
-    - export const appConfig: ApplicationConfig = {
-      providers: [
-      importProvidersFrom(BrowserModule),
-      ...provideCopilotKit({
-      // runtimeUrl can also be set via template directive; see below
-      }),
-      provideCopilotChatConfiguration({
-      labels: {
-      chatInputPlaceholder: 'Ask me anything...',
-      chatDisclaimerText: 'AI responses may need verification.'
-      }
-      })
-      ]
-      };
+```bash
+# pnpm (recommended)
+pnpm add @copilotkitnext/angular
 
-Runtime URL (template directive)
+# npm
+npm install @copilotkitnext/angular
 
-- You can declare the CopilotKit runtime endpoint directly in templates via the `CopilotKitConfigDirective`
-  - Component template example:
-    - <div [copilotkitConfig]="{ runtimeUrl: runtimeUrl }" style="display:block;height:100vh">
-        <copilot-chat></copilot-chat>
-      </div>
-  - Component class:
-    - runtimeUrl = 'http://localhost:3001/api/copilotkit';
-
-Using the Chat Component
-
-- Minimal usage:
-  - <copilot-chat></copilot-chat>
-- With a specific agent:
-  - <copilot-chat [agentId]="'sales'"></copilot-chat>
-- Behavior:
-  - If `agentId` is omitted, the component uses the default agent (ID: `default`).
-
-Agents 101 (AG-UI)
-
-- Agent model: CopilotKit uses AG-UI’s `AbstractAgent` interface (package `@ag-ui/client`).
-- Frontend vs backend:
-  - Backend (runtime): host your real agents. You can use any AG-UI agent on the server.
-  - Frontend (Angular app): discovers remote agents from the runtime automatically, and can also host local in-browser agents if desired.
-- Default agent:
-  - The ID `default` is special; when present, it is used by `<copilot-chat>` if no `agentId` is provided.
-- Compatibility: Any agent that supports AG-UI works. See https://docs.ag-ui.com/
-
-Note: In most real apps, you define agents on the server (runtime). The frontend will auto-discover them when a `runtimeUrl` is configured.
-
-Backend Runtime (Hono server)
-
-- Example Angular server: copied from `apps/angular/demo-server`
-
-index.ts
-
+# yarn
+yarn add @copilotkitnext/angular
 ```
+
+### Peer Dependencies
+
+Ensure these are present (Angular 19):
+- `@angular/core`
+- `@angular/common` 
+- `@angular/cdk`
+- `rxjs`
+- `tslib`
+
+### Styles
+
+Reference the package CSS so the components render correctly:
+
+**Option 1:** In `angular.json`:
+```json
+"styles": [
+  "@copilotkitnext/angular/styles.css",
+  "src/styles.css"
+]
+```
+
+**Option 2:** In your global stylesheet:
+```css
+@import "@copilotkitnext/angular/styles.css";
+```
+
+## App Wiring (Providers)
+
+Add CopilotKit providers in your application config to set labels and runtime URL.
+
+### Example (`app.config.ts`):
+
+```typescript
+import { provideCopilotKit, provideCopilotChatConfiguration } from '@copilotkitnext/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    importProvidersFrom(BrowserModule),
+    ...provideCopilotKit({
+      // runtimeUrl can also be set via template directive; see below
+    }),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Ask me anything...',
+        chatDisclaimerText: 'AI responses may need verification.'
+      }
+    })
+  ]
+};
+```
+
+## Runtime URL (Template Directive)
+
+You can declare the CopilotKit runtime endpoint directly in templates via the `CopilotKitConfigDirective`.
+
+### Component Template Example:
+
+```html
+<div [copilotkitConfig]="{ runtimeUrl: runtimeUrl }" style="display:block;height:100vh">
+  <copilot-chat></copilot-chat>
+</div>
+```
+
+### Component Class:
+
+```typescript
+export class AppComponent {
+  runtimeUrl = 'http://localhost:3001/api/copilotkit';
+}
+```
+
+## Using the Chat Component
+
+### Minimal Usage:
+```html
+<copilot-chat></copilot-chat>
+```
+
+### With a Specific Agent:
+```html
+<copilot-chat [agentId]="'sales'"></copilot-chat>
+```
+
+### Behavior:
+- If `agentId` is omitted, the component uses the default agent (ID: `default`)
+
+## Agents 101 (AG-UI)
+
+- **Agent model**: CopilotKit uses AG-UI's `AbstractAgent` interface (package `@ag-ui/client`)
+- **Frontend vs backend**:
+  - **Backend (runtime)**: Host your real agents. You can use any AG-UI agent on the server
+  - **Frontend (Angular app)**: Discovers remote agents from the runtime automatically, and can also host local in-browser agents if desired
+- **Default agent**: The ID `default` is special; when present, it is used by `<copilot-chat>` if no `agentId` is provided
+- **Compatibility**: Any agent that supports AG-UI works. See https://docs.ag-ui.com/
+
+> **Note**: In most real apps, you define agents on the server (runtime). The frontend will auto-discover them when a `runtimeUrl` is configured.
+
+## Backend Runtime (Hono Server)
+
+Example Angular server (from `apps/angular/demo-server`):
+
+### `index.ts`
+
+```typescript
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -125,41 +176,54 @@ console.log(
 );
 ```
 
-CopilotKit Angular APIs (most used)
+## CopilotKit Angular APIs (Most Used)
 
-- Components
-  - `CopilotChatComponent`: full chat UI. Inputs: `agentId?: string`
-- Directives
-  - `CopilotKitConfigDirective` (`[copilotkitConfig]`): set `runtimeUrl`, `headers`, `properties`, and/or `agents` declaratively
-  - `CopilotKitAgentDirective` (`[copilotkitAgent]`): observe agent state; defaults to the `default` agent if no `agentId` is provided
-- Providers
-  - `provideCopilotKit(...)`: set runtime URL, headers, properties, agents, tools, human-in-the-loop handlers
-  - `provideCopilotChatConfiguration(...)`: set UI labels and behavior for chat input/view
+### Components
+- **`CopilotChatComponent`**: Full chat UI
+  - Inputs: `agentId?: string`
 
-End-to-End: Running the Demo
+### Directives
+- **`CopilotKitConfigDirective`** (`[copilotkitConfig]`): Set `runtimeUrl`, `headers`, `properties`, and/or `agents` declaratively
+- **`CopilotKitAgentDirective`** (`[copilotkitAgent]`): Observe agent state; defaults to the `default` agent if no `agentId` is provided
 
-- From the repo root:
-  - Install deps: pnpm install
-  - Start both demo server and Angular demo app: pnpm demo:angular
-    - Frontend: runs on http://localhost:4200
-    - Backend: runs on http://localhost:3001/api/copilotkit
-  - Prerequisite: set `OPENAI_API_KEY` in `apps/angular/demo-server/.env` if using the OpenAI demo agent
+### Providers
+- **`provideCopilotKit(...)`**: Set runtime URL, headers, properties, agents, tools, human-in-the-loop handlers
+- **`provideCopilotChatConfiguration(...)`**: Set UI labels and behavior for chat input/view
 
-Building This Monorepo
+## End-to-End: Running the Demo
 
-- Full build: pnpm build (compiles all packages including Angular)
-- Clean: pnpm clean
-- Package-only dev (watch): pnpm dev:packages
+From the repo root:
 
-Angular Storybook
+1. **Install deps**: `pnpm install`
+2. **Start both demo server and Angular demo app**: `pnpm demo:angular`
+   - Frontend: runs on http://localhost:4200
+   - Backend: runs on http://localhost:3001/api/copilotkit
+3. **Prerequisite**: Set `OPENAI_API_KEY` in `apps/angular/demo-server/.env` if using the OpenAI demo agent
 
-- Dev server: pnpm storybook:angular
-  - Serves Storybook for Angular components on http://localhost:6007
-  - For live chat stories, ensure the demo server is running so the chat can connect
-    - pnpm --filter @copilotkitnext/angular-demo-server dev
-- Production build: pnpm -C apps/angular/storybook build
+## Building This Monorepo
 
-Notes
+- **Full build**: `pnpm build` (compiles all packages including Angular)
+- **Clean**: `pnpm clean`
+- **Package-only dev (watch)**: `pnpm dev:packages`
+
+## Angular Storybook
+
+### Dev Server
+```bash
+pnpm storybook:angular
+```
+- Serves Storybook for Angular components on http://localhost:6007
+- For live chat stories, ensure the demo server is running so the chat can connect:
+  ```bash
+  pnpm --filter @copilotkitnext/angular-demo-server dev
+  ```
+
+### Production Build
+```bash
+pnpm -C apps/angular/storybook build
+```
+
+## Notes
 
 - Node 18+ and pnpm 9+ recommended
 - If using custom CORS or non-default ports, update `runtimeUrl` and server CORS settings accordingly
