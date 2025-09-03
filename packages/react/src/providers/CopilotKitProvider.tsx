@@ -13,7 +13,11 @@ import React, {
 import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
-import { CopilotKitCore, CopilotKitCoreConfig, FrontendTool } from "@copilotkit/core";
+import {
+  CopilotKitCore,
+  CopilotKitCoreConfig,
+  FrontendTool,
+} from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 
 // Define the context value interface - idiomatic React naming
@@ -21,7 +25,9 @@ export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
   renderToolCalls: ReactToolCallRender<unknown>[];
   currentRenderToolCalls: ReactToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRender<unknown>[]>>;
+  setCurrentRenderToolCalls: React.Dispatch<
+    React.SetStateAction<ReactToolCallRender<unknown>[]>
+  >;
 }
 
 // Create the CopilotKit context
@@ -85,8 +91,10 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     (initial, next) => {
       // Only warn if the shape (names+agentId) changed. Allow identity changes
       // to support updated closures from parents (e.g., Storybook state).
-      const key = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ''}:${rc?.name ?? ''}`;
-      const setFrom = (arr: ReactToolCallRender<unknown>[]) => new Set(arr.map(key));
+      const key = (rc?: ReactToolCallRender<unknown>) =>
+        `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const setFrom = (arr: ReactToolCallRender<unknown>[]) =>
+        new Set(arr.map(key));
       const a = setFrom(initial);
       const b = setFrom(next);
       if (a.size !== b.size) return true;
@@ -129,7 +137,9 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
           return new Promise((resolve) => {
             // The actual implementation will be handled by the render component
             // This is a placeholder that the hook will override
-            console.warn(`Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`);
+            console.warn(
+              `Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`
+            );
             resolve(undefined);
           });
         },
@@ -153,17 +163,17 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   // Combine all tools for CopilotKitCore
   const allTools = useMemo(() => {
     const tools: Record<string, FrontendTool> = {};
-    
+
     // Add frontend tools
     frontendToolsList.forEach((tool) => {
       tools[tool.name] = tool;
     });
-    
+
     // Add processed human-in-the-loop tools
     processedHumanInTheLoopTools.tools.forEach((tool) => {
       tools[tool.name] = tool;
     });
-    
+
     return tools;
   }, [frontendToolsList, processedHumanInTheLoopTools]);
 
@@ -200,7 +210,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     const copilotkit = new CopilotKitCore(config);
 
     return copilotkit;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allTools]);
 
   // Keep currentRenderToolCalls in sync with computed render tool calls
@@ -252,7 +262,7 @@ export const useCopilotKit = (): CopilotKitContextValue => {
     return () => {
       unsubscribe();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return context;

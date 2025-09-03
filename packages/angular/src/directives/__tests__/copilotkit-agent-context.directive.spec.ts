@@ -7,7 +7,7 @@ import { CopilotKitService } from "../../core/copilotkit.service";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkit/core", () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addContext: vi.fn().mockImplementation(() => "context-id-" + Math.random()),
     removeContext: vi.fn(),

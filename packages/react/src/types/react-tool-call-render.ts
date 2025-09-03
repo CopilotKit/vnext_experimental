@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolCallStatus } from "@copilotkit/core";
+import { ToolCallStatus } from "@copilotkitnext/core";
 
 export interface ReactToolCallRender<T> {
   name: string;

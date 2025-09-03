@@ -15,27 +15,30 @@ import {
   runInInjectionContext,
   Optional,
   SkipSelf,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { CopilotChatViewComponent } from './copilot-chat-view.component';
-import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
-import { COPILOT_CHAT_INITIAL_CONFIG, CopilotChatConfiguration } from '../../core/chat-configuration/chat-configuration.types';
-import { watchAgent } from '../../utils/agent.utils';
-import { AgentWatchResult } from '../../core/copilotkit.types';
-import { DEFAULT_AGENT_ID, randomUUID } from '@copilotkit/shared';
-import { Message, AbstractAgent } from '@ag-ui/client';
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { CopilotChatViewComponent } from "./copilot-chat-view.component";
+import { CopilotChatConfigurationService } from "../../core/chat-configuration/chat-configuration.service";
+import {
+  COPILOT_CHAT_INITIAL_CONFIG,
+  CopilotChatConfiguration,
+} from "../../core/chat-configuration/chat-configuration.types";
+import { watchAgent } from "../../utils/agent.utils";
+import { AgentWatchResult } from "../../core/copilotkit.types";
+import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
+import { Message, AbstractAgent } from "@ag-ui/client";
 
 /**
  * CopilotChat component - Angular equivalent of React's <CopilotChat>
  * Provides a complete chat interface that wires an agent to the chat view
- * 
+ *
  * @example
  * ```html
  * <copilot-chat [agentId]="'default'" [threadId]="'abc123'"></copilot-chat>
  * ```
  */
 @Component({
-  selector: 'copilot-chat',
+  selector: "copilot-chat",
   standalone: true,
   imports: [CommonModule, CopilotChatViewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,22 +57,23 @@ import { Message, AbstractAgent } from '@ag-ui/client';
     },
   ],
   template: `
-    <copilot-chat-view 
-      [messages]="messages()" 
-      [autoScroll]="true" 
+    <copilot-chat-view
+      [messages]="messages()"
+      [autoScroll]="true"
       [messageViewClass]="'w-full'"
-      [showCursor]="showCursor()">
+      [showCursor]="showCursor()"
+    >
     </copilot-chat-view>
-  `
+  `,
 })
 export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
   @Input() agentId?: string;
   @Input() threadId?: string;
-  
+
   constructor(
     @Optional() private chatConfig: CopilotChatConfigurationService | null,
     private cdr: ChangeDetectorRef,
-    private injector: Injector,
+    private injector: Injector
   ) {
     // Create initial watcher once (constructor is a safe injection context)
     const initialId = this.agentId ?? DEFAULT_AGENT_ID;
@@ -87,39 +91,44 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
       }
     });
   }
-  
+
   // Signals from watchAgent - using direct references instead of assignment
-  protected agent: Signal<AbstractAgent | undefined> = signal<AbstractAgent | undefined>(undefined).asReadonly() as unknown as Signal<AbstractAgent | undefined>;
-  protected messages: Signal<Message[]> = signal<Message[]>([]).asReadonly() as unknown as Signal<Message[]>;
-  protected isRunning: Signal<boolean> = signal<boolean>(false).asReadonly() as unknown as Signal<boolean>;
+  protected agent: Signal<AbstractAgent | undefined> = signal<
+    AbstractAgent | undefined
+  >(undefined).asReadonly() as unknown as Signal<AbstractAgent | undefined>;
+  protected messages: Signal<Message[]> = signal<Message[]>(
+    []
+  ).asReadonly() as unknown as Signal<Message[]>;
+  protected isRunning: Signal<boolean> = signal<boolean>(
+    false
+  ).asReadonly() as unknown as Signal<boolean>;
   protected showCursor = signal<boolean>(false);
-  
+
   private generatedThreadId: string = randomUUID();
   private agentWatcher?: AgentWatchResult;
   private hasConnectedOnce = false;
   private lastAgentId?: string;
-  
+
   ngOnInit(): void {
     this.setupChatHandlers();
   }
-  
+
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['agentId'] && !changes['agentId'].firstChange) {
+    if (changes["agentId"] && !changes["agentId"].firstChange) {
       const newId = this.agentId ?? DEFAULT_AGENT_ID;
       this.createWatcher(newId);
     }
-    if (changes['threadId'] && !changes['threadId'].firstChange) {
+    if (changes["threadId"] && !changes["threadId"].firstChange) {
       const a = this.agent();
       if (a) {
         a.threadId = this.threadId || this.generatedThreadId;
       }
     }
   }
-  
-  
+
   private async connectToAgent(agent: AbstractAgent): Promise<void> {
     if (!agent) return;
-    
+
     this.showCursor.set(true);
     this.cdr.markForCheck();
 
@@ -134,41 +143,41 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
           onToolCallStartEvent: () => {
             this.showCursor.set(false);
             this.cdr.detectChanges();
-          }
+          },
         }
       );
       this.showCursor.set(false);
       this.cdr.markForCheck();
     } catch (error) {
-      console.error('Failed to connect to agent:', error);
+      console.error("Failed to connect to agent:", error);
       this.showCursor.set(false);
       this.cdr.markForCheck();
     }
   }
-  
+
   private setupChatHandlers(): void {
     if (!this.chatConfig) return;
-    
+
     // Handle input submission
     this.chatConfig.setSubmitHandler(async (value: string) => {
       const agent = this.agent();
       if (!agent || !value.trim()) return;
-      
+
       // Add user message
       const userMessage: Message = {
         id: randomUUID(),
-        role: 'user',
+        role: "user",
         content: value,
       };
       agent.addMessage(userMessage);
-      
+
       // Clear the input
-      this.chatConfig!.setInputValue('');
-      
+      this.chatConfig!.setInputValue("");
+
       // Show cursor while processing
       this.showCursor.set(true);
       this.cdr.markForCheck();
-      
+
       // Run the agent with named subscriber callbacks
       try {
         await agent.runAgent(
@@ -181,23 +190,23 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
             onToolCallStartEvent: () => {
               this.showCursor.set(false);
               this.cdr.detectChanges();
-            }
+            },
           }
         );
       } catch (error) {
-        console.error('Agent run error:', error);
+        console.error("Agent run error:", error);
       } finally {
         this.showCursor.set(false);
         this.cdr.markForCheck();
       }
     });
-    
+
     // Handle input value changes (optional)
     this.chatConfig.setChangeHandler(() => {
       // Keep input state if needed
     });
   }
-  
+
   ngOnDestroy(): void {
     if (this.agentWatcher?.unsubscribe) {
       this.agentWatcher.unsubscribe();

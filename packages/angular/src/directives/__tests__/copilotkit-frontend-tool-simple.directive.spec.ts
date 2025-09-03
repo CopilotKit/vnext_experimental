@@ -7,7 +7,7 @@ import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkit/core", () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),

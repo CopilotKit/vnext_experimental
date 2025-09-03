@@ -3,7 +3,7 @@ import {
   CopilotChatUserMessage,
   CopilotChatConfigurationProvider,
   type CopilotChatUserMessageProps,
-} from "@copilotkit/react";
+} from "@copilotkitnext/react";
 
 // Simple default message
 const simpleMessage = {

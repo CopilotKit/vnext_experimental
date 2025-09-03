@@ -46,8 +46,8 @@ import { cn } from '../../lib/utils';
       <!-- Default layout - exact React DOM structure: div with "flex flex-col" classes -->
       <div [class]="computedClass()">
         <!-- Message iteration - simplified without tool calls -->
-        @for (message of messagesSignal(); track message.id) {
-          @if (message.role === 'assistant') {
+        @for (message of messagesSignal(); track trackByMessageId($index, message)) {
+          @if (message && message.role === 'assistant') {
             <!-- Assistant message with slot support -->
             @if (assistantMessageComponent || assistantMessageTemplate) {
               <copilot-slot
@@ -67,7 +67,7 @@ import { cn } from '../../lib/utils';
                 (regenerate)="handleAssistantRegenerate($event)">
               </copilot-chat-assistant-message>
             }
-          } @else if (message.role === 'user') {
+          } @else if (message && message.role === 'user') {
             <!-- User message with slot support -->
             @if (userMessageComponent || userMessageTemplate) {
               <copilot-slot
@@ -158,7 +158,9 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   // Layout context for custom templates (render prop pattern)
   layoutContext = computed(() => ({
     isLoading: this.isLoadingSignal(),
-    messages: this.messagesSignal()
+    messages: this.messagesSignal(),
+    showCursor: this.showCursorSignal(),
+    messageElements: this.messagesSignal().filter(m => m && (m.role === 'assistant' || m.role === 'user'))
   }));
   
   // Slot resolution computed signals
@@ -193,7 +195,7 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   
   // TrackBy function for performance optimization
   trackByMessageId(index: number, message: Message): string {
-    return message.id;
+    return message?.id || `index-${index}`;
   }
   
   // Lifecycle hooks

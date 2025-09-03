@@ -3,7 +3,7 @@ import { BrowserModule } from "@angular/platform-browser";
 import {
   provideCopilotKit,
   provideCopilotChatConfiguration,
-} from "@copilotkit/angular";
+} from "@copilotkitnext/angular";
 
 export const appConfig: ApplicationConfig = {
   providers: [

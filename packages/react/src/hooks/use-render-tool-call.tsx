@@ -1,8 +1,8 @@
 import React, { useCallback } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
-import { ToolCallStatus } from "@copilotkit/core";
+import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { partialJSONParse } from "@copilotkit/shared";
+import { partialJSONParse } from "@copilotkitnext/shared";
 
 export interface UseRenderToolCallProps {
   toolCall: ToolCall;

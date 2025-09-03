@@ -1,17 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
   provideCopilotChatConfiguration,
   provideCopilotKit,
-} from '@copilotkit/angular';
-import { Message } from '@ag-ui/client';
+} from "@copilotkitnext/angular";
+import { Message } from "@ag-ui/client";
 
 const meta: Meta<CopilotChatViewComponent> = {
-  title: 'UI/CopilotChatView/Customized with Templates',
+  title: "UI/CopilotChatView/Customized with Templates",
   component: CopilotChatViewComponent,
   decorators: [
     moduleMetadata({
@@ -25,15 +25,16 @@ const meta: Meta<CopilotChatViewComponent> = {
         provideCopilotKit({}),
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
+            chatInputPlaceholder: "Type a message...",
+            chatDisclaimerText:
+              "AI can make mistakes. Please verify important information.",
           },
         }),
       ],
     }),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -44,14 +45,15 @@ export const CustomDisclaimerTemplate: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'How do I use templates for customization?',
-        role: 'user' as const,
+        id: "user-1",
+        content: "How do I use templates for customization?",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Templates provide a powerful way to customize components! You can use ng-template with template references to inject custom HTML directly into the component slots.',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Templates provide a powerful way to customize components! You can use ng-template with template references to inject custom HTML directly into the component slots.",
+        role: "assistant" as const,
       },
     ];
 
@@ -106,21 +108,25 @@ export const CustomInputTemplate: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'This input is created with a template!',
-        role: 'user' as const,
+        id: "user-1",
+        content: "This input is created with a template!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Yes! Templates allow for complete control over the input area, including custom styling and behavior.',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Yes! Templates allow for complete control over the input area, including custom styling and behavior.",
+        role: "assistant" as const,
       },
     ];
 
-    const sendMessage = (input: HTMLInputElement, onSend: (message: string) => void) => {
+    const sendMessage = (
+      input: HTMLInputElement,
+      onSend: (message: string) => void
+    ) => {
       if (input.value.trim()) {
         onSend(input.value);
-        input.value = '';
+        input.value = "";
       }
     };
 
@@ -207,10 +213,11 @@ export const CustomScrollButtonTemplate: Story = {
     for (let i = 0; i < 25; i++) {
       messages.push({
         id: `msg-${i}`,
-        content: i % 2 === 0 
-          ? `User message ${i}: Template-based scroll button demonstration!`
-          : `Assistant response ${i}: Templates provide maximum flexibility for UI customization, allowing you to create exactly the experience you want.`,
-        role: i % 2 === 0 ? 'user' : 'assistant',
+        content:
+          i % 2 === 0
+            ? `User message ${i}: Template-based scroll button demonstration!`
+            : `Assistant response ${i}: Templates provide maximum flexibility for UI customization, allowing you to create exactly the experience you want.`,
+        role: i % 2 === 0 ? "user" : "assistant",
       } as Message);
     }
 
@@ -278,31 +285,36 @@ export const AllTemplatesCombined: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Show me all templates working together!',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Show me all templates working together!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Here you can see custom disclaimer, input, and scroll button templates all working in harmony!',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Here you can see custom disclaimer, input, and scroll button templates all working in harmony!",
+        role: "assistant" as const,
       },
       {
-        id: 'user-2',
-        content: 'This is amazing flexibility!',
-        role: 'user' as const,
+        id: "user-2",
+        content: "This is amazing flexibility!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-2',
-        content: 'Templates give you complete control over every aspect of the chat interface while maintaining the core functionality.',
-        role: 'assistant' as const,
+        id: "assistant-2",
+        content:
+          "Templates give you complete control over every aspect of the chat interface while maintaining the core functionality.",
+        role: "assistant" as const,
       },
     ];
 
-    const send = (input: HTMLInputElement, onSend: (message: string) => void) => {
+    const send = (
+      input: HTMLInputElement,
+      onSend: (message: string) => void
+    ) => {
       if (input.value.trim()) {
         onSend(input.value);
-        input.value = '';
+        input.value = "";
       }
     };
 

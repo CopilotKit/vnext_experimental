@@ -1,6 +1,6 @@
 import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { Observable } from "rxjs";
-import { CopilotKitCore, ToolCallStatus } from "@copilotkit/core";
+import { CopilotKitCore, ToolCallStatus } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 import type { z } from "zod";
 import type { AngularFrontendTool } from "../types/frontend-tool";
@@ -11,13 +11,16 @@ export type { Context } from "@ag-ui/client";
 
 // Re-export tool types from their own files
 export type { AngularFrontendTool } from "../types/frontend-tool";
-export type { AngularHumanInTheLoop, HumanInTheLoopProps } from "../types/human-in-the-loop";
+export type {
+  AngularHumanInTheLoop,
+  HumanInTheLoopProps,
+} from "../types/human-in-the-loop";
 
 // Re-export ToolCallStatus from core
-export { ToolCallStatus } from "@copilotkit/core";
+export { ToolCallStatus } from "@copilotkitnext/core";
 
 // Props passed to tool render components - discriminated union matching React
-export type ToolCallProps<T = unknown> = 
+export type ToolCallProps<T = unknown> =
   | {
       name: string;
       description: string;
@@ -59,9 +62,7 @@ export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
   renderToolCalls: ToolCallRender<unknown>[];
   currentRenderToolCalls: ToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: (
-    v: ToolCallRender<unknown>[]
-  ) => void;
+  setCurrentRenderToolCalls: (v: ToolCallRender<unknown>[]) => void;
 }
 
 export interface CopilotKitRuntimeInputs {
@@ -78,36 +79,32 @@ export const COPILOTKIT_RUNTIME_URL = new InjectionToken<string | undefined>(
 );
 
 export const COPILOTKIT_HEADERS = new InjectionToken<Record<string, string>>(
-  "COPILOTKIT_HEADERS", 
+  "COPILOTKIT_HEADERS",
   { factory: () => ({}) }
 );
 
-export const COPILOTKIT_PROPERTIES = new InjectionToken<Record<string, unknown>>(
-  "COPILOTKIT_PROPERTIES", 
-  { factory: () => ({}) }
-);
+export const COPILOTKIT_PROPERTIES = new InjectionToken<
+  Record<string, unknown>
+>("COPILOTKIT_PROPERTIES", { factory: () => ({}) });
 
-export const COPILOTKIT_AGENTS = new InjectionToken<Record<string, AbstractAgent>>(
-  "COPILOTKIT_AGENTS", 
-  { factory: () => ({}) }
-);
+export const COPILOTKIT_AGENTS = new InjectionToken<
+  Record<string, AbstractAgent>
+>("COPILOTKIT_AGENTS", { factory: () => ({}) });
 
 export const COPILOTKIT_RENDER_TOOL_CALLS = new InjectionToken<
   ToolCallRender<unknown>[]
 >("COPILOTKIT_RENDER_TOOL_CALLS", { factory: () => [] });
 
-export const COPILOTKIT_FRONTEND_TOOLS = new InjectionToken<AngularFrontendTool<any>[]>(
-  "COPILOTKIT_FRONTEND_TOOLS", 
-  { factory: () => [] }
-);
+export const COPILOTKIT_FRONTEND_TOOLS = new InjectionToken<
+  AngularFrontendTool<any>[]
+>("COPILOTKIT_FRONTEND_TOOLS", { factory: () => [] });
 
-export const COPILOTKIT_HUMAN_IN_THE_LOOP = new InjectionToken<AngularHumanInTheLoop<any>[]>(
-  "COPILOTKIT_HUMAN_IN_THE_LOOP", 
-  { factory: () => [] }
-);
+export const COPILOTKIT_HUMAN_IN_THE_LOOP = new InjectionToken<
+  AngularHumanInTheLoop<any>[]
+>("COPILOTKIT_HUMAN_IN_THE_LOOP", { factory: () => [] });
 
 // Agent-related types
-import type { Message } from '@ag-ui/client';
+import type { Message } from "@ag-ui/client";
 
 export interface AgentWatchResult {
   agent: Signal<AbstractAgent | undefined>;

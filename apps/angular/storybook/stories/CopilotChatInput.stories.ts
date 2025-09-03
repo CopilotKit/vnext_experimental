@@ -7,7 +7,7 @@ import {
   CopilotChatInputComponent,
   provideCopilotChatConfiguration,
   type ToolsMenuItem,
-} from "@copilotkit/angular";
+} from "@copilotkitnext/angular";
 import { CustomSendButtonComponent } from "../components/custom-send-button.component";
 
 // Additional custom button components for slot demonstrations
@@ -136,8 +136,8 @@ The CopilotChatInput component provides a feature-rich chat input interface for 
 ## Basic Usage
 
 \`\`\`typescript
-import { CopilotChatInputComponent } from '@copilotkit/angular';
-import { provideCopilotChatConfiguration } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { provideCopilotChatConfiguration } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -262,9 +262,9 @@ export const Default: Story = {
         story: "The default chat input with all standard features enabled.",
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent, provideCopilotChatConfiguration } from '@copilotkit/angular';
+import { CopilotChatInputComponent, provideCopilotChatConfiguration } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -313,7 +313,7 @@ export class ChatComponent {
     console.log('Finished transcription');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -382,9 +382,9 @@ toolsMenu: [
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent, ToolsMenuItem } from '@copilotkit/angular';
+import { CopilotChatInputComponent, ToolsMenuItem } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -440,7 +440,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -470,9 +470,9 @@ Emits:
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -501,7 +501,7 @@ export class ChatComponent {
     console.log('Recording finished');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -572,9 +572,9 @@ The template receives:
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 // Custom send button component
 @Component({
@@ -625,7 +625,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -704,9 +704,9 @@ Note: The template is passed as an input property, not as content projection.
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -756,7 +756,7 @@ export class ChatComponent {
     alert('Another custom action clicked!');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -788,9 +788,9 @@ Useful for:
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -815,7 +815,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -842,9 +842,9 @@ Features:
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -872,7 +872,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -968,9 +968,9 @@ This example shows:
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -1011,7 +1011,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -1071,9 +1071,9 @@ The most flexible approach - use ng-template to completely control the send butt
         `,
       },
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
+import { CopilotChatInputComponent } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -1098,7 +1098,7 @@ export class ChatComponent {
     console.log('Message submitted:', message);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },

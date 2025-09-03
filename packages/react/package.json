@@ -1,5 +1,5 @@
 {
-  "name": "@copilotkit/react",
+  "name": "@copilotkitnext/react",
   "version": "0.0.0",
   "private": true,
   "description": "React components for CopilotKit2",
@@ -27,8 +27,8 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@copilotkit/eslint-config": "workspace:*",
-    "@copilotkit/typescript-config": "workspace:*",
+    "@copilotkitnext/eslint-config": "workspace:*",
+    "@copilotkitnext/typescript-config": "workspace:*",
     "@tailwindcss/cli": "^4.1.11",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5.16",
@@ -51,8 +51,8 @@
   "dependencies": {
     "@ag-ui/client": "0.0.36-alpha.1",
     "@ag-ui/core": "0.0.36-alpha.1",
-    "@copilotkit/core": "workspace:*",
-    "@copilotkit/shared": "workspace:*",
+    "@copilotkitnext/core": "workspace:*",
+    "@copilotkitnext/shared": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",

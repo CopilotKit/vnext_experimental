@@ -19,13 +19,13 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()),
 };
 
-vi.mock("@copilotkit/core", () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
   ToolCallStatus: {
-    InProgress: 'inProgress',
-    Executing: 'executing',
-    Complete: 'complete'
-  }
+    InProgress: "inProgress",
+    Executing: "executing",
+    Complete: "complete",
+  },
 }));
 
 // Test approval component

@@ -1,3 +1,3 @@
-import { config as baseConfig } from "@copilotkit/eslint-config/base";
+import { config as baseConfig } from "@copilotkitnext/eslint-config/base";
 
 export default [...baseConfig];

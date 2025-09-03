@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
-import { Component, Input, signal, Injectable } from '@angular/core';
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { Component, Input, signal, Injectable } from "@angular/core";
 import {
   CopilotChatMessageViewComponent,
   CopilotChatMessageViewCursorComponent,
@@ -12,18 +12,18 @@ import {
   ToolCall,
   ToolMessage,
   ToolCallRender,
-} from '@copilotkit/angular';
-import { ToolCallStatus } from '@copilotkit/core';
-import { z } from 'zod'; // Schema validation
+} from "@copilotkitnext/angular";
+import { ToolCallStatus } from "@copilotkitnext/core";
+import { z } from "zod"; // Schema validation
 
 const meta: Meta<CopilotChatMessageViewComponent> = {
-  title: 'UI/CopilotChatMessageView',
+  title: "UI/CopilotChatMessageView",
   component: CopilotChatMessageViewComponent,
   parameters: {
     docs: {
       description: {
         component:
-          'A simple conversation between user and AI using CopilotChatMessageView component.',
+          "A simple conversation between user and AI using CopilotChatMessageView component.",
       },
     },
   },
@@ -32,22 +32,22 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
       imports: [
         CommonModule,
         CopilotChatMessageViewComponent,
-        CopilotChatMessageViewCursorComponent
+        CopilotChatMessageViewCursorComponent,
       ],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
-            assistantMessageToolbarCopyMessageLabel: 'Copy',
-            assistantMessageToolbarCopyCodeLabel: 'Copy',
-            assistantMessageToolbarCopyCodeCopiedLabel: 'Copied',
-            assistantMessageToolbarThumbsUpLabel: 'Good response',
-            assistantMessageToolbarThumbsDownLabel: 'Bad response',
-            assistantMessageToolbarReadAloudLabel: 'Read aloud',
-            assistantMessageToolbarRegenerateLabel: 'Regenerate',
-            userMessageToolbarCopyMessageLabel: 'Copy',
-            userMessageToolbarEditMessageLabel: 'Edit'
-          }
-        })
+            assistantMessageToolbarCopyMessageLabel: "Copy",
+            assistantMessageToolbarCopyCodeLabel: "Copy",
+            assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
+            assistantMessageToolbarThumbsUpLabel: "Good response",
+            assistantMessageToolbarThumbsDownLabel: "Bad response",
+            assistantMessageToolbarReadAloudLabel: "Read aloud",
+            assistantMessageToolbarRegenerateLabel: "Regenerate",
+            userMessageToolbarCopyMessageLabel: "Copy",
+            userMessageToolbarEditMessageLabel: "Edit",
+          },
+        }),
       ],
     }),
   ],
@@ -59,12 +59,12 @@ type Story = StoryObj<CopilotChatMessageViewComponent>;
 // Default story with full conversation - matches React exactly
 export const Default: Story = {
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkit/angular';
+import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -143,19 +143,19 @@ In this example:
     },
   };
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Hello! Can you help me understand how React hooks work?',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Hello! Can you help me understand how React hooks work?",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
+        id: "assistant-1",
         content: `React hooks are functions that let you use state and other React features in functional components. Here are the most common ones:
 
 - **useState** - Manages local state
@@ -165,15 +165,15 @@ In this example:
 - **useMemo** - Memoizes values
 
 Would you like me to explain any of these in detail?`,
-        role: 'assistant' as const,
+        role: "assistant" as const,
       },
       {
-        id: 'user-2',
-        content: 'Yes, could you explain useState with a simple example?',
-        role: 'user' as const,
+        id: "user-2",
+        content: "Yes, could you explain useState with a simple example?",
+        role: "user" as const,
       },
       {
-        id: 'assistant-2',
+        id: "assistant-2",
         content: `Absolutely! Here's a simple useState example:
 
 \`\`\`jsx
@@ -198,7 +198,7 @@ In this example:
 - It returns an array: \`[currentValue, setterFunction]\`
 - \`count\` is the current state value
 - \`setCount\` is the function to update the state`,
-        role: 'assistant' as const,
+        role: "assistant" as const,
       },
     ];
 
@@ -207,12 +207,12 @@ In this example:
         messages,
         assistantMessageProps: {
           onThumbsUp: () => {
-            console.log('Thumbs up clicked!');
-            alert('thumbsUp');
+            console.log("Thumbs up clicked!");
+            alert("thumbsUp");
           },
           onThumbsDown: () => {
-            console.log('Thumbs down clicked!');
-            alert('thumbsDown');
+            console.log("Thumbs down clicked!");
+            alert("thumbsDown");
           },
         },
       },
@@ -231,12 +231,12 @@ In this example:
 // ShowCursor story - matches React exactly
 export const ShowCursor: Story = {
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkit/angular';
+import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -270,16 +270,16 @@ export class ChatComponent {
     },
   };
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Can you explain how AI models work?',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Can you explain how AI models work?",
+        role: "user" as const,
       },
     ];
 
@@ -289,12 +289,12 @@ export class ChatComponent {
         showCursor: true,
         assistantMessageProps: {
           onThumbsUp: () => {
-            console.log('Thumbs up clicked!');
-            alert('thumbsUp');
+            console.log("Thumbs up clicked!");
+            alert("thumbsUp");
           },
           onThumbsDown: () => {
-            console.log('Thumbs down clicked!');
-            alert('thumbsDown');
+            console.log("Thumbs down clicked!");
+            alert("thumbsDown");
           },
         },
       },
@@ -322,7 +322,7 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
 
 // SearchToolRender component with explicit inputs
 @Component({
-  selector: 'search-tool-render',
+  selector: "search-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -343,7 +343,7 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
         </div>
       }
     </div>
-  `
+  `,
 })
 class SearchToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
@@ -352,14 +352,15 @@ class SearchToolRenderComponent {
   @Input({ required: true }) args!: SearchArgs | Partial<SearchArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
-  
+
   get containerStyle() {
     return {
-      'padding': '12px',
-      'margin': '8px 0',
-      'background-color': this.status === ToolCallStatus.InProgress ? '#f0f4f8' : '#e6f3ff',
-      'border-radius': '8px',
-      'border': '1px solid #cce0ff'
+      padding: "12px",
+      margin: "8px 0",
+      "background-color":
+        this.status === ToolCallStatus.InProgress ? "#f0f4f8" : "#e6f3ff",
+      "border-radius": "8px",
+      border: "1px solid #cce0ff",
     };
   }
 }
@@ -373,14 +374,14 @@ const calculatorArgsSchema = z.object({
 type CalculatorArgs = z.infer<typeof calculatorArgsSchema>;
 
 // Service for shared counter state
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class CalculatorCounterService {
   readonly counter = signal(0);
 }
 
 // CalculatorToolRender component with interactive counters
 @Component({
-  selector: 'calculator-tool-render',
+  selector: "calculator-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -393,47 +394,53 @@ export class CalculatorCounterService {
         <div style="margin-top: 8px; color: #cc6600;">Calculating...</div>
       }
       @if (status === ToolCallStatus.Complete && result) {
-        <div style="margin-top: 8px; color: #006600;">
-          Result: {{ result }}
-        </div>
+        <div style="margin-top: 8px; color: #006600;">Result: {{ result }}</div>
       }
-      <div style="margin-top: 12px; padding: 8px; background-color: #fff8e6; border-radius: 4px;">
+      <div
+        style="margin-top: 12px; padding: 8px; background-color: #fff8e6; border-radius: 4px;"
+      >
         <div style="font-size: 13px; color: #666; margin-bottom: 4px;">
           Local counter: {{ counter() }}
         </div>
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <button 
+          <button
             (click)="decrementLocal()"
-            style="padding: 4px 12px; background-color: #ff9933; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            style="padding: 4px 12px; background-color: #ff9933; color: white; border: none; border-radius: 4px; cursor: pointer;"
+          >
             -
           </button>
-          <button 
+          <button
             (click)="incrementLocal()"
-            style="padding: 4px 12px; background-color: #ff9933; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            style="padding: 4px 12px; background-color: #ff9933; color: white; border: none; border-radius: 4px; cursor: pointer;"
+          >
             +
           </button>
         </div>
-        
+
         <div style="border-top: 1px solid #ffcc66; padding-top: 8px;">
-          <div style="font-size: 13px; color: #666; margin-bottom: 4px; font-weight: bold;">
+          <div
+            style="font-size: 13px; color: #666; margin-bottom: 4px; font-weight: bold;"
+          >
             Global counter: {{ globalCounter() }}
           </div>
           <div style="display: flex; gap: 8px;">
-            <button 
+            <button
               (click)="decrementGlobal()"
-              style="padding: 4px 12px; background-color: #cc6600; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              style="padding: 4px 12px; background-color: #cc6600; color: white; border: none; border-radius: 4px; cursor: pointer;"
+            >
               Global -
             </button>
-            <button 
+            <button
               (click)="incrementGlobal()"
-              style="padding: 4px 12px; background-color: #cc6600; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              style="padding: 4px 12px; background-color: #cc6600; color: white; border: none; border-radius: 4px; cursor: pointer;"
+            >
               Global +
             </button>
           </div>
         </div>
       </div>
     </div>
-  `
+  `,
 })
 class CalculatorToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
@@ -442,48 +449,53 @@ class CalculatorToolRenderComponent {
   @Input({ required: true }) args!: CalculatorArgs | Partial<CalculatorArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
-  
+
   counter = signal(0);
-  
+
   // This will be passed from the parent
   constructor(private readonly calcCounter: CalculatorCounterService) {}
   globalCounter = this.calcCounter.counter;
 
   get containerStyle() {
     return {
-      'padding': '12px',
-      'margin': '8px 0',
-      'background-color': this.status === ToolCallStatus.InProgress ? '#fff9e6' : '#fff4cc',
-      'border-radius': '8px',
-      'border': '1px solid #ffcc66'
+      padding: "12px",
+      margin: "8px 0",
+      "background-color":
+        this.status === ToolCallStatus.InProgress ? "#fff9e6" : "#fff4cc",
+      "border-radius": "8px",
+      border: "1px solid #ffcc66",
     };
   }
 
   incrementLocal() {
-    this.counter.update(v => v + 1);
+    this.counter.update((v) => v + 1);
   }
 
   decrementLocal() {
-    this.counter.update(v => v - 1);
+    this.counter.update((v) => v - 1);
   }
 
   incrementGlobal() {
-    this.calcCounter.counter.update(v => v + 1);
+    this.calcCounter.counter.update((v) => v + 1);
   }
 
   decrementGlobal() {
-    this.calcCounter.counter.update(v => v - 1);
+    this.calcCounter.counter.update((v) => v - 1);
   }
 }
 
 // WildcardToolRender component for unmatched tools
 @Component({
-  selector: 'wildcard-tool-render',
+  selector: "wildcard-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div style="padding: 12px; margin: 8px 0; background-color: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;">
-      <div style="font-weight: bold; margin-bottom: 4px;">🔧 Tool Execution</div>
+    <div
+      style="padding: 12px; margin: 8px 0; background-color: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;"
+    >
+      <div style="font-weight: bold; margin-bottom: 4px;">
+        🔧 Tool Execution
+      </div>
       <div style="font-size: 14px; color: #666;">
         <pre>{{ argsJson }}</pre>
       </div>
@@ -491,12 +503,10 @@ class CalculatorToolRenderComponent {
         <div style="margin-top: 8px; color: #666;">Processing...</div>
       }
       @if (status === ToolCallStatus.Complete && result) {
-        <div style="margin-top: 8px; color: #333;">
-          Output: {{ result }}
-        </div>
+        <div style="margin-top: 8px; color: #333;">Output: {{ result }}</div>
       }
     </div>
-  `
+  `,
 })
 class WildcardToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
@@ -514,10 +524,10 @@ class WildcardToolRenderComponent {
 // WithToolCalls story - matches React exactly
 export const WithToolCalls: Story = {
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component, Input, signal, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
@@ -528,8 +538,8 @@ import {
   ToolMessage,
   provideCopilotKit,
   ToolCallRender
-} from '@copilotkit/angular';
-import { ToolCallStatus } from '@copilotkit/core';
+} from '@copilotkitnext/angular';
+import { ToolCallStatus } from '@copilotkitnext/core';
 import { z } from 'zod';
 
 // Define Zod schema for search args
@@ -848,7 +858,7 @@ export class ChatComponent {
     },
   ];
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -859,7 +869,7 @@ export class ChatComponent {
         CopilotChatMessageViewComponent,
         SearchToolRenderComponent,
         CalculatorToolRenderComponent,
-        WildcardToolRenderComponent
+        WildcardToolRenderComponent,
       ],
       providers: [
         CopilotKitService,
@@ -867,120 +877,123 @@ export class ChatComponent {
           runtimeUrl: undefined, // Explicitly provide undefined to avoid null injector error
           renderToolCalls: [
             {
-              name: 'search',
+              name: "search",
               args: searchArgsSchema,
               render: SearchToolRenderComponent,
             } as unknown as ToolCallRender<SearchArgs>,
             {
-              name: 'calculator',
+              name: "calculator",
               args: calculatorArgsSchema,
               render: CalculatorToolRenderComponent,
             } as unknown as ToolCallRender<CalculatorArgs>,
             {
-              name: '*',
+              name: "*",
               args: z.any(),
               render: WildcardToolRenderComponent,
             } as unknown as ToolCallRender<any>,
-          ]
+          ],
         }),
         provideCopilotChatConfiguration({
           labels: {
-            assistantMessageToolbarCopyMessageLabel: 'Copy',
-            assistantMessageToolbarCopyCodeLabel: 'Copy',
-            assistantMessageToolbarCopyCodeCopiedLabel: 'Copied',
-            assistantMessageToolbarThumbsUpLabel: 'Good response',
-            assistantMessageToolbarThumbsDownLabel: 'Bad response',
-            assistantMessageToolbarReadAloudLabel: 'Read aloud',
-            assistantMessageToolbarRegenerateLabel: 'Regenerate',
-            userMessageToolbarCopyMessageLabel: 'Copy',
-            userMessageToolbarEditMessageLabel: 'Edit'
-          }
-        })
+            assistantMessageToolbarCopyMessageLabel: "Copy",
+            assistantMessageToolbarCopyCodeLabel: "Copy",
+            assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
+            assistantMessageToolbarThumbsUpLabel: "Good response",
+            assistantMessageToolbarThumbsDownLabel: "Bad response",
+            assistantMessageToolbarReadAloudLabel: "Read aloud",
+            assistantMessageToolbarRegenerateLabel: "Regenerate",
+            userMessageToolbarCopyMessageLabel: "Copy",
+            userMessageToolbarEditMessageLabel: "Edit",
+          },
+        }),
       ],
     }),
   ],
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Search for React hooks documentation, calculate 42 * 17 and 100 / 4 + 75, and check the weather in San Francisco',
-        role: 'user' as const,
+        id: "user-1",
+        content:
+          "Search for React hooks documentation, calculate 42 * 17 and 100 / 4 + 75, and check the weather in San Francisco",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
+        id: "assistant-1",
         content: `I'll help you search for React hooks documentation, calculate both expressions, and check the weather.`,
-        role: 'assistant' as const,
+        role: "assistant" as const,
         toolCalls: [
           {
-            id: 'search-1',
-            type: 'function' as const,
+            id: "search-1",
+            type: "function" as const,
             function: {
-              name: 'search',
+              name: "search",
               arguments: JSON.stringify({
-                query: 'React hooks documentation',
-                filters: ['official', 'latest'],
+                query: "React hooks documentation",
+                filters: ["official", "latest"],
               }),
             },
           },
           {
-            id: 'calc-1',
-            type: 'function' as const,
+            id: "calc-1",
+            type: "function" as const,
             function: {
-              name: 'calculator',
+              name: "calculator",
               arguments: JSON.stringify({
-                expression: '42 * 17',
+                expression: "42 * 17",
               }),
             },
           },
           {
-            id: 'calc-2',
-            type: 'function' as const,
+            id: "calc-2",
+            type: "function" as const,
             function: {
-              name: 'calculator',
+              name: "calculator",
               arguments: JSON.stringify({
-                expression: '100 / 4 + 75',
+                expression: "100 / 4 + 75",
               }),
             },
           },
           {
-            id: 'weather-1',
-            type: 'function' as const,
+            id: "weather-1",
+            type: "function" as const,
             function: {
-              name: 'getWeather',
+              name: "getWeather",
               arguments: '{"location": "San Francisco", "units": "fahren', // Intentionally cut off mid-word
             },
           },
         ],
       } as Message,
       {
-        id: 'tool-search-1',
-        role: 'tool' as const,
-        toolCallId: 'search-1',
-        content: 'Found 5 relevant documentation pages about React hooks including useState, useEffect, and custom hooks.',
+        id: "tool-search-1",
+        role: "tool" as const,
+        toolCallId: "search-1",
+        content:
+          "Found 5 relevant documentation pages about React hooks including useState, useEffect, and custom hooks.",
       } as ToolMessage,
       {
-        id: 'tool-calc-1',
-        role: 'tool' as const,
-        toolCallId: 'calc-1',
-        content: '714',
+        id: "tool-calc-1",
+        role: "tool" as const,
+        toolCallId: "calc-1",
+        content: "714",
       } as ToolMessage,
       {
-        id: 'tool-calc-2',
-        role: 'tool' as const,
-        toolCallId: 'calc-2',
-        content: '100',
+        id: "tool-calc-2",
+        role: "tool" as const,
+        toolCallId: "calc-2",
+        content: "100",
       } as ToolMessage,
       {
-        id: 'tool-weather-1',
-        role: 'tool' as const,
-        toolCallId: 'weather-1',
-        content: 'Current weather in San Francisco: 68°F, partly cloudy with a gentle breeze.',
+        id: "tool-weather-1",
+        role: "tool" as const,
+        toolCallId: "weather-1",
+        content:
+          "Current weather in San Francisco: 68°F, partly cloudy with a gentle breeze.",
       } as ToolMessage,
     ];
 
     return {
       props: {
-        messages
+        messages,
       },
       template: `
         <div style="height: 100vh; margin: 0; padding: 0;">

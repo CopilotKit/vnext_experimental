@@ -14,13 +14,21 @@ import {
   signal,
   computed,
   OnDestroy,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
-import type { AssistantMessage, Message, ToolCall, ToolMessage } from '@ag-ui/core';
-import { ToolCallStatus } from '@copilotkit/core';
-import { CopilotKitService } from '../../core/copilotkit.service';
-import { partialJSONParse } from '@copilotkit/shared';
-import type { ToolCallProps, ToolCallRender } from '../../core/copilotkit.types';
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import type {
+  AssistantMessage,
+  Message,
+  ToolCall,
+  ToolMessage,
+} from "@ag-ui/core";
+import { ToolCallStatus } from "@copilotkitnext/core";
+import { CopilotKitService } from "../../core/copilotkit.service";
+import { partialJSONParse } from "@copilotkitnext/shared";
+import type {
+  ToolCallProps,
+  ToolCallRender,
+} from "../../core/copilotkit.types";
 
 /**
  * Component for rendering all tool calls for an assistant message.
@@ -28,7 +36,7 @@ import type { ToolCallProps, ToolCallRender } from '../../core/copilotkit.types'
  * using the registered render functions in CopilotKitService.
  */
 @Component({
-  selector: 'copilot-chat-tool-calls-view',
+  selector: "copilot-chat-tool-calls-view",
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,23 +45,35 @@ import type { ToolCallProps, ToolCallRender } from '../../core/copilotkit.types'
       <ng-container>
         <ng-container #dynamicContainer></ng-container>
         <ng-container *ngIf="getTemplateForToolCall(toolCall) as templateData">
-          <ng-container *ngTemplateOutlet="templateData.template; context: templateData.context"></ng-container>
+          <ng-container
+            *ngTemplateOutlet="
+              templateData.template;
+              context: templateData.context
+            "
+          ></ng-container>
         </ng-container>
       </ng-container>
     }
   `,
 })
-export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChanges, OnDestroy {
+export class CopilotChatToolCallsViewComponent
+  implements AfterViewInit, OnChanges, OnDestroy
+{
   @Input({ required: true }) message!: AssistantMessage;
   @Input() messages: Message[] = [];
   @Input() isLoading = false;
 
-  @ViewChild('dynamicContainer', { read: ViewContainerRef })
+  @ViewChild("dynamicContainer", { read: ViewContainerRef })
   private container?: ViewContainerRef;
 
-  private copilotkit: CopilotKitService | null = inject(CopilotKitService, { optional: true });
+  private copilotkit: CopilotKitService | null = inject(CopilotKitService, {
+    optional: true,
+  });
   private componentRefs: Map<string, ComponentRef<any>> = new Map();
-  private templateCache: Map<string, { template: TemplateRef<any>; context: any }> = new Map();
+  private templateCache: Map<
+    string,
+    { template: TemplateRef<any>; context: any }
+  > = new Map();
 
   // Signals for reactive state
   private messageSignal = signal<AssistantMessage | null>(null);
@@ -65,13 +85,13 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['message']) {
+    if (changes["message"]) {
       this.messageSignal.set(this.message);
     }
-    if (changes['messages']) {
+    if (changes["messages"]) {
       this.messagesSignal.set(this.messages);
     }
-    if (changes['isLoading']) {
+    if (changes["isLoading"]) {
       this.isLoadingSignal.set(this.isLoading);
     }
 
@@ -80,12 +100,14 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
 
   ngOnDestroy(): void {
     // Clean up all component refs
-    this.componentRefs.forEach(ref => ref.destroy());
+    this.componentRefs.forEach((ref) => ref.destroy());
     this.componentRefs.clear();
     this.templateCache.clear();
   }
 
-  getTemplateForToolCall(toolCall: ToolCall): { template: TemplateRef<any>; context: any } | null {
+  getTemplateForToolCall(
+    toolCall: ToolCall
+  ): { template: TemplateRef<any>; context: any } | null {
     return this.templateCache.get(toolCall.id) || null;
   }
 
@@ -96,7 +118,7 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
     }
 
     // Clear existing renders
-    this.componentRefs.forEach(ref => ref.destroy());
+    this.componentRefs.forEach((ref) => ref.destroy());
     this.componentRefs.clear();
     this.templateCache.clear();
 
@@ -108,28 +130,34 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
     const isLoading = this.isLoadingSignal();
 
     // Render each tool call
-    message.toolCalls.forEach(toolCall => {
+    message.toolCalls.forEach((toolCall) => {
       const toolMessage = messages.find(
-        m => m.role === 'tool' && (m as ToolMessage).toolCallId === toolCall.id
+        (m) =>
+          m.role === "tool" && (m as ToolMessage).toolCallId === toolCall.id
       ) as ToolMessage | undefined;
 
       this.renderSingleToolCall(toolCall, toolMessage, isLoading);
     });
   }
 
-  private renderSingleToolCall(toolCall: ToolCall, toolMessage: ToolMessage | undefined, isLoading: boolean): void {
+  private renderSingleToolCall(
+    toolCall: ToolCall,
+    toolMessage: ToolMessage | undefined,
+    isLoading: boolean
+  ): void {
     if (!this.copilotkit) {
       return;
     }
 
     // Get current render tool calls
     const currentRenderToolCalls = this.copilotkit.currentRenderToolCalls();
-    
+
     // Find the render config for this tool call by name
     // Also check for wildcard (*) renders if no exact match
-    const renderConfig = currentRenderToolCalls.find(
-      (rc: ToolCallRender) => rc.name === toolCall.function.name
-    ) || currentRenderToolCalls.find((rc: ToolCallRender) => rc.name === '*');
+    const renderConfig =
+      currentRenderToolCalls.find(
+        (rc: ToolCallRender) => rc.name === toolCall.function.name
+      ) || currentRenderToolCalls.find((rc: ToolCallRender) => rc.name === "*");
 
     if (!renderConfig) {
       return;
@@ -153,7 +181,7 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
     if (status === ToolCallStatus.InProgress) {
       props = {
         name: toolCall.function.name,
-        description: '',
+        description: "",
         args: args, // Partial args for InProgress
         status: ToolCallStatus.InProgress,
         result: undefined,
@@ -162,10 +190,10 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
       // Complete status
       props = {
         name: toolCall.function.name,
-        description: '',
+        description: "",
         args: args, // Full args for Complete
         status: ToolCallStatus.Complete,
-        result: toolMessage?.content || '',
+        result: toolMessage?.content || "",
       };
     }
 
@@ -179,7 +207,11 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
     }
   }
 
-  private renderComponent(toolCallId: string, componentClass: Type<any>, props: ToolCallProps): void {
+  private renderComponent(
+    toolCallId: string,
+    componentClass: Type<any>,
+    props: ToolCallProps
+  ): void {
     if (!this.container) {
       return;
     }
@@ -201,7 +233,11 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
     componentRef.changeDetectorRef.detectChanges();
   }
 
-  private renderTemplate(toolCallId: string, template: TemplateRef<any>, props: ToolCallProps): void {
+  private renderTemplate(
+    toolCallId: string,
+    template: TemplateRef<any>,
+    props: ToolCallProps
+  ): void {
     this.templateCache.set(toolCallId, {
       template,
       context: {
@@ -211,12 +247,12 @@ export class CopilotChatToolCallsViewComponent implements AfterViewInit, OnChang
         args: props.args,
         status: props.status,
         result: props.result,
-      }
+      },
     });
   }
 
   private isComponentClass(value: any): value is Type<any> {
-    return typeof value === 'function' && value.prototype;
+    return typeof value === "function" && value.prototype;
   }
 
   private isTemplateRef(value: any): value is TemplateRef<any> {

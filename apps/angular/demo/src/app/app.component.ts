@@ -2,7 +2,7 @@ import { Component } from "@angular/core";
 import {
   CopilotKitConfigDirective,
   CopilotChatComponent,
-} from "@copilotkit/angular";
+} from "@copilotkitnext/angular";
 
 @Component({
   selector: "app-root",

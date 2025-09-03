@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { CopilotKitAgentDirective } from "../copilotkit-agent.directive";
 import { CopilotKitService } from "../../core/copilotkit.service";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
-import { DEFAULT_AGENT_ID } from "@copilotkit/shared";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 
 // Mock agent
 const mockAgent = {
@@ -41,7 +41,7 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function directly
 };
 
-vi.mock("@copilotkit/core", () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
 }));
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { HttpAgent } from "@ag-ui/client";
-import { CopilotChat, CopilotKitProvider } from "@copilotkit/react";
+import { CopilotChat, CopilotKitProvider } from "@copilotkitnext/react";
 
 // Disable static optimization for this page
 export const dynamic = "force-dynamic";

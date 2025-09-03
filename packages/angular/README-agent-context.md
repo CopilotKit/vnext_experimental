@@ -5,7 +5,7 @@ This document demonstrates how to use agent context in the Angular version of Co
 ## Installation
 
 ```bash
-pnpm add @copilotkit/angular
+pnpm add @copilotkitnext/angular
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ The directive approach is ideal for template-driven context management.
 
 ```typescript
 import { Component } from "@angular/core";
-import { CopilotKitAgentContextDirective } from "@copilotkit/angular";
+import { CopilotKitAgentContextDirective } from "@copilotkitnext/angular";
 
 @Component({
   selector: "app-user-profile",
@@ -139,7 +139,7 @@ For services and components that need programmatic control.
 
 ```typescript
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { addAgentContext, injectCopilotKit } from '@copilotkit/angular';
+import { addAgentContext, injectCopilotKit } from '@copilotkitnext/angular';
 
 @Component({...})
 export class MyComponent implements OnInit, OnDestroy {
@@ -167,7 +167,7 @@ export class MyComponent implements OnInit, OnDestroy {
 
 ```typescript
 import { Component, OnInit } from '@angular/core';
-import { useAgentContext } from '@copilotkit/angular';
+import { useAgentContext } from '@copilotkitnext/angular';
 
 @Component({...})
 export class MyComponent implements OnInit {
@@ -187,7 +187,7 @@ export class MyComponent implements OnInit {
 
 ```typescript
 import { Component, signal, computed } from '@angular/core';
-import { createReactiveContext } from '@copilotkit/angular';
+import { createReactiveContext } from '@copilotkitnext/angular';
 
 @Component({...})
 export class ReactiveComponent {
@@ -280,7 +280,7 @@ export class ConditionalContextComponent {
 All functions and directives are fully typed:
 
 ```typescript
-import type { Context } from '@copilotkit/angular';
+import type { Context } from '@copilotkitnext/angular';
 
 const myContext: Context = {
   description: 'Typed context',

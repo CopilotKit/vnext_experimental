@@ -1,12 +1,12 @@
 import { Type, TemplateRef } from "@angular/core";
 import type { z } from "zod";
 import { AngularFrontendTool } from "./frontend-tool";
-import { ToolCallStatus } from "@copilotkit/core";
+import { ToolCallStatus } from "@copilotkitnext/core";
 
 /**
  * Props passed to human-in-the-loop render components - discriminated union matching React
  */
-export type HumanInTheLoopProps<T = unknown> = 
+export type HumanInTheLoopProps<T = unknown> =
   | {
       name: string;
       description: string;
@@ -36,14 +36,15 @@ export type HumanInTheLoopProps<T = unknown> =
  * Angular human-in-the-loop tool definition.
  * Similar to frontend tools but designed for interactive user input scenarios.
  */
-export interface AngularHumanInTheLoop<T extends Record<string, any> = Record<string, any>> 
-  extends Omit<AngularFrontendTool<T>, 'handler' | 'render'> {
+export interface AngularHumanInTheLoop<
+  T extends Record<string, any> = Record<string, any>,
+> extends Omit<AngularFrontendTool<T>, "handler" | "render"> {
   /**
    * Angular component or template to render for user interaction.
    * Required for human-in-the-loop tools.
    */
   render: Type<HumanInTheLoopProps<T>> | TemplateRef<HumanInTheLoopProps<T>>;
-  
+
   /**
    * Parameters schema is required for human-in-the-loop tools
    */

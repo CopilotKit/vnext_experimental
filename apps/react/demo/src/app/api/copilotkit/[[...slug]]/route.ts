@@ -1,5 +1,5 @@
-import { CopilotRuntime, createCopilotEndpoint } from "@copilotkit/runtime";
-import { InMemoryAgentRunner } from "@copilotkit/runtime";
+import { CopilotRuntime, createCopilotEndpoint } from "@copilotkitnext/runtime";
+import { InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 

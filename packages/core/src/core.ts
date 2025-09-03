@@ -1,5 +1,9 @@
-import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
-import { logger } from "@copilotkit/shared";
+import {
+  AgentDescription,
+  randomUUID,
+  RuntimeInfo,
+} from "@copilotkitnext/shared";
+import { logger } from "@copilotkitnext/shared";
 import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { CopilotKitHttpAgent } from "./agent";
@@ -234,13 +238,13 @@ export class CopilotKitCore {
           ) {
             if (toolCall.function.name in this.tools) {
               const tool = this.tools[toolCall.function.name];
-              
+
               // Check if tool is constrained to a specific agent
               if (tool?.agentId && tool.agentId !== agentId) {
                 // Tool is not available for this agent, skip it
                 continue;
               }
-              
+
               let toolCallResult = "";
               if (tool?.handler) {
                 const args = JSON.parse(toolCall.function.arguments);
@@ -275,19 +279,19 @@ export class CopilotKitCore {
             } else if ("*" in this.tools) {
               // Wildcard fallback for undefined tools
               const wildcardTool = this.tools["*"];
-              
+
               // Check if wildcard tool is constrained to a specific agent
               if (wildcardTool?.agentId && wildcardTool.agentId !== agentId) {
                 // Wildcard tool is not available for this agent, skip it
                 continue;
               }
-              
+
               let toolCallResult = "";
               if (wildcardTool?.handler) {
                 // Pass both the tool name and original args to the wildcard handler
                 const wildcardArgs = {
                   toolName: toolCall.function.name,
-                  args: JSON.parse(toolCall.function.arguments)
+                  args: JSON.parse(toolCall.function.arguments),
                 };
                 try {
                   const result = await wildcardTool.handler(wildcardArgs);

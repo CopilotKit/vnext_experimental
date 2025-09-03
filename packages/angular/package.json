@@ -1,15 +1,15 @@
 {
-  "name": "@copilotkit/angular",
+  "name": "@copilotkitnext/angular",
   "version": "0.0.2",
   "description": "Angular library for CopilotKit",
-  "main": "dist/fesm2022/copilotkit-angular.mjs",
-  "module": "dist/fesm2022/copilotkit-angular.mjs",
+  "main": "dist/fesm2022/copilotkitnext-angular.mjs",
+  "module": "dist/fesm2022/copilotkitnext-angular.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/fesm2022/copilotkit-angular.mjs",
-      "default": "./dist/fesm2022/copilotkit-angular.mjs"
+      "import": "./dist/fesm2022/copilotkitnext-angular.mjs",
+      "default": "./dist/fesm2022/copilotkitnext-angular.mjs"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
@@ -32,8 +32,8 @@
   "dependencies": {
     "@ag-ui/client": "0.0.36-alpha.1",
     "@ag-ui/core": "0.0.36-alpha.1",
-    "@copilotkit/core": "workspace:*",
-    "@copilotkit/shared": "workspace:*",
+    "@copilotkitnext/core": "workspace:*",
+    "@copilotkitnext/shared": "workspace:*",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.22",
     "lucide-angular": "^0.540.0",
@@ -56,8 +56,8 @@
     "@angular/core": "^19.0.0",
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
-    "@copilotkit/eslint-config": "workspace:*",
-    "@copilotkit/typescript-config": "workspace:*",
+    "@copilotkitnext/eslint-config": "workspace:*",
+    "@copilotkitnext/typescript-config": "workspace:*",
     "@eslint/js": "^9.30.0",
     "@lucide/build-icons": "^1.1.0",
     "@tailwindcss/cli": "^4.1.11",

@@ -11,7 +11,12 @@ export * from "./utils/agent-context.utils";
 export * from "./utils/frontend-tool.utils";
 // Note: tool-render.utils removed in favor of direct ToolCallRender<T> usage
 // Export all except AgentWatchResult which is already exported from copilotkit.types
-export { watchAgent, getAgent, subscribeToAgent, registerAgentWatcher } from "./utils/agent.utils";
+export {
+  watchAgent,
+  getAgent,
+  subscribeToAgent,
+  registerAgentWatcher,
+} from "./utils/agent.utils";
 export * from "./utils/human-in-the-loop.utils";
 export * from "./utils/chat-config.utils";
 // Slot utilities are internal only, not exported
@@ -97,4 +102,4 @@ export { ResizeObserverService } from "./services/resize-observer.service";
 export { StickToBottomDirective } from "./directives/stick-to-bottom.directive";
 
 // Testing utilities are not exported from the main entry point
-// They should be imported directly from '@copilotkit/angular/testing' if needed
+// They should be imported directly from '@copilotkitnext/angular/testing' if needed

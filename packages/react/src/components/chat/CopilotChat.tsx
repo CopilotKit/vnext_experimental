@@ -1,7 +1,7 @@
 import { useAgent } from "@/hooks/use-agent";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
-import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
+import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 
@@ -40,7 +40,7 @@ export function CopilotChat({
       if ("isCopilotKitAgent" in agent) {
         connect();
       } else {
-        setShowCursor(false);
+        setIsLoading(false);
       }
     }
     return () => {};

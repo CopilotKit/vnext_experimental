@@ -5,7 +5,7 @@ import {
   CopilotChatUserMessageComponent,
   provideCopilotChatConfiguration,
   type UserMessage,
-} from "@copilotkit/angular";
+} from "@copilotkitnext/angular";
 
 // Simple default message
 const simpleMessage: UserMessage = {
@@ -108,9 +108,9 @@ export const Default: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -135,7 +135,7 @@ export class ChatComponent {
     console.log('Edit message:', event);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -148,9 +148,9 @@ export const LongMessage: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -184,7 +184,7 @@ Can you help me implement this step by step? I'm particularly struggling with th
     console.log('Edit message:', event);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -198,9 +198,9 @@ export const WithEditButton: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -226,7 +226,7 @@ export class ChatComponent {
     console.log('Edit message:', event);
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -240,9 +240,9 @@ export const WithoutEditButton: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -264,7 +264,7 @@ export class ChatComponent {
   
   // No edit handler - edit button won't appear
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -278,9 +278,9 @@ export const CodeRelatedMessage: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -323,7 +323,7 @@ How can I fix this?\`,
     alert('Edit code message clicked!');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -337,9 +337,9 @@ export const ShortQuestion: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -364,7 +364,7 @@ export class ChatComponent {
     console.log('Edit short message clicked!');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },
@@ -406,9 +406,9 @@ export const WithAdditionalToolbarItems: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkit/angular';
+import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
@@ -459,7 +459,7 @@ export class ChatComponent {
     alert('Custom button 2 clicked!');
   }
 }`,
-        language: 'typescript',
+        language: "typescript",
       },
     },
   },

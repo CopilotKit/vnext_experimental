@@ -1,17 +1,17 @@
-import { TestBed } from '@angular/core/testing';
-import { Component, OnInit } from '@angular/core';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { 
+import { TestBed } from "@angular/core/testing";
+import { Component, OnInit } from "@angular/core";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import {
   registerFrontendTool,
-  createDynamicFrontendTool 
-} from '../frontend-tool.utils';
-import { CopilotKitService } from '../../core/copilotkit.service';
-import { provideCopilotKit } from '../../core/copilotkit.providers';
-import { z } from 'zod';
-import { signal } from '@angular/core';
+  createDynamicFrontendTool,
+} from "../frontend-tool.utils";
+import { CopilotKitService } from "../../core/copilotkit.service";
+import { provideCopilotKit } from "../../core/copilotkit.providers";
+import { z } from "zod";
+import { signal } from "@angular/core";
 
 // Mock CopilotKitCore
-vi.mock('@copilotkit/core', () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -20,55 +20,53 @@ vi.mock('@copilotkit/core', () => ({
     setProperties: vi.fn(),
     setAgents: vi.fn(),
     subscribe: vi.fn(() => () => {}),
-  }))
+  })),
 }));
 
 // Mock component for testing
 @Component({
   template: `<div>Mock Render</div>`,
-  standalone: true
+  standalone: true,
 })
 class MockRenderComponent {}
 
-describe('Frontend Tool Inject Functions', () => {
+describe("Frontend Tool Inject Functions", () => {
   let service: CopilotKitService;
   let addToolSpy: any;
   let removeToolSpy: any;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        provideCopilotKit({})
-      ]
+      providers: [provideCopilotKit({})],
     });
-    
+
     service = TestBed.inject(CopilotKitService);
-    addToolSpy = vi.spyOn(service.copilotkit, 'addTool');
-    removeToolSpy = vi.spyOn(service.copilotkit, 'removeTool');
+    addToolSpy = vi.spyOn(service.copilotkit, "addTool");
+    removeToolSpy = vi.spyOn(service.copilotkit, "removeTool");
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('registerFrontendTool', () => {
-    it('should register tool within component context', () => {
+  describe("registerFrontendTool", () => {
+    it("should register tool within component context", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
         // Move the registration to constructor or field initializer
         // where injection context is available
         toolName = registerFrontendTool({
-          name: 'testTool',
-          description: 'Test tool',
-          parameters: z.object({ value: z.string() })
+          name: "testTool",
+          description: "Test tool",
+          parameters: z.object({ value: z.string() }),
         });
 
         ngOnInit() {
-          expect(this.toolName).toBe('testTool');
+          expect(this.toolName).toBe("testTool");
         }
       }
 
@@ -78,23 +76,23 @@ describe('Frontend Tool Inject Functions', () => {
       // Tool should be added
       expect(addToolSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'testTool',
-          description: 'Test tool'
+          name: "testTool",
+          description: "Test tool",
         })
       );
     });
 
-    it('should register render when provided', () => {
+    it("should register render when provided", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         // Call in field initializer where injection context is available
         toolName = registerFrontendTool({
-          name: 'renderTool',
-          render: MockRenderComponent
+          name: "renderTool",
+          render: MockRenderComponent,
         });
       }
 
@@ -102,21 +100,21 @@ describe('Frontend Tool Inject Functions', () => {
       fixture.detectChanges();
 
       const renders = service.currentRenderToolCalls();
-      const renderTool = renders.find(r => r.name === 'renderTool');
+      const renderTool = renders.find((r) => r.name === "renderTool");
       expect(renderTool).toBeDefined();
       expect(renderTool?.render).toBe(MockRenderComponent);
     });
 
-    it('should cleanup on component destroy', () => {
+    it("should cleanup on component destroy", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         toolName = registerFrontendTool({
-          name: 'cleanupTool',
-          description: 'Tool with auto cleanup'
+          name: "cleanupTool",
+          description: "Tool with auto cleanup",
         });
       }
 
@@ -129,13 +127,13 @@ describe('Frontend Tool Inject Functions', () => {
       fixture.destroy();
 
       // Tool should be removed
-      expect(removeToolSpy).toHaveBeenCalledWith('cleanupTool');
+      expect(removeToolSpy).toHaveBeenCalledWith("cleanupTool");
     });
 
-    it('should handle complex tool configuration', () => {
+    it("should handle complex tool configuration", () => {
       const schema = z.object({
         query: z.string(),
-        limit: z.number().optional()
+        limit: z.number().optional(),
       });
 
       const handler = vi.fn(async (args: any) => {
@@ -143,18 +141,18 @@ describe('Frontend Tool Inject Functions', () => {
       });
 
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         toolName = registerFrontendTool({
-          name: 'searchTool',
-          description: 'Search tool',
+          name: "searchTool",
+          description: "Search tool",
           parameters: schema,
           handler: handler,
           render: MockRenderComponent,
-          followUp: true
+          followUp: true,
         });
       }
 
@@ -163,28 +161,28 @@ describe('Frontend Tool Inject Functions', () => {
 
       expect(addToolSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'searchTool',
-          description: 'Search tool',
-          followUp: true
+          name: "searchTool",
+          description: "Search tool",
+          followUp: true,
         })
       );
     });
   });
 
-  describe('createDynamicFrontendTool', () => {
-    it('should create tool with initial configuration', () => {
+  describe("createDynamicFrontendTool", () => {
+    it("should create tool with initial configuration", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
         // Create in field initializer
         tool = createDynamicFrontendTool(
-          'dynamicTool',
-          'Dynamic tool',
+          "dynamicTool",
+          "Dynamic tool",
           z.object({ value: z.string() }),
-          () => vi.fn(async () => 'result')
+          () => vi.fn(async () => "result")
         );
 
         ngOnInit() {
@@ -199,24 +197,24 @@ describe('Frontend Tool Inject Functions', () => {
 
       expect(addToolSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'dynamicTool',
-          description: 'Dynamic tool'
+          name: "dynamicTool",
+          description: "Dynamic tool",
         })
       );
     });
 
-    it('should handle dynamic updates', () => {
+    it("should handle dynamic updates", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
-        handlerSignal = signal(vi.fn(async () => 'initial'));
-        
+        handlerSignal = signal(vi.fn(async () => "initial"));
+
         tool = createDynamicFrontendTool(
-          'updateableTool',
-          'Updateable tool',
+          "updateableTool",
+          "Updateable tool",
           z.object({ value: z.string() }),
           () => this.handlerSignal()
         );
@@ -226,11 +224,11 @@ describe('Frontend Tool Inject Functions', () => {
           expect(addToolSpy).toHaveBeenCalledTimes(1);
 
           // Update handler
-          this.handlerSignal.set(vi.fn(async () => 'updated'));
+          this.handlerSignal.set(vi.fn(async () => "updated"));
           this.tool.update();
 
           // Should remove old and add new
-          expect(removeToolSpy).toHaveBeenCalledWith('updateableTool');
+          expect(removeToolSpy).toHaveBeenCalledWith("updateableTool");
           expect(addToolSpy).toHaveBeenCalledTimes(2);
         }
       }
@@ -239,24 +237,24 @@ describe('Frontend Tool Inject Functions', () => {
       fixture.detectChanges();
     });
 
-    it('should support dynamic description', () => {
+    it("should support dynamic description", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
-        descSignal = signal('Initial description');
-        
+        descSignal = signal("Initial description");
+
         tool = createDynamicFrontendTool(
-          'descTool',
+          "descTool",
           () => this.descSignal(),
           z.object({}),
           () => vi.fn(async () => null)
         );
 
         ngOnInit() {
-          this.descSignal.set('Updated description');
+          this.descSignal.set("Updated description");
           this.tool.update();
         }
       }
@@ -266,21 +264,21 @@ describe('Frontend Tool Inject Functions', () => {
 
       expect(addToolSpy).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          description: 'Updated description'
+          description: "Updated description",
         })
       );
     });
 
-    it('should cleanup on manual destroy', () => {
+    it("should cleanup on manual destroy", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
         tool = createDynamicFrontendTool(
-          'manualCleanupTool',
-          'Manual cleanup',
+          "manualCleanupTool",
+          "Manual cleanup",
           z.object({}),
           () => vi.fn(async () => null)
         );
@@ -294,19 +292,19 @@ describe('Frontend Tool Inject Functions', () => {
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
-      expect(removeToolSpy).toHaveBeenCalledWith('manualCleanupTool');
+      expect(removeToolSpy).toHaveBeenCalledWith("manualCleanupTool");
     });
 
-    it('should auto-cleanup on component destroy', () => {
+    it("should auto-cleanup on component destroy", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         tool = createDynamicFrontendTool(
-          'autoCleanupTool',
-          'Auto cleanup',
+          "autoCleanupTool",
+          "Auto cleanup",
           z.object({}),
           () => vi.fn(async () => null)
         );
@@ -319,21 +317,21 @@ describe('Frontend Tool Inject Functions', () => {
 
       fixture.destroy();
 
-      expect(removeToolSpy).toHaveBeenCalledWith('autoCleanupTool');
+      expect(removeToolSpy).toHaveBeenCalledWith("autoCleanupTool");
     });
 
-    it('should support dynamic render', () => {
+    it("should support dynamic render", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         renderSignal = signal<any>(MockRenderComponent);
-        
+
         tool = createDynamicFrontendTool(
-          'renderDynamicTool',
-          'Dynamic render',
+          "renderDynamicTool",
+          "Dynamic render",
           z.object({}),
           () => vi.fn(async () => null),
           () => this.renderSignal()
@@ -344,7 +342,7 @@ describe('Frontend Tool Inject Functions', () => {
       fixture.detectChanges();
 
       const renders = service.currentRenderToolCalls();
-      const renderTool = renders.find(r => r.name === 'renderDynamicTool');
+      const renderTool = renders.find((r) => r.name === "renderDynamicTool");
       expect(renderTool).toBeDefined();
       expect(renderTool?.render).toBe(MockRenderComponent);
     });

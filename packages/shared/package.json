@@ -1,5 +1,5 @@
 {
-  "name": "@copilotkit/shared",
+  "name": "@copilotkitnext/shared",
   "version": "0.0.0",
   "private": true,
   "description": "Shared utilities and types for CopilotKit2",
@@ -20,8 +20,8 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@copilotkit/eslint-config": "workspace:*",
-    "@copilotkit/typescript-config": "workspace:*",
+    "@copilotkitnext/eslint-config": "workspace:*",
+    "@copilotkitnext/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
     "tsup": "^8.5.0",

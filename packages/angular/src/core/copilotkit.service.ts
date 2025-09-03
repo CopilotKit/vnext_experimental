@@ -20,7 +20,11 @@ import {
   AngularFrontendTool,
   AngularHumanInTheLoop,
 } from "./copilotkit.types";
-import { CopilotKitCore, CopilotKitCoreConfig, FrontendTool } from "@copilotkit/core";
+import {
+  CopilotKitCore,
+  CopilotKitCoreConfig,
+  FrontendTool,
+} from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 
 /**
@@ -38,21 +42,37 @@ export class CopilotKitService {
   readonly copilotkit: CopilotKitCore;
 
   // State signals
-  private readonly _renderToolCalls: ReturnType<typeof signal<ToolCallRender<unknown>[]>>;
-  private readonly _currentRenderToolCalls: ReturnType<typeof signal<ToolCallRender<unknown>[]>>;
+  private readonly _renderToolCalls: ReturnType<
+    typeof signal<ToolCallRender<unknown>[]>
+  >;
+  private readonly _currentRenderToolCalls: ReturnType<
+    typeof signal<ToolCallRender<unknown>[]>
+  >;
   private readonly _runtimeUrl: ReturnType<typeof signal<string | undefined>>;
   private readonly _headers: ReturnType<typeof signal<Record<string, string>>>;
-  private readonly _properties: ReturnType<typeof signal<Record<string, unknown>>>;
-  private readonly _agents: ReturnType<typeof signal<Record<string, AbstractAgent>>>;
-  private readonly _frontendTools: ReturnType<typeof signal<AngularFrontendTool<any>[]>>;
-  private readonly _humanInTheLoop: ReturnType<typeof signal<AngularHumanInTheLoop<any>[]>>;
-  
+  private readonly _properties: ReturnType<
+    typeof signal<Record<string, unknown>>
+  >;
+  private readonly _agents: ReturnType<
+    typeof signal<Record<string, AbstractAgent>>
+  >;
+  private readonly _frontendTools: ReturnType<
+    typeof signal<AngularFrontendTool<any>[]>
+  >;
+  private readonly _humanInTheLoop: ReturnType<
+    typeof signal<AngularHumanInTheLoop<any>[]>
+  >;
+
   // Runtime state change notification signal
   private readonly _runtimeStateVersion: ReturnType<typeof signal<number>>;
 
   // Computed signals for processed values
-  private readonly _allTools: ReturnType<typeof computed<Record<string, FrontendTool<any>>>>;
-  private readonly _allRenderToolCalls: ReturnType<typeof computed<ToolCallRender<unknown>[]>>;
+  private readonly _allTools: ReturnType<
+    typeof computed<Record<string, FrontendTool<any>>>
+  >;
+  private readonly _allRenderToolCalls: ReturnType<
+    typeof computed<ToolCallRender<unknown>[]>
+  >;
 
   // Public readonly signals - will be initialized in constructor
   readonly renderToolCalls: any;
@@ -84,22 +104,25 @@ export class CopilotKitService {
     @Inject(COPILOTKIT_HEADERS) headers: Record<string, string>,
     @Inject(COPILOTKIT_PROPERTIES) properties: Record<string, unknown>,
     @Inject(COPILOTKIT_AGENTS) agents: Record<string, AbstractAgent>,
-    @Inject(COPILOTKIT_RENDER_TOOL_CALLS) renderToolCalls: ToolCallRender<unknown>[],
-    @Inject(COPILOTKIT_FRONTEND_TOOLS) frontendTools: AngularFrontendTool<any>[],
-    @Inject(COPILOTKIT_HUMAN_IN_THE_LOOP) humanInTheLoop: AngularHumanInTheLoop<any>[]
+    @Inject(COPILOTKIT_RENDER_TOOL_CALLS)
+    renderToolCalls: ToolCallRender<unknown>[],
+    @Inject(COPILOTKIT_FRONTEND_TOOLS)
+    frontendTools: AngularFrontendTool<any>[],
+    @Inject(COPILOTKIT_HUMAN_IN_THE_LOOP)
+    humanInTheLoop: AngularHumanInTheLoop<any>[]
   ) {
     // Store initial values for stability checking
     this.initialFrontendTools = frontendTools;
     this.initialHumanInTheLoop = humanInTheLoop;
     this.initialRenderToolCalls = renderToolCalls;
-    
+
     // Process tools and humanInTheLoop
     const { allTools, allRenderToolCalls } = this.processTools(
       frontendTools,
       humanInTheLoop,
       renderToolCalls
     );
-    
+
     // Initialize core instance with processed tools
     this.copilotkit = new CopilotKitCore({
       runtimeUrl: undefined, // Prevent server-side fetching
@@ -108,10 +131,12 @@ export class CopilotKitService {
       agents,
       tools: allTools,
     } as CopilotKitCoreConfig);
-    
+
     // Initialize state signals
-    this._renderToolCalls = signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
-    this._currentRenderToolCalls = signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
+    this._renderToolCalls =
+      signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
+    this._currentRenderToolCalls =
+      signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
     this._runtimeUrl = signal<string | undefined>(runtimeUrl);
     this._headers = signal<Record<string, string>>(headers);
     this._properties = signal<Record<string, unknown>>(properties);
@@ -119,16 +144,16 @@ export class CopilotKitService {
     this._frontendTools = signal<AngularFrontendTool<any>[]>(frontendTools);
     this._humanInTheLoop = signal<AngularHumanInTheLoop<any>[]>(humanInTheLoop);
     this._runtimeStateVersion = signal<number>(0);
-    
+
     // Initialize computed signals for processed values
     this._allTools = computed(() => {
       const tools: Record<string, FrontendTool<any>> = {};
-      
+
       // Add frontend tools
       this._frontendTools().forEach((tool) => {
         tools[tool.name] = tool as FrontendTool<any>;
       });
-      
+
       // Process human-in-the-loop tools
       this._humanInTheLoop().forEach((tool) => {
         const frontendTool: FrontendTool<any> = {
@@ -137,21 +162,21 @@ export class CopilotKitService {
           parameters: tool.parameters,
           followUp: tool.followUp,
           handler: async (args: any) => {
-            console.warn(`Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`);
+            console.warn(
+              `Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`
+            );
             return undefined;
           },
         };
         tools[tool.name] = frontendTool;
       });
-      
+
       return tools;
     });
-    
+
     this._allRenderToolCalls = computed(() => {
-      const combined: ToolCallRender<unknown>[] = [
-        ...this._renderToolCalls(),
-      ];
-      
+      const combined: ToolCallRender<unknown>[] = [...this._renderToolCalls()];
+
       // Add render components from frontend tools
       this._frontendTools().forEach((tool) => {
         if (tool.render && tool.parameters) {
@@ -163,7 +188,7 @@ export class CopilotKitService {
           });
         }
       });
-      
+
       // Add render components from human-in-the-loop tools
       this._humanInTheLoop().forEach((tool) => {
         if (tool.render && tool.parameters) {
@@ -175,10 +200,10 @@ export class CopilotKitService {
           });
         }
       });
-      
+
       return combined;
     });
-    
+
     // Initialize public readonly signals
     this.renderToolCalls = this._allRenderToolCalls;
     this.currentRenderToolCalls = this._currentRenderToolCalls.asReadonly();
@@ -189,7 +214,7 @@ export class CopilotKitService {
     this.frontendTools = this._frontendTools.asReadonly();
     this.humanInTheLoop = this._humanInTheLoop.asReadonly();
     this.runtimeStateVersion = this._runtimeStateVersion.asReadonly();
-    
+
     // Initialize Observable APIs
     this.renderToolCalls$ = toObservable(this.renderToolCalls);
     this.currentRenderToolCalls$ = toObservable(this.currentRenderToolCalls);
@@ -199,13 +224,13 @@ export class CopilotKitService {
     this.agents$ = toObservable(this.agents);
     this.frontendTools$ = toObservable(this.frontendTools);
     this.humanInTheLoop$ = toObservable(this.humanInTheLoop);
-    
+
     // Initialize context value as computed signal
     this.context = computed<CopilotKitContextValue>(() => {
       // Touch the runtime state version to ensure this computed updates
       // when runtime events occur (loaded/error)
       this.runtimeStateVersion();
-      
+
       return {
         copilotkit: this.copilotkit,
         renderToolCalls: this.renderToolCalls(),
@@ -213,9 +238,9 @@ export class CopilotKitService {
         setCurrentRenderToolCalls: (v) => this.setCurrentRenderToolCalls(v),
       };
     });
-    
+
     this.context$ = toObservable(this.context);
-    
+
     // Effects must be created in injection context (constructor)
     this.setupRuntimeSyncEffects();
     this.setupStabilityWarnings();
@@ -234,14 +259,12 @@ export class CopilotKitService {
     allRenderToolCalls: ToolCallRender<unknown>[];
   } {
     const allTools: Record<string, FrontendTool<any>> = {};
-    const allRenderToolCalls: ToolCallRender<unknown>[] = [
-      ...renderToolCalls,
-    ];
+    const allRenderToolCalls: ToolCallRender<unknown>[] = [...renderToolCalls];
 
     // Add frontend tools
     frontendTools.forEach((tool) => {
       allTools[tool.name] = tool as FrontendTool<any>;
-      
+
       // Add render component if provided
       if (tool.render && tool.parameters) {
         allRenderToolCalls.push({
@@ -264,7 +287,9 @@ export class CopilotKitService {
         ...(tool.agentId && { agentId: tool.agentId }),
         handler: async (args: any) => {
           // Placeholder handler - actual implementation will be handled by the render component
-          console.warn(`Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`);
+          console.warn(
+            `Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`
+          );
           return undefined;
         },
       };
@@ -291,7 +316,10 @@ export class CopilotKitService {
     // Warn if frontendTools changes
     effect(() => {
       const current = this._frontendTools();
-      if (current !== this.initialFrontendTools && this.initialFrontendTools.length > 0) {
+      if (
+        current !== this.initialFrontendTools &&
+        this.initialFrontendTools.length > 0
+      ) {
         untracked(() => {
           console.error(
             "frontendTools must be a stable array. To add/remove tools dynamically, use dynamic tool registration."
@@ -303,7 +331,10 @@ export class CopilotKitService {
     // Warn if humanInTheLoop changes
     effect(() => {
       const current = this._humanInTheLoop();
-      if (current !== this.initialHumanInTheLoop && this.initialHumanInTheLoop.length > 0) {
+      if (
+        current !== this.initialHumanInTheLoop &&
+        this.initialHumanInTheLoop.length > 0
+      ) {
         untracked(() => {
           console.error(
             "humanInTheLoop must be a stable array. To add/remove human-in-the-loop tools dynamically, use dynamic tool registration."
@@ -315,7 +346,10 @@ export class CopilotKitService {
     // Warn if renderToolCalls changes
     effect(() => {
       const current = this._renderToolCalls();
-      if (current !== this.initialRenderToolCalls && this.initialRenderToolCalls.length > 0) {
+      if (
+        current !== this.initialRenderToolCalls &&
+        this.initialRenderToolCalls.length > 0
+      ) {
         untracked(() => {
           console.error(
             "renderToolCalls must be a stable object. To add/remove tools dynamically, use dynamic tool registration."
@@ -389,7 +423,7 @@ export class CopilotKitService {
    * for any computed signals or effects that depend on runtime state.
    */
   private notifyRuntimeStateChange(): void {
-    this._runtimeStateVersion.update(version => version + 1);
+    this._runtimeStateVersion.update((version) => version + 1);
   }
 
   // Public mutation methods
@@ -479,12 +513,12 @@ export class CopilotKitService {
    */
   registerToolRender(name: string, render: ToolCallRender<unknown>): void {
     const current = this._currentRenderToolCalls();
-    if (current.find(r => r.name === name)) {
+    if (current.find((r) => r.name === name)) {
       console.warn(`Tool render for '${name}' is being overwritten`);
     }
     this._currentRenderToolCalls.set([
-      ...current.filter(r => r.name !== name),
-      render
+      ...current.filter((r) => r.name !== name),
+      render,
     ]);
   }
 
@@ -493,7 +527,7 @@ export class CopilotKitService {
    */
   unregisterToolRender(name: string): void {
     const current = this._currentRenderToolCalls();
-    const filtered = current.filter(r => r.name !== name);
+    const filtered = current.filter((r) => r.name !== name);
     if (filtered.length !== current.length) {
       this._currentRenderToolCalls.set(filtered);
     }
@@ -503,6 +537,6 @@ export class CopilotKitService {
    * Get a specific tool render
    */
   getToolRender(name: string): ToolCallRender<unknown> | undefined {
-    return this._currentRenderToolCalls().find(r => r.name === name);
+    return this._currentRenderToolCalls().find((r) => r.name === name);
   }
 }

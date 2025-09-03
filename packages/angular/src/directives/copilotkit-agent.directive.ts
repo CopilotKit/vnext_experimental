@@ -14,7 +14,7 @@ import { toObservable } from "@angular/core/rxjs-interop";
 import { Observable } from "rxjs";
 import { CopilotKitService } from "../core/copilotkit.service";
 import { AbstractAgent } from "@ag-ui/client";
-import { DEFAULT_AGENT_ID } from "@copilotkit/shared";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 
 /**
  * Directive to watch and interact with CopilotKit agents.

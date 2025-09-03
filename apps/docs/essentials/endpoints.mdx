@@ -12,8 +12,8 @@ CopilotKit Runtime provides a flexible endpoint system that can be integrated wi
 First, create and configure your CopilotKit runtime:
 
 ```typescript
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 // Configure your runtime
 const runtime = new CopilotRuntime({
@@ -57,8 +57,8 @@ CopilotKit uses `@whatwg-node/server` under the hood, which provides seamless in
 
 ```typescript Next.js (Pages Router)
 // pages/api/copilotkit/[...copilotkit].ts
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -81,8 +81,8 @@ export default copilotkitEndpoint;
 
 ```typescript Next.js (App Router)
 // app/api/copilotkit/[...copilotkit]/route.ts
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -104,8 +104,8 @@ export async function POST(request: Request) {
 ```javascript Node.js
 // server.js
 import { createServer } from "http";
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -125,8 +125,8 @@ nodeServer.listen(4000, () => {
 ```javascript Express.js
 // server.js
 import express from "express";
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const app = express();
 
@@ -149,8 +149,8 @@ app.listen(4000, () => {
 ```javascript Fastify
 // server.js
 import fastify from "fastify";
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const app = fastify({ logger: true });
 
@@ -178,8 +178,8 @@ app.listen({ port: 4000 });
 ```javascript Koa.js
 // server.js
 import Koa from "koa";
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const app = new Koa();
 
@@ -218,8 +218,8 @@ app.listen(4000, () => {
 
 ```javascript Deno
 // server.ts
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -235,8 +235,8 @@ Deno.serve(copilotkitEndpoint);
 
 ```javascript Bun
 // server.js
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -254,8 +254,8 @@ console.info(`Server is running on ${server.hostname}:${server.port}`);
 
 ```javascript SvelteKit
 // src/routes/api/copilotkit/+server.js
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -271,8 +271,8 @@ export { copilotkitEndpoint as GET, copilotkitEndpoint as POST };
 
 ```javascript Cloudflare Workers
 // worker.js
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -288,8 +288,8 @@ self.addEventListener("fetch", copilotkitEndpoint);
 
 ```javascript AWS Lambda
 // lambda.js
-import { CopilotRuntime } from "@copilotkit/runtime";
-import createEndpoint from "@copilotkit/runtime/endpoint";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import createEndpoint from "@copilotkitnext/runtime/endpoint";
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -350,7 +350,7 @@ The endpoint handler automatically routes requests based on URL patterns:
 import {
   routeRequest,
   CopilotKitRequestType,
-} from "@copilotkit/runtime/endpoint";
+} from "@copilotkitnext/runtime/endpoint";
 
 // Example of how routing works internally
 const { requestType, info } = routeRequest(request);

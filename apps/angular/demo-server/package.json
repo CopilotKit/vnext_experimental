@@ -1,5 +1,5 @@
 {
-  "name": "@copilotkit/angular-demo-server",
+  "name": "@copilotkitnext/angular-demo-server",
   "private": true,
   "type": "module",
   "version": "0.0.0",
@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ag-ui/client": "0.0.36-alpha.1",
-    "@copilotkit/runtime": "workspace:^",
+    "@copilotkitnext/runtime": "workspace:^",
     "@hono/node-server": "^1.13.6",
     "hono": "^4.6.11",
     "openai": "^4.56.1",
