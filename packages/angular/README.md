@@ -29,8 +29,9 @@ yarn add @copilotkitnext/angular
 ### Peer Dependencies
 
 Ensure these are present (Angular 19):
+
 - `@angular/core`
-- `@angular/common` 
+- `@angular/common`
 - `@angular/cdk`
 - `rxjs`
 - `tslib`
@@ -40,6 +41,7 @@ Ensure these are present (Angular 19):
 Reference the package CSS so the components render correctly:
 
 **Option 1:** In `angular.json`:
+
 ```json
 "styles": [
   "@copilotkitnext/angular/styles.css",
@@ -48,6 +50,7 @@ Reference the package CSS so the components render correctly:
 ```
 
 **Option 2:** In your global stylesheet:
+
 ```css
 @import "@copilotkitnext/angular/styles.css";
 ```
@@ -59,7 +62,10 @@ Add CopilotKit providers in your application config to set labels and runtime UR
 ### Example (`app.config.ts`):
 
 ```typescript
-import { provideCopilotKit, provideCopilotChatConfiguration } from '@copilotkitnext/angular';
+import {
+  provideCopilotKit,
+  provideCopilotChatConfiguration,
+} from "@copilotkitnext/angular";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -69,11 +75,11 @@ export const appConfig: ApplicationConfig = {
     }),
     provideCopilotChatConfiguration({
       labels: {
-        chatInputPlaceholder: 'Ask me anything...',
-        chatDisclaimerText: 'AI responses may need verification.'
-      }
-    })
-  ]
+        chatInputPlaceholder: "Ask me anything...",
+        chatDisclaimerText: "AI responses may need verification.",
+      },
+    }),
+  ],
 };
 ```
 
@@ -84,7 +90,10 @@ You can declare the CopilotKit runtime endpoint directly in templates via the `C
 ### Component Template Example:
 
 ```html
-<div [copilotkitConfig]="{ runtimeUrl: runtimeUrl }" style="display:block;height:100vh">
+<div
+  [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
+  style="display:block;height:100vh"
+>
   <copilot-chat></copilot-chat>
 </div>
 ```
@@ -93,23 +102,26 @@ You can declare the CopilotKit runtime endpoint directly in templates via the `C
 
 ```typescript
 export class AppComponent {
-  runtimeUrl = 'http://localhost:3001/api/copilotkit';
+  runtimeUrl = "http://localhost:3001/api/copilotkit";
 }
 ```
 
 ## Using the Chat Component
 
 ### Minimal Usage:
+
 ```html
 <copilot-chat></copilot-chat>
 ```
 
 ### With a Specific Agent:
+
 ```html
 <copilot-chat [agentId]="'sales'"></copilot-chat>
 ```
 
 ### Behavior:
+
 - If `agentId` is omitted, the component uses the default agent (ID: `default`)
 
 ## Agents 101 (AG-UI)
@@ -141,7 +153,7 @@ import {
 import { AnyAGUIAgent } from "@ag-ui/your-desired-agent-framework";
 
 const runtime = new CopilotRuntime({
-  agents: { default: new AnyAGUIAgent() }
+  agents: { default: new AnyAGUIAgent() },
 });
 
 // Create a main app with CORS enabled
@@ -179,14 +191,17 @@ console.log(
 ## CopilotKit Angular APIs (Most Used)
 
 ### Components
+
 - **`CopilotChatComponent`**: Full chat UI
   - Inputs: `agentId?: string`
 
 ### Directives
+
 - **`CopilotKitConfigDirective`** (`[copilotkitConfig]`): Set `runtimeUrl`, `headers`, `properties`, and/or `agents` declaratively
 - **`CopilotKitAgentDirective`** (`[copilotkitAgent]`): Observe agent state; defaults to the `default` agent if no `agentId` is provided
 
 ### Providers
+
 - **`provideCopilotKit(...)`**: Set runtime URL, headers, properties, agents, tools, human-in-the-loop handlers
 - **`provideCopilotChatConfiguration(...)`**: Set UI labels and behavior for chat input/view
 
@@ -204,14 +219,16 @@ From the repo root:
 
 - **Full build**: `pnpm build` (compiles all packages including Angular)
 - **Clean**: `pnpm clean`
-- **Package-only dev (watch)**: `pnpm dev:packages`
+- **Package-only dev (watch)**: `pnpm dev`
 
 ## Angular Storybook
 
 ### Dev Server
+
 ```bash
 pnpm storybook:angular
 ```
+
 - Serves Storybook for Angular components on http://localhost:6007
 - For live chat stories, ensure the demo server is running so the chat can connect:
   ```bash
@@ -219,6 +236,7 @@ pnpm storybook:angular
   ```
 
 ### Production Build
+
 ```bash
 pnpm -C apps/angular/storybook build
 ```
