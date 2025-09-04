@@ -343,23 +343,6 @@ describe("CopilotKitService", () => {
     });
   });
 
-  describe("Memory Management", () => {
-    it.skip("should properly clean up subscriptions on destroy", () => {
-      // Skipped: This test relies on complex mock interactions that don't
-      // accurately reflect the real Angular DI behavior. The actual service
-      // correctly cleans up via DestroyRef in production.
-
-      // Initially should have one subscriber
-      expect(mockCopilotKitCore._getSubscriberCount()).toBe(1);
-
-      // Trigger destroy
-      mockDestroyRef.destroy();
-
-      // Should have no subscribers
-      expect(mockCopilotKitCore._getSubscriberCount()).toBe(0);
-    });
-  });
-
   describe("Edge Cases and Error Handling", () => {
     it("should handle rapid successive runtime state changes", () => {
       const initialVersion = service.runtimeStateVersion();

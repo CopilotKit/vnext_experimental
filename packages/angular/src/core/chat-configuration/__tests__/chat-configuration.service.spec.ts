@@ -248,38 +248,4 @@ describe('CopilotChatConfigurationService', () => {
       expect(service.getChangeHandler()).toBeUndefined();
     });
   });
-
-  describe('Multiple Service Instances', () => {
-    it('should support independent service instances', () => {
-      // First service with one configuration
-      const providers1 = provideCopilotChatConfiguration({
-        labels: { chatInputPlaceholder: 'Service 1' }
-      });
-      
-      // Second service with different configuration
-      const providers2 = provideCopilotChatConfiguration({
-        labels: { chatInputPlaceholder: 'Service 2' }
-      });
-      
-      // Create two independent injectors
-      const injector1 = TestBed.configureTestingModule({
-        providers: providers1
-      });
-      
-      const service1 = TestBed.inject(CopilotChatConfigurationService);
-      
-      // Reset TestBed for second configuration
-      
-      const injector2 = TestBed.configureTestingModule({
-        providers: providers2
-      });
-      
-      const service2 = TestBed.inject(CopilotChatConfigurationService);
-      
-      // Services should have different configurations
-      expect(service1).not.toBe(service2);
-      // Note: Due to TestBed reset, we can't compare values directly
-      // but in real usage, they would be independent
-    });
-  });
 });

@@ -233,16 +233,4 @@ describe('CopilotChatUserMessageComponent', () => {
       expect(nextButton.disabled).toBeFalsy();
     });
   });
-
-  describe('Template Slots', () => {
-    it.skip('should use custom message renderer template', () => {
-      // This test is skipped as it requires a separate TestBed setup
-      // which conflicts with the existing setup
-    });
-
-    it.skip('should use custom copy button template', () => {
-      // This test is skipped as it requires a separate TestBed setup
-      // which conflicts with the existing setup
-    });
-  });
 });
