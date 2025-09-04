@@ -4,7 +4,7 @@
   "type": "module",
   "version": "0.0.0",
   "scripts": {
-    "dev": "tsx --env-file=.env src/index.ts",
+    "dev": "nodemon --verbose --cwd ../../../ --watch packages/core/dist/** --watch packages/shared/dist/** --watch packages/runtime/dist/** --watch apps/angular/demo-server/src/** --ext mjs,js,json,ts --delay 800ms --signal SIGTERM --exec \"tsx --env-file=apps/angular/demo-server/.env apps/angular/demo-server/src/index.ts\"",
     "start": "node --env-file=.env --loader tsx src/index.ts"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "nodemon": "^3.1.7",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   }
