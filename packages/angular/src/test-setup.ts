@@ -3,6 +3,7 @@ import '@angular/compiler';
 import '@analogjs/vitest-angular/setup-zone';
 
 import { getTestBed } from '@angular/core/testing';
+import { Injector } from '@angular/core';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
@@ -79,10 +80,27 @@ if (!(globalThis as any).DOMRect) {
   (globalThis as any).DOMRect = class { constructor(public x=0, public y=0, public width=0, public height=0) {} } as any;
 }
 
-// Initialize Angular testing environment once
+// Initialize Angular testing environment once per worker
 console.info('[vitest] test-setup.ts running in pid', process.pid);
-getTestBed().initTestEnvironment(
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting()
-);
-console.info('[vitest] TestBed initialized');
+
+const testBed = getTestBed();
+
+// Store platform instance globally to reuse across test files
+const globalAny = globalThis as any;
+if (!globalAny.__ANGULAR_TEST_PLATFORM__) {
+  console.info('[vitest] Creating Angular test platform');
+  globalAny.__ANGULAR_TEST_PLATFORM__ = platformBrowserDynamicTesting();
+}
+
+// Check if TestBed has already been initialized by checking the platform
+if (!testBed.platform) {
+  console.info('[vitest] Initializing TestBed');
+  testBed.initTestEnvironment(
+    BrowserDynamicTestingModule,
+    globalAny.__ANGULAR_TEST_PLATFORM__,
+    { teardown: { destroyAfterEach: false } } // Don't tear down after each test
+  );
+  console.info('[vitest] TestBed initialized');
+} else {
+  console.info('[vitest] TestBed already initialized, skipping');
+}
