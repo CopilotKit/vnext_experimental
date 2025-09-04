@@ -45,6 +45,106 @@ export default meta;
 type Story = StoryObj<CopilotChatViewComponent>;
 
 export const CustomDisclaimer: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  CopilotChatViewComponent,
+  CopilotChatMessageViewComponent,
+  CopilotChatInputComponent,
+  provideCopilotKit,
+  provideCopilotChatConfiguration
+} from '@copilotkitnext/angular';
+import { Message } from '@ag-ui/client';
+
+// Custom disclaimer component
+@Component({
+  selector: 'custom-disclaimer',
+  standalone: true,
+  template: \`
+    <div [class]="inputClass" style="
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      margin: 10px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    ">
+      <h3 style="margin: 0 0 10px 0; font-size: 20px;">
+        ✨ Custom Disclaimer Component ✨
+      </h3>
+      <p style="margin: 0; font-size: 14px; opacity: 0.9;">
+        {{ text || 'This is a custom disclaimer demonstrating component overrides!' }}
+      </p>
+      <div style="
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.3);
+        font-size: 12px;
+        opacity: 0.7;
+      ">
+        🎨 Styled with custom gradients and animations
+      </div>
+    </div>
+  \`
+})
+class CustomDisclaimerComponent {
+  @Input() text?: string;
+  @Input() inputClass?: string;
+}
+
+@Component({
+  selector: 'app-custom-disclaimer',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotChatViewComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent,
+    CustomDisclaimerComponent
+  ],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+      }
+    })
+  ],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [disclaimerComponent]="customDisclaimerComponent">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class CustomDisclaimerExampleComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Hello! Can you help me with TypeScript?',
+      role: 'user'
+    },
+    {
+      id: 'assistant-1',
+      content: 'Of course! TypeScript is a superset of JavaScript that adds static typing. What would you like to know?',
+      role: 'assistant'
+    }
+  ];
+
+  customDisclaimerComponent = CustomDisclaimerComponent;
+}`,
+        language: 'typescript'
+      }
+    }
+  },
   render: () => {
     const messages: Message[] = [
       {
@@ -78,6 +178,129 @@ export const CustomDisclaimer: Story = {
 };
 
 export const CustomInput: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  CopilotChatViewComponent,
+  CopilotChatMessageViewComponent,
+  CopilotChatInputComponent,
+  provideCopilotKit,
+  provideCopilotChatConfiguration
+} from '@copilotkitnext/angular';
+import { Message } from '@ag-ui/client';
+
+// Custom input component
+@Component({
+  selector: 'custom-input',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: \`
+    <div [class]="inputClass" style="
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 10px;
+    ">
+      <input 
+        type="text"
+        [(ngModel)]="inputValue"
+        placeholder="💬 Ask me anything..."
+        style="
+          width: 100%;
+          padding: 15px;
+          border: 2px solid white;
+          border-radius: 10px;
+          font-size: 16px;
+          background: rgba(255, 255, 255, 0.9);
+          color: #333;
+          outline: none;
+        "
+        (keyup.enter)="handleSend()"
+      />
+      <button 
+        style="
+          margin-top: 10px;
+          padding: 10px 20px;
+          background: white;
+          color: #f5576c;
+          border: none;
+          border-radius: 5px;
+          font-weight: bold;
+          cursor: pointer;
+        "
+        (click)="handleSend()">
+        Send Message ✨
+      </button>
+    </div>
+  \`
+})
+class CustomInputComponent {
+  @Input() onSend?: (message: string) => void;
+  @Input() inputClass?: string;
+  
+  inputValue = '';
+  
+  handleSend() {
+    if (this.inputValue && this.onSend) {
+      this.onSend(this.inputValue);
+      this.inputValue = '';
+    }
+  }
+}
+
+@Component({
+  selector: 'app-custom-input',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotChatViewComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent,
+    CustomInputComponent
+  ],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+      }
+    })
+  ],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [inputComponent]="customInputComponent">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class CustomInputExampleComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Check out this custom input!',
+      role: 'user'
+    },
+    {
+      id: 'assistant-1',
+      content: 'That\'s a beautiful custom input component! The gradient and styling look great.',
+      role: 'assistant'
+    }
+  ];
+
+  customInputComponent = CustomInputComponent;
+}`,
+        language: 'typescript'
+      }
+    }
+  },
   render: () => {
     const messages: Message[] = [
       {
@@ -111,6 +334,125 @@ export const CustomInput: Story = {
 };
 
 export const CustomScrollButton: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  CopilotChatViewComponent,
+  CopilotChatMessageViewComponent,
+  CopilotChatInputComponent,
+  provideCopilotKit,
+  provideCopilotChatConfiguration
+} from '@copilotkitnext/angular';
+import { Message } from '@ag-ui/client';
+
+// Custom scroll button component
+@Component({
+  selector: 'custom-scroll-button',
+  standalone: true,
+  imports: [CommonModule],
+  template: \`
+    <button 
+      type="button"
+      (click)="handleClick()"
+      [class]="inputClass"
+      [class.hover]="isHovered"
+      (mouseenter)="isHovered = true"
+      (mouseleave)="isHovered = false"
+      style="
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+        z-index: 1000;
+      "
+      [style.transform]="isHovered ? 'scale(1.1)' : 'scale(1)'">
+      <span style="color: white; font-size: 24px; pointer-events: none;">⬇️</span>
+    </button>
+  \`,
+  styles: [\`
+    button.hover {
+      transform: scale(1.1);
+    }
+  \`]
+})
+class CustomScrollButtonComponent {
+  @Input() onClick?: () => void;
+  @Input() inputClass?: string;
+  @Output() clicked = new EventEmitter<void>();
+  
+  isHovered = false;
+  
+  handleClick() {
+    this.clicked.emit();
+    if (this.onClick) {
+      this.onClick();
+    }
+  }
+}
+
+@Component({
+  selector: 'app-custom-scroll',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotChatViewComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent,
+    CustomScrollButtonComponent
+  ],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+      }
+    })
+  ],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [autoScroll]="false"
+        [scrollToBottomButtonComponent]="scrollToBottomButtonComponent">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class CustomScrollButtonExampleComponent {
+  messages: Message[] = [];
+  scrollToBottomButtonComponent = CustomScrollButtonComponent;
+
+  constructor() {
+    // Generate many messages to show scroll behavior
+    for (let i = 0; i < 20; i++) {
+      this.messages.push({
+        id: \`msg-\${i}\`,
+        content: \`Message \${i}: This is a test message to demonstrate the custom scroll button.\`,
+        role: i % 2 === 0 ? 'user' : 'assistant'
+      } as Message);
+    }
+  }
+}`,
+        language: 'typescript'
+      }
+    }
+  },
   render: () => {
     // Generate many messages to show scroll behavior
     const messages: Message[] = [];
@@ -141,6 +483,66 @@ export const CustomScrollButton: Story = {
 };
 
 export const NoFeatherEffect: Story = {
+  parameters: {
+    docs: {
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  CopilotChatViewComponent,
+  CopilotChatMessageViewComponent,
+  CopilotChatInputComponent,
+  provideCopilotKit,
+  provideCopilotChatConfiguration
+} from '@copilotkitnext/angular';
+import { Message } from '@ag-ui/client';
+
+@Component({
+  selector: 'app-no-feather',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotChatViewComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent
+  ],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+      }
+    })
+  ],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [featherComponent]="null">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class NoFeatherEffectComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'Hello!',
+      role: 'user'
+    },
+    {
+      id: 'assistant-1',
+      content: 'Hi there! How can I help you today?',
+      role: 'assistant'
+    }
+  ];
+}`,
+        language: 'typescript'
+      }
+    }
+  },
   render: () => {
     const messages: Message[] = [
       {
