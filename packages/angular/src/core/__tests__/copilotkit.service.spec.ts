@@ -79,10 +79,6 @@ describe("CopilotKitService", () => {
   });
 
   afterEach(() => {
-    TestBed.resetTestingModule();
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
     mockSubscribers = [];
   });

@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import { resolve } from 'path';
 
 export default defineConfig({
   esbuild: {
@@ -8,20 +7,29 @@ export default defineConfig({
       compilerOptions: {
         experimentalDecorators: true,
         emitDecoratorMetadata: true,
-        useDefineForClassFields: false
-      }
-    }
+        // Avoid class fields transform incompatibilities
+        useDefineForClassFields: false,
+      },
+    },
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true
-      }
+    poolOptions: { threads: { singleThread: true } },
+    // Important: Inline/prebundle Angular deps for vite-node
+    deps: {
+      optimizer: {
+        web: {
+          include: [
+            /^@angular\//,
+            'zone.js',
+            'rxjs',
+          ],
+        },
+      },
     },
     coverage: {
       provider: 'v8',
@@ -29,12 +37,11 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'dist/',
-        '*.config.ts',
+        '*.config.*',
         'src/test-setup.ts',
-        'src/**/*.spec.ts',
         'src/index.ts',
-        'src/public-api.ts'
-      ]
-    }
-  }
+        'src/public-api.ts',
+      ],
+    },
+  },
 });
