@@ -168,19 +168,6 @@ export class InMemoryAgentRunner extends AgentRunner {
       try {
         await request.agent.runAgent(request.input, {
           onEvent: ({ event }) => {
-            if (event.type === EventType.MESSAGES_SNAPSHOT) {
-              const messagesSnapshotEvent = event as MessagesSnapshotEvent;
-              const fixedMessages = [];
-              const messageIds = new Set<string>();
-              for (const message of messagesSnapshotEvent.messages) {
-                if (messageIds.has(message.id)) {
-                  continue;
-                }
-                fixedMessages.push(message);
-                messageIds.add(message.id);
-              }
-              messagesSnapshotEvent.messages = fixedMessages;
-            }
             runSubject.next(event); // For run() return - only agent events
             nextSubject.next(event); // For connect() / store - all events
             currentRunEvents.push(event); // Accumulate for storage

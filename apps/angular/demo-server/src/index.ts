@@ -7,7 +7,6 @@ import {
   InMemoryAgentRunner,
 } from "@copilotkitnext/runtime";
 import { OpenAIAgent } from "./openai.js";
-import { LangGraphAgent } from "@ag-ui/langgraph";
 
 const runtime = new CopilotRuntime({
   agents: {
