@@ -13,7 +13,7 @@ This package provides native Angular components, directives, and providers to bu
 
 ### Package Installation
 
-Install `@copilotkitnext/angular` in your Angular app (requires Angular 19+):
+Install `@copilotkitnext/angular` in your Angular app (supports Angular 18 and 19):
 
 ```bash
 # pnpm (recommended)
@@ -28,11 +28,11 @@ yarn add @copilotkitnext/angular
 
 ### Peer Dependencies
 
-Ensure these are present (Angular 19):
+Ensure these are present (matching your Angular major):
 
 - `@angular/core`
 - `@angular/common`
-- `@angular/cdk`
+- `@angular/cdk` (use `^18` with Angular 18, `^19` with Angular 19)
 - `rxjs`
 - `tslib`
 

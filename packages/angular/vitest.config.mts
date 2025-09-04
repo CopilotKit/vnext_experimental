@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   esbuild: {
-    target: 'es2022',
+    target: 'es2016',
     tsconfigRaw: {
       compilerOptions: {
         experimentalDecorators: true,
@@ -17,6 +17,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

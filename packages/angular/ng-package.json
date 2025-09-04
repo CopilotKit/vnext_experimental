@@ -14,6 +14,8 @@
     "lucide-angular",
     "highlight.js",
     "katex",
-    "marked"
+    "marked",
+    "clsx",
+    "tailwind-merge"
   ]
 }
