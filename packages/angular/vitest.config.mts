@@ -1,36 +1,31 @@
-import { defineConfig } from 'vitest/config';
+/// <reference types="vitest" />
+import { defineConfig } from 'vite';
+import angular from '@analogjs/vite-plugin-angular';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-export default defineConfig({
-  esbuild: {
-    target: 'es2016',
-    tsconfigRaw: {
-      compilerOptions: {
-        experimentalDecorators: true,
-        emitDecoratorMetadata: true,
-        // Avoid class fields transform incompatibilities
-        useDefineForClassFields: false,
-      },
-    },
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const r = (...p: string[]) => resolve(__dirname, ...p);
+
+export default defineConfig(({ mode }) => ({
+  plugins: [angular()],
+  resolve: {
+    dedupe: [
+      '@angular/core',
+      '@angular/common',
+      '@angular/platform-browser',
+      '@angular/platform-browser-dynamic',
+      '@angular/compiler',
+      '@angular/core/testing',
+    ],
   },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: [r('src/test-setup.ts')], // Use absolute path
+    include: ['src/**/*.{spec,test}.{ts,tsx}'],
     pool: 'threads',
     poolOptions: { threads: { singleThread: true } },
-    // Important: Inline/prebundle Angular deps for vite-node
-    deps: {
-      optimizer: {
-        web: {
-          include: [
-            /^@angular\//,
-            'zone.js',
-            'rxjs',
-          ],
-        },
-      },
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -44,4 +39,7 @@ export default defineConfig({
       ],
     },
   },
-});
+  define: {
+    'import.meta.vitest': mode !== 'production',
+  },
+}));

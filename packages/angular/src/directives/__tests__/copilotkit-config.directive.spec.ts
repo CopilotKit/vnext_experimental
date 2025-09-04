@@ -1,6 +1,5 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CopilotKitConfigDirective } from "../copilotkit-config.directive";
 import { CopilotKitService } from "../../core/copilotkit.service";
 import { provideCopilotKit } from "../../core/copilotkit.providers";

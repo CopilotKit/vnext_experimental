@@ -1,6 +1,5 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CopilotKitChatConfigDirective } from "../copilotkit-chat-config.directive";
 import { CopilotChatConfigurationService } from "../../core/chat-configuration/chat-configuration.service";
 import { provideCopilotChatConfiguration } from "../../core/chat-configuration/chat-configuration.providers";
@@ -65,7 +64,6 @@ describe("CopilotKitChatConfigDirective", () => {
 
     it("should handle missing service gracefully", () => {
       // Create a component without providing the service
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CopilotKitChatConfigDirective],
       });

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CopilotChatConfigurationService } from '../chat-configuration.service';
 import { provideCopilotChatConfiguration } from '../chat-configuration.providers';
 import { 
@@ -270,7 +269,6 @@ describe('CopilotChatConfigurationService', () => {
       const service1 = TestBed.inject(CopilotChatConfigurationService);
       
       // Reset TestBed for second configuration
-      TestBed.resetTestingModule();
       
       const injector2 = TestBed.configureTestingModule({
         providers: providers2

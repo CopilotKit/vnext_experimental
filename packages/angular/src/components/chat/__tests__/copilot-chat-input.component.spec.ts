@@ -1,7 +1,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CopilotChatInputComponent } from '../copilot-chat-input.component';
 import { CopilotChatTextareaComponent } from '../copilot-chat-textarea.component';
 import { CopilotChatConfigurationService } from '../../../core/chat-configuration/chat-configuration.service';
@@ -360,7 +359,6 @@ describe('CopilotChatTextareaComponent', () => {
     
     it('should focus when autoFocus is true', async () => {
       // Set autoFocus before creating the component
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [TestHostComponent, CopilotChatTextareaComponent],
         providers: [

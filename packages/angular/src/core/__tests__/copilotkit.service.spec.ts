@@ -1,5 +1,4 @@
 import { TestBed } from "@angular/core/testing";
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { CopilotKitService } from "../copilotkit.service";
 import { CopilotKitCore } from "@copilotkitnext/core";
 import {
@@ -503,7 +502,6 @@ describe("CopilotKitService", () => {
         },
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -538,7 +536,6 @@ describe("CopilotKitService", () => {
         render: ToolRenderComponent,
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -560,7 +557,6 @@ describe("CopilotKitService", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
       const initialTools: AngularFrontendTool[] = [];
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -599,7 +595,6 @@ describe("CopilotKitService", () => {
         render: ApprovalComponent,
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -637,7 +632,6 @@ describe("CopilotKitService", () => {
         render: InputComponent,
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -675,7 +669,6 @@ describe("CopilotKitService", () => {
         render: ConfirmComponent,
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -698,7 +691,6 @@ describe("CopilotKitService", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
       const initialTools: AngularHumanInTheLoop[] = [];
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -740,7 +732,6 @@ describe("CopilotKitService", () => {
         agentId: "agent2",
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -795,7 +786,6 @@ describe("CopilotKitService", () => {
         agentId: "agent1",
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -837,7 +827,6 @@ describe("CopilotKitService", () => {
         agentId: "specificAgent",
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -881,7 +870,6 @@ describe("CopilotKitService", () => {
         agentId: "approvalAgent",
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -935,7 +923,6 @@ describe("CopilotKitService", () => {
         agentId: "hitlAgent",
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({
@@ -1012,7 +999,6 @@ describe("CopilotKitService", () => {
         render: CustomRenderComponent,
       };
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           provideCopilotKit({

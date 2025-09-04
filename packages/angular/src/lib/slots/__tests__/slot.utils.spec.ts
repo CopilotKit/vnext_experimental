@@ -1,6 +1,5 @@
 import { Component, Input, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   renderSlot,
   isComponentType,
@@ -327,7 +326,6 @@ describe('Slot Utilities', () => {
         ['button', { component: CustomComponent }]
       ]);
 
-      TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         providers: [
           { provide: SLOT_CONFIG, useValue: slots }

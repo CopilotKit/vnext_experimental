@@ -1,9 +1,8 @@
-// Angular + Zone
-import 'reflect-metadata';
-import 'zone.js';
-import 'zone.js/testing';
-import { beforeAll, afterEach } from 'vitest';
-import { TestBed } from '@angular/core/testing';
+// Angular + Zone - Using AnalogJS setup for proper Zone.js integration
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-zone';
+
+import { getTestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
@@ -80,18 +79,10 @@ if (!(globalThis as any).DOMRect) {
   (globalThis as any).DOMRect = class { constructor(public x=0, public y=0, public width=0, public height=0) {} } as any;
 }
 
-beforeAll(() => {
-  try {
-    TestBed.initTestEnvironment(
-      BrowserDynamicTestingModule,
-      platformBrowserDynamicTesting(),
-      { teardown: { destroyAfterEach: false } },
-    );
-  } catch {
-    // Already initialized
-  }
-});
-
-afterEach(() => {
-  TestBed.resetTestingModule();
-});
+// Initialize Angular testing environment once
+console.info('[vitest] test-setup.ts running in pid', process.pid);
+getTestBed().initTestEnvironment(
+  BrowserDynamicTestingModule,
+  platformBrowserDynamicTesting()
+);
+console.info('[vitest] TestBed initialized');

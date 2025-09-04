@@ -52,6 +52,8 @@
     "tslib": "^2.6.0"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^1.20.2",
+    "@analogjs/vitest-angular": "^1.20.2",
     "@angular/cdk": "^18.0.0",
     "@angular/common": "^18.0.0",
     "@angular/compiler": "^18.0.0",
@@ -82,6 +84,7 @@
     "tw-animate-css": "^1.3.5",
     "typescript": "~5.4.5",
     "typescript-eslint": "^8.35.0",
+    "vite": "^7.1.4",
     "vitest": "^2.0.5",
     "zone.js": "^0.14.0"
   },

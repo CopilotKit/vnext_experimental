@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { vi } from 'vitest';
 import { CopilotChatUserMessageComponent } from '../copilot-chat-user-message.component';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { UserMessage } from '../copilot-chat-user-message.types';

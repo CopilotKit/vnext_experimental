@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { 
   watchChatConfig,
   registerChatConfig,

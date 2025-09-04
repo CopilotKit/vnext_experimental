@@ -85,7 +85,6 @@ describe('CopilotChatAssistantMessageComponent', () => {
 
   it('should hide toolbar when toolbarVisible is false', () => {
     // Create a fresh instance with toolbarVisible set to false from the start
-    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [
         CommonModule,

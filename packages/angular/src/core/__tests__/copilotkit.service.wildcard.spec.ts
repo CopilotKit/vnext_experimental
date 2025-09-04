@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CopilotKitService } from '../copilotkit.service';
 import { Component } from '@angular/core';
 import { provideCopilotKit } from '../copilotkit.providers';
@@ -9,7 +8,6 @@ import { z } from 'zod';
 
 describe('CopilotKitService - Wildcard Tool', () => {
   beforeEach(() => {
-    TestBed.resetTestingModule();
   });
 
   describe('Wildcard Frontend Tool', () => {
