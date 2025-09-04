@@ -25,12 +25,16 @@ vi.mock("@copilotkitnext/core", () => {
     CopilotKitCore: vi.fn().mockImplementation((config) => {
       // Reset subscribers for each instance
       mockSubscribers = [];
+      
+      // Properly initialize tools from config
+      const tools = config?.tools || {};
+      
       const instance = {
         setRuntimeUrl: vi.fn(),
         setHeaders: vi.fn(),
         setProperties: vi.fn(),
         setAgents: vi.fn(),
-        tools: config?.tools || {},
+        tools: tools, // Use the initialized tools
         subscribe: vi.fn((callbacks) => {
           mockSubscribers.push(callbacks);
           // Return unsubscribe function
@@ -53,11 +57,6 @@ vi.mock("@copilotkitnext/core", () => {
         // Add any other properties that might be accessed
         state: "idle",
       };
-
-      // Store the config tools for later access
-      if (config?.tools) {
-        instance.tools = config.tools;
-      }
 
       return instance;
     }),
