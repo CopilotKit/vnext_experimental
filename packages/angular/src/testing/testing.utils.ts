@@ -71,6 +71,9 @@ export function createCopilotKitTestingModule(
               headers: config.headers as Record<string, string> | undefined,
               properties: config.properties,
               agents: config.agents,
+              renderToolCalls: (config as any).renderToolCalls,
+              frontendTools: (config as any).frontendTools,
+              humanInTheLoop: (config as any).humanInTheLoop,
             }
           : {}
       ),
