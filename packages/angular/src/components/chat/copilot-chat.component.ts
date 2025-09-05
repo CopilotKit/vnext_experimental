@@ -80,16 +80,19 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     this.createWatcher(initialId);
 
     // Connect once when agent becomes available
-    effect(() => {
-      const a = this.agent();
-      if (!a) return;
-      // Apply thread id when agent is available
-      a.threadId = this.threadId || this.generatedThreadId;
-      if (!this.hasConnectedOnce) {
-        this.hasConnectedOnce = true;
-        this.connectToAgent(a);
-      }
-    });
+    effect(
+      () => {
+        const a = this.agent();
+        if (!a) return;
+        // Apply thread id when agent is available
+        a.threadId = this.threadId || this.generatedThreadId;
+        if (!this.hasConnectedOnce) {
+          this.hasConnectedOnce = true;
+          this.connectToAgent(a);
+        }
+      },
+      { allowSignalWrites: true }
+    );
   }
 
   // Signals from watchAgent - using direct references instead of assignment
