@@ -4,6 +4,7 @@ import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 
 const runtime = new CopilotRuntime({
+  // @ts-expect-error
   agents: { default: new OpenAIAgent() },
   runner: new InMemoryAgentRunner(),
 });
