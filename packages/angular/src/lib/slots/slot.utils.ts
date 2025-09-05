@@ -91,10 +91,19 @@ function createComponent<T>(
   });
   
   if (props) {
-    // Apply props using setInput
-    for (const key in props) {
-      const value = props[key];
-      componentRef.setInput(key, value);
+    // Apply props using setInput, but only for declared inputs
+    const cmpDef: any = (component as any).ɵcmp;
+    const declaredInputs = new Set<string>(Object.keys(cmpDef?.inputs ?? {}));
+
+    if (declaredInputs.has('props')) {
+      componentRef.setInput('props', props as any);
+    } else {
+      for (const key in props) {
+        if (declaredInputs.has(key)) {
+          const value = (props as any)[key];
+          componentRef.setInput(key, value);
+        }
+      }
     }
   }
   

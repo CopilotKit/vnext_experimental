@@ -220,12 +220,21 @@ export class CopilotChatToolCallsViewComponent
     const componentRef = this.container.createComponent(componentClass);
     this.componentRefs.set(toolCallId, componentRef);
 
-    // Set inputs on the component
-    for (const [key, value] of Object.entries(props)) {
-      try {
-        componentRef.setInput(key, value);
-      } catch (e) {
-        // Input might not exist on the component, which is fine
+    // Determine declared inputs to avoid Angular NG0303 console errors
+    const cmpDef: any = (componentClass as any).ɵcmp;
+    const declaredInputs = new Set<string>(
+      Object.keys(cmpDef?.inputs ?? {})
+    );
+
+    // Prefer a single 'props' input if declared
+    if (declaredInputs.has('props')) {
+      componentRef.setInput('props', props);
+    } else {
+      // Otherwise, set only inputs that the component actually declares
+      for (const [key, value] of Object.entries(props)) {
+        if (declaredInputs.has(key)) {
+          componentRef.setInput(key, value);
+        }
       }
     }
 

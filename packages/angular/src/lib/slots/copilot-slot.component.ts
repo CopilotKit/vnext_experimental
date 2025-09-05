@@ -119,11 +119,21 @@ export class CopilotSlotComponent implements OnInit, OnChanges {
     
     const props = this.context;
     
-    // Update props using setInput
+    // Update props using setInput, only for declared inputs
     if (props) {
-      for (const key in props) {
-        const value = props[key];
-        this.componentRef.setInput(key, value);
+      const ctor = this.componentRef.instance.constructor as any;
+      const cmpDef: any = ctor?.ɵcmp;
+      const declaredInputs = new Set<string>(Object.keys(cmpDef?.inputs ?? {}));
+
+      if (declaredInputs.has('props')) {
+        this.componentRef.setInput('props', props);
+      } else {
+        for (const key in props) {
+          if (declaredInputs.has(key)) {
+            const value = props[key];
+            this.componentRef.setInput(key, value);
+          }
+        }
       }
     }
     
