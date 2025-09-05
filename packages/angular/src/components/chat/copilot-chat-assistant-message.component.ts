@@ -95,8 +95,8 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
         </copilot-chat-tool-calls-view>
       }
       
-      <!-- Toolbar -->
-      <ng-container *ngIf="toolbarVisible">
+      <!-- Toolbar: show only when there is assistant text content -->
+      <ng-container *ngIf="toolbarVisible && hasMessageContent()">
         @if (toolbarTemplate || toolbarComponent) {
           <copilot-slot
             [slot]="toolbarTemplate || toolbarComponent"
@@ -433,6 +433,13 @@ export class CopilotChatAssistantMessageComponent {
   toolbarContext = computed<AssistantMessageToolbarContext>(() => ({
     children: null // Will be populated by the toolbar content
   }));
+
+  // Return true if assistant message has non-empty text content
+  hasMessageContent(): boolean {
+    const raw = (this.message?.content ?? '') as any;
+    const content = typeof raw === 'string' ? raw : String(raw ?? '');
+    return content.trim().length > 0;
+  }
   
   toolCallsViewContext = computed(() => ({
     message: this.message,
