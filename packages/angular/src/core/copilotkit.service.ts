@@ -339,20 +339,7 @@ export class CopilotKitService {
       }
     });
 
-    // Warn if renderToolCalls changes
-    effect(() => {
-      const current = this._renderToolCalls();
-      if (
-        current !== this.initialRenderToolCalls &&
-        this.initialRenderToolCalls.length > 0
-      ) {
-        untracked(() => {
-          console.error(
-            "renderToolCalls must be a stable object. To add/remove tools dynamically, use dynamic tool registration."
-          );
-        });
-      }
-    });
+    // Previously warned if renderToolCalls reference changed; removed per UX feedback
   }
 
   /**
@@ -465,11 +452,6 @@ export class CopilotKitService {
    * Update render tool calls (warns if object reference changes)
    */
   setRenderToolCalls(renderToolCalls: ToolCallRender[]): void {
-    if (renderToolCalls !== this.initialRenderToolCalls) {
-      console.error(
-        "renderToolCalls must be a stable object. To add/remove tools dynamically, use dynamic tool registration."
-      );
-    }
     this._renderToolCalls.set(renderToolCalls);
   }
 
