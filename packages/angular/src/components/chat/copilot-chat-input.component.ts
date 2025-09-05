@@ -418,12 +418,15 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
     });
     
     // Sync with chat configuration
-    effect(() => {
-      const configValue = this.chatConfig?.inputValue();
-      if (configValue !== undefined && !this.valueSignal()) {
-        this.valueSignal.set(configValue);
-      }
-    });
+    effect(
+      () => {
+        const configValue = this.chatConfig?.inputValue();
+        if (configValue !== undefined && !this.valueSignal()) {
+          this.valueSignal.set(configValue);
+        }
+      },
+      { allowSignalWrites: true }
+    );
   }
   
   // Output maps for slots
