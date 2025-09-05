@@ -11,7 +11,6 @@ import {
   Message,
   ToolCall,
   ToolMessage,
-  ToolCallRender,
 } from "@copilotkitnext/angular";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { z } from "zod"; // Schema validation
@@ -322,7 +321,6 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
 
 // SearchToolRender component with explicit inputs
 @Component({
-  selector: "search-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -348,7 +346,6 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
 class SearchToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: SearchArgs | Partial<SearchArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -381,7 +378,6 @@ export class CalculatorCounterService {
 
 // CalculatorToolRender component with interactive counters
 @Component({
-  selector: "calculator-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -445,7 +441,6 @@ export class CalculatorCounterService {
 class CalculatorToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: CalculatorArgs | Partial<CalculatorArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -486,7 +481,6 @@ class CalculatorToolRenderComponent {
 
 // WildcardToolRender component for unmatched tools
 @Component({
-  selector: "wildcard-tool-render",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -511,7 +505,6 @@ class CalculatorToolRenderComponent {
 class WildcardToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: any;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -536,8 +529,7 @@ import {
   Message, 
   ToolCall, 
   ToolMessage,
-  provideCopilotKit,
-  ToolCallRender
+  provideCopilotKit
 } from '@copilotkitnext/angular';
 import { ToolCallStatus } from '@copilotkitnext/core';
 import { z } from 'zod';
@@ -553,7 +545,6 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
 
 // SearchToolRender component
 @Component({
-  selector: 'search-tool-render',
   standalone: true,
   imports: [CommonModule],
   template: \`
@@ -579,7 +570,6 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
 class SearchToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: SearchArgs | Partial<SearchArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -611,7 +601,6 @@ export class CalculatorCounterService {
 
 // CalculatorToolRender component with interactive counters
 @Component({
-  selector: 'calculator-tool-render',
   standalone: true,
   imports: [CommonModule],
   template: \`
@@ -669,7 +658,6 @@ export class CalculatorCounterService {
 class CalculatorToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: CalculatorArgs | Partial<CalculatorArgs>;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -708,7 +696,6 @@ class CalculatorToolRenderComponent {
 
 // WildcardToolRender component for unmatched tools
 @Component({
-  selector: 'wildcard-tool-render',
   standalone: true,
   imports: [CommonModule],
   template: \`
@@ -731,7 +718,6 @@ class CalculatorToolRenderComponent {
 class WildcardToolRenderComponent {
   readonly ToolCallStatus = ToolCallStatus;
   @Input({ required: true }) name!: string;
-  @Input({ required: true }) description!: string;
   @Input({ required: true }) args!: any;
   @Input({ required: true }) status!: ToolCallStatus;
   @Input() result?: string;
@@ -757,19 +743,16 @@ class WildcardToolRenderComponent {
       renderToolCalls: [
         {
           name: 'search',
-          args: searchArgsSchema,
           render: SearchToolRenderComponent
-        } as ToolCallRender<SearchArgs>,
+        },
         {
           name: 'calculator',
-          args: calculatorArgsSchema,
           render: CalculatorToolRenderComponent
-        } as ToolCallRender<CalculatorArgs>,
+        },
         {
           name: '*',
-          args: z.any(),
           render: WildcardToolRenderComponent
-        } as ToolCallRender<any>
+        }
       ]
     })
   ],
@@ -878,19 +861,16 @@ export class ChatComponent {
           renderToolCalls: [
             {
               name: "search",
-              args: searchArgsSchema,
               render: SearchToolRenderComponent,
-            } as unknown as ToolCallRender<SearchArgs>,
+            },
             {
               name: "calculator",
-              args: calculatorArgsSchema,
               render: CalculatorToolRenderComponent,
-            } as unknown as ToolCallRender<CalculatorArgs>,
+            },
             {
               name: "*",
-              args: z.any(),
               render: WildcardToolRenderComponent,
-            } as unknown as ToolCallRender<any>,
+            },
           ],
         }),
         provideCopilotChatConfiguration({

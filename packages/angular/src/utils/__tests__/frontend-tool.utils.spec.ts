@@ -124,7 +124,6 @@ describe("Frontend Tool Utils", () => {
       service.setCurrentRenderToolCalls([
         {
           name: "duplicateTool",
-          args: z.object({}),
           render: MockRenderComponent,
         },
       ]);
@@ -187,7 +186,6 @@ describe("Frontend Tool Utils", () => {
       service.setCurrentRenderToolCalls([
         {
           name: "toolWithRender",
-          args: z.object({}),
           render: MockRenderComponent,
         },
       ]);
@@ -210,9 +208,9 @@ describe("Frontend Tool Utils", () => {
     it("should only remove specified tool", () => {
       // Setup multiple tools
       service.setCurrentRenderToolCalls([
-        { name: "tool1", args: z.object({}), render: MockRenderComponent },
-        { name: "tool2", args: z.object({}), render: MockRenderComponent },
-        { name: "tool3", args: z.object({}), render: MockRenderComponent },
+        { name: "tool1", render: MockRenderComponent },
+        { name: "tool2", render: MockRenderComponent },
+        { name: "tool3", render: MockRenderComponent },
       ]);
 
       removeFrontendTool(service, "tool2");
@@ -234,7 +232,6 @@ describe("Frontend Tool Utils", () => {
       // Test registerToolRender
       service.registerToolRender("serviceTool", {
         name: "serviceTool",
-        args: z.object({}),
         render: MockRenderComponent,
       });
 

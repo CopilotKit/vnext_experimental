@@ -77,10 +77,9 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
   const toolId = frontendTool.name;
   
   // Register tool render if provided
-  if (frontendTool.render && tool.parameters) {
+  if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
       name: frontendTool.name,
-      args: tool.parameters,
       render: frontendTool.render
     });
   }
@@ -166,10 +165,9 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
   const toolId = frontendTool.name;
   
   // Register tool render if provided
-  if (frontendTool.render && tool.parameters) {
+  if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
       name: frontendTool.name,
-      args: tool.parameters,
       render: frontendTool.render
     });
   }
@@ -254,10 +252,9 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
     toolId = frontendTool.name;
     
     // Register tool render if provided
-    if (frontendTool.render && currentTool.parameters) {
+    if (frontendTool.render) {
       service.registerToolRender(frontendTool.name, {
         name: frontendTool.name,
-        args: currentTool.parameters,
         render: frontendTool.render
       });
     }

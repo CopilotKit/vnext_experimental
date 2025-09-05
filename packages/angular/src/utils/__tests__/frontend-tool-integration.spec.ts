@@ -30,7 +30,6 @@ describe("Frontend Tool Integration", () => {
     it("should register tool render", () => {
       const render = {
         name: "testTool",
-        args: z.object({ value: z.string() }),
         render: {} as any, // Mock component
       };
 
@@ -43,7 +42,6 @@ describe("Frontend Tool Integration", () => {
     it("should unregister tool render", () => {
       const render = {
         name: "removeTool",
-        args: z.object({}),
         render: {} as any,
       };
 
@@ -59,13 +57,11 @@ describe("Frontend Tool Integration", () => {
 
       service.registerToolRender("dupeTool", {
         name: "dupeTool",
-        args: z.object({}),
         render: {} as any,
       });
 
       service.registerToolRender("dupeTool", {
         name: "dupeTool",
-        args: z.object({}),
         render: {} as any,
       });
 
@@ -82,7 +78,6 @@ describe("Frontend Tool Integration", () => {
       tools.forEach((name) => {
         service.registerToolRender(name, {
           name: name,
-          args: z.object({}),
           render: {} as any,
         });
       });
@@ -157,8 +152,8 @@ describe("Frontend Tool Integration", () => {
       expect(initial).toEqual([]);
 
       const renders = [
-        { name: "tool1", args: z.object({}), render: {} as any },
-        { name: "tool2", args: z.object({}), render: {} as any },
+        { name: "tool1", render: {} as any },
+        { name: "tool2", render: {} as any },
       ];
 
       service.setCurrentRenderToolCalls(renders);
@@ -168,12 +163,11 @@ describe("Frontend Tool Integration", () => {
 
     it("should merge renders when registering", () => {
       service.setCurrentRenderToolCalls([
-        { name: "existing", args: z.object({}), render: {} as any },
+        { name: "existing", render: {} as any },
       ]);
 
       service.registerToolRender("newTool", {
         name: "newTool",
-        args: z.object({}),
         render: {} as any,
       });
 
@@ -184,9 +178,9 @@ describe("Frontend Tool Integration", () => {
 
     it("should preserve other renders when unregistering", () => {
       service.setCurrentRenderToolCalls([
-        { name: "keep1", args: z.object({}), render: {} as any },
-        { name: "remove", args: z.object({}), render: {} as any },
-        { name: "keep2", args: z.object({}), render: {} as any },
+        { name: "keep1", render: {} as any },
+        { name: "remove", render: {} as any },
+        { name: "keep2", render: {} as any },
       ]);
 
       service.unregisterToolRender("remove");

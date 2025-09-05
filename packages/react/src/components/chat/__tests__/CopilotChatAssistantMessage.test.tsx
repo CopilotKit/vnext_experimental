@@ -25,7 +25,7 @@ const mockOnRegenerate = vi.fn();
 // Helper to render components with context providers
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotKitProvider publicApiKey="test">
+    <CopilotKitProvider runtimeUrl="/test">
       <CopilotChatConfigurationProvider>
         {component}
       </CopilotChatConfigurationProvider>

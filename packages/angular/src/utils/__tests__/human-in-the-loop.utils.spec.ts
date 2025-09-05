@@ -195,7 +195,6 @@ describe("Human-in-the-Loop Utilities", () => {
 
       expect(registerSpy).toHaveBeenCalledWith("requireApproval", {
         name: "requireApproval",
-        args: expect.any(Object), // Note: registerToolRender expects 'args', not 'parameters'
         render: TestApprovalComponent,
       });
     });

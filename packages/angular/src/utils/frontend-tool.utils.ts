@@ -1,7 +1,7 @@
 import { DestroyRef, inject } from '@angular/core';
 import { CopilotKitService } from '../core/copilotkit.service';
 import { AngularFrontendTool, AngularToolCallRender, ToolCallRender } from '../core/copilotkit.types';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 /**
  * Explicitly adds a frontend tool to CopilotKit.
@@ -49,14 +49,13 @@ export function addFrontendTool<T extends Record<string, any> = Record<string, a
   // Register the render if provided
   if (tool.render) {
     const currentRenders = service.currentRenderToolCalls();
-    const existingIndex = currentRenders.findIndex((r: ToolCallRender<unknown>) => r.name === tool.name);
+    const existingIndex = currentRenders.findIndex((r: ToolCallRender) => r.name === tool.name);
     
     if (existingIndex !== -1) {
       console.error(`Tool with name '${tool.name}' already has a render. Skipping.`);
     } else {
-      const renderEntry: AngularToolCallRender<T> = {
+      const renderEntry: AngularToolCallRender = {
         name: tool.name,
-        args: tool.parameters || (z.object({}) as unknown as z.ZodSchema<T>),
         render: tool.render
       };
       
@@ -109,14 +108,13 @@ export function registerFrontendTool<T extends Record<string, any> = Record<stri
   // Register the render if provided
   if (tool.render) {
     const currentRenders = service.currentRenderToolCalls();
-    const existingIndex = currentRenders.findIndex((r: ToolCallRender<unknown>) => r.name === tool.name);
+    const existingIndex = currentRenders.findIndex((r: ToolCallRender) => r.name === tool.name);
     
     if (existingIndex !== -1) {
       console.error(`Tool with name '${tool.name}' already has a render. Skipping.`);
     } else {
-      const renderEntry: AngularToolCallRender<T> = {
+      const renderEntry: AngularToolCallRender = {
         name: tool.name,
-        args: tool.parameters || (z.object({}) as unknown as z.ZodSchema<T>),
         render: tool.render
       };
       
@@ -152,7 +150,7 @@ export function removeFrontendTool(
   
   // Remove the render if it exists
   const currentRenders = service.currentRenderToolCalls();
-  const filtered = currentRenders.filter((r: ToolCallRender<unknown>) => r.name !== toolName);
+  const filtered = currentRenders.filter((r: ToolCallRender) => r.name !== toolName);
   if (filtered.length !== currentRenders.length) {
     service.setCurrentRenderToolCalls(filtered);
   }
@@ -230,13 +228,12 @@ export function createDynamicFrontendTool<T extends Record<string, any> = Record
     // Update render if provided
     if (currentRender) {
       const currentRenders = service.currentRenderToolCalls();
-      const renderEntry: AngularToolCallRender<T> = {
+      const renderEntry: AngularToolCallRender = {
         name: name,
-        args: parameters,
         render: currentRender
       };
       
-      const existingIndex = currentRenders.findIndex((r: ToolCallRender<unknown>) => r.name === name);
+      const existingIndex = currentRenders.findIndex((r: ToolCallRender) => r.name === name);
       if (existingIndex !== -1) {
         const updated = [...currentRenders];
         updated[existingIndex] = renderEntry;

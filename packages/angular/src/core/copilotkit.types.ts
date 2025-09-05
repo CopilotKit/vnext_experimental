@@ -2,7 +2,6 @@ import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { Observable } from "rxjs";
 import { CopilotKitCore, ToolCallStatus } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
-import type { z } from "zod";
 import type { AngularFrontendTool } from "../types/frontend-tool";
 import type { AngularHumanInTheLoop } from "../types/human-in-the-loop";
 
@@ -42,27 +41,27 @@ export type ToolCallProps<T = unknown> =
       status: ToolCallStatus.Complete;
       result: string;
     };
+1;
 
 // Angular-specific tool call render definition with proper typing
-export interface AngularToolCallRender<T = unknown> {
+export interface AngularToolCallRender {
   name: string;
-  args: z.ZodSchema<T>;
   /**
    * Optional agent ID to constrain this tool render to a specific agent.
    * If specified, this render will only be used for the specified agent.
    */
   agentId?: string;
-  render: Type<any> | TemplateRef<ToolCallProps<T>>;
+  render: Type<any> | TemplateRef<ToolCallProps<any>>;
 }
 
 // Type alias for convenience
-export type ToolCallRender<T = unknown> = AngularToolCallRender<T>;
+export type ToolCallRender = AngularToolCallRender;
 
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: ToolCallRender<unknown>[];
-  currentRenderToolCalls: ToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: (v: ToolCallRender<unknown>[]) => void;
+  renderToolCalls: ToolCallRender[];
+  currentRenderToolCalls: ToolCallRender[];
+  setCurrentRenderToolCalls: (v: ToolCallRender[]) => void;
 }
 
 export interface CopilotKitRuntimeInputs {
@@ -70,7 +69,7 @@ export interface CopilotKitRuntimeInputs {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: ToolCallRender<unknown>[];
+  renderToolCalls?: ToolCallRender[];
 }
 
 // Injection tokens for dependency injection
@@ -92,7 +91,7 @@ export const COPILOTKIT_AGENTS = new InjectionToken<
 >("COPILOTKIT_AGENTS", { factory: () => ({}) });
 
 export const COPILOTKIT_RENDER_TOOL_CALLS = new InjectionToken<
-  ToolCallRender<unknown>[]
+  ToolCallRender[]
 >("COPILOTKIT_RENDER_TOOL_CALLS", { factory: () => [] });
 
 export const COPILOTKIT_FRONTEND_TOOLS = new InjectionToken<

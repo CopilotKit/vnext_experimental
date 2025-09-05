@@ -36,17 +36,17 @@ export class CopilotKitService {
   // Initial values for stability tracking
   private readonly initialFrontendTools: AngularFrontendTool<any>[];
   private readonly initialHumanInTheLoop: AngularHumanInTheLoop<any>[];
-  private readonly initialRenderToolCalls: ToolCallRender<unknown>[];
+  private readonly initialRenderToolCalls: ToolCallRender[];
 
   // Core instance - created once
   readonly copilotkit: CopilotKitCore;
 
   // State signals
   private readonly _renderToolCalls: ReturnType<
-    typeof signal<ToolCallRender<unknown>[]>
+    typeof signal<ToolCallRender[]>
   >;
   private readonly _currentRenderToolCalls: ReturnType<
-    typeof signal<ToolCallRender<unknown>[]>
+    typeof signal<ToolCallRender[]>
   >;
   private readonly _runtimeUrl: ReturnType<typeof signal<string | undefined>>;
   private readonly _headers: ReturnType<typeof signal<Record<string, string>>>;
@@ -71,7 +71,7 @@ export class CopilotKitService {
     typeof computed<Record<string, FrontendTool<any>>>
   >;
   private readonly _allRenderToolCalls: ReturnType<
-    typeof computed<ToolCallRender<unknown>[]>
+    typeof computed<ToolCallRender[]>
   >;
 
   // Public readonly signals - will be initialized in constructor
@@ -105,7 +105,7 @@ export class CopilotKitService {
     @Inject(COPILOTKIT_PROPERTIES) properties: Record<string, unknown>,
     @Inject(COPILOTKIT_AGENTS) agents: Record<string, AbstractAgent>,
     @Inject(COPILOTKIT_RENDER_TOOL_CALLS)
-    renderToolCalls: ToolCallRender<unknown>[],
+    renderToolCalls: ToolCallRender[],
     @Inject(COPILOTKIT_FRONTEND_TOOLS)
     frontendTools: AngularFrontendTool<any>[],
     @Inject(COPILOTKIT_HUMAN_IN_THE_LOOP)
@@ -134,9 +134,9 @@ export class CopilotKitService {
 
     // Initialize state signals
     this._renderToolCalls =
-      signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
+      signal<ToolCallRender[]>(allRenderToolCalls);
     this._currentRenderToolCalls =
-      signal<ToolCallRender<unknown>[]>(allRenderToolCalls);
+      signal<ToolCallRender[]>(allRenderToolCalls);
     this._runtimeUrl = signal<string | undefined>(runtimeUrl);
     this._headers = signal<Record<string, string>>(headers);
     this._properties = signal<Record<string, unknown>>(properties);
@@ -175,14 +175,13 @@ export class CopilotKitService {
     });
 
     this._allRenderToolCalls = computed(() => {
-      const combined: ToolCallRender<unknown>[] = [...this._renderToolCalls()];
+      const combined: ToolCallRender[] = [...this._renderToolCalls()];
 
       // Add render components from frontend tools
       this._frontendTools().forEach((tool) => {
-        if (tool.render && tool.parameters) {
+        if (tool.render) {
           combined.push({
             name: tool.name,
-            args: tool.parameters,
             render: tool.render,
             ...(tool.agentId && { agentId: tool.agentId }),
           });
@@ -191,10 +190,9 @@ export class CopilotKitService {
 
       // Add render components from human-in-the-loop tools
       this._humanInTheLoop().forEach((tool) => {
-        if (tool.render && tool.parameters) {
+        if (tool.render) {
           combined.push({
             name: tool.name,
-            args: tool.parameters,
             render: tool.render,
             ...(tool.agentId && { agentId: tool.agentId }),
           });
@@ -253,23 +251,22 @@ export class CopilotKitService {
   private processTools(
     frontendTools: AngularFrontendTool<any>[],
     humanInTheLoop: AngularHumanInTheLoop<any>[],
-    renderToolCalls: ToolCallRender<unknown>[]
+    renderToolCalls: ToolCallRender[]
   ): {
     allTools: Record<string, FrontendTool<any>>;
-    allRenderToolCalls: ToolCallRender<unknown>[];
+    allRenderToolCalls: ToolCallRender[];
   } {
     const allTools: Record<string, FrontendTool<any>> = {};
-    const allRenderToolCalls: ToolCallRender<unknown>[] = [...renderToolCalls];
+    const allRenderToolCalls: ToolCallRender[] = [...renderToolCalls];
 
     // Add frontend tools
     frontendTools.forEach((tool) => {
       allTools[tool.name] = tool as FrontendTool<any>;
 
       // Add render component if provided
-      if (tool.render && tool.parameters) {
+      if (tool.render) {
         allRenderToolCalls.push({
           name: tool.name,
-          args: tool.parameters,
           render: tool.render,
           ...(tool.agentId && { agentId: tool.agentId }),
         });
@@ -296,10 +293,9 @@ export class CopilotKitService {
       allTools[tool.name] = frontendTool;
 
       // Add the render component
-      if (tool.render && tool.parameters) {
+      if (tool.render) {
         allRenderToolCalls.push({
           name: tool.name,
-          args: tool.parameters,
           render: tool.render,
           ...(tool.agentId && { agentId: tool.agentId }),
         });
@@ -468,7 +464,7 @@ export class CopilotKitService {
   /**
    * Update render tool calls (warns if object reference changes)
    */
-  setRenderToolCalls(renderToolCalls: ToolCallRender<unknown>[]): void {
+  setRenderToolCalls(renderToolCalls: ToolCallRender[]): void {
     if (renderToolCalls !== this.initialRenderToolCalls) {
       console.error(
         "renderToolCalls must be a stable object. To add/remove tools dynamically, use dynamic tool registration."
@@ -504,14 +500,14 @@ export class CopilotKitService {
   /**
    * Update current render tool calls
    */
-  setCurrentRenderToolCalls(renderToolCalls: ToolCallRender<unknown>[]): void {
+  setCurrentRenderToolCalls(renderToolCalls: ToolCallRender[]): void {
     this._currentRenderToolCalls.set(renderToolCalls);
   }
 
   /**
    * Register a tool render
    */
-  registerToolRender(name: string, render: ToolCallRender<unknown>): void {
+  registerToolRender(name: string, render: ToolCallRender): void {
     const current = this._currentRenderToolCalls();
     if (current.find((r) => r.name === name)) {
       console.warn(`Tool render for '${name}' is being overwritten`);
@@ -536,7 +532,7 @@ export class CopilotKitService {
   /**
    * Get a specific tool render
    */
-  getToolRender(name: string): ToolCallRender<unknown> | undefined {
+  getToolRender(name: string): ToolCallRender | undefined {
     return this._currentRenderToolCalls().find((r) => r.name === name);
   }
 }

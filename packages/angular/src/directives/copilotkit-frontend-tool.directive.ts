@@ -16,7 +16,7 @@ import type {
   AngularToolCallRender,
   ToolCallRender,
 } from "../core/copilotkit.types";
-import { z } from "zod";
+import type { z } from "zod";
 
 @Directive({
   selector: "[copilotkitFrontendTool]",
@@ -81,12 +81,11 @@ export class CopilotKitFrontendToolDirective<
       const currentRenders = this.copilotkit.currentRenderToolCalls();
       const renderEntry: AngularToolCallRender = {
         name: tool.name,
-        args: tool.parameters || z.object({}),
         render: tool.render,
       };
 
       // Check for duplicate
-      const existingIndex = currentRenders.findIndex((r: ToolCallRender<unknown>) => r.name === tool.name);
+      const existingIndex = currentRenders.findIndex((r: ToolCallRender) => r.name === tool.name);
       if (existingIndex !== -1) {
         if (isDevMode()) {
           console.warn(
@@ -117,7 +116,7 @@ export class CopilotKitFrontendToolDirective<
 
       // Remove the render if it exists
       const currentRenders = this.copilotkit.currentRenderToolCalls();
-      const filtered = currentRenders.filter((r: ToolCallRender<unknown>) => r.name !== tool.name);
+      const filtered = currentRenders.filter((r: ToolCallRender) => r.name !== tool.name);
       if (filtered.length !== currentRenders.length) {
         this.copilotkit.setCurrentRenderToolCalls(filtered);
       }

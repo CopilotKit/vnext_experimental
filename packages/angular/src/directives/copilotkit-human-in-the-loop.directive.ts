@@ -217,7 +217,6 @@ export class CopilotKitHumanInTheLoopDirective<
     // Register the render with respond capability
     this.copilotkit.registerToolRender(this.name, {
       name: this.name,
-      args: this.parameters,
       render: this.createEnhancedRender(),
     });
   }

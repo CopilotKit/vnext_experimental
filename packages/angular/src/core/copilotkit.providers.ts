@@ -18,7 +18,7 @@ export interface ProvideCopilotKitOptions {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: ToolCallRender<unknown>[];
+  renderToolCalls?: ToolCallRender[];
   frontendTools?: AngularFrontendTool<any>[];
   humanInTheLoop?: AngularHumanInTheLoop<any>[];
 }
