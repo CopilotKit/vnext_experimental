@@ -88,7 +88,13 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
         a.threadId = this.threadId || this.generatedThreadId;
         if (!this.hasConnectedOnce) {
           this.hasConnectedOnce = true;
-          this.connectToAgent(a);
+          if ('isCopilotKitAgent' in (a as any)) {
+            this.connectToAgent(a);
+          } else {
+            // Not a CopilotKit agent: ensure UI not showing loading cursor
+            this.showCursor.set(false);
+            this.cdr.markForCheck();
+          }
         }
       },
       { allowSignalWrites: true }
