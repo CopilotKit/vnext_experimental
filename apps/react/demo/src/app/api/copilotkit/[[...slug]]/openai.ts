@@ -1,1 +1,1 @@
-export { OpenAIAgent } from "@copilotkitnext/openai-agent";
+export { OpenAIAgent } from "@copilotkitnext/demo-agents";

@@ -6,12 +6,15 @@ import {
   createCopilotEndpoint,
   InMemoryAgentRunner,
 } from "@copilotkitnext/runtime";
-import { OpenAIAgent } from "./openai.js";
+import {
+  OpenAIAgent,
+  SlowToolCallStreamingAgent,
+} from "@copilotkitnext/demo-agents";
 
 const runtime = new CopilotRuntime({
   agents: {
     // @ts-ignore
-    default: new OpenAIAgent(),
+    default: new SlowToolCallStreamingAgent(),
   },
   runner: new InMemoryAgentRunner(),
 });
