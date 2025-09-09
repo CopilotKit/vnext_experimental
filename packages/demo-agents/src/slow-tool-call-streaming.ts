@@ -89,6 +89,7 @@ export class SlowToolCallStreamingAgent extends AbstractAgent {
 
           // Send tool result
           if (cancelled) return;
+          const toolResultMessageId = `${Date.now()}_tool_result`;
           observer.next({
             type: EventType.TOOL_CALL_RESULT,
             toolCallId,
@@ -99,7 +100,7 @@ export class SlowToolCallStreamingAgent extends AbstractAgent {
               humidity: 65,
               windSpeed: 12,
             }),
-            messageId,
+            messageId: toolResultMessageId,
           } as ToolCallResultEvent);
 
           // Complete the run
