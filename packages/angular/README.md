@@ -307,6 +307,80 @@ export class AgentSwitcherComponent {
 }
 ```
 
+### Rendering Tool Calls (Headless)
+
+To render tool calls in a headless UI, register renderers in your providers and drop the lightweight view in your template.
+
+1) Register tool renderers (e.g., a wildcard that renders any tool):
+
+```ts
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { provideCopilotKit } from '@copilotkitnext/angular';
+
+// Simple demo renderer (Component or TemplateRef accepted)
+@Component({
+  standalone: true,
+  template: `
+    <div style="padding:12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;margin:8px 0;">
+      <div style="font-weight:600;margin-bottom:6px;">Tool: {{ name }}</div>
+      <pre style="margin:0;white-space:pre-wrap;">{{ args | json }}</pre>
+      <div *ngIf="result" style="margin-top:6px;">Result: {{ result }}</div>
+    </div>
+  `,
+})
+export class WildcardToolRenderComponent {
+  @Input() name!: string;
+  @Input() args: any;
+  @Input() status: any;
+  @Input() result?: string;
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    importProvidersFrom(BrowserModule),
+    ...provideCopilotKit({
+      renderToolCalls: [
+        { name: '*', render: WildcardToolRenderComponent },
+      ],
+    }),
+  ],
+};
+```
+
+2) Render tool calls under assistant messages using the headless view component:
+
+```ts
+import { Component } from '@angular/core';
+import { watchAgent, CopilotChatToolCallsViewComponent } from '@copilotkitnext/angular';
+
+@Component({
+  standalone: true,
+  imports: [CopilotChatToolCallsViewComponent],
+  template: `
+    <div *ngFor="let m of messages()">
+      <div>{{ m.role }}: {{ m.content }}</div>
+      <ng-container *ngIf="m.role === 'assistant'">
+        <copilot-chat-tool-calls-view
+          [message]="m"
+          [messages]="messages()"
+          [isLoading]="isRunning()"
+        />
+      </ng-container>
+    </div>
+  `,
+})
+export class HeadlessWithToolsComponent {
+  agent = watchAgent().agent;
+  messages = watchAgent().messages;
+  isRunning = watchAgent().isRunning;
+}
+```
+
+Notes:
+- If you prefer full manual control, you can render a specific tool call with `CopilotKitToolRenderComponent` and pass `toolName`, `args`, `status`, and `result` yourself.
+- You can also register tool renders declaratively via the `CopilotKitFrontendToolDirective` by using `[copilotkitFrontendTool]` in templates.
+
 ### Key Benefits of Headless Usage
 
 - **Full control**: Build any UI you need without constraints
