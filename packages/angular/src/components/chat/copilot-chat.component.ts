@@ -3,7 +3,6 @@ import {
   Input,
   OnInit,
   OnChanges,
-  OnDestroy,
   SimpleChanges,
   ChangeDetectionStrategy,
   ViewEncapsulation,
@@ -12,7 +11,6 @@ import {
   ChangeDetectorRef,
   Signal,
   Injector,
-  runInInjectionContext,
   Optional,
   SkipSelf,
 } from "@angular/core";
@@ -23,8 +21,7 @@ import {
   COPILOT_CHAT_INITIAL_CONFIG,
   CopilotChatConfiguration,
 } from "../../core/chat-configuration/chat-configuration.types";
-import { watchAgent } from "../../utils/agent.utils";
-import { AgentWatchResult } from "../../core/copilotkit.types";
+import { watchAgent, watchAgentWith } from "../../utils/agent.utils";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { Message, AbstractAgent } from "@ag-ui/client";
 
@@ -66,7 +63,7 @@ import { Message, AbstractAgent } from "@ag-ui/client";
     </copilot-chat-view>
   `,
 })
-export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
+export class CopilotChatComponent implements OnInit, OnChanges {
   @Input() agentId?: string;
   @Input() threadId?: string;
 
@@ -101,22 +98,15 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     );
   }
 
-  // Signals from watchAgent - using direct references instead of assignment
-  protected agent: Signal<AbstractAgent | undefined> = signal<
-    AbstractAgent | undefined
-  >(undefined).asReadonly() as unknown as Signal<AbstractAgent | undefined>;
-  protected messages: Signal<Message[]> = signal<Message[]>(
-    []
-  ).asReadonly() as unknown as Signal<Message[]>;
-  protected isRunning: Signal<boolean> = signal<boolean>(
-    false
-  ).asReadonly() as unknown as Signal<boolean>;
+  // Signals from watchAgent - destructured from watcher
+  protected agent!: Signal<AbstractAgent | undefined>;
+  protected messages!: Signal<Message[]>;
+  protected isRunning!: Signal<boolean>;
   protected showCursor = signal<boolean>(false);
 
   private generatedThreadId: string = randomUUID();
-  private agentWatcher?: AgentWatchResult;
+  private watcher?: ReturnType<typeof watchAgent>;
   private hasConnectedOnce = false;
-  private lastAgentId?: string;
 
   ngOnInit(): void {
     this.setupChatHandlers();
@@ -216,26 +206,21 @@ export class CopilotChatComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    if (this.agentWatcher?.unsubscribe) {
-      this.agentWatcher.unsubscribe();
-    }
-  }
 
   private createWatcher(desiredAgentId: string) {
-    // Tear down previous watcher if it exists
-    if (this.agentWatcher?.unsubscribe) {
-      this.agentWatcher.unsubscribe();
-      this.agentWatcher = undefined;
-    }
-    // Setup watcher for desired agent - ensure injection context
-    this.agentWatcher = runInInjectionContext(this.injector, () =>
-      watchAgent({ agentId: desiredAgentId })
-    );
-    this.agent = this.agentWatcher.agent;
-    this.messages = this.agentWatcher.messages;
-    this.isRunning = this.agentWatcher.isRunning;
+    // Tear down previous watcher if it exists to prevent parallel subscriptions
+    this.watcher?.unsubscribe();
+    
+    // Create new watcher using the ergonomic helper
+    const w = watchAgentWith(this.injector, { agentId: desiredAgentId });
+    
+    // Destructure signals directly to class fields
+    this.agent = w.agent;
+    this.messages = w.messages;
+    this.isRunning = w.isRunning;
+    this.watcher = w;
+    
+    // Reset connection state for new agent
     this.hasConnectedOnce = false;
-    this.lastAgentId = desiredAgentId;
   }
 }

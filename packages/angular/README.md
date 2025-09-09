@@ -205,6 +205,116 @@ console.log(
 - **`provideCopilotKit(...)`**: Set runtime URL, headers, properties, agents, tools, human-in-the-loop handlers
 - **`provideCopilotChatConfiguration(...)`**: Set UI labels and behavior for chat input/view
 
+## Headless Usage: Building Custom Chat UIs
+
+For advanced use cases where you need full control over the chat UI, you can use the `watchAgent` utility directly to build a custom chat component.
+
+### Using `watchAgent` for Custom Components
+
+The `watchAgent` function provides reactive signals for agent state, making it easy to build custom chat interfaces:
+
+```typescript
+import { Component, effect } from "@angular/core";
+import { watchAgent } from "@copilotkitnext/angular";
+
+@Component({
+  selector: "my-custom-chat",
+  template: `
+    <div class="custom-chat">
+      <div *ngFor="let msg of messages()" class="message">
+        {{ msg.content }}
+      </div>
+      <input
+        [disabled]="isRunning()"
+        (keyup.enter)="sendMessage($event)"
+      />
+    </div>
+  `,
+})
+export class MyCustomChatComponent {
+  protected agent!: ReturnType<typeof watchAgent>["agent"];
+  protected messages!: ReturnType<typeof watchAgent>["messages"];
+  protected isRunning!: ReturnType<typeof watchAgent>["isRunning"];
+
+  constructor() {
+    const w = watchAgent({ agentId: "custom" });
+    this.agent = w.agent;
+    this.messages = w.messages;
+    this.isRunning = w.isRunning;
+
+    // React to agent changes
+    effect(() => {
+      const currentAgent = this.agent();
+      if (currentAgent) {
+        console.log("Agent ready:", currentAgent.id);
+      }
+    });
+  }
+
+  async sendMessage(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const content = input.value.trim();
+    if (!content || !this.agent()) return;
+
+    // Add user message and run agent
+    this.agent()!.addMessage({ role: "user", content });
+    input.value = "";
+    await this.agent()!.runAgent();
+  }
+}
+```
+
+### Switching Agents at Runtime
+
+Use `watchAgentWith` when you need to switch agents dynamically outside of the constructor:
+
+```typescript
+import { Component, Injector } from "@angular/core";
+import { watchAgent, watchAgentWith } from "@copilotkitnext/angular";
+
+@Component({
+  selector: "agent-switcher",
+  template: `
+    <button (click)="switchToAgent('sales')">Sales Agent</button>
+    <button (click)="switchToAgent('support')">Support Agent</button>
+    <div>Current Agent: {{ agent()?.id || 'None' }}</div>
+  `,
+})
+export class AgentSwitcherComponent {
+  protected agent!: ReturnType<typeof watchAgent>["agent"];
+  protected messages!: ReturnType<typeof watchAgent>["messages"];
+  protected isRunning!: ReturnType<typeof watchAgent>["isRunning"];
+  private watcher?: ReturnType<typeof watchAgent>;
+
+  constructor(private injector: Injector) {
+    // Initialize with default agent
+    this.switchToAgent("default");
+  }
+
+  switchToAgent(agentId: string) {
+    // Clean up previous watcher
+    this.watcher?.unsubscribe();
+
+    // Create new watcher with the ergonomic helper
+    const w = watchAgentWith(this.injector, { agentId });
+
+    // Update component signals
+    this.agent = w.agent;
+    this.messages = w.messages;
+    this.isRunning = w.isRunning;
+    this.watcher = w;
+  }
+}
+```
+
+### Key Benefits of Headless Usage
+
+- **Full control**: Build any UI you need without constraints
+- **Reactive signals**: Automatically update UI when agent state changes
+- **Type safety**: Full TypeScript support with AG-UI types
+- **Memory efficient**: Automatic cleanup via Angular's DestroyRef
+- **Framework agnostic**: Works with any AG-UI compatible agent
+
 ## End-to-End: Running the Demo
 
 From the repo root:
