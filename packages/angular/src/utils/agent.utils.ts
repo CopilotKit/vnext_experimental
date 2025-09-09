@@ -1,4 +1,11 @@
-import { DestroyRef, inject, signal, computed } from "@angular/core";
+import {
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+  Injector,
+  runInInjectionContext,
+} from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { CopilotKitService } from "../core/copilotkit.service";
 import {
@@ -164,6 +171,36 @@ export function getAgent(
 export type { AgentWatchResult } from "../core/copilotkit.types";
 
 /**
+ * Convenience wrapper for watchAgent that handles injection context.
+ * Useful when you need to call watchAgent outside of a constructor or field initializer.
+ *
+ * @param injector - The Angular Injector to use for injection context
+ * @param config - Optional configuration with agentId
+ * @returns Object with agent, messages, and isRunning signals plus observables
+ *
+ * @example
+ * ```typescript
+ * export class MyComponent {
+ *   constructor(private injector: Injector) {}
+ *
+ *   switchAgent(newAgentId: string) {
+ *     // Can call outside of constructor using watchAgentWith
+ *     const watcher = watchAgentWith(this.injector, { agentId: newAgentId });
+ *     this.agent = watcher.agent;
+ *     this.messages = watcher.messages;
+ *     this.isRunning = watcher.isRunning;
+ *   }
+ * }
+ * ```
+ */
+export function watchAgentWith(
+  injector: Injector,
+  config?: { agentId?: string }
+): AgentWatchResult {
+  return runInInjectionContext(injector, () => watchAgent(config));
+}
+
+/**
  * Subscribes to an agent's events with custom callbacks.
  * Returns a cleanup function that should be called to unsubscribe.
  *
@@ -215,25 +252,4 @@ export function subscribeToAgent(
   });
 
   return () => subscription.unsubscribe();
-}
-
-/**
- * Registers an agent watcher that automatically cleans up on component destroy.
- * This is an alias for watchAgent with a more explicit name.
- * Must be called within an injection context.
- *
- * @param config - Optional configuration with agentId
- * @returns Object with agent, messages, and isRunning signals plus observables
- *
- * @example
- * ```typescript
- * export class MyComponent {
- *   agentState = registerAgentWatcher({ agentId: 'my-agent' });
- * }
- * ```
- */
-export function registerAgentWatcher(config?: {
-  agentId?: string;
-}): AgentWatchResult {
-  return watchAgent(config);
 }

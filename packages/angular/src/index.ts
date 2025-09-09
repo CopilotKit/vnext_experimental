@@ -13,9 +13,9 @@ export * from "./utils/frontend-tool.utils";
 // Export all except AgentWatchResult which is already exported from copilotkit.types
 export {
   watchAgent,
+  watchAgentWith,
   getAgent,
   subscribeToAgent,
-  registerAgentWatcher,
 } from "./utils/agent.utils";
 export * from "./utils/human-in-the-loop.utils";
 export * from "./utils/chat-config.utils";

@@ -1,11 +1,6 @@
 import { TestBed } from "@angular/core/testing";
-import { Component, OnInit, DestroyRef, inject } from "@angular/core";
-import {
-  watchAgent,
-  getAgent,
-  subscribeToAgent,
-  registerAgentWatcher,
-} from "../agent.utils";
+import { Component, OnInit, DestroyRef, inject, Injector } from "@angular/core";
+import { watchAgent, watchAgentWith, getAgent, subscribeToAgent } from "../agent.utils";
 import { CopilotKitService } from "../../core/copilotkit.service";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { AbstractAgent } from "@ag-ui/client";
@@ -201,25 +196,57 @@ describe("Agent Utilities", () => {
     });
   });
 
-  describe("registerAgentWatcher", () => {
-    it("should be an alias for watchAgent", () => {
+  describe("watchAgentWith", () => {
+    it("should create agent watcher with injector context", () => {
       @Component({
         template: "",
         standalone: true,
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
-        agentState = registerAgentWatcher({ agentId: "test-agent" });
+        agentState: any;
+        injector = inject(Injector);
+
+        switchAgent(agentId: string) {
+          // Use watchAgentWith outside of constructor
+          this.agentState = watchAgentWith(this.injector, { agentId });
+        }
       }
 
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
+
+      // Call switchAgent method to test watchAgentWith
+      fixture.componentInstance.switchAgent("test-agent");
 
       expect(fixture.componentInstance.agentState).toBeDefined();
       expect(fixture.componentInstance.agentState.agent).toBeDefined();
       expect(fixture.componentInstance.agentState.messages).toBeDefined();
       expect(fixture.componentInstance.agentState.isRunning).toBeDefined();
       expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith("test-agent");
+    });
+
+    it("should handle default agent ID when not provided", () => {
+      @Component({
+        template: "",
+        standalone: true,
+        providers: [provideCopilotKit({})],
+      })
+      class TestComponent {
+        agentState: any;
+        injector = inject(Injector);
+
+        constructor() {
+          // Use watchAgentWith without agentId
+          this.agentState = watchAgentWith(this.injector);
+        }
+      }
+
+      const fixture = TestBed.createComponent(TestComponent);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.agentState).toBeDefined();
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(DEFAULT_AGENT_ID);
     });
   });
 

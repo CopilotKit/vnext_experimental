@@ -660,7 +660,7 @@ describe("CopilotKitService - Human-in-the-Loop", () => {
     );
     expect(confirmRender).toBeDefined();
     expect(confirmRender?.render).toBe(ConfirmComponent);
-    expect(confirmRender?.args).toBe(confirmTool.parameters);
+    // ToolCallRender doesn't have an args property - parameters are passed through tool execution
   });
 
   it("should warn when human-in-the-loop array changes", () => {
