@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatConfigurationProvider,
   CopilotChatView,
-} from "@copilotkit/react";
+  CopilotKitProvider,
+} from "@copilotkitnext/react";
 
 const meta = {
   title: "UI/CopilotChatView",
@@ -92,23 +93,25 @@ In this example:
     ];
 
     return (
-      <CopilotChatConfigurationProvider>
-        <div style={{ height: "100%" }}>
-          <CopilotChatView
-            messages={messages}
-            messageView={{
-              assistantMessage: {
-                onThumbsUp: () => {
-                  alert("thumbsUp");
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider>
+          <div style={{ height: "100%" }}>
+            <CopilotChatView
+              messages={messages}
+              messageView={{
+                assistantMessage: {
+                  onThumbsUp: () => {
+                    alert("thumbsUp");
+                  },
+                  onThumbsDown: () => {
+                    alert("thumbsDown");
+                  },
                 },
-                onThumbsDown: () => {
-                  alert("thumbsDown");
-                },
-              },
-            }}
-          />
-        </div>
-      </CopilotChatConfigurationProvider>
+              }}
+            />
+          </div>
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
     );
   },
 };

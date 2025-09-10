@@ -1,6 +1,6 @@
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useMemo, useEffect, useReducer, useState } from "react";
-import { DEFAULT_AGENT_ID } from "@copilotkit/shared";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import { AbstractAgent } from "@ag-ui/client";
 
 export interface UseAgentProps {
@@ -16,23 +16,24 @@ export function useAgent({ agentId }: UseAgentProps = {}) {
 
   const agent: AbstractAgent | undefined = useMemo(() => {
     return copilotkit.getAgent(agentId);
-  }, [agentId, copilotkit.agents, copilotkit.didLoadRuntime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentId, copilotkit.agents, copilotkit.didLoadRuntime, copilotkit]);
 
   useEffect(() => {
     const subscription = agent?.subscribe({
-      onMessagesChanged(params) {
+      onMessagesChanged() {
         forceUpdate();
       },
-      onStateChanged(params) {
+      onStateChanged() {
         forceUpdate();
       },
-      onRunInitialized(params) {
+      onRunInitialized() {
         setIsRunning(true);
       },
-      onRunFinalized(params) {
+      onRunFinalized() {
         setIsRunning(false);
       },
-      onRunFailed(params) {
+      onRunFailed() {
         setIsRunning(false);
       },
     });

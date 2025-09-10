@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/blocks';
+import { Meta } from "@storybook/blocks";
 
 <Meta title="Welcome" />
 
@@ -13,6 +13,7 @@ CopilotKit is a comprehensive toolkit for building AI-powered copilot experience
 ## Available Components
 
 ### Chat Components
+
 - **CopilotChatInput** - A feature-rich chat input component with voice recording, tools menu, and file attachments
 - **CopilotChatTextarea** - An auto-resizing textarea component for chat interfaces
 - **CopilotChatView** - Complete chat interface with message history
@@ -20,6 +21,7 @@ CopilotKit is a comprehensive toolkit for building AI-powered copilot experience
 - **CopilotAssistantMessage** - Assistant message display component
 
 ### Context Management
+
 - **CopilotAgentContextProvider** - Provides agent context to child components
 - **CopilotChatConfigurationProvider** - Configures chat components globally
 
@@ -28,38 +30,38 @@ CopilotKit is a comprehensive toolkit for building AI-powered copilot experience
 ### Installation
 
 ```bash
-npm install @copilotkit/angular
+npm install @copilotkitnext/angular
 # or
-pnpm add @copilotkit/angular
+pnpm add @copilotkitnext/angular
 ```
 
 ### Basic Usage
 
 ```typescript
-import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkit/angular';
-import { provideCopilotChatConfiguration } from '@copilotkit/angular';
+import { Component } from "@angular/core";
+import { CopilotChatInputComponent } from "@copilotkitnext/angular";
+import { provideCopilotChatConfiguration } from "@copilotkitnext/angular";
 
 @Component({
-  selector: 'app-chat',
+  selector: "app-chat",
   standalone: true,
   imports: [CopilotChatInputComponent],
   providers: [
     provideCopilotChatConfiguration({
       labels: {
-        chatInputPlaceholder: 'Type a message...',
-      }
-    })
+        chatInputPlaceholder: "Type a message...",
+      },
+    }),
   ],
   template: `
     <copilot-chat-input
       (submitMessage)="onSubmitMessage($event)"
     ></copilot-chat-input>
-  `
+  `,
 })
 export class ChatComponent {
   onSubmitMessage(message: string): void {
-    console.log('Message:', message);
+    console.log("Message:", message);
   }
 }
 ```
@@ -67,16 +69,20 @@ export class ChatComponent {
 ## Features
 
 ### Angular 19+ Support
+
 Built with the latest Angular features including:
+
 - Standalone components
 - Signals for reactive state management
 - OnPush change detection
 - TypeScript strict mode
 
 ### Full TypeScript Support
+
 All components are fully typed with comprehensive TypeScript definitions.
 
 ### Customizable
+
 - Custom CSS classes for styling
 - Configurable labels and placeholders
 - Event emitters for all interactions
@@ -105,9 +111,10 @@ pnpm --filter storybook-angular build
 ## Support
 
 For issues, feature requests, or questions:
+
 - [GitHub Issues](https://github.com/CopilotKit/CopilotKit/issues)
 - [Discord Community](https://discord.gg/copilotkit)
 
 ---
 
-*Built with Angular 19 and Storybook 8*
+_Built with Angular 19 and Storybook 8_

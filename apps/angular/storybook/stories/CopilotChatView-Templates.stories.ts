@@ -1,22 +1,27 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { Component, Input } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
+  CopilotChatConfigurationService,
   provideCopilotChatConfiguration,
   provideCopilotKit,
-} from '@copilotkit/angular';
-import { Message } from '@ag-ui/client';
+} from "@copilotkitnext/angular";
+import { Message } from "@ag-ui/client";
 
+// Custom input components defined after imports
 const meta: Meta<CopilotChatViewComponent> = {
-  title: 'UI/CopilotChatView/Customized with Templates',
+  title: "UI/CopilotChatView/Customized with Templates",
   component: CopilotChatViewComponent,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
+        FormsModule,
         CopilotChatViewComponent,
         CopilotChatMessageViewComponent,
         CopilotChatInputComponent,
@@ -25,15 +30,16 @@ const meta: Meta<CopilotChatViewComponent> = {
         provideCopilotKit({}),
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
+            chatInputPlaceholder: "Type a message...",
+            chatDisclaimerText:
+              "AI can make mistakes. Please verify important information.",
           },
         }),
       ],
     }),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -44,14 +50,15 @@ export const CustomDisclaimerTemplate: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'How do I use templates for customization?',
-        role: 'user' as const,
+        id: "user-1",
+        content: "How do I use templates for customization?",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Templates provide a powerful way to customize components! You can use ng-template with template references to inject custom HTML directly into the component slots.',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Templates provide a powerful way to customize components! You can use ng-template with template references to inject custom HTML directly into the component slots.",
+        role: "assistant" as const,
       },
     ];
 
@@ -102,99 +109,111 @@ export const CustomDisclaimerTemplate: Story = {
   },
 };
 
+// Custom input component for template story
+@Component({
+  selector: 'template-custom-input',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 24px;
+      margin: 0;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    ">
+      <div style="
+        display: flex;
+        gap: 12px;
+        max-width: 1200px;
+        margin: 0 auto;
+      ">
+        <input 
+          type="text"
+          [(ngModel)]="inputValue"
+          placeholder="✨ Type your message here..."
+          style="
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            outline: none;
+            transition: all 0.3s ease;
+          "
+          (keyup.enter)="sendMessage()"
+        />
+        <button 
+          style="
+            padding: 16px 32px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          "
+          (click)="sendMessage()">
+          Send
+        </button>
+      </div>
+      <div style="
+        text-align: center;
+        margin-top: 8px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+      ">
+        Press Enter to send • Powered by Templates
+      </div>
+    </div>
+  `
+})
+class TemplateCustomInputComponent {
+  inputValue = '';
+  
+  constructor(private chat: CopilotChatConfigurationService) {}
+  
+  sendMessage() {
+    const value = this.inputValue.trim();
+    if (value) {
+      this.chat.submitInput(value);
+      this.inputValue = '';
+    }
+  }
+}
+
 export const CustomInputTemplate: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'This input is created with a template!',
-        role: 'user' as const,
+        id: "user-1",
+        content: "This input is created with a component!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Yes! Templates allow for complete control over the input area, including custom styling and behavior.',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Yes! Components with service injection provide complete control over the input area, including custom styling and behavior.",
+        role: "assistant" as const,
       },
     ];
-
-    const sendMessage = (input: HTMLInputElement, onSend: (message: string) => void) => {
-      if (input.value.trim()) {
-        onSend(input.value);
-        input.value = '';
-      }
-    };
 
     return {
       template: `
         <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
-          <!-- Custom Input Template -->
-          <ng-template #customInput let-onSend="onSend">
-            <div style="
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              padding: 24px;
-              margin: 0;
-              box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-            ">
-              <div style="
-                display: flex;
-                gap: 12px;
-                max-width: 1200px;
-                margin: 0 auto;
-              ">
-                <input 
-                  #messageInput
-                  type="text"
-                  placeholder="✨ Type your message here..."
-                  style="
-                    flex: 1;
-                    padding: 16px 20px;
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    border-radius: 12px;
-                    font-size: 16px;
-                    background: rgba(255, 255, 255, 0.95);
-                    color: #333;
-                    outline: none;
-                    transition: all 0.3s ease;
-                  "
-                  (keyup.enter)="sendMessage(messageInput, onSend)"
-                />
-                <button 
-                  style="
-                    padding: 16px 32px;
-                    background: white;
-                    color: #667eea;
-                    border: none;
-                    border-radius: 12px;
-                    font-weight: bold;
-                    font-size: 16px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                  "
-                  (click)="sendMessage(messageInput, onSend)">
-                  Send
-                </button>
-              </div>
-              <div style="
-                text-align: center;
-                margin-top: 8px;
-                font-size: 12px;
-                color: rgba(255, 255, 255, 0.8);
-              ">
-                Press Enter to send • Powered by Templates
-              </div>
-            </div>
-          </ng-template>
-
           <copilot-chat-view
             [messages]="messages"
-            [inputTemplate]="customInput">
+            [inputComponent]="customInputComponent">
           </copilot-chat-view>
         </div>
       `,
       props: {
         messages,
-        sendMessage,
+        customInputComponent: TemplateCustomInputComponent,
       },
     };
   },
@@ -207,10 +226,11 @@ export const CustomScrollButtonTemplate: Story = {
     for (let i = 0; i < 25; i++) {
       messages.push({
         id: `msg-${i}`,
-        content: i % 2 === 0 
-          ? `User message ${i}: Template-based scroll button demonstration!`
-          : `Assistant response ${i}: Templates provide maximum flexibility for UI customization, allowing you to create exactly the experience you want.`,
-        role: i % 2 === 0 ? 'user' : 'assistant',
+        content:
+          i % 2 === 0
+            ? `User message ${i}: Template-based scroll button demonstration!`
+            : `Assistant response ${i}: Templates provide maximum flexibility for UI customization, allowing you to create exactly the experience you want.`,
+        role: i % 2 === 0 ? "user" : "assistant",
       } as Message);
     }
 
@@ -274,37 +294,88 @@ export const CustomScrollButtonTemplate: Story = {
   },
 };
 
+// Custom input component for combined story
+@Component({
+  selector: 'combined-custom-input',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div style="
+      background: linear-gradient(90deg, #00d2ff 0%, #3a47d5 100%);
+      padding: 20px;
+    ">
+      <input 
+        type="text"
+        [(ngModel)]="inputValue"
+        placeholder="Template-powered input..."
+        style="
+          width: calc(100% - 100px);
+          padding: 12px;
+          border: 2px solid white;
+          border-radius: 8px;
+          font-size: 16px;
+          outline: none;
+        "
+        (keyup.enter)="sendMessage()"
+      />
+      <button 
+        style="
+          width: 80px;
+          padding: 12px;
+          margin-left: 10px;
+          background: white;
+          color: #3a47d5;
+          border: none;
+          border-radius: 8px;
+          font-weight: bold;
+          cursor: pointer;
+        "
+        (click)="sendMessage()">
+        Go
+      </button>
+    </div>
+  `
+})
+class CombinedCustomInputComponent {
+  inputValue = '';
+  
+  constructor(private chat: CopilotChatConfigurationService) {}
+  
+  sendMessage() {
+    const value = this.inputValue.trim();
+    if (value) {
+      this.chat.submitInput(value);
+      this.inputValue = '';
+    }
+  }
+}
+
 export const AllTemplatesCombined: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Show me all templates working together!',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Show me all templates working together!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Here you can see custom disclaimer, input, and scroll button templates all working in harmony!',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content:
+          "Here you can see custom disclaimer, input, and scroll button templates all working in harmony!",
+        role: "assistant" as const,
       },
       {
-        id: 'user-2',
-        content: 'This is amazing flexibility!',
-        role: 'user' as const,
+        id: "user-2",
+        content: "This is amazing flexibility!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-2',
-        content: 'Templates give you complete control over every aspect of the chat interface while maintaining the core functionality.',
-        role: 'assistant' as const,
+        id: "assistant-2",
+        content:
+          "Templates give you complete control over every aspect of the chat interface while maintaining the core functionality.",
+        role: "assistant" as const,
       },
     ];
-
-    const send = (input: HTMLInputElement, onSend: (message: string) => void) => {
-      if (input.value.trim()) {
-        onSend(input.value);
-        input.value = '';
-      }
-    };
 
     return {
       template: `
@@ -321,43 +392,6 @@ export const AllTemplatesCombined: Story = {
               border-radius: 8px;
             ">
               🚀 All custom templates active!
-            </div>
-          </ng-template>
-
-          <ng-template #input let-onSend="onSend">
-            <div style="
-              background: linear-gradient(90deg, #00d2ff 0%, #3a47d5 100%);
-              padding: 20px;
-            ">
-              <input 
-                #msgInput
-                type="text"
-                placeholder="Template-powered input..."
-                style="
-                  width: calc(100% - 100px);
-                  padding: 12px;
-                  border: 2px solid white;
-                  border-radius: 8px;
-                  font-size: 16px;
-                  outline: none;
-                "
-                (keyup.enter)="send(msgInput, onSend)"
-              />
-              <button 
-                style="
-                  width: 80px;
-                  padding: 12px;
-                  margin-left: 10px;
-                  background: white;
-                  color: #3a47d5;
-                  border: none;
-                  border-radius: 8px;
-                  font-weight: bold;
-                  cursor: pointer;
-                "
-                (click)="send(msgInput, onSend)">
-                Go
-              </button>
             </div>
           </ng-template>
 
@@ -386,14 +420,14 @@ export const AllTemplatesCombined: Story = {
             [messages]="messages"
             [autoScroll]="false"
             [disclaimerTemplate]="disclaimer"
-            [inputTemplate]="input"
+            [inputComponent]="customInputComponent"
             [scrollToBottomButtonTemplate]="scrollBtn">
           </copilot-chat-view>
         </div>
       `,
       props: {
         messages,
-        send,
+        customInputComponent: CombinedCustomInputComponent,
       },
     };
   },

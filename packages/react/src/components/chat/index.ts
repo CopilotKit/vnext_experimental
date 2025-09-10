@@ -25,6 +25,11 @@ export {
   type CopilotChatMessageViewProps,
 } from "./CopilotChatMessageView";
 
+export {
+  default as CopilotChatToolCallsView,
+  type CopilotChatToolCallsViewProps,
+} from "./CopilotChatToolCallsView";
+
 export { default as CopilotChatView, type CopilotChatViewProps } from "./CopilotChatView";
 
 export { CopilotChat, type CopilotChatProps } from "./CopilotChat";

@@ -15,6 +15,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotComponent } from '../../lib/slots/copilot-slot.component';
+import { CopilotChatToolCallsViewComponent } from './copilot-chat-tool-calls-view.component';
+import type { Message } from '@ag-ui/core';
 import {
   type AssistantMessage,
   type CopilotChatAssistantMessageOnThumbsUpProps,
@@ -53,7 +55,8 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
     CopilotChatAssistantMessageThumbsDownButtonComponent,
     CopilotChatAssistantMessageReadAloudButtonComponent,
     CopilotChatAssistantMessageRegenerateButtonComponent,
-    CopilotChatAssistantMessageToolbarComponent
+    CopilotChatAssistantMessageToolbarComponent,
+    CopilotChatToolCallsViewComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -77,8 +80,23 @@ import { CopilotChatViewHandlersService } from './copilot-chat-view-handlers.ser
         </copilot-chat-assistant-message-renderer>
       }
       
-      <!-- Toolbar -->
-      <ng-container *ngIf="toolbarVisible">
+      <!-- Tool Calls View -->
+      @if (toolCallsViewTemplate || toolCallsViewComponent) {
+        <copilot-slot
+          [slot]="toolCallsViewTemplate || toolCallsViewComponent"
+          [context]="toolCallsViewContext()"
+          [defaultComponent]="CopilotChatToolCallsViewComponent">
+        </copilot-slot>
+      } @else if (message?.toolCalls && message.toolCalls.length > 0) {
+        <copilot-chat-tool-calls-view
+          [message]="message"
+          [messages]="messages"
+          [isLoading]="isLoading">
+        </copilot-chat-tool-calls-view>
+      }
+      
+      <!-- Toolbar: show only when there is assistant text content -->
+      <ng-container *ngIf="toolbarVisible && hasMessageContent()">
         @if (toolbarTemplate || toolbarComponent) {
           <copilot-slot
             [slot]="toolbarTemplate || toolbarComponent"
@@ -335,6 +353,7 @@ export class CopilotChatAssistantMessageComponent {
   @ContentChild('thumbsDownButton', { read: TemplateRef }) thumbsDownButtonTemplate?: TemplateRef<ThumbsDownButtonContext>;
   @ContentChild('readAloudButton', { read: TemplateRef }) readAloudButtonTemplate?: TemplateRef<ReadAloudButtonContext>;
   @ContentChild('regenerateButton', { read: TemplateRef }) regenerateButtonTemplate?: TemplateRef<RegenerateButtonContext>;
+  @ContentChild('toolCallsView', { read: TemplateRef }) toolCallsViewTemplate?: TemplateRef<any>;
   
   // Class inputs for styling default components
   @Input() markdownRendererClass?: string;
@@ -344,6 +363,7 @@ export class CopilotChatAssistantMessageComponent {
   @Input() thumbsDownButtonClass?: string;
   @Input() readAloudButtonClass?: string;
   @Input() regenerateButtonClass?: string;
+  @Input() toolCallsViewClass?: string;
   
   // Component inputs for overrides
   @Input() markdownRendererComponent?: Type<any>;
@@ -353,9 +373,12 @@ export class CopilotChatAssistantMessageComponent {
   @Input() thumbsDownButtonComponent?: Type<any>;
   @Input() readAloudButtonComponent?: Type<any>;
   @Input() regenerateButtonComponent?: Type<any>;
+  @Input() toolCallsViewComponent?: Type<any>;
   
   // Regular inputs
   @Input() message!: AssistantMessage;
+  @Input() messages: Message[] = [];
+  @Input() isLoading = false;
   @Input() additionalToolbarItems?: TemplateRef<any>;
   @Input() toolbarVisible = true;
   @Input() set inputClass(val: string | undefined) {
@@ -393,6 +416,7 @@ export class CopilotChatAssistantMessageComponent {
   protected readonly CopilotChatAssistantMessageRendererComponent = CopilotChatAssistantMessageRendererComponent;
   protected readonly CopilotChatAssistantMessageToolbarComponent = CopilotChatAssistantMessageToolbarComponent;
   protected readonly CopilotChatAssistantMessageCopyButtonComponent = CopilotChatAssistantMessageCopyButtonComponent;
+  protected readonly CopilotChatToolCallsViewComponent = CopilotChatToolCallsViewComponent;
   
   // Context for slots (reactive via signals)
   markdownRendererContext = computed<AssistantMessageMarkdownRendererContext>(() => ({
@@ -408,6 +432,19 @@ export class CopilotChatAssistantMessageComponent {
   
   toolbarContext = computed<AssistantMessageToolbarContext>(() => ({
     children: null // Will be populated by the toolbar content
+  }));
+
+  // Return true if assistant message has non-empty text content
+  hasMessageContent(): boolean {
+    const raw = (this.message?.content ?? '') as any;
+    const content = typeof raw === 'string' ? raw : String(raw ?? '');
+    return content.trim().length > 0;
+  }
+  
+  toolCallsViewContext = computed(() => ({
+    message: this.message,
+    messages: this.messages,
+    isLoading: this.isLoading
   }));
   
   handleCopy(): void {

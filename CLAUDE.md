@@ -19,7 +19,7 @@ pnpm install
 pnpm build
 
 # Build specific package
-pnpm turbo run build --filter=@copilotkit/react
+pnpm turbo run build --filter=@copilotkitnext/react
 
 # Clean all dist outputs
 pnpm clean
@@ -28,14 +28,16 @@ pnpm clean
 **Development Workflow - Run Order (Important):**
 
 1. **Always start package compilers first:**
+
    ```bash
    pnpm dev  # Watches and compiles libraries only
    ```
-   - Includes: @copilotkit/core, @copilotkit/shared, @copilotkit/runtime, @copilotkit/react, @copilotkit/angular
+   - Includes: @copilotkitnext/core, @copilotkitnext/shared, @copilotkitnext/runtime, @copilotkitnext/react, @copilotkitnext/angular
    - Produces dist and styles.css with hot reload for dependent apps
    - Wait for this to be ready before starting apps
 
 2. **Then run demos/storybooks/docs in separate terminals as needed:**
+
    ```bash
    # Angular demo + backend server
    pnpm demo:angular
@@ -60,6 +62,7 @@ pnpm clean
    ```
 
 **Important Notes:**
+
 - Demos and storybooks depend on `pnpm dev` for compiled outputs
 - No upstream builds for apps - they rely on the watch mode from `pnpm dev`
 - All apps have hot reload enabled
@@ -101,6 +104,7 @@ pnpm build-storybook
 When creating or modifying Storybook stories, especially for Angular components:
 
 1. **Always manually provide source code** - Do not rely on automatic source extraction. Use the `parameters.docs.source` configuration:
+
    ```typescript
    parameters: {
      docs: {
@@ -117,7 +121,7 @@ When creating or modifying Storybook stories, especially for Angular components:
 
 ## Architecture Overview
 
-CopilotKit 2.0 is a TypeScript-first monorepo built with React components and AI agents. The codebase follows a modular workspace architecture managed by Turbo and pnpm.
+CopilotKit vnext_experimental is a TypeScript-first monorepo built with React components and AI agents. The codebase follows a modular workspace architecture managed by Turbo and pnpm.
 
 ### Package Structure
 

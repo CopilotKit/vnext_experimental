@@ -234,6 +234,8 @@ describe('CopilotChatMessageViewComponent', () => {
       // Props are merged and passed to slot system
       expect(component.mergeAssistantProps(mockAssistantMessage)).toEqual({
         message: mockAssistantMessage,
+        messages: [mockAssistantMessage],
+        isLoading: false,
         inputClass: 'custom-class'
       });
     });
@@ -258,9 +260,9 @@ describe('CopilotChatMessageViewComponent', () => {
           <ng-template #customLayout let-messages="messages" let-showCursor="showCursor" let-messageElements="messageElements">
             <div class="custom-layout">
               <h2>Custom Layout</h2>
-              <div class="message-count">{{ messages.length }} messages</div>
+              <div class="message-count">{{ messages?.length || 0 }} messages</div>
               <div class="cursor-status">Cursor: {{ showCursor }}</div>
-              <div class="elements-count">Elements: {{ messageElements.length }}</div>
+              <div class="elements-count">Elements: {{ messageElements?.length || 0 }}</div>
             </div>
           </ng-template>
         </copilot-chat-message-view>

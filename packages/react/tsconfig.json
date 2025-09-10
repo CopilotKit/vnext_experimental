@@ -1,17 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@copilotkit/typescript-config/react-library.json",
+  "extends": "@copilotkitnext/typescript-config/react-library.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@copilotkit/core": [
+      "@copilotkitnext/core": [
         "../core/dist/index.d.ts",
         "../core/src/index.ts"
       ],
-      "@copilotkit/shared": [
+      "@copilotkitnext/shared": [
         "../shared/dist/index.d.ts",
         "../shared/src/index.ts"
       ]

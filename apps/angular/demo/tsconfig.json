@@ -12,16 +12,16 @@
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
-      "@copilotkit/angular": [
+      "@copilotkitnext/angular": [
         "../../packages/angular/dist/index.d.ts",
         "../../packages/angular/dist/fesm2022/copilotkit-angular.mjs"
       ],
-      "@copilotkit/core": [
+      "@copilotkitnext/core": [
         "../../packages/core/dist/index.d.ts",
         "../../packages/core/dist/index.mjs",
         "../../packages/core/src/index.ts"
       ],
-      "@copilotkit/shared": [
+      "@copilotkitnext/shared": [
         "../../packages/shared/dist/index.d.ts",
         "../../packages/shared/dist/index.mjs",
         "../../packages/shared/src/index.ts"
@@ -34,8 +34,5 @@
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   },
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "exclude": ["dist", "node_modules"]
 }

@@ -1,7 +1,6 @@
 {
-  "name": "@copilotkit/react",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@copilotkitnext/react",
+  "version": "0.0.7",
   "description": "React components for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,11 +12,15 @@
     },
     "./styles.css": "./dist/styles.css"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css --watch --minify",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/globals.css -o ./dist/styles.css -m",
     "dev": "concurrently \"npm:dev:css\" \"tsup --watch\"",
     "build": "tsup && npm run build:css",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
@@ -27,8 +30,8 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@copilotkit/eslint-config": "workspace:*",
-    "@copilotkit/typescript-config": "workspace:*",
+    "@copilotkitnext/eslint-config": "workspace:*",
+    "@copilotkitnext/typescript-config": "workspace:*",
     "@tailwindcss/cli": "^4.1.11",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5.16",
@@ -51,8 +54,8 @@
   "dependencies": {
     "@ag-ui/client": "0.0.36-alpha.1",
     "@ag-ui/core": "0.0.36-alpha.1",
-    "@copilotkit/core": "workspace:*",
-    "@copilotkit/shared": "workspace:*",
+    "@copilotkitnext/core": "workspace:*",
+    "@copilotkitnext/shared": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",

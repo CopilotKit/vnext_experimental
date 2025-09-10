@@ -1,6 +1,6 @@
 import type { Preview } from "@storybook/react-webpack5";
 import { withThemeByClassName } from "@storybook/addon-themes";
-import "@copilotkit/react/styles.css";
+import "@copilotkitnext/react/styles.css";
 import "./preview.css";
 
 const preview: Preview = {
@@ -15,12 +15,12 @@ const preview: Preview = {
     },
     docs: {
       // Canvas (bottom) code panel behavior
-      canvas: { sourceState: 'shown' }, // Show source code by default
+      canvas: { sourceState: "shown" }, // Show source code by default
       // Enable the separate Code panel in Docs tab
       codePanel: true,
       // Configure source display
       source: {
-        type: 'dynamic', // Update snippet as args/Controls change
+        type: "dynamic", // Update snippet as args/Controls change
       },
     },
   },

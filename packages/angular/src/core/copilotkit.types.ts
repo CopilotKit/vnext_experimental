@@ -1,50 +1,67 @@
 import { InjectionToken, TemplateRef, Type, Signal } from "@angular/core";
 import { Observable } from "rxjs";
-import { CopilotKitCoreConfig, CopilotKitCore } from "@copilotkit/core";
+import { CopilotKitCore, ToolCallStatus } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
-import type { z } from "zod";
+import type { AngularFrontendTool } from "../types/frontend-tool";
+import type { AngularHumanInTheLoop } from "../types/human-in-the-loop";
 
 // Re-export commonly used types
 export type { Context } from "@ag-ui/client";
 
-// Tool call status type
-export type ToolCallStatus = 'inProgress' | 'executing' | 'complete';
+// Re-export tool types from their own files
+export type { AngularFrontendTool } from "../types/frontend-tool";
+export type {
+  AngularHumanInTheLoop,
+  HumanInTheLoopProps,
+} from "../types/human-in-the-loop";
 
-// Props passed to tool render components
-export interface ToolCallProps<T = unknown> {
+// Re-export ToolCallStatus from core
+export { ToolCallStatus } from "@copilotkitnext/core";
+
+// Props passed to tool render components - discriminated union matching React
+export type ToolCallProps<T = unknown> =
+  | {
+      name: string;
+      description: string;
+      args: Partial<T>;
+      status: ToolCallStatus.InProgress;
+      result: undefined;
+    }
+  | {
+      name: string;
+      description: string;
+      args: T;
+      status: ToolCallStatus.Executing;
+      result: undefined;
+    }
+  | {
+      name: string;
+      description: string;
+      args: T;
+      status: ToolCallStatus.Complete;
+      result: string;
+    };
+1;
+
+// Angular-specific tool call render definition with proper typing
+export interface AngularToolCallRender {
   name: string;
-  description: string;
-  args: T | Partial<T>;
-  status: ToolCallStatus;
-  result?: unknown;
+  /**
+   * Optional agent ID to constrain this tool render to a specific agent.
+   * If specified, this render will only be used for the specified agent.
+   */
+  agentId?: string;
+  render: Type<any> | TemplateRef<ToolCallProps<any>>;
 }
 
-// Angular-specific tool call render definition
-export interface AngularToolCallRender<T = unknown> {
-  args: z.ZodSchema<T>;
-  render: Type<any> | TemplateRef<any>;  // Angular component class or template ref
-}
-
-// Angular-specific frontend tool definition
-export interface AngularFrontendTool<T extends Record<string, any> = Record<string, any>> {
-  name: string;
-  description?: string;
-  parameters?: z.ZodSchema<T>;
-  handler?: (args: T) => Promise<any>;
-  render?: Type<any> | TemplateRef<any>;
-  followUp?: boolean;
-}
-
-// Legacy type alias for backward compatibility
-export type ToolCallRender<T = unknown> = AngularToolCallRender<T>;
+// Type alias for convenience
+export type ToolCallRender = AngularToolCallRender;
 
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: Record<string, ToolCallRender<unknown>>;
-  currentRenderToolCalls: Record<string, ToolCallRender<unknown>>;
-  setCurrentRenderToolCalls: (
-    v: Record<string, ToolCallRender<unknown>>
-  ) => void;
+  renderToolCalls: ToolCallRender[];
+  currentRenderToolCalls: ToolCallRender[];
+  setCurrentRenderToolCalls: (v: ToolCallRender[]) => void;
 }
 
 export interface CopilotKitRuntimeInputs {
@@ -52,19 +69,41 @@ export interface CopilotKitRuntimeInputs {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: Record<string, ToolCallRender<unknown>>;
+  renderToolCalls?: ToolCallRender[];
 }
 
-export const COPILOTKIT_INITIAL_CONFIG = new InjectionToken<
-  Partial<CopilotKitCoreConfig>
->("COPILOTKIT_INITIAL_CONFIG");
+// Injection tokens for dependency injection
+export const COPILOTKIT_RUNTIME_URL = new InjectionToken<string | undefined>(
+  "COPILOTKIT_RUNTIME_URL"
+);
 
-export const COPILOTKIT_INITIAL_RENDERERS = new InjectionToken<
-  Record<string, ToolCallRender<unknown>>
->("COPILOTKIT_INITIAL_RENDERERS", { factory: () => ({}) });
+export const COPILOTKIT_HEADERS = new InjectionToken<Record<string, string>>(
+  "COPILOTKIT_HEADERS",
+  { factory: () => ({}) }
+);
+
+export const COPILOTKIT_PROPERTIES = new InjectionToken<
+  Record<string, unknown>
+>("COPILOTKIT_PROPERTIES", { factory: () => ({}) });
+
+export const COPILOTKIT_AGENTS = new InjectionToken<
+  Record<string, AbstractAgent>
+>("COPILOTKIT_AGENTS", { factory: () => ({}) });
+
+export const COPILOTKIT_RENDER_TOOL_CALLS = new InjectionToken<
+  ToolCallRender[]
+>("COPILOTKIT_RENDER_TOOL_CALLS", { factory: () => [] });
+
+export const COPILOTKIT_FRONTEND_TOOLS = new InjectionToken<
+  AngularFrontendTool<any>[]
+>("COPILOTKIT_FRONTEND_TOOLS", { factory: () => [] });
+
+export const COPILOTKIT_HUMAN_IN_THE_LOOP = new InjectionToken<
+  AngularHumanInTheLoop<any>[]
+>("COPILOTKIT_HUMAN_IN_THE_LOOP", { factory: () => [] });
 
 // Agent-related types
-import type { Message } from '@ag-ui/client';
+import type { Message } from "@ag-ui/client";
 
 export interface AgentWatchResult {
   agent: Signal<AbstractAgent | undefined>;
@@ -84,25 +123,9 @@ export interface AgentSubscriptionCallbacks {
   onRunFailed?: (params: any) => void;
 }
 
-// Human-in-the-loop types
-export type HumanInTheLoopStatus = 'inProgress' | 'executing' | 'complete';
-
-// Extended props for human-in-the-loop components
-export interface HumanInTheLoopProps<T = unknown> extends ToolCallProps<T> {
-  respond?: (result: unknown) => Promise<void>;
-}
-
-// Angular human-in-the-loop tool definition
-export interface AngularHumanInTheLoop<T extends Record<string, any> = Record<string, any>> 
-  extends Omit<AngularFrontendTool<T>, 'handler' | 'render'> {
-  render: Type<any> | TemplateRef<HumanInTheLoopProps<T>>;
-  // Redefine parameters to ensure it's present (it's optional in FrontendTool)
-  parameters: z.ZodType<T>;
-}
-
 // Human-in-the-loop state result
 export interface HumanInTheLoopState {
-  status: Signal<HumanInTheLoopStatus>;
+  status: Signal<ToolCallStatus>;
   toolId: string;
   destroy: () => void;
 }

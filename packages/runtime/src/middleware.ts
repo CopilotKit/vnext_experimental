@@ -13,8 +13,8 @@
  */
 
 import type { CopilotRuntime } from "./runtime";
-import type { MaybePromise } from "@copilotkit/shared";
-import { logger } from "@copilotkit/shared";
+import type { MaybePromise } from "@copilotkitnext/shared";
+import { logger } from "@copilotkitnext/shared";
 
 /* ------------------------------------------------------------------------------------------------
  * Public types

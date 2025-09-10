@@ -9,7 +9,7 @@ import {
 import { CopilotKitService } from '../core/copilotkit.service';
 import { 
   AngularHumanInTheLoop, 
-  HumanInTheLoopStatus,
+  ToolCallStatus,
   HumanInTheLoopState,
   HumanInTheLoopProps,
   AngularFrontendTool
@@ -42,14 +42,14 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
   const destroyRef = inject(DestroyRef);
   
   // Create state management
-  const statusSignal = signal<HumanInTheLoopStatus>('inProgress');
+  const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let resolvePromise: ((result: unknown) => void) | null = null;
   
   // Create respond function
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
       resolvePromise(result);
-      statusSignal.set('complete');
+      statusSignal.set(ToolCallStatus.Complete);
       resolvePromise = null;
     }
   };
@@ -57,7 +57,7 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
-      statusSignal.set('executing');
+      statusSignal.set(ToolCallStatus.Executing);
       resolvePromise = resolve;
     });
   };
@@ -77,9 +77,9 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
   const toolId = frontendTool.name;
   
   // Register tool render if provided
-  if (frontendTool.render && tool.parameters) {
+  if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
-      args: tool.parameters,
+      name: frontendTool.name,
       render: frontendTool.render
     });
   }
@@ -130,14 +130,14 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
   tool: AngularHumanInTheLoop<T>
 ): () => void {
   // Create state management
-  const statusSignal = signal<HumanInTheLoopStatus>('inProgress');
+  const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let resolvePromise: ((result: unknown) => void) | null = null;
   
   // Create respond function
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
       resolvePromise(result);
-      statusSignal.set('complete');
+      statusSignal.set(ToolCallStatus.Complete);
       resolvePromise = null;
     }
   };
@@ -145,7 +145,7 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
-      statusSignal.set('executing');
+      statusSignal.set(ToolCallStatus.Executing);
       resolvePromise = resolve;
     });
   };
@@ -165,9 +165,9 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
   const toolId = frontendTool.name;
   
   // Register tool render if provided
-  if (frontendTool.render && tool.parameters) {
+  if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
-      args: tool.parameters,
+      name: frontendTool.name,
       render: frontendTool.render
     });
   }
@@ -213,7 +213,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
   tool: AngularHumanInTheLoop<T>
 ): HumanInTheLoopState & { update: (updates: Partial<AngularHumanInTheLoop<T>>) => void } {
   // Create state management
-  const statusSignal = signal<HumanInTheLoopStatus>('inProgress');
+  const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let currentTool = { ...tool };
   let toolId: string = '';
   let resolvePromise: ((result: unknown) => void) | null = null;
@@ -222,7 +222,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
       resolvePromise(result);
-      statusSignal.set('complete');
+      statusSignal.set(ToolCallStatus.Complete);
       resolvePromise = null;
     }
   };
@@ -230,7 +230,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
-      statusSignal.set('executing');
+      statusSignal.set(ToolCallStatus.Executing);
       resolvePromise = resolve;
     });
   };
@@ -252,9 +252,9 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
     toolId = frontendTool.name;
     
     // Register tool render if provided
-    if (frontendTool.render && currentTool.parameters) {
+    if (frontendTool.render) {
       service.registerToolRender(frontendTool.name, {
-        args: currentTool.parameters,
+        name: frontendTool.name,
         render: frontendTool.render
       });
     }
@@ -294,7 +294,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
  */
 function createEnhancedRender<T extends Record<string, any>>(
   originalRender: Type<any> | TemplateRef<HumanInTheLoopProps<T>>,
-  _statusSignal: Signal<HumanInTheLoopStatus>,
+  _statusSignal: Signal<ToolCallStatus>,
   _respond: (result: unknown) => Promise<void>
 ): Type<any> | TemplateRef<any> {
   // For component classes, we need to create a wrapper
@@ -326,20 +326,31 @@ function isComponentClass(value: any): value is Type<any> {
  */
 export function enhancePropsForHumanInTheLoop<T>(
   props: HumanInTheLoopProps<T>,
-  status: HumanInTheLoopStatus,
+  status: ToolCallStatus,
   respond?: (result: unknown) => Promise<void>
 ): HumanInTheLoopProps<T> {
-  if (status === 'executing' && respond) {
+  if (status === ToolCallStatus.Executing && respond) {
     return {
       ...props,
-      status: 'executing',
+      status: ToolCallStatus.Executing,
       respond
-    };
+    } as HumanInTheLoopProps<T>;
   }
   
+  if (status === ToolCallStatus.Complete) {
+    return {
+      ...props,
+      status: ToolCallStatus.Complete,
+      result: typeof props.result === 'string' ? props.result : '',
+      respond: undefined
+    } as HumanInTheLoopProps<T>;
+  }
+  
+  // InProgress
   return {
     ...props,
-    status,
+    status: ToolCallStatus.InProgress,
+    result: undefined,
     respond: undefined
-  };
+  } as HumanInTheLoopProps<T>;
 }

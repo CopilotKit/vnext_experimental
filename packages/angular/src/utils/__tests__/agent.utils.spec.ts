@@ -1,26 +1,20 @@
-import { TestBed } from '@angular/core/testing';
-import { Component, OnInit, DestroyRef, inject } from '@angular/core';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { 
-  watchAgent,
-  getAgent,
-  subscribeToAgent,
-  registerAgentWatcher
-} from '../agent.utils';
-import { CopilotKitService } from '../../core/copilotkit.service';
-import { provideCopilotKit } from '../../core/copilotkit.providers';
-import { AbstractAgent } from '@ag-ui/client';
-import { DEFAULT_AGENT_ID } from '@copilotkit/shared';
-import { effect } from '@angular/core';
+import { TestBed } from "@angular/core/testing";
+import { Component, OnInit, DestroyRef, inject, Injector } from "@angular/core";
+import { watchAgent, watchAgentWith, getAgent, subscribeToAgent } from "../agent.utils";
+import { CopilotKitService } from "../../core/copilotkit.service";
+import { provideCopilotKit } from "../../core/copilotkit.providers";
+import { AbstractAgent } from "@ag-ui/client";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
+import { effect } from "@angular/core";
 
 // Mock CopilotKitCore
 const mockAgent = {
   subscribe: vi.fn((callbacks) => ({
-    unsubscribe: vi.fn()
+    unsubscribe: vi.fn(),
   })),
-  id: 'test-agent',
+  id: "test-agent",
   state: {},
-  messages: []
+  messages: [],
 };
 
 const mockCopilotKitCore = {
@@ -30,22 +24,24 @@ const mockCopilotKitCore = {
   setHeaders: vi.fn(),
   setProperties: vi.fn(),
   setAgents: vi.fn(),
-  getAgent: vi.fn((id: string) => id === 'test-agent' ? mockAgent : undefined),
-  subscribe: vi.fn(() => vi.fn()),  // Returns unsubscribe function directly
+  getAgent: vi.fn((id: string) =>
+    id === "test-agent" ? mockAgent : undefined
+  ),
+  subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function directly
 };
 
-vi.mock('@copilotkit/core', () => ({
-  CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore)
+vi.mock("@copilotkitnext/core", () => ({
+  CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
 }));
 
-describe('Agent Utilities', () => {
+describe("Agent Utilities", () => {
   let service: CopilotKitService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideCopilotKit({})]
+      providers: [provideCopilotKit({})],
     });
-    
+
     service = TestBed.inject(CopilotKitService);
     vi.clearAllMocks();
   });
@@ -54,34 +50,36 @@ describe('Agent Utilities', () => {
     vi.clearAllMocks();
   });
 
-  describe('getAgent', () => {
-    it('should get agent by ID', () => {
-      const agent = getAgent(service, 'test-agent');
+  describe("getAgent", () => {
+    it("should get agent by ID", () => {
+      const agent = getAgent(service, "test-agent");
       expect(agent).toBe(mockAgent);
-      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith('test-agent');
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith("test-agent");
     });
 
-    it('should use default agent ID when not provided', () => {
+    it("should use default agent ID when not provided", () => {
       getAgent(service);
-      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(DEFAULT_AGENT_ID);
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(
+        DEFAULT_AGENT_ID
+      );
     });
 
-    it('should return undefined for non-existent agent', () => {
-      const agent = getAgent(service, 'non-existent');
+    it("should return undefined for non-existent agent", () => {
+      const agent = getAgent(service, "non-existent");
       expect(agent).toBeUndefined();
     });
   });
 
-  describe('subscribeToAgent', () => {
-    it('should subscribe to agent events', () => {
+  describe("subscribeToAgent", () => {
+    it("should subscribe to agent events", () => {
       const callbacks = {
         onRunInitialized: vi.fn(),
         onRunFinalized: vi.fn(),
         onRunFailed: vi.fn(),
       };
 
-      const unsubscribe = subscribeToAgent(service, 'test-agent', callbacks);
-      
+      const unsubscribe = subscribeToAgent(service, "test-agent", callbacks);
+
       expect(mockAgent.subscribe).toHaveBeenCalledWith(
         expect.objectContaining({
           onRunInitialized: callbacks.onRunInitialized,
@@ -90,22 +88,22 @@ describe('Agent Utilities', () => {
         })
       );
 
-      expect(typeof unsubscribe).toBe('function');
+      expect(typeof unsubscribe).toBe("function");
     });
 
-    it('should return no-op function for non-existent agent', () => {
-      const unsubscribe = subscribeToAgent(service, 'non-existent');
-      expect(typeof unsubscribe).toBe('function');
+    it("should return no-op function for non-existent agent", () => {
+      const unsubscribe = subscribeToAgent(service, "non-existent");
+      expect(typeof unsubscribe).toBe("function");
       unsubscribe(); // Should not throw
     });
 
-    it('should handle partial callbacks', () => {
+    it("should handle partial callbacks", () => {
       const callbacks = {
         onRunInitialized: vi.fn(),
       };
 
-      subscribeToAgent(service, 'test-agent', callbacks);
-      
+      subscribeToAgent(service, "test-agent", callbacks);
+
       expect(mockAgent.subscribe).toHaveBeenCalledWith(
         expect.objectContaining({
           onRunInitialized: callbacks.onRunInitialized,
@@ -116,12 +114,12 @@ describe('Agent Utilities', () => {
     });
   });
 
-  describe('watchAgent', () => {
-    it('should return reactive signals within component context', () => {
+  describe("watchAgent", () => {
+    it("should return reactive signals within component context", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         agentState: any;
@@ -130,7 +128,7 @@ describe('Agent Utilities', () => {
         isRunningValue = false;
 
         constructor() {
-          this.agentState = watchAgent({ agentId: 'test-agent' });
+          this.agentState = watchAgent({ agentId: "test-agent" });
           // Use effect in constructor (injection context)
           effect(() => {
             this.agentValue = this.agentState.agent();
@@ -152,17 +150,17 @@ describe('Agent Utilities', () => {
       expect(fixture.componentInstance.agentState.isRunning$).toBeDefined();
     });
 
-    it('should cleanup on component destroy', () => {
+    it("should cleanup on component destroy", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         agentState: any;
-        
+
         constructor() {
-          this.agentState = watchAgent({ agentId: 'test-agent' });
+          this.agentState = watchAgent({ agentId: "test-agent" });
         }
       }
 
@@ -174,16 +172,16 @@ describe('Agent Utilities', () => {
 
       fixture.destroy();
 
-      // The actual unsubscribe is handled by DestroyRef, 
+      // The actual unsubscribe is handled by DestroyRef,
       // but we can verify the function exists
       expect(fixture.componentInstance.agentState.unsubscribe).toBeDefined();
     });
 
-    it('should use default agent ID when not provided', () => {
+    it("should use default agent ID when not provided", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
         agentState = watchAgent(); // No agent ID
@@ -192,38 +190,71 @@ describe('Agent Utilities', () => {
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
-      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(DEFAULT_AGENT_ID);
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(
+        DEFAULT_AGENT_ID
+      );
     });
-
   });
 
-  describe('registerAgentWatcher', () => {
-    it('should be an alias for watchAgent', () => {
+  describe("watchAgentWith", () => {
+    it("should create agent watcher with injector context", () => {
       @Component({
-        template: '',
+        template: "",
         standalone: true,
-        providers: [provideCopilotKit({})]
+        providers: [provideCopilotKit({})],
       })
       class TestComponent {
-        agentState = registerAgentWatcher({ agentId: 'test-agent' });
+        agentState: any;
+        injector = inject(Injector);
+
+        switchAgent(agentId: string) {
+          // Use watchAgentWith outside of constructor
+          this.agentState = watchAgentWith(this.injector, { agentId });
+        }
+      }
+
+      const fixture = TestBed.createComponent(TestComponent);
+      fixture.detectChanges();
+
+      // Call switchAgent method to test watchAgentWith
+      fixture.componentInstance.switchAgent("test-agent");
+
+      expect(fixture.componentInstance.agentState).toBeDefined();
+      expect(fixture.componentInstance.agentState.agent).toBeDefined();
+      expect(fixture.componentInstance.agentState.messages).toBeDefined();
+      expect(fixture.componentInstance.agentState.isRunning).toBeDefined();
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith("test-agent");
+    });
+
+    it("should handle default agent ID when not provided", () => {
+      @Component({
+        template: "",
+        standalone: true,
+        providers: [provideCopilotKit({})],
+      })
+      class TestComponent {
+        agentState: any;
+        injector = inject(Injector);
+
+        constructor() {
+          // Use watchAgentWith without agentId
+          this.agentState = watchAgentWith(this.injector);
+        }
       }
 
       const fixture = TestBed.createComponent(TestComponent);
       fixture.detectChanges();
 
       expect(fixture.componentInstance.agentState).toBeDefined();
-      expect(fixture.componentInstance.agentState.agent).toBeDefined();
-      expect(fixture.componentInstance.agentState.messages).toBeDefined();
-      expect(fixture.componentInstance.agentState.isRunning).toBeDefined();
-      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith('test-agent');
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith(DEFAULT_AGENT_ID);
     });
   });
 
-  describe('CopilotKitService.getAgent', () => {
-    it('should delegate to core getAgent', () => {
-      const agent = service.getAgent('test-agent');
+  describe("CopilotKitService.getAgent", () => {
+    it("should delegate to core getAgent", () => {
+      const agent = service.getAgent("test-agent");
       expect(agent).toBe(mockAgent);
-      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith('test-agent');
+      expect(mockCopilotKitCore.getAgent).toHaveBeenCalledWith("test-agent");
     });
   });
 });

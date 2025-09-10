@@ -98,12 +98,15 @@ export class CopilotChatTextareaComponent implements AfterViewInit, OnChanges {
   
   constructor() {
     // Effect to sync value with chat configuration if available
-    effect(() => {
-      const configValue = this.chatConfig.inputValue();
-      if (configValue !== undefined && !this.customPlaceholder()) {
-        this.value.set(configValue);
-      }
-    });
+    effect(
+      () => {
+        const configValue = this.chatConfig.inputValue();
+        if (configValue !== undefined && !this.customPlaceholder()) {
+          this.value.set(configValue);
+        }
+      },
+      { allowSignalWrites: true }
+    );
   }
   
   ngAfterViewInit(): void {

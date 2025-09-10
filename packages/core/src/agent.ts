@@ -14,6 +14,7 @@ export interface CopilotKitHttpAgentConfig
 }
 
 export class CopilotKitHttpAgent extends HttpAgent {
+  isCopilotKitAgent = true;
   runtimeUrl?: string;
 
   constructor(config: CopilotKitHttpAgentConfig) {

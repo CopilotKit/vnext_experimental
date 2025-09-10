@@ -1,5 +1,9 @@
-import { AgentDescription, randomUUID, RuntimeInfo } from "@copilotkit/shared";
-import { logger } from "@copilotkit/shared";
+import {
+  AgentDescription,
+  randomUUID,
+  RuntimeInfo,
+} from "@copilotkitnext/shared";
+import { logger } from "@copilotkitnext/shared";
 import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { CopilotKitHttpAgent } from "./agent";
@@ -9,6 +13,7 @@ export interface CopilotKitCoreConfig {
   agents?: Record<string, AbstractAgent>;
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
+  tools?: Record<string, FrontendTool<any>>;
 }
 
 export interface CopilotKitCoreAddAgentParams {
@@ -19,6 +24,7 @@ export interface CopilotKitCoreAddAgentParams {
 export interface RunAgentParams {
   agent: AbstractAgent;
   withMessages?: Message[];
+  agentId?: string;
 }
 
 export interface CopilotKitCoreSubscriber {
@@ -53,11 +59,13 @@ export class CopilotKitCore {
     headers = {},
     properties = {},
     agents = {},
+    tools = {},
   }: CopilotKitCoreConfig) {
     this.headers = headers;
     this.properties = properties;
     this.localAgents = agents;
     this.agents = this.localAgents;
+    this.tools = tools;
 
     this.setRuntimeUrl(runtimeUrl);
   }
@@ -206,6 +214,7 @@ export class CopilotKitCore {
   async runAgent({
     agent,
     withMessages,
+    agentId,
   }: RunAgentParams): Promise<Awaited<ReturnType<typeof agent.runAgent>>> {
     if (withMessages) {
       agent.addMessages(withMessages);
@@ -229,15 +238,25 @@ export class CopilotKitCore {
           ) {
             if (toolCall.function.name in this.tools) {
               const tool = this.tools[toolCall.function.name];
+
+              // Check if tool is constrained to a specific agent
+              if (tool?.agentId && tool.agentId !== agentId) {
+                // Tool is not available for this agent, skip it
+                continue;
+              }
+
               let toolCallResult = "";
               if (tool?.handler) {
                 const args = JSON.parse(toolCall.function.arguments);
                 try {
                   const result = await tool.handler(args);
-                  toolCallResult =
-                    typeof result === "string"
-                      ? result
-                      : JSON.stringify(result);
+                  if (result === undefined || result === null) {
+                    toolCallResult = "";
+                  } else if (typeof result === "string") {
+                    toolCallResult = result;
+                  } else {
+                    toolCallResult = JSON.stringify(result);
+                  }
                 } catch (error) {
                   toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
                 }
@@ -257,6 +276,51 @@ export class CopilotKitCore {
               if (tool?.followUp !== false) {
                 needsFollowUp = true;
               }
+            } else if ("*" in this.tools) {
+              // Wildcard fallback for undefined tools
+              const wildcardTool = this.tools["*"];
+
+              // Check if wildcard tool is constrained to a specific agent
+              if (wildcardTool?.agentId && wildcardTool.agentId !== agentId) {
+                // Wildcard tool is not available for this agent, skip it
+                continue;
+              }
+
+              let toolCallResult = "";
+              if (wildcardTool?.handler) {
+                // Pass both the tool name and original args to the wildcard handler
+                const wildcardArgs = {
+                  toolName: toolCall.function.name,
+                  args: JSON.parse(toolCall.function.arguments),
+                };
+                try {
+                  const result = await wildcardTool.handler(wildcardArgs);
+                  if (result === undefined || result === null) {
+                    toolCallResult = "";
+                  } else if (typeof result === "string") {
+                    toolCallResult = result;
+                  } else {
+                    toolCallResult = JSON.stringify(result);
+                  }
+                } catch (error) {
+                  toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+                }
+              }
+
+              const messageIndex = agent.messages.findIndex(
+                (m) => m.id === message.id
+              );
+              const toolMessage = {
+                id: randomUUID(),
+                role: "tool" as const,
+                toolCallId: toolCall.id,
+                content: toolCallResult,
+              };
+              agent.messages.splice(messageIndex + 1, 0, toolMessage);
+
+              if (wildcardTool?.followUp !== false) {
+                needsFollowUp = true;
+              }
             }
           }
         }
@@ -264,7 +328,7 @@ export class CopilotKitCore {
     }
 
     if (needsFollowUp) {
-      return await this.runAgent({ agent });
+      return await this.runAgent({ agent, agentId });
     }
 
     return runAgentResult;

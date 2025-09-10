@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { vi } from 'vitest';
 import { CopilotChatUserMessageComponent } from '../copilot-chat-user-message.component';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { UserMessage } from '../copilot-chat-user-message.types';
@@ -232,18 +231,6 @@ describe('CopilotChatUserMessageComponent', () => {
       
       expect(prevButton.disabled).toBeFalsy();
       expect(nextButton.disabled).toBeFalsy();
-    });
-  });
-
-  describe('Template Slots', () => {
-    it.skip('should use custom message renderer template', () => {
-      // This test is skipped as it requires a separate TestBed setup
-      // which conflicts with the existing setup
-    });
-
-    it.skip('should use custom copy button template', () => {
-      // This test is skipped as it requires a separate TestBed setup
-      // which conflicts with the existing setup
     });
   });
 });

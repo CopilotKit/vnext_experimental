@@ -1,14 +1,22 @@
 export * from "./core/copilotkit.service";
 export * from "./core/copilotkit.types";
 export * from "./core/copilotkit.providers";
+// Re-export types from @ag-ui/core for convenience
+export type { Message, ToolCall, ToolMessage } from "@ag-ui/core";
 export * from "./core/chat-configuration/chat-configuration.types";
 export * from "./core/chat-configuration/chat-configuration.service";
 export * from "./core/chat-configuration/chat-configuration.providers";
 export * from "./utils/copilotkit.utils";
 export * from "./utils/agent-context.utils";
 export * from "./utils/frontend-tool.utils";
+// Note: tool-render.utils removed in favor of direct ToolCallRender<T> usage
 // Export all except AgentWatchResult which is already exported from copilotkit.types
-export { watchAgent, getAgent, subscribeToAgent, registerAgentWatcher } from "./utils/agent.utils";
+export {
+  watchAgent,
+  watchAgentWith,
+  getAgent,
+  subscribeToAgent,
+} from "./utils/agent.utils";
 export * from "./utils/human-in-the-loop.utils";
 export * from "./utils/chat-config.utils";
 // Slot utilities are internal only, not exported
@@ -74,6 +82,7 @@ export { CopilotChatAssistantMessageToolbarComponent } from "./components/chat/c
 export * from "./components/chat/copilot-chat-message-view.types";
 export { CopilotChatMessageViewComponent } from "./components/chat/copilot-chat-message-view.component";
 export { CopilotChatMessageViewCursorComponent } from "./components/chat/copilot-chat-message-view-cursor.component";
+export { CopilotChatToolCallsViewComponent } from "./components/chat/copilot-chat-tool-calls-view.component";
 
 // Chat View Components
 export * from "./components/chat/copilot-chat-view.types";
@@ -93,4 +102,4 @@ export { ResizeObserverService } from "./services/resize-observer.service";
 export { StickToBottomDirective } from "./directives/stick-to-bottom.directive";
 
 // Testing utilities are not exported from the main entry point
-// They should be imported directly from '@copilotkit/angular/testing' if needed
+// They should be imported directly from '@copilotkitnext/angular/testing' if needed

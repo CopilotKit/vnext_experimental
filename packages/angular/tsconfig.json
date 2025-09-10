@@ -1,5 +1,5 @@
 {
-  "extends": "@copilotkit/typescript-config/base.json",
+  "extends": "@copilotkitnext/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "declaration": true,
@@ -18,8 +18,8 @@
     "importHelpers": true,
     "types": ["node"],
     "paths": {
-      "@copilotkit/core": ["../core/src/index.ts"],
-      "@copilotkit/shared": ["../shared/src/index.ts"]
+      "@copilotkitnext/core": ["../core/src/index.ts"],
+      "@copilotkitnext/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

@@ -1,4 +1,4 @@
-import { AssistantMessage } from "@ag-ui/core";
+import { AssistantMessage, Message } from "@ag-ui/core";
 import { MarkdownHooks } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
 import { WithSlots, renderSlot } from "@/lib/slots";
-import { completePartialMarkdown } from "@copilotkit/core";
+import { completePartialMarkdown } from "@copilotkitnext/core";
+import CopilotChatToolCallsView from "./CopilotChatToolCallsView";
 
 export type CopilotChatAssistantMessageProps = WithSlots<
   {
@@ -35,6 +36,7 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     thumbsDownButton: typeof CopilotChatAssistantMessage.ThumbsDownButton;
     readAloudButton: typeof CopilotChatAssistantMessage.ReadAloudButton;
     regenerateButton: typeof CopilotChatAssistantMessage.RegenerateButton;
+    toolCallsView: typeof CopilotChatToolCallsView;
   },
   {
     onThumbsUp?: (message: AssistantMessage) => void;
@@ -42,6 +44,8 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     onReadAloud?: (message: AssistantMessage) => void;
     onRegenerate?: (message: AssistantMessage) => void;
     message: AssistantMessage;
+    messages?: Message[];
+    isLoading?: boolean;
     additionalToolbarItems?: React.ReactNode;
     toolbarVisible?: boolean;
   } & React.HTMLAttributes<HTMLDivElement>
@@ -49,6 +53,8 @@ export type CopilotChatAssistantMessageProps = WithSlots<
 
 export function CopilotChatAssistantMessage({
   message,
+  messages,
+  isLoading,
   onThumbsUp,
   onThumbsDown,
   onReadAloud,
@@ -62,6 +68,7 @@ export function CopilotChatAssistantMessage({
   thumbsDownButton,
   readAloudButton,
   regenerateButton,
+  toolCallsView,
   children,
   className,
   ...props
@@ -139,18 +146,31 @@ export function CopilotChatAssistantMessage({
     }
   );
 
+  const boundToolCallsView = renderSlot(
+    toolCallsView,
+    CopilotChatToolCallsView,
+    {
+      message,
+      messages,
+      isLoading,
+    }
+  );
+
   if (children) {
     return (
       <>
         {children({
           markdownRenderer: boundMarkdownRenderer,
           toolbar: boundToolbar,
+          toolCallsView: boundToolCallsView,
           copyButton: boundCopyButton,
           thumbsUpButton: boundThumbsUpButton,
           thumbsDownButton: boundThumbsDownButton,
           readAloudButton: boundReadAloudButton,
           regenerateButton: boundRegenerateButton,
           message,
+          messages,
+          isLoading,
           onThumbsUp,
           onThumbsDown,
           onReadAloud,
@@ -172,6 +192,7 @@ export function CopilotChatAssistantMessage({
       data-message-id={message.id}
     >
       {boundMarkdownRenderer}
+      {boundToolCallsView}
       {toolbarVisible && boundToolbar}
     </div>
   );

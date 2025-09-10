@@ -4,7 +4,7 @@ import {
   CopilotChatInput,
   CopilotChatConfigurationProvider,
   type ToolsMenuItem,
-} from "@copilotkit/react";
+} from "@copilotkitnext/react";
 
 const meta = {
   title: "UI/CopilotChatInput",
@@ -13,7 +13,7 @@ const meta = {
   decorators: [
     (Story, args) => {
       const [inputValue, setInputValue] = useState(args.args.value || "");
-      
+
       return (
         <div
           style={{
@@ -62,7 +62,7 @@ The CopilotChatInput component provides a feature-rich chat input interface for 
 ## Basic Usage
 
 \`\`\`tsx
-import { CopilotChatInput, CopilotChatConfigurationProvider } from '@copilotkit/react';
+import { CopilotChatInput, CopilotChatConfigurationProvider } from '@copilotkitnext/react';
 
 function ChatComponent() {
   const [inputValue, setInputValue] = useState("");
@@ -419,7 +419,8 @@ Useful for:
 // 7. Expanded Textarea
 export const ExpandedTextarea: Story = {
   args: {
-    value: "This is a longer message that will cause the textarea to expand.\n\nIt has multiple lines to demonstrate the auto-resize functionality.\n\nThe textarea will grow up to the maxRows limit.",
+    value:
+      "This is a longer message that will cause the textarea to expand.\n\nIt has multiple lines to demonstrate the auto-resize functionality.\n\nThe textarea will grow up to the maxRows limit.",
     textArea: {
       maxRows: 10,
     },

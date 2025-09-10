@@ -1,30 +1,29 @@
 import { z } from "zod";
-
-export type ReactToolCallRenderStatus = "inProgress" | "executing" | "complete";
+import { ToolCallStatus } from "@copilotkitnext/core";
 
 export interface ReactToolCallRender<T> {
+  name: string;
   args: z.ZodSchema<T>;
+  /**
+   * Optional agent ID to constrain this tool render to a specific agent.
+   * If specified, this render will only be used for the specified agent.
+   */
+  agentId?: string;
   render: React.ComponentType<
     | {
-        name: string;
-        description: string;
         args: Partial<T>;
-        status: "inProgress";
+        status: ToolCallStatus.InProgress;
         result: undefined;
       }
     | {
-        name: string;
-        description: string;
         args: T;
-        status: "executing";
+        status: ToolCallStatus.Executing;
         result: undefined;
       }
     | {
-        name: string;
-        description: string;
         args: T;
-        status: "complete";
-        result: unknown;
+        status: ToolCallStatus.Complete;
+        result: string;
       }
   >;
 }

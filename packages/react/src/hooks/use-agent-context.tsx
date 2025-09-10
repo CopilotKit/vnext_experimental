@@ -2,7 +2,7 @@ import { useCopilotKit } from "../providers/CopilotKitProvider";
 import { Context } from "@ag-ui/client";
 import { useEffect } from "react";
 
-export default function useAgentContext(context: Context) {
+export function useAgentContext(context: Context) {
   const { description, value } = context;
   const { copilotkit } = useCopilotKit();
 

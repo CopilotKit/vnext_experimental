@@ -1,42 +1,11 @@
 import { ReactToolCallRender } from "@/types/react-tool-call-render";
-import { FrontendTool } from "@copilotkit/core";
-import { useFrontendTool, ReactFrontendTool } from "./use-frontend-tool";
+import { useFrontendTool } from "./use-frontend-tool";
+import { ReactFrontendTool } from "@/types/frontend-tool";
+import { ReactHumanInTheLoop } from "@/types/human-in-the-loop";
 import { useState, useCallback, useRef } from "react";
 import React from "react";
 
-export type ReactHumanInTheLoop<T extends Record<string, any> = {}> = Omit<
-  FrontendTool<T>,
-  "handler"
-> & {
-  render: React.ComponentType<
-    | {
-        name: string;
-        description: string;
-        args: Partial<T>;
-        status: "inProgress";
-        result: undefined;
-        respond: undefined;
-      }
-    | {
-        name: string;
-        description: string;
-        args: T;
-        status: "executing";
-        result: undefined;
-        respond: (result: unknown) => Promise<void>;
-      }
-    | {
-        name: string;
-        description: string;
-        args: T;
-        status: "complete";
-        result: unknown;
-        respond: undefined;
-      }
-  >;
-};
-
-export function useHumanInTheLoop<T extends Record<string, any> = {}>(
+export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>
 ) {
   const [status, setStatus] = useState<"inProgress" | "executing" | "complete">(
@@ -52,7 +21,7 @@ export function useHumanInTheLoop<T extends Record<string, any> = {}>(
     }
   }, []);
 
-  const handler = useCallback(async (args: T) => {
+  const handler = useCallback(async () => {
     return new Promise((resolve) => {
       setStatus("executing");
       resolvePromiseRef.current = resolve;
@@ -67,27 +36,34 @@ export function useHumanInTheLoop<T extends Record<string, any> = {}>(
       if (status === "inProgress" && props.status === "inProgress") {
         const enhancedProps = {
           ...props,
+          name: tool.name,
+          description: tool.description || "",
           respond: undefined,
         };
         return React.createElement(ToolComponent, enhancedProps);
       } else if (status === "executing" && props.status === "executing") {
         const enhancedProps = {
           ...props,
+          name: tool.name,
+          description: tool.description || "",
           respond,
         };
         return React.createElement(ToolComponent, enhancedProps);
       } else if (status === "complete" && props.status === "complete") {
         const enhancedProps = {
           ...props,
+          name: tool.name,
+          description: tool.description || "",
           respond: undefined,
         };
         return React.createElement(ToolComponent, enhancedProps);
       }
 
       // Fallback - just render with original props
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return React.createElement(ToolComponent, props as any);
     },
-    [tool.render, status, respond]
+    [tool.render, tool.name, tool.description, status, respond]
   );
 
   const frontendTool: ReactFrontendTool<T> = {

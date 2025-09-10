@@ -1,7 +1,6 @@
 {
-  "name": "@copilotkit/shared",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@copilotkitnext/shared",
+  "version": "0.0.7",
   "description": "Shared utilities and types for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,23 +11,28 @@
       "require": "./dist/index.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "pnpm run build",
     "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@copilotkit/eslint-config": "workspace:*",
-    "@copilotkit/typescript-config": "workspace:*",
+    "@copilotkitnext/eslint-config": "workspace:*",
+    "@copilotkitnext/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
     "tsup": "^8.5.0",
     "typescript": "5.8.2"
   },
   "dependencies": {
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "partial-json": "^0.1.7"
   },
   "engines": {
     "node": ">=18"

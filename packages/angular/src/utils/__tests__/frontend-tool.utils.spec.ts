@@ -1,16 +1,12 @@
-import { TestBed } from '@angular/core/testing';
-import { Component } from '@angular/core';
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { 
-  addFrontendTool, 
-  removeFrontendTool
-} from '../frontend-tool.utils';
-import { CopilotKitService } from '../../core/copilotkit.service';
-import { provideCopilotKit } from '../../core/copilotkit.providers';
-import { z } from 'zod';
+import { TestBed } from "@angular/core/testing";
+import { Component } from "@angular/core";
+import { addFrontendTool, removeFrontendTool } from "../frontend-tool.utils";
+import { CopilotKitService } from "../../core/copilotkit.service";
+import { provideCopilotKit } from "../../core/copilotkit.providers";
+import { z } from "zod";
 
 // Mock CopilotKitCore
-vi.mock('@copilotkit/core', () => ({
+vi.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -19,158 +15,159 @@ vi.mock('@copilotkit/core', () => ({
     setProperties: vi.fn(),
     setAgents: vi.fn(),
     subscribe: vi.fn(() => () => {}),
-  }))
+  })),
 }));
 
 // Mock component for testing
 @Component({
   template: `<div>Mock Tool Render</div>`,
-  standalone: true
+  standalone: true,
 })
 class MockRenderComponent {}
 
-describe('Frontend Tool Utils', () => {
+describe("Frontend Tool Utils", () => {
   let service: CopilotKitService;
   let addToolSpy: any;
   let removeToolSpy: any;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        provideCopilotKit({})
-      ]
+      providers: [provideCopilotKit({})],
     });
-    
+
     service = TestBed.inject(CopilotKitService);
-    addToolSpy = vi.spyOn(service.copilotkit, 'addTool');
-    removeToolSpy = vi.spyOn(service.copilotkit, 'removeTool');
+    addToolSpy = vi.spyOn(service.copilotkit, "addTool");
+    removeToolSpy = vi.spyOn(service.copilotkit, "removeTool");
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('addFrontendTool', () => {
-    it('should add tool to CopilotKit', () => {
+  describe("addFrontendTool", () => {
+    it("should add tool to CopilotKit", () => {
       const tool = {
-        name: 'testTool',
-        description: 'Test tool',
+        name: "testTool",
+        description: "Test tool",
         parameters: z.object({ value: z.string() }),
-        handler: vi.fn(async () => 'result')
+        handler: vi.fn(async () => "result"),
       };
 
       const cleanup = addFrontendTool(service, tool);
 
       expect(addToolSpy).toHaveBeenCalledWith(tool);
-      expect(typeof cleanup).toBe('function');
-      
+      expect(typeof cleanup).toBe("function");
+
       cleanup();
     });
 
-    it('should register render when provided', () => {
+    it("should register render when provided", () => {
       const tool = {
-        name: 'renderTool',
-        description: 'Tool with render',
-        render: MockRenderComponent
+        name: "renderTool",
+        description: "Tool with render",
+        render: MockRenderComponent,
       };
 
       const cleanup = addFrontendTool(service, tool);
 
       const renders = service.currentRenderToolCalls();
-      expect(renders['renderTool']).toBeDefined();
-      expect(renders['renderTool'].render).toBe(MockRenderComponent);
-      
+      const renderTool = renders.find((r) => r.name === "renderTool");
+      expect(renderTool).toBeDefined();
+      expect(renderTool?.render).toBe(MockRenderComponent);
+
       cleanup();
     });
 
-    it('should return cleanup function that removes tool and render', () => {
+    it("should return cleanup function that removes tool and render", () => {
       const tool = {
-        name: 'cleanupTool',
-        description: 'Tool to cleanup',
-        render: MockRenderComponent
+        name: "cleanupTool",
+        description: "Tool to cleanup",
+        render: MockRenderComponent,
       };
 
       const cleanup = addFrontendTool(service, tool);
-      
+
       // Verify tool was added
       expect(addToolSpy).toHaveBeenCalledWith(tool);
       let renders = service.currentRenderToolCalls();
-      expect(renders['cleanupTool']).toBeDefined();
+      expect(renders.find((r) => r.name === "cleanupTool")).toBeDefined();
 
       // Execute cleanup
       cleanup();
 
       // Verify tool was removed
-      expect(removeToolSpy).toHaveBeenCalledWith('cleanupTool');
+      expect(removeToolSpy).toHaveBeenCalledWith("cleanupTool");
       renders = service.currentRenderToolCalls();
-      expect(renders['cleanupTool']).toBeUndefined();
+      expect(renders.find((r) => r.name === "cleanupTool")).toBeUndefined();
     });
 
-    it('should handle tool without parameters', () => {
+    it("should handle tool without parameters", () => {
       const tool = {
-        name: 'noParams',
-        description: 'No parameters tool',
-        handler: vi.fn(async () => 'result')
+        name: "noParams",
+        description: "No parameters tool",
+        handler: vi.fn(async () => "result"),
       };
 
       const cleanup = addFrontendTool(service, tool);
 
       expect(addToolSpy).toHaveBeenCalledWith(tool);
-      
+
       cleanup();
     });
 
-    it('should warn about duplicate render names', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+    it("should warn about duplicate render names", () => {
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       // Pre-register a render
-      service.setCurrentRenderToolCalls({
-        duplicateTool: {
-          args: z.object({}),
-          render: MockRenderComponent
-        }
-      });
+      service.setCurrentRenderToolCalls([
+        {
+          name: "duplicateTool",
+          render: MockRenderComponent,
+        },
+      ]);
 
       const tool = {
-        name: 'duplicateTool',
-        render: MockRenderComponent
+        name: "duplicateTool",
+        render: MockRenderComponent,
       };
 
       const cleanup = addFrontendTool(service, tool);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already has a render')
+        expect.stringContaining("already has a render")
       );
-      
+
       consoleSpy.mockRestore();
       cleanup();
     });
 
-    it('should handle complex parameter schemas', () => {
+    it("should handle complex parameter schemas", () => {
       const complexSchema = z.object({
         user: z.object({
           name: z.string(),
-          age: z.number()
+          age: z.number(),
         }),
         settings: z.object({
-          theme: z.enum(['light', 'dark']),
-          notifications: z.boolean()
+          theme: z.enum(["light", "dark"]),
+          notifications: z.boolean(),
         }),
-        items: z.array(z.string())
+        items: z.array(z.string()),
       });
 
       const tool = {
-        name: 'complexTool',
+        name: "complexTool",
         parameters: complexSchema,
-        handler: vi.fn()
+        handler: vi.fn(),
       };
 
       const cleanup = addFrontendTool(service, tool);
 
       expect(addToolSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'complexTool',
-          parameters: complexSchema
+          name: "complexTool",
+          parameters: complexSchema,
         })
       );
 
@@ -178,91 +175,91 @@ describe('Frontend Tool Utils', () => {
     });
   });
 
-  describe('removeFrontendTool', () => {
-    it('should remove tool from CopilotKit', () => {
-      removeFrontendTool(service, 'testTool');
-      expect(removeToolSpy).toHaveBeenCalledWith('testTool');
+  describe("removeFrontendTool", () => {
+    it("should remove tool from CopilotKit", () => {
+      removeFrontendTool(service, "testTool");
+      expect(removeToolSpy).toHaveBeenCalledWith("testTool");
     });
 
-    it('should remove render if exists', () => {
+    it("should remove render if exists", () => {
       // Setup a tool with render
-      service.setCurrentRenderToolCalls({
-        toolWithRender: {
-          args: z.object({}),
-          render: MockRenderComponent
-        }
-      });
+      service.setCurrentRenderToolCalls([
+        {
+          name: "toolWithRender",
+          render: MockRenderComponent,
+        },
+      ]);
 
-      removeFrontendTool(service, 'toolWithRender');
+      removeFrontendTool(service, "toolWithRender");
 
-      expect(removeToolSpy).toHaveBeenCalledWith('toolWithRender');
+      expect(removeToolSpy).toHaveBeenCalledWith("toolWithRender");
       const renders = service.currentRenderToolCalls();
-      expect(renders['toolWithRender']).toBeUndefined();
+      expect(renders.find((r) => r.name === "toolWithRender")).toBeUndefined();
     });
 
-    it('should handle removing non-existent tool gracefully', () => {
+    it("should handle removing non-existent tool gracefully", () => {
       expect(() => {
-        removeFrontendTool(service, 'nonExistent');
+        removeFrontendTool(service, "nonExistent");
       }).not.toThrow();
 
-      expect(removeToolSpy).toHaveBeenCalledWith('nonExistent');
+      expect(removeToolSpy).toHaveBeenCalledWith("nonExistent");
     });
 
-    it('should only remove specified tool', () => {
+    it("should only remove specified tool", () => {
       // Setup multiple tools
-      service.setCurrentRenderToolCalls({
-        tool1: { args: z.object({}), render: MockRenderComponent },
-        tool2: { args: z.object({}), render: MockRenderComponent },
-        tool3: { args: z.object({}), render: MockRenderComponent }
-      });
+      service.setCurrentRenderToolCalls([
+        { name: "tool1", render: MockRenderComponent },
+        { name: "tool2", render: MockRenderComponent },
+        { name: "tool3", render: MockRenderComponent },
+      ]);
 
-      removeFrontendTool(service, 'tool2');
+      removeFrontendTool(service, "tool2");
 
       const renders = service.currentRenderToolCalls();
-      expect(renders['tool1']).toBeDefined();
-      expect(renders['tool2']).toBeUndefined();
-      expect(renders['tool3']).toBeDefined();
+      expect(renders.find((r) => r.name === "tool1")).toBeDefined();
+      expect(renders.find((r) => r.name === "tool2")).toBeUndefined();
+      expect(renders.find((r) => r.name === "tool3")).toBeDefined();
     });
   });
 
-  describe('Service Integration', () => {
-    it('should work with service render methods', () => {
+  describe("Service Integration", () => {
+    it("should work with service render methods", () => {
       const tool = {
-        name: 'serviceTool',
-        render: MockRenderComponent
+        name: "serviceTool",
+        render: MockRenderComponent,
       };
 
       // Test registerToolRender
-      service.registerToolRender('serviceTool', {
-        args: z.object({}),
-        render: MockRenderComponent
+      service.registerToolRender("serviceTool", {
+        name: "serviceTool",
+        render: MockRenderComponent,
       });
 
-      expect(service.getToolRender('serviceTool')).toBeDefined();
+      expect(service.getToolRender("serviceTool")).toBeDefined();
 
       // Test unregisterToolRender
-      service.unregisterToolRender('serviceTool');
-      expect(service.getToolRender('serviceTool')).toBeUndefined();
+      service.unregisterToolRender("serviceTool");
+      expect(service.getToolRender("serviceTool")).toBeUndefined();
     });
 
-    it('should handle multiple tools with renders', () => {
+    it("should handle multiple tools with renders", () => {
       const tools = [
-        { name: 'tool1', render: MockRenderComponent },
-        { name: 'tool2', render: MockRenderComponent },
-        { name: 'tool3', render: MockRenderComponent }
+        { name: "tool1", render: MockRenderComponent },
+        { name: "tool2", render: MockRenderComponent },
+        { name: "tool3", render: MockRenderComponent },
       ];
 
-      const cleanups = tools.map(tool => addFrontendTool(service, tool));
+      const cleanups = tools.map((tool) => addFrontendTool(service, tool));
 
       // All tools should be registered
       expect(addToolSpy).toHaveBeenCalledTimes(3);
       const renders = service.currentRenderToolCalls();
-      expect(Object.keys(renders)).toContain('tool1');
-      expect(Object.keys(renders)).toContain('tool2');
-      expect(Object.keys(renders)).toContain('tool3');
+      expect(renders.find((r) => r.name === "tool1")).toBeDefined();
+      expect(renders.find((r) => r.name === "tool2")).toBeDefined();
+      expect(renders.find((r) => r.name === "tool3")).toBeDefined();
 
       // Cleanup all
-      cleanups.forEach(cleanup => cleanup());
+      cleanups.forEach((cleanup) => cleanup());
 
       // All tools should be removed
       expect(removeToolSpy).toHaveBeenCalledTimes(3);

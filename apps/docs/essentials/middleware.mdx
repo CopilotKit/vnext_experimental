@@ -39,7 +39,7 @@ Function-based middleware runs in-process and receives the actual Request/Respon
 ### Before Request Middleware
 
 ```typescript
-import type { BeforeRequestMiddlewareFn } from "@copilotkit/runtime";
+import type { BeforeRequestMiddlewareFn } from "@copilotkitnext/runtime";
 
 const beforeRequestMiddleware: BeforeRequestMiddlewareFn = async ({
   runtime,
@@ -66,7 +66,7 @@ const beforeRequestMiddleware: BeforeRequestMiddlewareFn = async ({
 ### After Request Middleware
 
 ```typescript
-import type { AfterRequestMiddlewareFn } from "@copilotkit/runtime";
+import type { AfterRequestMiddlewareFn } from "@copilotkitnext/runtime";
 
 const afterRequestMiddleware: AfterRequestMiddlewareFn = async ({
   runtime,
@@ -93,7 +93,7 @@ const afterRequestMiddleware: AfterRequestMiddlewareFn = async ({
 ### Setting Up Function Middleware
 
 ```typescript
-import { CopilotRuntime } from "@copilotkit/runtime";
+import { CopilotRuntime } from "@copilotkitnext/runtime";
 
 const runtime = new CopilotRuntime({
   beforeRequestMiddleware,

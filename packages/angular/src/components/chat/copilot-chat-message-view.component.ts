@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CopilotSlotComponent } from '../../lib/slots/copilot-slot.component';
-import { Message } from '@ag-ui/client';
+import type { Message } from '@ag-ui/core';
 import { CopilotChatAssistantMessageComponent } from './copilot-chat-assistant-message.component';
 import { CopilotChatUserMessageComponent } from './copilot-chat-user-message.component';
 import { CopilotChatMessageViewCursorComponent } from './copilot-chat-message-view-cursor.component';
@@ -45,9 +45,9 @@ import { cn } from '../../lib/utils';
     } @else {
       <!-- Default layout - exact React DOM structure: div with "flex flex-col" classes -->
       <div [class]="computedClass()">
-        <!-- Message iteration - exactly like React's messages.map() -->
-        @for (message of filteredMessages(); track trackByMessageId($index, message)) {
-          @if (message.role === 'assistant') {
+        <!-- Message iteration - simplified without tool calls -->
+        @for (message of messagesSignal(); track trackByMessageId($index, message)) {
+          @if (message && message.role === 'assistant') {
             <!-- Assistant message with slot support -->
             @if (assistantMessageComponent || assistantMessageTemplate) {
               <copilot-slot
@@ -58,6 +58,8 @@ import { cn } from '../../lib/utils';
             } @else {
               <copilot-chat-assistant-message 
                 [message]="message"
+                [messages]="messagesSignal()"
+                [isLoading]="isLoadingSignal()"
                 [inputClass]="assistantMessageClass"
                 (thumbsUp)="handleAssistantThumbsUp($event)"
                 (thumbsDown)="handleAssistantThumbsDown($event)"
@@ -65,7 +67,7 @@ import { cn } from '../../lib/utils';
                 (regenerate)="handleAssistantRegenerate($event)">
               </copilot-chat-assistant-message>
             }
-          } @else if (message.role === 'user') {
+          } @else if (message && message.role === 'user') {
             <!-- User message with slot support -->
             @if (userMessageComponent || userMessageTemplate) {
               <copilot-slot
@@ -104,6 +106,7 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   // Core inputs matching React props
   @Input() messages: Message[] = [];
   @Input() showCursor = false;
+  @Input() isLoading = false;
   @Input() inputClass?: string;
   
   // Handler availability handled via DI service
@@ -117,6 +120,7 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   @Input() userMessageComponent?: Type<any>;
   @Input() userMessageTemplate?: TemplateRef<any>;
   @Input() userMessageClass?: string;
+  
   
   // Cursor slot inputs
   @Input() cursorComponent?: Type<any>;
@@ -140,36 +144,23 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   protected readonly defaultCursorComponent = CopilotChatMessageViewCursorComponent;
   
   // Signals for reactive updates
-  private messagesSignal = signal<Message[]>([]);
-  private showCursorSignal = signal(false);
-  private inputClassSignal = signal<string | undefined>(undefined);
+  protected messagesSignal = signal<Message[]>([]);
+  protected showCursorSignal = signal(false);
+  protected isLoadingSignal = signal(false);
+  protected inputClassSignal = signal<string | undefined>(undefined);
   
   // Computed class matching React: twMerge("flex flex-col", className)
   computedClass = computed(() => 
     cn('flex flex-col', this.inputClassSignal())
   );
   
-  // Filtered messages - matches React's filter logic exactly
-  filteredMessages = computed(() => {
-    return this.messagesSignal()
-      .filter(message => message && (message.role === 'assistant' || message.role === 'user'))
-      .filter(Boolean) as Message[];
-  });
-  
-  // Message elements for custom layout context
-  messageElements = computed(() => {
-    return this.filteredMessages().map(message => ({
-      role: message.role,
-      id: message.id,
-      component: message.role === 'assistant' ? 'assistant-message' : 'user-message'
-    }));
-  });
   
   // Layout context for custom templates (render prop pattern)
   layoutContext = computed(() => ({
-    showCursor: this.showCursorSignal(),
+    isLoading: this.isLoadingSignal(),
     messages: this.messagesSignal(),
-    messageElements: this.messageElements()
+    showCursor: this.showCursorSignal(),
+    messageElements: this.messagesSignal().filter(m => m && (m.role === 'assistant' || m.role === 'user'))
   }));
   
   // Slot resolution computed signals
@@ -189,6 +180,8 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   mergeAssistantProps(message: Message) {
     return {
       message,
+      messages: this.messagesSignal(),
+      isLoading: this.isLoadingSignal(),
       inputClass: this.assistantMessageClass
     };
   }
@@ -202,7 +195,7 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
   
   // TrackBy function for performance optimization
   trackByMessageId(index: number, message: Message): string {
-    return message.id;
+    return message?.id || `index-${index}`;
   }
   
   // Lifecycle hooks
@@ -210,12 +203,14 @@ export class CopilotChatMessageViewComponent implements OnInit, OnChanges {
     // Initialize signals with input values
     this.messagesSignal.set(this.messages);
     this.showCursorSignal.set(this.showCursor);
+    this.isLoadingSignal.set(this.isLoading);
     this.inputClassSignal.set(this.inputClass);
   }
   
   ngOnChanges() {
     this.messagesSignal.set(this.messages);
     this.showCursorSignal.set(this.showCursor);
+    this.isLoadingSignal.set(this.isLoading);
     this.inputClassSignal.set(this.inputClass);
   }
   

@@ -1,18 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/angular';
-import { moduleMetadata } from '@storybook/angular';
-import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import type { Meta, StoryObj } from "@storybook/angular";
+import { moduleMetadata } from "@storybook/angular";
+import { CommonModule } from "@angular/common";
+import { Component, Input } from "@angular/core";
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
   provideCopilotChatConfiguration,
   provideCopilotKit,
-} from '@copilotkit/angular';
-import { Message } from '@ag-ui/client';
+} from "@copilotkitnext/angular";
+import { Message } from "@ag-ui/client";
 
 const meta: Meta<CopilotChatViewComponent> = {
-  title: 'UI/CopilotChatView/Customized with CSS',
+  title: "UI/CopilotChatView/Customized with CSS",
   component: CopilotChatViewComponent,
   decorators: [
     moduleMetadata({
@@ -26,15 +26,16 @@ const meta: Meta<CopilotChatViewComponent> = {
         provideCopilotKit({}),
         provideCopilotChatConfiguration({
           labels: {
-            chatInputPlaceholder: 'Type a message...',
-            chatDisclaimerText: 'AI can make mistakes. Please verify important information.',
+            chatInputPlaceholder: "Type a message...",
+            chatDisclaimerText:
+              "AI can make mistakes. Please verify important information.",
           },
         }),
       ],
     }),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -46,14 +47,14 @@ export const CustomDisclaimerText: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Hello!',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Hello!",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
-        content: 'Hi there! How can I help you today?',
-        role: 'assistant' as const,
+        id: "assistant-1",
+        content: "Hi there! How can I help you today?",
+        role: "assistant" as const,
       },
     ];
 
@@ -67,25 +68,24 @@ export const CustomDisclaimerText: Story = {
         </div>
       `,
       props: {
-        messages
+        messages,
       },
     };
   },
 };
 
-
 export const AnimatedDisclaimer: Story = {
   render: () => {
     const messages: Message[] = [
       {
-        id: 'user-1',
-        content: 'Hello! Can you help me with styling?',
-        role: 'user' as const,
+        id: "user-1",
+        content: "Hello! Can you help me with styling?",
+        role: "user" as const,
       },
       {
-        id: 'assistant-1',
+        id: "assistant-1",
         content: `Absolutely! I can help you with CSS styling, design patterns, and UI/UX best practices. What specific styling challenge are you working on?`,
-        role: 'assistant' as const,
+        role: "assistant" as const,
       },
     ];
 

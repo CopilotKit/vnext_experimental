@@ -1,13 +1,13 @@
 {
-  "name": "CopilotKit2",
+  "name": "CopilotKitNext",
   "private": true,
   "scripts": {
-    "predev": "turbo run build --filter='@copilotkit/core' --filter='@copilotkit/shared' --filter='@copilotkit/react' --filter='@copilotkit/angular'",
+    "predev": "turbo run build --filter='@copilotkitnext/core' --filter='@copilotkitnext/shared' --filter='@copilotkitnext/react' --filter='@copilotkitnext/angular' --filter='@copilotkitnext/demo-agents'",
     "build": "turbo run build",
     "clean": "turbo run clean",
-    "dev": "turbo run dev --filter='@copilotkit/core' --filter='@copilotkit/shared' --filter='@copilotkit/runtime' --filter='@copilotkit/react' --filter='@copilotkit/angular' --concurrency=15",
-    "dev:packages": "turbo run dev --filter='@copilotkit/core' --filter='@copilotkit/shared' --filter='@copilotkit/runtime' --filter='@copilotkit/react' --filter='@copilotkit/angular'",
-    "demo:angular": "turbo run dev --filter='@copilotkit/angular-demo-server' --filter='@copilotkit/angular-demo'",
+    "dev": "turbo run dev --filter='@copilotkitnext/core' --filter='@copilotkitnext/shared' --filter='@copilotkitnext/runtime' --filter='@copilotkitnext/react' --filter='@copilotkitnext/angular' --filter='@copilotkitnext/demo-agents' --concurrency=15",
+    "dev:packages": "turbo run dev --filter='@copilotkitnext/core' --filter='@copilotkitnext/shared' --filter='@copilotkitnext/runtime' --filter='@copilotkitnext/react' --filter='@copilotkitnext/angular' --filter='@copilotkitnext/demo-agents'",
+    "demo:angular": "turbo run dev --filter='@copilotkitnext/angular-demo-server' --filter='@copilotkitnext/angular-demo'",
     "storybook:angular": "pnpm -C apps/angular/storybook dev",
     "demo:react": "pnpm -C apps/react/demo dev",
     "storybook:react": "pnpm -C apps/react/storybook dev",
@@ -20,7 +20,9 @@
     "test:coverage": "turbo run test:coverage",
     "storybook": "pnpm storybook:react",
     "storybook:all": "echo 'Run storybooks in separate terminals: pnpm storybook:react | pnpm storybook:angular'",
-    "build-storybook": "turbo run build --filter=storybook --filter=storybook-angular"
+    "build-storybook": "turbo run build --filter=storybook --filter=storybook-angular",
+    "release:dry": "pnpm -r --filter '@copilotkitnext/*' publish --access public --dry-run",
+    "release": "pnpm -r --filter '@copilotkitnext/*' publish --access public"
   },
   "devDependencies": {
     "@storybook/addon-docs": "^9.0.16",

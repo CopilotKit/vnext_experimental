@@ -1,4 +1,4 @@
-import { MaybePromise, NonEmptyRecord } from "@copilotkit/shared";
+import { MaybePromise, NonEmptyRecord } from "@copilotkitnext/shared";
 import { AbstractAgent } from "@ag-ui/client";
 import pkg from "../package.json";
 import type {

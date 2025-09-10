@@ -1,10 +1,10 @@
 {
-  "extends": "@copilotkit/typescript-config/base.json",
+  "extends": "@copilotkitnext/typescript-config/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@copilotkit/react": ["../../packages/react/src"],
+      "@copilotkitnext/react": ["../../packages/react/src"],
       "@/*": ["../../packages/react/src/*"]
     },
     "types": ["node"]

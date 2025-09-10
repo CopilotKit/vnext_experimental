@@ -1,12 +1,11 @@
-import { CopilotRuntime, createCopilotEndpoint } from "@copilotkit/runtime";
-import { InMemoryAgentRunner } from "@copilotkit/runtime";
+import { CopilotRuntime, createCopilotEndpoint } from "@copilotkitnext/runtime";
+import { InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { OpenAIAgent } from "./openai";
 
 const runtime = new CopilotRuntime({
-  agents: {
-    default: new OpenAIAgent(),
-  },
+  // @ts-expect-error - OpenAIAgent has the correct type
+  agents: { default: new OpenAIAgent() },
   runner: new InMemoryAgentRunner(),
 });
 

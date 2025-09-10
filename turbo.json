@@ -56,11 +56,11 @@
       "cache": false,
       "persistent": true
     },
-    "@copilotkit/angular-demo#dev": {
+    "@copilotkitnext/angular-demo#dev": {
       "cache": false,
       "persistent": true
     },
-    "@copilotkit/angular-demo-server#dev": {
+    "@copilotkitnext/angular-demo-server#dev": {
       "cache": false,
       "persistent": true
     },
@@ -80,9 +80,11 @@
       "persistent": true
     },
     "storybook:build": {
-      "outputs": ["apps/react/storybook/storybook-static/**", "apps/angular/storybook/storybook-static/**"]
-    }
-    ,
+      "outputs": [
+        "apps/react/storybook/storybook-static/**",
+        "apps/angular/storybook/storybook-static/**"
+      ]
+    },
     "clean": {
       "cache": false,
       "persistent": false,

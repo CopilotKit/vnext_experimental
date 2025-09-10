@@ -14,8 +14,9 @@ import { CopilotKitService } from "../core/copilotkit.service";
 import type {
   AngularFrontendTool,
   AngularToolCallRender,
+  ToolCallRender,
 } from "../core/copilotkit.types";
-import { z } from "zod";
+import type { z } from "zod";
 
 @Directive({
   selector: "[copilotkitFrontendTool]",
@@ -79,12 +80,13 @@ export class CopilotKitFrontendToolDirective<
     if (tool.render) {
       const currentRenders = this.copilotkit.currentRenderToolCalls();
       const renderEntry: AngularToolCallRender = {
-        args: tool.parameters || z.object({}),
+        name: tool.name,
         render: tool.render,
       };
 
       // Check for duplicate
-      if (tool.name in currentRenders) {
+      const existingIndex = currentRenders.findIndex((r: ToolCallRender) => r.name === tool.name);
+      if (existingIndex !== -1) {
         if (isDevMode()) {
           console.warn(
             `[CopilotKit] Tool "${tool.name}" already has a render. ` +
@@ -92,11 +94,12 @@ export class CopilotKitFrontendToolDirective<
               `This may indicate a duplicate tool registration.`
           );
         }
+        const updated = [...currentRenders];
+        updated[existingIndex] = renderEntry;
+        this.copilotkit.setCurrentRenderToolCalls(updated);
+      } else {
+        this.copilotkit.setCurrentRenderToolCalls([...currentRenders, renderEntry]);
       }
-      this.copilotkit.setCurrentRenderToolCalls({
-        ...currentRenders,
-        [tool.name]: renderEntry,
-      });
     }
 
     this.isRegistered = true;
@@ -113,9 +116,9 @@ export class CopilotKitFrontendToolDirective<
 
       // Remove the render if it exists
       const currentRenders = this.copilotkit.currentRenderToolCalls();
-      if (tool.name in currentRenders) {
-        const { [tool.name]: _, ...remainingRenders } = currentRenders;
-        this.copilotkit.setCurrentRenderToolCalls(remainingRenders);
+      const filtered = currentRenders.filter((r: ToolCallRender) => r.name !== tool.name);
+      if (filtered.length !== currentRenders.length) {
+        this.copilotkit.setCurrentRenderToolCalls(filtered);
       }
     }
 

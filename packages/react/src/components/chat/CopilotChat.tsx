@@ -1,7 +1,7 @@
 import { useAgent } from "@/hooks/use-agent";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
-import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkit/shared";
+import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 
@@ -16,28 +16,32 @@ export function CopilotChat({
   ...props
 }: CopilotChatProps) {
   const { agent } = useAgent({ agentId });
-  const [showCursor, setShowCursor] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   threadId = threadId ?? useMemo(() => randomUUID(), []);
 
   const subscriber = {
-    onTextMessageStartEvent: () => setShowCursor(false),
-    onToolCallStartEvent: () => setShowCursor(false),
+    onTextMessageStartEvent: () => setIsLoading(false),
+    onToolCallStartEvent: () => setIsLoading(false),
   };
 
   useEffect(() => {
     const connect = async () => {
-      setShowCursor(true);
+      setIsLoading(true);
       await agent?.runAgent(
         {
           forwardedProps: { __copilotkitConnect: true },
         },
         subscriber
       );
-      setShowCursor(false);
+      setIsLoading(false);
     };
     if (agent) {
       agent.threadId = threadId;
-      connect();
+      if ("isCopilotKitAgent" in agent) {
+        connect();
+      } else {
+        setIsLoading(false);
+      }
     }
     return () => {};
   }, [threadId, agent]);
@@ -51,16 +55,16 @@ export function CopilotChat({
         role: "user",
         content: value,
       });
-      setShowCursor(true);
+      setIsLoading(true);
       await agent?.runAgent({}, subscriber);
-      setShowCursor(false);
+      setIsLoading(false);
     },
     [agent]
   );
 
   const mergedProps = merge(
     {
-      messageView: { showCursor },
+      messageView: { isLoading },
     },
     {
       ...props,

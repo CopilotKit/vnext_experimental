@@ -12,14 +12,14 @@ export type CopilotChatMessageViewProps = Omit<
       cursor: typeof CopilotChatMessageView.Cursor;
     },
     {
-      showCursor?: boolean;
+      isLoading?: boolean;
       messages?: Message[];
     } & React.HTMLAttributes<HTMLDivElement>
   >,
   "children"
 > & {
   children?: (props: {
-    showCursor: boolean;
+    isLoading: boolean;
     messages: Message[];
     messageElements: React.ReactElement[];
   }) => React.ReactElement;
@@ -30,7 +30,7 @@ export function CopilotChatMessageView({
   assistantMessage,
   userMessage,
   cursor,
-  showCursor = false,
+  isLoading = false,
   children,
   className,
   ...props
@@ -41,6 +41,8 @@ export function CopilotChatMessageView({
         return renderSlot(assistantMessage, CopilotChatAssistantMessage, {
           key: message.id,
           message,
+          messages,
+          isLoading,
         });
       } else if (message.role === "user") {
         return renderSlot(userMessage, CopilotChatUserMessage, {
@@ -54,21 +56,21 @@ export function CopilotChatMessageView({
     .filter(Boolean) as React.ReactElement[];
 
   if (children) {
-    return children({ messageElements, messages, showCursor });
+    return children({ messageElements, messages, isLoading });
   }
 
   return (
     <div className={twMerge("flex flex-col", className)} {...props}>
       {messageElements}
-      {showCursor && renderSlot(cursor, CopilotChatMessageView.Cursor, {})}
+      {isLoading && renderSlot(cursor, CopilotChatMessageView.Cursor, {})}
     </div>
   );
 }
 
-CopilotChatMessageView.Cursor = ({
+CopilotChatMessageView.Cursor = function Cursor({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={twMerge(

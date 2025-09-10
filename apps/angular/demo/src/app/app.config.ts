@@ -3,12 +3,20 @@ import { BrowserModule } from "@angular/platform-browser";
 import {
   provideCopilotKit,
   provideCopilotChatConfiguration,
-} from "@copilotkit/angular";
+} from "@copilotkitnext/angular";
+import { WildcardToolRenderComponent } from "./app.component";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(BrowserModule),
-    ...provideCopilotKit({}),
+    ...provideCopilotKit({
+      renderToolCalls: [
+        {
+          name: "*",
+          render: WildcardToolRenderComponent,
+        },
+      ],
+    }),
     provideCopilotChatConfiguration({
       labels: {
         chatInputPlaceholder: "Ask me anything...",

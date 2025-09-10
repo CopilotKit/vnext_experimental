@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "CopilotKit 2.0",
+  "name": "CopilotKit vnext_experimental",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg"
@@ -18,7 +18,7 @@
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:hi@copilotkit.ai"
+      "url": "mailto:hi@copilotkitnext.ai"
     }
   ],
   "topbarCtaButton": {

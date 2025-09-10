@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatAssistantMessage,
   CopilotChatConfigurationProvider,
+  CopilotKitProvider,
   type CopilotChatAssistantMessageProps,
-} from "@copilotkit/react";
+} from "@copilotkitnext/react";
 
 // Simple default message
 const simpleMessage = {
@@ -139,9 +140,11 @@ const meta = {
         }}
       >
         <div style={{ width: "100%", maxWidth: "640px" }}>
-          <CopilotChatConfigurationProvider>
-            <Story />
-          </CopilotChatConfigurationProvider>
+          <CopilotKitProvider publicApiKey="test">
+            <CopilotChatConfigurationProvider>
+              <Story />
+            </CopilotChatConfigurationProvider>
+          </CopilotKitProvider>
         </div>
       </div>
     ),

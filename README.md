@@ -1,4 +1,4 @@
-# CopilotKit 2.0
+# CopilotKit vnext_experimental
 
 A modern TypeScript-first copilot framework built with React components and AI agents.
 
@@ -24,7 +24,7 @@ pnpm install
 pnpm turbo run build
 
 # Build specific package
-pnpm turbo run build --filter=@copilotkit/react
+pnpm turbo run build --filter=@copilotkitnext/react
 ```
 
 #### Development

@@ -19,9 +19,7 @@ import type {
   HumanInTheLoopProps,
   AngularFrontendTool,
 } from "../core/copilotkit.types";
-
-// Define the status type locally to avoid decorator issues
-type HumanInTheLoopStatus = "inProgress" | "executing" | "complete";
+import { ToolCallStatus } from "../core/copilotkit.types";
 import * as z from "zod";
 
 /**
@@ -68,9 +66,9 @@ export class CopilotKitHumanInTheLoopDirective<
   implements OnInit, OnChanges, OnDestroy
 {
   private toolId?: string;
-  private statusSignal = signal<HumanInTheLoopStatus>("inProgress");
+  private statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   private resolvePromise: ((result: unknown) => void) | null = null;
-  private _status: HumanInTheLoopStatus = "inProgress";
+  private _status: ToolCallStatus = ToolCallStatus.InProgress;
 
   constructor(
     @Inject(CopilotKitService) private readonly copilotkit: CopilotKitService
@@ -119,16 +117,16 @@ export class CopilotKitHumanInTheLoopDirective<
   /**
    * Emits when the status changes.
    */
-  @Output() statusChange = new EventEmitter<HumanInTheLoopStatus>();
+  @Output() statusChange = new EventEmitter<ToolCallStatus>();
 
   /**
    * Two-way binding for status.
    */
   @Input()
-  get status(): HumanInTheLoopStatus {
+  get status(): ToolCallStatus {
     return this._status;
   }
-  set status(value: HumanInTheLoopStatus) {
+  set status(value: ToolCallStatus) {
     // Input setter for two-way binding (though typically read-only)
     this._status = value;
   }
@@ -197,7 +195,7 @@ export class CopilotKitHumanInTheLoopDirective<
     // Create handler that returns a Promise
     const handler = async (args: T): Promise<unknown> => {
       return new Promise((resolve) => {
-        this.updateStatus("executing");
+        this.updateStatus(ToolCallStatus.Executing);
         this.resolvePromise = resolve;
         this.executionStarted.emit(args);
       });
@@ -218,7 +216,7 @@ export class CopilotKitHumanInTheLoopDirective<
 
     // Register the render with respond capability
     this.copilotkit.registerToolRender(this.name, {
-      args: this.parameters,
+      name: this.name,
       render: this.createEnhancedRender(),
     });
   }
@@ -246,14 +244,14 @@ export class CopilotKitHumanInTheLoopDirective<
   private handleResponse(result: unknown): void {
     if (this.resolvePromise) {
       this.resolvePromise(result);
-      this.updateStatus("complete");
+      this.updateStatus(ToolCallStatus.Complete);
       this.resolvePromise = null;
       this.responseProvided.emit(result);
       this.executionCompleted.emit(result);
     }
   }
 
-  private updateStatus(status: HumanInTheLoopStatus): void {
+  private updateStatus(status: ToolCallStatus): void {
     this._status = status;
     this.statusSignal.set(status);
     this.statusChange.emit(status);
