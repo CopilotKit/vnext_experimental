@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
+import { Component } from "@angular/core";
+import { FormsModule } from "@angular/forms";
 import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
+  CopilotChatConfigurationService,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
@@ -189,6 +192,7 @@ import {
   CopilotChatViewComponent,
   CopilotChatMessageViewComponent,
   CopilotChatInputComponent,
+  CopilotChatConfigurationService,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -240,14 +244,16 @@ import { Message } from '@ag-ui/client';
   \`
 })
 class CustomInputComponent {
-  @Input() onSend?: (message: string) => void;
   @Input() inputClass?: string;
   
   inputValue = '';
   
+  constructor(private chat: CopilotChatConfigurationService) {}
+  
   handleSend() {
-    if (this.inputValue && this.onSend) {
-      this.onSend(this.inputValue);
+    const value = this.inputValue.trim();
+    if (value) {
+      this.chat.submitInput(value);
       this.inputValue = '';
     }
   }
@@ -568,6 +574,251 @@ export class NoFeatherEffectComponent {
       `,
       props: {
         messages,
+      },
+    };
+  },
+};
+
+export const CustomInputServiceBased: Story = {
+  name: "Custom Input via Service (Recommended)",
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Demonstrates the recommended approach for custom inputs using service injection.
+
+This pattern uses \`CopilotChatConfigurationService.submitInput()\` to submit messages, 
+which is the idiomatic Angular approach for cross-component communication.
+
+**Key differences from React:**
+- Angular uses dependency injection with services
+- React uses callback props (e.g., \`onSubmitMessage\`)
+- Both achieve the same result with framework-appropriate patterns
+        `,
+      },
+      source: {
+        type: 'code',
+        code: `import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  CopilotChatViewComponent,
+  CopilotChatMessageViewComponent,
+  CopilotChatInputComponent,
+  CopilotChatConfigurationService,
+  provideCopilotKit,
+  provideCopilotChatConfiguration
+} from '@copilotkitnext/angular';
+import { Message } from '@ag-ui/client';
+
+// Minimal custom input component with service injection
+@Component({
+  selector: 'service-based-input',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: \`
+    <div style="
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 10px;
+    ">
+      <h4 style="color: white; margin: 0 0 10px 0;">
+        Service-Based Custom Input
+      </h4>
+      <div style="display: flex; gap: 10px;">
+        <input 
+          type="text"
+          [(ngModel)]="value"
+          placeholder="Type your message..."
+          style="
+            flex: 1;
+            padding: 12px;
+            border: 2px solid white;
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            outline: none;
+          "
+          (keyup.enter)="submit()"
+        />
+        <button 
+          style="
+            padding: 12px 24px;
+            background: white;
+            color: #059669;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+          "
+          (click)="submit()">
+          Submit
+        </button>
+      </div>
+      <p style="color: rgba(255, 255, 255, 0.9); font-size: 12px; margin: 8px 0 0 0;">
+        This component uses CopilotChatConfigurationService.submitInput()
+      </p>
+    </div>
+  \`
+})
+class ServiceBasedInputComponent {
+  value = '';
+  
+  constructor(private chat: CopilotChatConfigurationService) {}
+  
+  submit() {
+    const trimmedValue = this.value.trim();
+    if (!trimmedValue) return;
+    
+    // Use the service to submit the message
+    this.chat.submitInput(trimmedValue);
+    this.value = '';
+  }
+}
+
+@Component({
+  selector: 'app-service-based-example',
+  standalone: true,
+  imports: [
+    CommonModule,
+    CopilotChatViewComponent,
+    CopilotChatMessageViewComponent,
+    CopilotChatInputComponent,
+    ServiceBasedInputComponent
+  ],
+  providers: [
+    provideCopilotKit({}),
+    provideCopilotChatConfiguration({
+      labels: {
+        chatInputPlaceholder: 'Type a message...',
+        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+      }
+    })
+  ],
+  template: \`
+    <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+      <copilot-chat-view
+        [messages]="messages"
+        [inputComponent]="customInputComponent">
+      </copilot-chat-view>
+    </div>
+  \`
+})
+export class ServiceBasedExampleComponent {
+  messages: Message[] = [
+    {
+      id: 'user-1',
+      content: 'How does the service-based approach work?',
+      role: 'user'
+    },
+    {
+      id: 'assistant-1',
+      content: 'The service-based approach uses Angular\\'s dependency injection to access CopilotChatConfigurationService, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!',
+      role: 'assistant'
+    }
+  ];
+
+  customInputComponent = ServiceBasedInputComponent;
+}`,
+        language: 'typescript'
+      }
+    }
+  },
+  render: () => {
+    // Define the service-based input component inline for the story
+    @Component({
+      selector: 'story-service-input',
+      standalone: true,
+      imports: [CommonModule, FormsModule],
+      template: `
+        <div style="
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          padding: 20px;
+          border-radius: 15px;
+          margin: 10px;
+        ">
+          <h4 style="color: white; margin: 0 0 10px 0;">
+            Service-Based Custom Input
+          </h4>
+          <div style="display: flex; gap: 10px;">
+            <input 
+              type="text"
+              [(ngModel)]="value"
+              placeholder="Type your message..."
+              style="
+                flex: 1;
+                padding: 12px;
+                border: 2px solid white;
+                border-radius: 8px;
+                font-size: 14px;
+                background: rgba(255, 255, 255, 0.95);
+                color: #333;
+                outline: none;
+              "
+              (keyup.enter)="submit()"
+            />
+            <button 
+              style="
+                padding: 12px 24px;
+                background: white;
+                color: #059669;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+                cursor: pointer;
+              "
+              (click)="submit()">
+              Submit
+            </button>
+          </div>
+          <p style="color: rgba(255, 255, 255, 0.9); font-size: 12px; margin: 8px 0 0 0;">
+            This component uses CopilotChatConfigurationService.submitInput()
+          </p>
+        </div>
+      `
+    })
+    class StoryServiceInputComponent {
+      value = '';
+      
+      constructor(private chat: CopilotChatConfigurationService) {}
+      
+      submit() {
+        const trimmedValue = this.value.trim();
+        if (!trimmedValue) return;
+        
+        this.chat.submitInput(trimmedValue);
+        this.value = '';
+      }
+    }
+
+    const messages: Message[] = [
+      {
+        id: "user-1",
+        content: "How does the service-based approach work?",
+        role: "user" as const,
+      },
+      {
+        id: "assistant-1",
+        content:
+          "The service-based approach uses Angular's dependency injection to access CopilotChatConfigurationService, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!",
+        role: "assistant" as const,
+      },
+    ];
+
+    return {
+      template: `
+        <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
+          <copilot-chat-view
+            [messages]="messages"
+            [inputComponent]="customInputComponent">
+          </copilot-chat-view>
+        </div>
+      `,
+      props: {
+        messages,
+        customInputComponent: StoryServiceInputComponent,
       },
     };
   },

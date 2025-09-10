@@ -104,7 +104,6 @@ const meta: Meta<CopilotChatInputComponent> = {
             [value]="value"
             [autoFocus]="autoFocus"
             [sendButtonComponent]="sendButtonComponent"
-            [sendButtonTemplate]="sendButtonTemplate"
             [additionalToolbarItems]="additionalToolbarItems"
             (submitMessage)="submitMessage($event)"
             (startTranscribe)="startTranscribe()"
@@ -225,13 +224,6 @@ See individual stories below for detailed examples of each customization approac
       description: "Custom send button component",
       table: {
         type: { summary: "Type<any>" },
-        category: "Customization",
-      },
-    },
-    sendButtonTemplate: {
-      description: "Custom send button template",
-      table: {
-        type: { summary: "TemplateRef<any>" },
         category: "Customization",
       },
     },

@@ -408,14 +408,17 @@ export class CopilotChatInputComponent implements AfterViewInit, OnDestroy {
   
   constructor() {
     // Effect to handle mode changes
-    effect(() => {
-      const currentMode = this.computedMode();
-      if (currentMode === 'transcribe' && this.audioRecorderRef) {
-        this.audioRecorderRef.start().catch(console.error);
-      } else if (this.audioRecorderRef?.getState() === 'recording') {
-        this.audioRecorderRef.stop().catch(console.error);
-      }
-    });
+    effect(
+      () => {
+        const currentMode = this.computedMode();
+        if (currentMode === 'transcribe' && this.audioRecorderRef) {
+          this.audioRecorderRef.start().catch(console.error);
+        } else if (this.audioRecorderRef?.getState() === 'recording') {
+          this.audioRecorderRef.stop().catch(console.error);
+        }
+      },
+      { allowSignalWrites: true }
+    );
     
     // Sync with chat configuration
     effect(
