@@ -124,6 +124,104 @@ export class AppComponent {
 
 - If `agentId` is omitted, the component uses the default agent (ID: `default`)
 
+## Custom Input Components (Angular)
+
+When building custom input components for CopilotKit Angular, use the service-based pattern with `CopilotChatConfigurationService` for message submission. This is the idiomatic Angular approach leveraging dependency injection.
+
+### Service-Based Custom Input Example:
+
+```typescript
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CopilotChatConfigurationService } from '@copilotkitnext/angular';
+
+@Component({
+  selector: 'my-custom-input',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <div class="custom-input-wrapper">
+      <input 
+        [(ngModel)]="inputValue"
+        (keyup.enter)="submitMessage()"
+        placeholder="Type your message..."
+      />
+      <button (click)="submitMessage()">Send</button>
+    </div>
+  `
+})
+export class MyCustomInputComponent {
+  inputValue = '';
+  
+  constructor(private chat: CopilotChatConfigurationService) {}
+  
+  submitMessage() {
+    const value = this.inputValue.trim();
+    if (value) {
+      // Use the service to submit the message
+      this.chat.submitInput(value);
+      this.inputValue = '';
+    }
+  }
+}
+```
+
+### Using the Custom Input Component:
+
+```typescript
+import { Component } from '@angular/core';
+import { CopilotChatViewComponent } from '@copilotkitnext/angular';
+import { MyCustomInputComponent } from './my-custom-input.component';
+
+@Component({
+  selector: 'app-chat',
+  standalone: true,
+  imports: [CopilotChatViewComponent],
+  template: `
+    <copilot-chat-view
+      [messages]="messages"
+      [inputComponent]="customInputComponent">
+    </copilot-chat-view>
+  `
+})
+export class ChatComponent {
+  messages = [];
+  customInputComponent = MyCustomInputComponent;
+}
+```
+
+### Key Points:
+
+- **No callback props**: Unlike React which uses `onSubmitMessage` callbacks, Angular uses dependency injection
+- **Service injection**: Inject `CopilotChatConfigurationService` to access `submitInput()`
+- **Cross-component communication**: The service handles message submission internally
+- **Type safety**: Full TypeScript support with proper type inference
+
+### Alternative: Using the Chat Config Directive
+
+For template-level hooks, you can also use the `copilotkitChatConfig` directive:
+
+```html
+<div [copilotkitChatConfig]="{ 
+  onSubmitInput: handleSubmit,
+  onChangeInput: handleChange 
+}">
+  <copilot-chat></copilot-chat>
+</div>
+```
+
+```typescript
+export class ChatComponent {
+  handleSubmit = (value: string) => {
+    console.log('Message submitted:', value);
+  };
+  
+  handleChange = (value: string) => {
+    console.log('Input changed:', value);
+  };
+}
+```
+
 ## Agents 101 (AG-UI)
 
 - **Agent model**: CopilotKit uses AG-UI's `AbstractAgent` interface (package `@ag-ui/client`)
