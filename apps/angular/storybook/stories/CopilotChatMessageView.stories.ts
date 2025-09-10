@@ -72,7 +72,7 @@ import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angula
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
-      [assistantMessageProps]="assistantMessageProps">
+>
     </copilot-chat-message-view>
   \`
 })
@@ -131,16 +131,8 @@ In this example:
     },
   ];
 
-  assistantMessageProps = {
-    onThumbsUp: () => {
-      console.log('Thumbs up clicked!');
-      alert('thumbsUp');
-    },
-    onThumbsDown: () => {
-      console.log('Thumbs down clicked!');
-      alert('thumbsDown');
-    },
-  };
+  // Note: In Angular, thumbs up/down actions are handled through the chat configuration service
+  // or by providing a custom assistant message component
 }`,
         language: "typescript",
       },
@@ -204,22 +196,12 @@ In this example:
     return {
       props: {
         messages,
-        assistantMessageProps: {
-          onThumbsUp: () => {
-            console.log("Thumbs up clicked!");
-            alert("thumbsUp");
-          },
-          onThumbsDown: () => {
-            console.log("Thumbs down clicked!");
-            alert("thumbsDown");
-          },
-        },
       },
       template: `
         <div style="height: 100vh; margin: 0; padding: 0;">
           <copilot-chat-message-view
             [messages]="messages"
-            [assistantMessageProps]="assistantMessageProps">
+      >
           </copilot-chat-message-view>
         </div>
       `,
@@ -245,7 +227,7 @@ import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angula
     <copilot-chat-message-view
       [messages]="messages"
       [showCursor]="true"
-      [assistantMessageProps]="assistantMessageProps">
+>
     </copilot-chat-message-view>
   \`
 })
@@ -258,16 +240,8 @@ export class ChatComponent {
     },
   ];
 
-  assistantMessageProps = {
-    onThumbsUp: () => {
-      console.log('Thumbs up clicked!');
-      alert('thumbsUp');
-    },
-    onThumbsDown: () => {
-      console.log('Thumbs down clicked!');
-      alert('thumbsDown');
-    },
-  };
+  // Note: In Angular, thumbs up/down actions are handled through the chat configuration service
+  // or by providing a custom assistant message component
 }`,
         language: "typescript",
       },
@@ -286,23 +260,13 @@ export class ChatComponent {
       props: {
         messages,
         showCursor: true,
-        assistantMessageProps: {
-          onThumbsUp: () => {
-            console.log("Thumbs up clicked!");
-            alert("thumbsUp");
-          },
-          onThumbsDown: () => {
-            console.log("Thumbs down clicked!");
-            alert("thumbsDown");
-          },
-        },
       },
       template: `
         <div style="height: 100vh; margin: 0; padding: 0;">
           <copilot-chat-message-view
             [messages]="messages"
             [showCursor]="showCursor"
-            [assistantMessageProps]="assistantMessageProps">
+      >
           </copilot-chat-message-view>
         </div>
       `,
