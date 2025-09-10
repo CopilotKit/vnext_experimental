@@ -64,7 +64,7 @@ import {
 import { Message } from '@ag-ui/client';
 
 // Custom disclaimer component
-@Component({
+&#64;Component({
   selector: 'custom-disclaimer',
   standalone: true,
   template: \`
@@ -81,7 +81,7 @@ import { Message } from '@ag-ui/client';
         ✨ Custom Disclaimer Component ✨
       </h3>
       <p style="margin: 0; font-size: 14px; opacity: 0.9;">
-        {{ text || 'This is a custom disclaimer demonstrating component overrides!' }}
+        {{ '{' }}{{ '{' }} text || 'This is a custom disclaimer demonstrating component overrides!' {{ '}' }}{{ '}' }}
       </p>
       <div style="
         margin-top: 15px;
@@ -96,11 +96,11 @@ import { Message } from '@ag-ui/client';
   \`
 })
 class CustomDisclaimerComponent {
-  @Input() text?: string;
-  @Input() inputClass?: string;
+  &#64;Input() text?: string;
+  &#64;Input() inputClass?: string;
 }
 
-@Component({
+&#64;Component({
   selector: 'app-custom-disclaimer',
   standalone: true,
   imports: [
@@ -199,7 +199,7 @@ import {
 import { Message } from '@ag-ui/client';
 
 // Custom input component
-@Component({
+&#64;Component({
   selector: 'custom-input',
   standalone: true,
   imports: [CommonModule, FormsModule],
@@ -244,7 +244,7 @@ import { Message } from '@ag-ui/client';
   \`
 })
 class CustomInputComponent {
-  @Input() inputClass?: string;
+  &#64;Input() inputClass?: string;
   
   inputValue = '';
   
@@ -259,7 +259,7 @@ class CustomInputComponent {
   }
 }
 
-@Component({
+&#64;Component({
   selector: 'app-custom-input',
   standalone: true,
   imports: [
@@ -356,7 +356,7 @@ import {
 import { Message } from '@ag-ui/client';
 
 // Custom scroll button component
-@Component({
+&#64;Component({
   selector: 'custom-scroll-button',
   standalone: true,
   imports: [CommonModule],
@@ -397,9 +397,9 @@ import { Message } from '@ag-ui/client';
   \`]
 })
 class CustomScrollButtonComponent {
-  @Input() onClick?: () => void;
-  @Input() inputClass?: string;
-  @Output() clicked = new EventEmitter<void>();
+  &#64;Input() onClick?: () => void;
+  &#64;Input() inputClass?: string;
+  &#64;Output() clicked = new EventEmitter<void>();
   
   isHovered = false;
   
@@ -411,7 +411,7 @@ class CustomScrollButtonComponent {
   }
 }
 
-@Component({
+&#64;Component({
   selector: 'app-custom-scroll',
   standalone: true,
   imports: [
@@ -504,7 +504,7 @@ import {
 } from '@copilotkitnext/angular';
 import { Message } from '@ag-ui/client';
 
-@Component({
+&#64;Component({
   selector: 'app-no-feather',
   standalone: true,
   imports: [
@@ -612,7 +612,7 @@ import {
 import { Message } from '@ag-ui/client';
 
 // Minimal custom input component with service injection
-@Component({
+&#64;Component({
   selector: 'service-based-input',
   standalone: true,
   imports: [CommonModule, FormsModule],
@@ -678,7 +678,7 @@ class ServiceBasedInputComponent {
   }
 }
 
-@Component({
+&#64;Component({
   selector: 'app-service-based-example',
   standalone: true,
   imports: [

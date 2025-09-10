@@ -59,7 +59,7 @@ import {
 import { Message } from '@ag-ui/client';
 
 // Custom disclaimer component
-@Component({
+&#64;Component({
   selector: 'custom-disclaimer',
   standalone: true,
   template: \`
@@ -80,11 +80,11 @@ import { Message } from '@ag-ui/client';
   \`
 })
 class CustomDisclaimerComponent {
-  @Input() text?: string;
-  @Input() inputClass?: string;
+  &#64;Input() text?: string;
+  &#64;Input() inputClass?: string;
 }
 
-@Component({
+&#64;Component({
   selector: 'app-chat-actions',
   standalone: true,
   imports: [
