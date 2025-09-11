@@ -13,6 +13,7 @@ import {
   Injector,
   Optional,
   SkipSelf,
+  Type,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { CopilotChatViewComponent } from "./copilot-chat-view.component";
@@ -59,6 +60,7 @@ import { Message, AbstractAgent } from "@ag-ui/client";
       [autoScroll]="true"
       [messageViewClass]="'w-full'"
       [showCursor]="showCursor()"
+      [inputComponent]="inputComponent"
     >
     </copilot-chat-view>
   `,
@@ -66,6 +68,7 @@ import { Message, AbstractAgent } from "@ag-ui/client";
 export class CopilotChatComponent implements OnInit, OnChanges {
   @Input() agentId?: string;
   @Input() threadId?: string;
+  @Input() inputComponent?: Type<any>;
 
   constructor(
     @Optional() private chatConfig: CopilotChatConfigurationService | null,

@@ -4,7 +4,7 @@ import {
   provideCopilotKit,
   provideCopilotChatConfiguration,
 } from "@copilotkitnext/angular";
-import { WildcardToolRenderComponent } from "./app.component";
+import { WildcardToolRenderComponent } from "./components/wildcard-tool-render.component";
 
 export const appConfig: ApplicationConfig = {
   providers: [

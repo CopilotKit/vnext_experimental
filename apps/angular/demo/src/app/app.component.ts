@@ -1,39 +1,10 @@
-import { Component, Input } from "@angular/core";
-import {
-  CopilotKitConfigDirective,
-  CopilotChatComponent,
-} from "@copilotkitnext/angular";
-import { HeadlessChatComponent } from "./headless-chat.component";
+import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
-
-// WildcardToolRender component for unmatched tools
-@Component({
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div
-      style="padding: 12px; margin: 8px 0; background-color: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;"
-    >
-      <div style="font-weight: bold; margin-bottom: 4px;">
-        🔧 Tool Execution
-      </div>
-      <div style="font-size: 14px; color: #666;">
-        <pre>{{ argsJson }}</pre>
-      </div>
-      <div style="margin-top: 8px; color: #333;">Output: {{ result }}</div>
-    </div>
-  `,
-})
-export class WildcardToolRenderComponent {
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: any;
-  @Input({ required: true }) status!: any;
-  @Input() result?: string;
-
-  get argsJson() {
-    return JSON.stringify(this.args, null, 2);
-  }
-}
+import { CopilotKitConfigDirective } from "@copilotkitnext/angular";
+import { HeadlessChatComponent } from "./routes/headless/headless-chat.component";
+import { CustomInputChatComponent } from "./routes/custom-input/custom-input-chat.component";
+import { DefaultChatComponent } from "./routes/default/default-chat.component";
+import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port.component";
 
 @Component({
   selector: "app-root",
@@ -41,25 +12,37 @@ export class WildcardToolRenderComponent {
   imports: [
     CommonModule,
     CopilotKitConfigDirective,
-    CopilotChatComponent,
     HeadlessChatComponent,
+    CustomInputChatComponent,
+    DefaultChatComponent,
+    CoPilotPortComponent,
   ],
   template: `
     <div
       [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
       style="height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; display: block;"
     >
-      <ng-container *ngIf="isHeadless; else fullChat">
+      <ng-container *ngIf="isHeadless">
         <headless-chat></headless-chat>
       </ng-container>
-      <ng-template #fullChat>
-        <copilot-chat [threadId]="'xyz'"></copilot-chat>
-      </ng-template>
+      <ng-container *ngIf="isCustomInput">
+        <nextgen-custom-input-chat></nextgen-custom-input-chat>
+      </ng-container>
+      <ng-container *ngIf="!isHeadless && !isCustomInput && !isUkgPort">
+        <default-chat></default-chat>
+      </ng-container>
+      <ng-container *ngIf="isUkgPort">
+        <ukg-co-pilot-port></ukg-co-pilot-port>
+      </ng-container>
     </div>
   `,
 })
 export class AppComponent {
   runtimeUrl = "http://localhost:3001/api/copilotkit";
   isHeadless =
-    typeof window !== "undefined" && window.location?.pathname === "/headless";
+    typeof window !== "undefined" && window.location?.pathname.startsWith("/headless");
+  isCustomInput =
+    typeof window !== "undefined" && window.location?.pathname.startsWith("/custom-input");
+  isUkgPort =
+    typeof window !== "undefined" && window.location?.pathname.startsWith("/ukg-port");
 }
