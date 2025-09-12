@@ -31,9 +31,9 @@ Note: Executing status is subscribed to directly in `useRenderToolCall` (from co
 - Emit `TEXT_MESSAGE_CHUNK` deltas → the assistant message accumulates content. Keep assertions minimal (we are not testing markdown/toolbar).
 
 2) Tool Rendering via `useRenderToolCall`
-- Named renderer: provide a renderer for `getWeather`; stream partial args via `TOOL_CALL_CHUNK` (e.g., `{"location":"Paris","unit":"c`) and assert renderer shows InProgress with parsed partials; then finish args + emit `TOOL_CALL_RESULT` and assert Complete with result.
+- Named renderer: provide a renderer for `getWeather`; stream partial args via `TOOL_CALL_CHUNK` (e.g., `{"location":"Paris","unit":"c`) and assert renderer shows InProgress with parsed partials; then finish args + emit `TOOL_CALL_RESULT` and assert Complete with result. Also assert the render prop `name` equals `getWeather` throughout.
 - Multiple tool calls in the same assistant message: ensure each renders independently and finalizes upon its own result.
-- Wildcard fallback: when no exact renderer exists, supply `*` renderer and assert it is used; then add a specific renderer and assert the specific one is used on subsequent runs.
+- Wildcard fallback: when no exact renderer exists, supply `*` renderer and assert it is used; then add a specific renderer and assert the specific one is used on subsequent runs. Wildcard renderers should rely on `props.name` (invoked tool's name), not non-API props like `toolCallName`.
 
 3) Dynamic Registration via `useFrontendTool` (renderers)
 - Register at runtime: mount a small component that calls `useFrontendTool({ name: "dynamicTool", parameters, render })` after the provider is mounted; then emit a tool call for `dynamicTool` and assert it renders.

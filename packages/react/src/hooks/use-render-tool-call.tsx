@@ -67,11 +67,14 @@ export function useRenderToolCall() {
       const args = partialJSONParse(toolCall.function.arguments);
 
       // Create props based on status with proper typing
+      const toolName = toolCall.function.name;
+
       if (toolMessage) {
         // Complete status with result
         return (
           <RenderComponent
             key={toolCall.id}
+            name={toolName}
             args={args}
             status={ToolCallStatus.Complete}
             result={toolMessage.content}
@@ -82,6 +85,7 @@ export function useRenderToolCall() {
         return (
           <RenderComponent
             key={toolCall.id}
+            name={toolName}
             // args should be complete when executing; but pass whatever we have
             args={args}
             status={ToolCallStatus.Executing}
@@ -93,6 +97,7 @@ export function useRenderToolCall() {
         return (
           <RenderComponent
             key={toolCall.id}
+            name={toolName}
             args={args}
             status={ToolCallStatus.InProgress}
             result={undefined}
@@ -103,6 +108,7 @@ export function useRenderToolCall() {
         return (
           <RenderComponent
             key={toolCall.id}
+            name={toolName}
             args={args}
             status={ToolCallStatus.Complete}
             result=""

@@ -96,9 +96,9 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             location: z.string(),
             unit: z.string().optional(),
           }),
-          render: ({ args, result, status }) => (
+          render: ({ name, args, result, status }) => (
             <div data-testid="weather-tool">
-              Status: {status} | Location: {args.location} | 
+              Tool: {name} | Status: {status} | Location: {args.location} | 
               {result && ` Result: ${JSON.stringify(result)}`}
             </div>
           ),
@@ -136,9 +136,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         delta: ',"unit":"celsius"}',
       }));
 
-      // Wait for tool to render with complete args
+      // Wait for tool to render with complete args and verify name is provided
       await waitFor(() => {
         const tool = screen.getByTestId("weather-tool");
+        expect(tool.textContent).toContain("Tool: getWeather");
         expect(tool.textContent).toContain("Location: Paris");
       });
 
@@ -169,18 +170,18 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         defineToolCallRender({
           name: "getWeather",
           args: z.object({ location: z.string() }),
-          render: ({ args, result }) => (
+          render: ({ name, args, result }) => (
             <div data-testid={`weather-${args.location}`}>
-              Weather for {args.location}: {result ? JSON.stringify(result) : "Loading..."}
+              [{name}] Weather for {args.location}: {result ? JSON.stringify(result) : "Loading..."}
             </div>
           ),
         }),
         defineToolCallRender({
           name: "getTime",
           args: z.object({ timezone: z.string() }),
-          render: ({ args, result }) => (
+          render: ({ name, args, result }) => (
             <div data-testid={`time-${args.timezone}`}>
-              Time in {args.timezone}: {result ? JSON.stringify(result) : "Loading..."}
+              [{name}] Time in {args.timezone}: {result ? JSON.stringify(result) : "Loading..."}
             </div>
           ),
         }),
@@ -202,34 +203,20 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       agent.emit(runStartedEvent());
       agent.emit(textChunkEvent(messageId, "I'll check both for you."));
 
-      // Start first tool call (weather)
+      // Start first tool call (weather) with complete JSON in one chunk
       agent.emit(toolCallChunkEvent({
         toolCallId: toolCallId1,
         toolCallName: "getWeather",
         parentMessageId: messageId,
-        delta: '{"location":"',
+        delta: '{"location":"London"}',
       }));
 
-      // Start second tool call (time) - interleaved
+      // Start second tool call (time) with complete JSON in one chunk  
       agent.emit(toolCallChunkEvent({
         toolCallId: toolCallId2,
         toolCallName: "getTime",
         parentMessageId: messageId,
-        delta: '{"timezone":"',
-      }));
-
-      // Continue first tool call
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId1,
-        parentMessageId: messageId,
-        delta: 'London"}',
-      }));
-
-      // Continue second tool call
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId2,
-        parentMessageId: messageId,
-        delta: 'UTC"}',
+        delta: '{"timezone":"UTC"}',
       }));
 
       // Both tools should render with partial/complete args
@@ -251,13 +238,15 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         content: JSON.stringify({ temp: 18, condition: "Cloudy" }),
       }));
 
-      // Both results should appear
+      // Both results should appear with correct names
       await waitFor(() => {
         const weatherTool = screen.getByTestId("weather-London");
         const timeTool = screen.getByTestId("time-UTC");
         
+        expect(weatherTool.textContent).toContain("[getWeather]");
         expect(weatherTool.textContent).toContain("18");
         expect(weatherTool.textContent).toContain("Cloudy");
+        expect(timeTool.textContent).toContain("[getTime]");
         expect(timeTool.textContent).toContain("12:00 PM");
       });
 
@@ -273,9 +262,9 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         defineToolCallRender({
           name: "*",
           args: z.any(),
-          render: (props: any) => (
+          render: ({ name, args }) => (
             <div data-testid="wildcard-renderer">
-              Unknown tool: {props.toolCallName || props.name || "unknown"} with args: {JSON.stringify(props.args)}
+              Unknown tool: {name} with args: {JSON.stringify(args)}
             </div>
           ),
         }),
@@ -307,8 +296,8 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       await waitFor(() => {
         const wildcard = screen.getByTestId("wildcard-renderer");
         expect(wildcard).toBeDefined();
-        // Check that the wildcard renders something about the unknown tool
-        expect(wildcard.textContent).toContain("Unknown tool:");
+        // Check that the wildcard renders with the tool name
+        expect(wildcard.textContent).toContain("Unknown tool: unknownTool");
         expect(wildcard.textContent).toContain("value");
       });
 
@@ -331,9 +320,9 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         defineToolCallRender({
           name: "*",
           args: z.any(),
-          render: (props: any) => (
+          render: ({ name }) => (
             <div data-testid="wildcard-renderer">
-              Wildcard: {props.toolCallName || props.name || "unknown"}
+              Wildcard: {name}
             </div>
           ),
         }),
@@ -381,7 +370,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       await waitFor(() => {
         const wildcard = screen.getByTestId("wildcard-renderer");
         expect(wildcard).toBeDefined();
-        expect(wildcard.textContent).toContain("unknownTool");
+        expect(wildcard.textContent).toContain("Wildcard: unknownTool");
       });
 
       agent.emit(runFinishedEvent());

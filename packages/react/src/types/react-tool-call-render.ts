@@ -11,16 +11,19 @@ export interface ReactToolCallRender<T> {
   agentId?: string;
   render: React.ComponentType<
     | {
+        name: string;
         args: Partial<T>;
         status: ToolCallStatus.InProgress;
         result: undefined;
       }
     | {
+        name: string;
         args: T;
         status: ToolCallStatus.Executing;
         result: undefined;
       }
     | {
+        name: string;
         args: T;
         status: ToolCallStatus.Complete;
         result: string;
