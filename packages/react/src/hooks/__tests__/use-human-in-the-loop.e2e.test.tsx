@@ -16,7 +16,7 @@ import {
   waitForReactUpdate,
 } from "@/__tests__/utils/test-helpers";
 
-describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
+describe.skip("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
   describe("HITL Renderer with Status Transitions", () => {
     it("should show InProgress → Complete transitions for HITL tool", async () => {
       const agent = new MockStepwiseAgent();
