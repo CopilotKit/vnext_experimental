@@ -1,6 +1,6 @@
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
-import { defineToolCallRender } from "@/types";
+import { defineToolCallRender, ReactToolCallRender } from "@/types";
 import {
   MockStepwiseAgent,
   renderWithCopilotKit,
@@ -11,7 +11,7 @@ import {
   toolCallResultEvent,
   testId,
   waitForReactUpdate,
-} from "@/__tests__/utils/test-helpers.tsx";
+} from "@/__tests__/utils/test-helpers";
 
 describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
   describe("Chat Basics: text input + run", () => {
@@ -103,7 +103,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ];
+      ] as unknown as ReactToolCallRender<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -185,7 +185,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ];
+      ] as unknown as ReactToolCallRender<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -268,7 +268,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ];
+      ] as unknown as ReactToolCallRender<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -326,7 +326,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ];
+      ] as unknown as ReactToolCallRender<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 

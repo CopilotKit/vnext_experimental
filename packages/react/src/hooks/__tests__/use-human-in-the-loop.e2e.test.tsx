@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useHumanInTheLoop } from "../use-human-in-the-loop";
 import { ReactHumanInTheLoop } from "@/types";
 import { ToolCallStatus } from "@copilotkitnext/core";
+import { CopilotChat } from "@/components/chat/CopilotChat";
 import {
   MockStepwiseAgent,
   renderWithCopilotKit,
@@ -13,7 +14,7 @@ import {
   toolCallResultEvent,
   testId,
   waitForReactUpdate,
-} from "@/__tests__/utils/test-helpers.tsx";
+} from "@/__tests__/utils/test-helpers";
 
 describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
   describe("HITL Renderer with Status Transitions", () => {
@@ -22,7 +23,7 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       
       // Component that uses useHumanInTheLoop
       const HITLComponent: React.FC = () => {
-        const hitlTool: ReactHumanInTheLoop = {
+        const hitlTool: ReactHumanInTheLoop<{ action: string; reason: string }> = {
           name: "approvalTool",
           description: "Requires human approval",
           parameters: z.object({
@@ -45,7 +46,6 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
         return null;
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,
@@ -128,7 +128,7 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       const InteractiveHITLComponent: React.FC = () => {
         const [responseText, setResponseText] = useState("");
         
-        const hitlTool: ReactHumanInTheLoop = {
+        const hitlTool: ReactHumanInTheLoop<{ question: string; options: string[] }> = {
           name: "interactiveTool",
           description: "Interactive human-in-the-loop tool",
           parameters: z.object({
@@ -168,7 +168,6 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
         return null;
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,
@@ -237,24 +236,24 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       
       // Component with multiple HITL tools
       const MultipleHITLComponent: React.FC = () => {
-        const reviewTool: ReactHumanInTheLoop = {
+        const reviewTool: ReactHumanInTheLoop<{ changes: string[] }> = {
           name: "reviewTool",
           description: "Review changes",
           parameters: z.object({ changes: z.array(z.string()) }),
-          render: ({ args, status }) => (
+          render: ({ name, description, args, status }) => (
             <div data-testid="review-tool">
-              Review Tool - Status: {status} | Changes: {args.changes?.length || 0}
+              {name} - {description} | Status: {status} | Changes: {args.changes?.length || 0}
             </div>
           ),
         };
         
-        const confirmTool: ReactHumanInTheLoop = {
+        const confirmTool: ReactHumanInTheLoop<{ action: string }> = {
           name: "confirmTool",
           description: "Confirm action",
           parameters: z.object({ action: z.string() }),
-          render: ({ args, status }) => (
+          render: ({ name, description, args, status }) => (
             <div data-testid="confirm-tool">
-              Confirm Tool - Status: {status} | Action: {args.action}
+              {name} - {description} | Status: {status} | Action: {args.action}
             </div>
           ),
         };
@@ -265,7 +264,6 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
         return null;
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,
@@ -329,7 +327,7 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       const DynamicHITLComponent: React.FC<{ enabled: boolean }> = ({ enabled }) => {
         if (!enabled) return null;
         
-        const dynamicHitl: ReactHumanInTheLoop = {
+        const dynamicHitl: ReactHumanInTheLoop<{ data: string }> = {
           name: "dynamicHitl",
           description: "Dynamically registered HITL",
           parameters: z.object({ data: z.string() }),
@@ -363,7 +361,6 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
         );
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,

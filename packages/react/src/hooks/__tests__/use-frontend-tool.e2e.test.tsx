@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
 import { useFrontendTool } from "../use-frontend-tool";
 import { ReactFrontendTool } from "@/types";
+import { CopilotChat } from "@/components/chat/CopilotChat";
 import {
   MockStepwiseAgent,
   renderWithCopilotKit,
@@ -12,7 +13,7 @@ import {
   toolCallResultEvent,
   testId,
   waitForReactUpdate,
-} from "@/__tests__/utils/test-helpers.tsx";
+} from "@/__tests__/utils/test-helpers";
 
 describe("useFrontendTool E2E - Dynamic Registration", () => {
   describe("Register at runtime", () => {
@@ -33,12 +34,12 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         
         // Only use the hook when isRegistered is true
         if (isRegistered) {
-          const tool: ReactFrontendTool = {
+          const tool: ReactFrontendTool<{ message: string }> = {
             name: "dynamicTool",
             parameters: z.object({ message: z.string() }),
-            render: ({ args, result }) => (
+            render: ({ name, args, result }) => (
               <div data-testid="dynamic-tool-render">
-                Dynamic Tool: {args.message} | Result: {result ? JSON.stringify(result) : "pending"}
+                {name}: {args.message} | Result: {result ? JSON.stringify(result) : "pending"}
               </div>
             ),
             handler: async (args) => {
@@ -64,8 +65,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         ),
       });
       
-      // Import CopilotChat after other imports to avoid circular dependency
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       // Initially not registered
       expect(screen.getByTestId("dynamic-status").textContent).toBe("Not registered");
@@ -126,12 +125,12 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       const ToggleableToolComponent: React.FC<{ isVisible: boolean }> = ({ isVisible }) => {
         if (!isVisible) return null;
         
-        const tool: ReactFrontendTool = {
+        const tool: ReactFrontendTool<{ value: string }> = {
           name: "temporaryTool",
           parameters: z.object({ value: z.string() }),
-          render: ({ args }) => (
+          render: ({ name, args }) => (
             <div data-testid="temporary-tool">
-              Temporary: {args.value}
+              {name}: {args.value}
             </div>
           ),
         };
@@ -156,7 +155,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         );
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,
@@ -233,12 +231,12 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       
       // First component with initial tool definition
       const FirstToolComponent: React.FC = () => {
-        const tool: ReactFrontendTool = {
+        const tool: ReactFrontendTool<{ text: string }> = {
           name: "overridableTool",
           parameters: z.object({ text: z.string() }),
-          render: ({ args }) => (
+          render: ({ name, args }) => (
             <div data-testid="first-version">
-              First Version: {args.text}
+              First Version: {args.text} ({name})
             </div>
           ),
         };
@@ -251,12 +249,12 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       const SecondToolComponent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         if (!isActive) return null;
         
-        const tool: ReactFrontendTool = {
+        const tool: ReactFrontendTool<{ text: string }> = {
           name: "overridableTool",
           parameters: z.object({ text: z.string() }),
-          render: ({ args }) => (
+          render: ({ name, args }) => (
             <div data-testid="second-version">
-              Second Version (Override): {args.text}
+              Second Version (Override): {args.text} ({name})
             </div>
           ),
         };
@@ -282,7 +280,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         );
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,
@@ -354,14 +351,15 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       const agent = new MockStepwiseAgent();
       
       const IntegratedToolComponent: React.FC = () => {
-        const tool: ReactFrontendTool = {
+        const tool: ReactFrontendTool<{ action: string; target: string }> = {
           name: "chatIntegratedTool",
           parameters: z.object({
             action: z.string(),
             target: z.string(),
           }),
-          render: ({ args, result, status }) => (
+          render: ({ name, args, result, status }) => (
             <div data-testid="integrated-tool" className="tool-render">
+              <div>Tool: {name}</div>
               <div>Action: {args.action}</div>
               <div>Target: {args.target}</div>
               <div>Status: {status}</div>
@@ -377,7 +375,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         return null;
       };
       
-      const { CopilotChat } = await import("@/components/chat/CopilotChat");
       
       renderWithCopilotKit({
         agent,

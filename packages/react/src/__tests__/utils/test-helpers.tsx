@@ -57,7 +57,7 @@ export function renderWithCopilotKit({
   frontendTools?: any[];
   humanInTheLoop?: any[];
   children?: React.ReactNode;
-}) {
+}): ReturnType<typeof render> {
   const agents = agent ? { default: agent } : undefined;
   
   return render(
