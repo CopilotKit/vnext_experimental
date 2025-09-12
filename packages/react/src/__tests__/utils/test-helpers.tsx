@@ -59,7 +59,7 @@ export function renderWithCopilotKit({
   children?: React.ReactNode;
 }): ReturnType<typeof render> {
   const agents = agent ? { default: agent } : undefined;
-  
+
   return render(
     <CopilotKitProvider
       agents={agents}
@@ -67,6 +67,7 @@ export function renderWithCopilotKit({
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
     >
+      ´
       {children || (
         <div style={{ height: 400 }}>
           <CopilotChat />
@@ -155,5 +156,5 @@ export function testId(prefix: string): string {
  * Small delay helper for React updates (use sparingly)
  */
 export function waitForReactUpdate(ms: number = 50): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
