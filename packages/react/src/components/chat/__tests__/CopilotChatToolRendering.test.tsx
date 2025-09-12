@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
-import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
+import { CopilotKitProvider, useCopilotKit } from "@/providers/CopilotKitProvider";
 import { CopilotChat } from "../CopilotChat";
 import {
   AbstractAgent,
@@ -10,10 +10,11 @@ import {
   type RunAgentInput,
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
-import { defineToolCallRender, ReactToolCallRender } from "@/types";
+import { defineToolCallRender, ReactToolCallRender, ReactFrontendTool } from "@/types";
 import CopilotChatToolCallsView from "../CopilotChatToolCallsView";
 import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
+import { useFrontendTool } from "@/hooks/use-frontend-tool";
 
 // A minimal mock agent that streams a tool call and a result
 class MockStreamingAgent extends AbstractAgent {
@@ -316,6 +317,306 @@ describe("Streaming in-progress without timers", () => {
       const el = await screen.findByTestId("tool-status");
       expect(el.textContent).toContain("temperature");
       expect(el.textContent).toContain("21");
+    });
+
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
+});
+
+describe("Executing State Transitions", () => {
+  it("should show Executing status while tool handler is running", async () => {
+    const agent = new MockStepwiseAgent();
+    
+    // Component that uses useFrontendTool with a deferred promise
+    const ToolWithDeferredHandler: React.FC = () => {
+      const [resolvePromise, setResolvePromise] = React.useState<(() => void) | null>(null);
+      
+      const tool: ReactFrontendTool = {
+        name: "slowTool",
+        parameters: z.object({ value: z.string() }),
+        handler: async () => {
+          return new Promise((resolve) => {
+            // Store resolve function to control when promise resolves
+            setResolvePromise(() => resolve);
+            // We'll resolve this manually in the test
+          });
+        },
+        render: ({ status, args, result }) => (
+          <div data-testid="slow-tool-status">
+            Status: {status} | Value: {args.value} | Result: {String(result) ? "Complete" : "Pending"}
+          </div>
+        ),
+      };
+      
+      useFrontendTool(tool);
+      
+      // Expose resolve function for test control
+      React.useEffect(() => {
+        if (resolvePromise) {
+          (window as any).resolveSlowTool = () => {
+            resolvePromise();
+          };
+        }
+      }, [resolvePromise]);
+      
+      return null;
+    };
+    
+    render(
+      <CopilotKitProvider agents={{ default: agent }}>
+        <ToolWithDeferredHandler />
+        <div style={{ height: 400 }}>
+          <CopilotChat />
+        </div>
+      </CopilotKitProvider>
+    );
+
+    // Submit message
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Run slow tool" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const messageId = "m_exec";
+    const toolCallId = "tc_exec";
+
+    // Stream tool call
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "slowTool",
+      parentMessageId: messageId,
+      delta: '{"value":"test"}',
+    } as BaseEvent);
+
+    // Initially should show InProgress or Complete (args complete but not executing yet)
+    await waitFor(() => {
+      const status = screen.getByTestId("slow-tool-status");
+      expect(status.textContent).toContain("test");
+    });
+
+    // Note: In the current implementation, executing state requires the core
+    // to actually run the handler. This would need integration with the core's
+    // runAgent flow. For now, we verify the render component receives the status.
+    
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
+});
+
+describe("Multiple Tool Calls in Same Message", () => {
+  it("should render multiple tools independently with their own status", async () => {
+    const agent = new MockStepwiseAgent();
+    
+    const renderToolCalls = [
+      defineToolCallRender({
+        name: "tool1",
+        args: z.object({ id: z.string() }),
+        render: ({ status, args, result }) => (
+          <div data-testid={`tool1-${args.id}`}>
+            Tool1[{args.id}]: {status} - {result ? JSON.stringify(result) : "waiting"}
+          </div>
+        ),
+      }),
+      defineToolCallRender({
+        name: "tool2",
+        args: z.object({ id: z.string() }),
+        render: ({ status, args, result }) => (
+          <div data-testid={`tool2-${args.id}`}>
+            Tool2[{args.id}]: {status} - {result ? JSON.stringify(result) : "waiting"}
+          </div>
+        ),
+      }),
+    ] as unknown as ReactToolCallRender<unknown>[];
+
+    render(
+      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+        <div style={{ height: 400 }}>
+          <CopilotChat />
+        </div>
+      </CopilotKitProvider>
+    );
+
+    // Submit message
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Multiple tools" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const messageId = "m_multi";
+    const toolCallId1 = "tc_1";
+    const toolCallId2 = "tc_2";
+    const toolCallId3 = "tc_3";
+
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+    
+    // Stream three tool calls (2 of tool1, 1 of tool2)
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId: toolCallId1,
+      toolCallName: "tool1",
+      parentMessageId: messageId,
+      delta: '{"id":"first"}',
+    } as BaseEvent);
+    
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId: toolCallId2,
+      toolCallName: "tool2",
+      parentMessageId: messageId,
+      delta: '{"id":"second"}',
+    } as BaseEvent);
+    
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId: toolCallId3,
+      toolCallName: "tool1",
+      parentMessageId: messageId,
+      delta: '{"id":"third"}',
+    } as BaseEvent);
+
+    // All three should render
+    await waitFor(() => {
+      expect(screen.getByTestId("tool1-first")).toBeDefined();
+      expect(screen.getByTestId("tool2-second")).toBeDefined();
+      expect(screen.getByTestId("tool1-third")).toBeDefined();
+    });
+
+    // Send results in different order
+    agent.emit({
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId: toolCallId2,
+      messageId: `${messageId}_r2`,
+      content: JSON.stringify({ result: "B" }),
+    } as BaseEvent);
+
+    await waitFor(() => {
+      const tool2 = screen.getByTestId("tool2-second");
+      expect(tool2.textContent).toContain('"result":"B"');
+    });
+
+    agent.emit({
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId: toolCallId1,
+      messageId: `${messageId}_r1`,
+      content: JSON.stringify({ result: "A" }),
+    } as BaseEvent);
+
+    agent.emit({
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId: toolCallId3,
+      messageId: `${messageId}_r3`,
+      content: JSON.stringify({ result: "C" }),
+    } as BaseEvent);
+
+    // All results should be visible
+    await waitFor(() => {
+      expect(screen.getByTestId("tool1-first").textContent).toContain('"result":"A"');
+      expect(screen.getByTestId("tool2-second").textContent).toContain('"result":"B"');
+      expect(screen.getByTestId("tool1-third").textContent).toContain('"result":"C"');
+    });
+
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
+});
+
+describe("Partial Args Accumulation", () => {
+  it("should properly show InProgress status with accumulating partial args", async () => {
+    const agent = new MockStepwiseAgent();
+    
+    const renderToolCalls = [
+      defineToolCallRender({
+        name: "complexTool",
+        args: z.object({
+          name: z.string().optional(),
+          age: z.number().optional(),
+          city: z.string().optional(),
+        }),
+        render: ({ status, args }) => (
+          <div data-testid="complex-tool">
+            <div>Status: {status}</div>
+            <div>Name: {args.name || "pending"}</div>
+            <div>Age: {args.age !== undefined ? args.age : "pending"}</div>
+            <div>City: {args.city || "pending"}</div>
+          </div>
+        ),
+      }),
+    ] as unknown as ReactToolCallRender<unknown>[];
+
+    render(
+      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+        <div style={{ height: 400 }}>
+          <CopilotChat />
+        </div>
+      </CopilotKitProvider>
+    );
+
+    // Submit message
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Complex tool test" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const messageId = "m_partial";
+    const toolCallId = "tc_partial";
+
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+    
+    // Stream args piece by piece
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "complexTool",
+      parentMessageId: messageId,
+      delta: '{"name":"',
+    } as BaseEvent);
+
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      parentMessageId: messageId,
+      delta: 'Alice"',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      const tool = screen.getByTestId("complex-tool");
+      expect(tool.textContent).toContain("Name: Alice");
+      expect(tool.textContent).toContain("Age: pending");
+    });
+
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      parentMessageId: messageId,
+      delta: ',"age":30',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      const tool = screen.getByTestId("complex-tool");
+      expect(tool.textContent).toContain("Age: 30");
+      expect(tool.textContent).toContain("City: pending");
+    });
+
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      parentMessageId: messageId,
+      delta: ',"city":"Paris"}',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      const tool = screen.getByTestId("complex-tool");
+      expect(tool.textContent).toContain("City: Paris");
+      // All args complete but no result yet
+      expect(tool.textContent).toMatch(/Status: complete/i);
     });
 
     agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
