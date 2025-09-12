@@ -28,6 +28,7 @@ export interface CopilotKitContextValue {
   setCurrentRenderToolCalls: React.Dispatch<
     React.SetStateAction<ReactToolCallRender<unknown>[]>
   >;
+  executingToolCallIds: ReadonlySet<string>;
 }
 
 // Create the CopilotKit context
@@ -36,6 +37,7 @@ const CopilotKitContext = createContext<CopilotKitContextValue>({
   renderToolCalls: [],
   currentRenderToolCalls: [],
   setCurrentRenderToolCalls: () => {},
+  executingToolCallIds: new Set(),
 });
 
 // Provider props interface
@@ -115,6 +117,9 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<
     ReactToolCallRender<unknown>[]
   >([]);
+  const [executingToolCallIds, setExecutingToolCallIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
 
   // Note: warnings for array identity changes are handled by useStableArrayProp
 
@@ -228,6 +233,29 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setAgents(agents);
   }, [runtimeUrl, headers, properties, agents]);
 
+  // Subscribe to tool executing lifecycle from core
+  useEffect(() => {
+    const unsubscribe = (copilotkit as any).subscribe({
+      onToolExecutingStart: ({ toolCallId }: { toolCallId: string }) => {
+        setExecutingToolCallIds((prev) => {
+          if (prev.has(toolCallId)) return prev;
+          const next = new Set(prev);
+          next.add(toolCallId);
+          return next;
+        });
+      },
+      onToolExecutingEnd: ({ toolCallId }: { toolCallId: string }) => {
+        setExecutingToolCallIds((prev) => {
+          if (!prev.has(toolCallId)) return prev;
+          const next = new Set(prev);
+          next.delete(toolCallId);
+          return next;
+        });
+      },
+    });
+    return () => unsubscribe();
+  }, [copilotkit]);
+
   return (
     <CopilotKitContext.Provider
       value={{
@@ -235,6 +263,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
         renderToolCalls: allRenderToolCalls,
         currentRenderToolCalls,
         setCurrentRenderToolCalls,
+        executingToolCallIds,
       }}
     >
       {children}

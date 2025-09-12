@@ -34,6 +34,10 @@ export interface CopilotKitCoreSubscriber {
   onRuntimeLoadError?: (event: {
     copilotkit: CopilotKitCore;
   }) => void | Promise<void>;
+  onToolExecutingStart?: (event: { toolCallId: string; agentId?: string }) =>
+    void | Promise<void>;
+  onToolExecutingEnd?: (event: { toolCallId: string; agentId?: string }) =>
+    void | Promise<void>;
 }
 
 export class CopilotKitCore {
@@ -53,6 +57,7 @@ export class CopilotKitCore {
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
+  private executingToolCallIds: Set<string> = new Set();
 
   constructor({
     runtimeUrl,
@@ -249,6 +254,18 @@ export class CopilotKitCore {
               if (tool?.handler) {
                 const args = JSON.parse(toolCall.function.arguments);
                 try {
+                  // mark executing start
+                  this.executingToolCallIds.add(toolCall.id);
+                  for (const sub of this.subscribers) {
+                    try {
+                      await sub.onToolExecutingStart?.({
+                        toolCallId: toolCall.id,
+                        agentId,
+                      });
+                    } catch (err) {
+                      logger.error("Subscriber onToolExecutingStart error:", err);
+                    }
+                  }
                   const result = await tool.handler(args);
                   if (result === undefined || result === null) {
                     toolCallResult = "";
@@ -259,6 +276,19 @@ export class CopilotKitCore {
                   }
                 } catch (error) {
                   toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+                } finally {
+                  // mark executing end
+                  this.executingToolCallIds.delete(toolCall.id);
+                  for (const sub of this.subscribers) {
+                    try {
+                      await sub.onToolExecutingEnd?.({
+                        toolCallId: toolCall.id,
+                        agentId,
+                      });
+                    } catch (err) {
+                      logger.error("Subscriber onToolExecutingEnd error:", err);
+                    }
+                  }
                 }
               }
 
@@ -294,6 +324,18 @@ export class CopilotKitCore {
                   args: JSON.parse(toolCall.function.arguments),
                 };
                 try {
+                  // mark executing start
+                  this.executingToolCallIds.add(toolCall.id);
+                  for (const sub of this.subscribers) {
+                    try {
+                      await sub.onToolExecutingStart?.({
+                        toolCallId: toolCall.id,
+                        agentId,
+                      });
+                    } catch (err) {
+                      logger.error("Subscriber onToolExecutingStart error:", err);
+                    }
+                  }
                   const result = await wildcardTool.handler(wildcardArgs);
                   if (result === undefined || result === null) {
                     toolCallResult = "";
@@ -304,6 +346,19 @@ export class CopilotKitCore {
                   }
                 } catch (error) {
                   toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
+                } finally {
+                  // mark executing end
+                  this.executingToolCallIds.delete(toolCall.id);
+                  for (const sub of this.subscribers) {
+                    try {
+                      await sub.onToolExecutingEnd?.({
+                        toolCallId: toolCall.id,
+                        agentId,
+                      });
+                    } catch (err) {
+                      logger.error("Subscriber onToolExecutingEnd error:", err);
+                    }
+                  }
                 }
               }
 
@@ -332,5 +387,9 @@ export class CopilotKitCore {
     }
 
     return runAgentResult;
+  }
+
+  getExecutingToolCallIds(): ReadonlySet<string> {
+    return this.executingToolCallIds;
   }
 }

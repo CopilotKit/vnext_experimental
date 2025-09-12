@@ -4,6 +4,7 @@ import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigu
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
+import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -16,6 +17,7 @@ export function CopilotChat({
   ...props
 }: CopilotChatProps) {
   const { agent } = useAgent({ agentId });
+  const { copilotkit } = useCopilotKit();
   const [isLoading, setIsLoading] = useState(false);
   threadId = threadId ?? useMemo(() => randomUUID(), []);
 
@@ -27,12 +29,9 @@ export function CopilotChat({
   useEffect(() => {
     const connect = async () => {
       setIsLoading(true);
-      await agent?.runAgent(
-        {
-          forwardedProps: { __copilotkitConnect: true },
-        },
-        subscriber
-      );
+      if (agent) {
+        await copilotkit.runAgent({ agent, agentId });
+      }
       setIsLoading(false);
     };
     if (agent) {
@@ -44,7 +43,7 @@ export function CopilotChat({
       }
     }
     return () => {};
-  }, [threadId, agent]);
+  }, [threadId, agent, copilotkit, agentId]);
 
   const [inputValue, setInputValue] = useState("");
   const onSubmitInput = useCallback(
@@ -56,10 +55,12 @@ export function CopilotChat({
         content: value,
       });
       setIsLoading(true);
-      await agent?.runAgent({}, subscriber);
+      if (agent) {
+        await copilotkit.runAgent({ agent, agentId });
+      }
       setIsLoading(false);
     },
-    [agent]
+    [agent, copilotkit, agentId]
   );
 
   const mergedProps = merge(

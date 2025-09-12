@@ -17,7 +17,7 @@ export interface UseRenderToolCallProps {
  * @returns A function that takes a tool call and optional tool message and returns the rendered component
  */
 export function useRenderToolCall() {
-  const { currentRenderToolCalls } = useCopilotKit();
+  const { currentRenderToolCalls, executingToolCallIds } = useCopilotKit();
 
   const renderToolCall = useCallback(
     ({
@@ -52,6 +52,17 @@ export function useRenderToolCall() {
             result={toolMessage.content}
           />
         );
+      } else if (executingToolCallIds.has(toolCall.id)) {
+        // Tool is currently executing
+        return (
+          <RenderComponent
+            key={toolCall.id}
+            // args should be complete when executing; but pass whatever we have
+            args={args}
+            status={ToolCallStatus.Executing}
+            result={undefined}
+          />
+        );
       } else if (isLoading) {
         // In progress status when loading
         return (
@@ -74,7 +85,7 @@ export function useRenderToolCall() {
         );
       }
     },
-    [currentRenderToolCalls]
+    [currentRenderToolCalls, executingToolCallIds]
   );
 
   return renderToolCall;
