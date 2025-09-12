@@ -21,6 +21,8 @@ Runner: Vitest + Testing Library (jsdom).
 - Render harness: `<CopilotKitProvider agents={{ default: agent }} renderToolCalls={...}><CopilotChat/></CopilotKitProvider>`.
 - Dynamic registration harness: test components that mount/unmount and call `useFrontendTool` and/or `useHumanInTheLoop` during the test.
 
+Note: Executing status is subscribed to directly in `useRenderToolCall` (from core). No provider wiring is required for executing state.
+
 
 ## E2E Scenarios
 

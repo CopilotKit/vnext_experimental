@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
@@ -17,7 +17,32 @@ export interface UseRenderToolCallProps {
  * @returns A function that takes a tool call and optional tool message and returns the rendered component
  */
 export function useRenderToolCall() {
-  const { currentRenderToolCalls, executingToolCallIds } = useCopilotKit();
+  const { currentRenderToolCalls, copilotkit } = useCopilotKit();
+  const [executingToolCallIds, setExecutingToolCallIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+
+  useEffect(() => {
+    const unsubscribe = (copilotkit as any).subscribe({
+      onToolExecutingStart: ({ toolCallId }: { toolCallId: string }) => {
+        setExecutingToolCallIds((prev) => {
+          if (prev.has(toolCallId)) return prev;
+          const next = new Set(prev);
+          next.add(toolCallId);
+          return next;
+        });
+      },
+      onToolExecutingEnd: ({ toolCallId }: { toolCallId: string }) => {
+        setExecutingToolCallIds((prev) => {
+          if (!prev.has(toolCallId)) return prev;
+          const next = new Set(prev);
+          next.delete(toolCallId);
+          return next;
+        });
+      },
+    });
+    return () => unsubscribe();
+  }, [copilotkit]);
 
   const renderToolCall = useCallback(
     ({
