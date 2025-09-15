@@ -17,8 +17,9 @@ describe('CopilotKitCore - Agent Constraints', () => {
     };
     
     core.addTool(tool);
-    expect(core.tools['testTool']).toBeDefined();
-    expect(core.tools['testTool']?.agentId).toBe('agent1');
+    const retrievedTool = core.getTool({ toolName: 'testTool', agentId: 'agent1' });
+    expect(retrievedTool).toBeDefined();
+    expect(retrievedTool?.agentId).toBe('agent1');
   });
 
   it('should add multiple tools with different agentIds', () => {
@@ -48,14 +49,17 @@ describe('CopilotKitCore - Agent Constraints', () => {
     core.addTool(agent1Tool);
     core.addTool(agent2Tool);
     
-    expect(core.tools['globalTool']).toBeDefined();
-    expect(core.tools['globalTool']?.agentId).toBeUndefined();
+    const retrievedGlobalTool = core.getTool({ toolName: 'globalTool' });
+    expect(retrievedGlobalTool).toBeDefined();
+    expect(retrievedGlobalTool?.agentId).toBeUndefined();
     
-    expect(core.tools['agent1Tool']).toBeDefined();
-    expect(core.tools['agent1Tool']?.agentId).toBe('agent1');
+    const retrievedAgent1Tool = core.getTool({ toolName: 'agent1Tool', agentId: 'agent1' });
+    expect(retrievedAgent1Tool).toBeDefined();
+    expect(retrievedAgent1Tool?.agentId).toBe('agent1');
     
-    expect(core.tools['agent2Tool']).toBeDefined();
-    expect(core.tools['agent2Tool']?.agentId).toBe('agent2');
+    const retrievedAgent2Tool = core.getTool({ toolName: 'agent2Tool', agentId: 'agent2' });
+    expect(retrievedAgent2Tool).toBeDefined();
+    expect(retrievedAgent2Tool?.agentId).toBe('agent2');
   });
 
   it('should preserve all FrontendTool properties including agentId', () => {
@@ -75,7 +79,7 @@ describe('CopilotKitCore - Agent Constraints', () => {
     
     core.addTool(tool);
     
-    const addedTool = core.tools['fullTool'];
+    const addedTool = core.getTool({ toolName: 'fullTool', agentId: 'specificAgent' });
     expect(addedTool).toBeDefined();
     expect(addedTool?.name).toBe('fullTool');
     expect(addedTool?.description).toBe('A complete tool');

@@ -25,9 +25,10 @@ describe('CopilotKitService - Wildcard Tool - Frontend', () => {
     
     const service = TestBed.inject(CopilotKitService);
     
-    expect(service.copilotkit.tools['*']).toBeDefined();
-    expect(service.copilotkit.tools['*'].name).toBe('*');
-    expect(service.copilotkit.tools['*'].handler).toBe(wildcardHandler);
+    const wildcardTool = service.copilotkit.getTool({ toolName: '*' });
+    expect(wildcardTool).toBeDefined();
+    expect(wildcardTool.name).toBe('*');
+    expect(wildcardTool.handler).toBe(wildcardHandler);
   });
 });
 
@@ -52,8 +53,8 @@ describe('CopilotKitService - Wildcard Tool - With Specific', () => {
     
     const service = TestBed.inject(CopilotKitService);
     
-    expect(service.copilotkit.tools['specific']).toBeDefined();
-    expect(service.copilotkit.tools['*']).toBeDefined();
+    expect(service.copilotkit.getTool('specific']).toBeDefined();
+    expect(service.copilotkit.getTool({ toolName: '*' })).toBeDefined();
   });
 });
 
@@ -106,7 +107,8 @@ describe('CopilotKitService - Wildcard Tool - With AgentId', () => {
     
     const service = TestBed.inject(CopilotKitService);
     
-    expect(service.copilotkit.tools['*'].agentId).toBe('specificAgent');
+    const wildcardTool = service.copilotkit.getTool({ toolName: '*', agentId: 'specificAgent' });
+    expect(wildcardTool.agentId).toBe('specificAgent');
   });
 });
 
@@ -137,7 +139,7 @@ describe('CopilotKitService - Wildcard Human-in-the-Loop', () => {
     
     const service = TestBed.inject(CopilotKitService);
     
-    expect(service.copilotkit.tools['*']).toBeDefined();
+    expect(service.copilotkit.getTool({ toolName: '*' })).toBeDefined();
     const renderToolCalls = service.renderToolCalls();
     const wildcardRender = renderToolCalls.find(r => r.name === '*');
     expect(wildcardRender).toBeDefined();
@@ -170,7 +172,8 @@ describe('CopilotKitService - Wildcard HITL With AgentId', () => {
     
     const service = TestBed.inject(CopilotKitService);
     
-    expect(service.copilotkit.tools['*'].agentId).toBe('agent1');
+    const wildcardTool = service.copilotkit.getTool({ toolName: '*', agentId: 'agent1' });
+    expect(wildcardTool.agentId).toBe('agent1');
     const renderToolCalls = service.renderToolCalls();
     const wildcardRender = renderToolCalls.find(r => r.name === '*');
     expect(wildcardRender?.agentId).toBe('agent1');
@@ -280,8 +283,8 @@ describe('CopilotKitService - Combined wildcard and specific', () => {
     const service = TestBed.inject(CopilotKitService);
     
     // Both tools should be registered
-    expect(service.copilotkit.tools['specificTool']).toBeDefined();
-    expect(service.copilotkit.tools['*']).toBeDefined();
+    expect(service.copilotkit.getTool('specificTool']).toBeDefined();
+    expect(service.copilotkit.getTool({ toolName: '*' })).toBeDefined();
     
     // Both renders should be registered
     const renderToolCalls = service.renderToolCalls();

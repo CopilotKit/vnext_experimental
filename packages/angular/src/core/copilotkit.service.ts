@@ -373,9 +373,9 @@ export class CopilotKitService {
     // Sync tools - computed from frontend tools and human-in-the-loop
     effect(() => {
       const tools = this._allTools();
-      // Update copilotkit.tools directly since there's no setTools method
       untracked(() => {
-        this.copilotkit.tools = tools;
+        // Convert object to array for the new API
+        this.copilotkit.setTools(Object.values(tools));
       });
     });
   }

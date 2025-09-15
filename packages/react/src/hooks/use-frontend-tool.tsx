@@ -12,18 +12,21 @@ export function useFrontendTool<
     const name = tool.name;
 
     // Always register/override the tool for this name on mount
-    if (name in copilotkit.tools) {
+    if (copilotkit.getTool({ toolName: name, agentId: tool.agentId })) {
       console.warn(
-        `Tool '${name}' already exists. Overriding with latest registration.`
+        `Tool '${name}' already exists for agent '${tool.agentId || 'global'}'. Overriding with latest registration.`
       );
-      copilotkit.removeTool(name);
+      copilotkit.removeTool(name, tool.agentId);
     }
     copilotkit.addTool(tool);
 
-    // Register/override renderer by name
+    // Register/override renderer by name and agentId
     if (tool.render) {
       setCurrentRenderToolCalls((prev) => {
-        const replaced = prev.filter((rc) => rc.name !== name);
+        // Only replace renderers with the same name AND agentId
+        const replaced = prev.filter((rc) => 
+          !(rc.name === name && rc.agentId === tool.agentId)
+        );
         return [
           ...replaced,
           {
@@ -37,7 +40,7 @@ export function useFrontendTool<
     }
 
     return () => {
-      copilotkit.removeTool(name);
+      copilotkit.removeTool(name, tool.agentId);
       // we are intentionally not removing the render here so that the tools can still render in the chat history
     };
     // Depend only on stable keys to avoid re-register loops due to object identity

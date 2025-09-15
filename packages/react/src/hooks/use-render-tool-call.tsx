@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
+import { useCopilotAgentId } from "./use-copilot-agent-id";
 import { partialJSONParse } from "@copilotkitnext/shared";
 
 export interface UseRenderToolCallProps {
@@ -18,6 +19,7 @@ export interface UseRenderToolCallProps {
  */
 export function useRenderToolCall() {
   const { currentRenderToolCalls, copilotkit } = useCopilotKit();
+  const agentId = useCopilotAgentId();
   const [executingToolCallIds, setExecutingToolCallIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
@@ -51,11 +53,21 @@ export function useRenderToolCall() {
       isLoading,
     }: UseRenderToolCallProps): React.ReactElement | null => {
       // Find the render config for this tool call by name
-      // Also check for wildcard (*) renders if no exact match
-      const renderConfig =
-        currentRenderToolCalls.find(
-          (rc) => rc.name === toolCall.function.name
-        ) || currentRenderToolCalls.find((rc) => rc.name === "*");
+      // For rendering, we show all tool calls regardless of agentId
+      // The agentId scoping only affects handler execution (in core)
+      // Priority order:
+      // 1. Exact match by name (prefer agent-specific if multiple exist)
+      // 2. Wildcard (*) renderer
+      const exactMatches = currentRenderToolCalls.filter(
+        (rc) => rc.name === toolCall.function.name
+      );
+      
+      // If multiple renderers with same name exist, prefer the one matching our agentId
+      const renderConfig = 
+        exactMatches.find((rc) => rc.agentId === agentId) ||
+        exactMatches.find((rc) => !rc.agentId) ||
+        exactMatches[0] ||
+        currentRenderToolCalls.find((rc) => rc.name === "*");
 
       if (!renderConfig) {
         return null;
@@ -116,7 +128,7 @@ export function useRenderToolCall() {
         );
       }
     },
-    [currentRenderToolCalls, executingToolCallIds]
+    [currentRenderToolCalls, executingToolCallIds, agentId]
   );
 
   return renderToolCall;

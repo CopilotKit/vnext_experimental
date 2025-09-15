@@ -75,9 +75,10 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["testTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["testTool"]?.name).toBe("testTool");
-      expect(result.current.copilotkit.tools["testTool"]?.handler).toBe(mockHandler);
+      const tool = result.current.copilotkit.getTool({ toolName: "testTool" });
+      expect(tool).toBeDefined();
+      expect(tool?.name).toBe("testTool");
+      expect(tool?.handler).toBe(mockHandler);
     });
 
     it("includes render components from frontend tools", () => {
@@ -164,9 +165,10 @@ describe("CopilotKitProvider", () => {
       });
 
       // Check that the tool is registered
-      expect(result.current.copilotkit.tools["approvalTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["approvalTool"]?.name).toBe("approvalTool");
-      expect(result.current.copilotkit.tools["approvalTool"]?.handler).toBeDefined();
+      const tool = result.current.copilotkit.getTool({ toolName: "approvalTool" });
+      expect(tool).toBeDefined();
+      expect(tool?.name).toBe("approvalTool");
+      expect(tool?.handler).toBeDefined();
       
       // Check that render component is registered
       const approvalTool = result.current.renderToolCalls.find(rc => rc.name === "approvalTool");
@@ -195,7 +197,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const handler = result.current.copilotkit.tools["interactiveTool"]?.handler;
+      const handler = result.current.copilotkit.getTool({ toolName: "interactiveTool" })?.handler;
       expect(handler).toBeDefined();
 
       // Call the handler and check for warning
@@ -278,8 +280,8 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["frontendTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["humanTool"]).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "frontendTool" })).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "humanTool" })).toBeDefined();
     });
 
     it("should handle agentId in frontend tools", () => {
@@ -308,10 +310,12 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["globalTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["globalTool"]?.agentId).toBeUndefined();
-      expect(result.current.copilotkit.tools["agentSpecificTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["agentSpecificTool"]?.agentId).toBe("specificAgent");
+      const globalTool = result.current.copilotkit.getTool({ toolName: "globalTool" });
+      expect(globalTool).toBeDefined();
+      expect(globalTool?.agentId).toBeUndefined();
+      const agentTool = result.current.copilotkit.getTool({ toolName: "agentSpecificTool", agentId: "specificAgent" });
+      expect(agentTool).toBeDefined();
+      expect(agentTool?.agentId).toBe("specificAgent");
     });
 
     it("combines render components from all sources", () => {
@@ -435,7 +439,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(Object.keys(result.current.copilotkit.tools)).toHaveLength(0);
+      expect(result.current.copilotkit.getAllTools()).toHaveLength(0);
       expect(Object.keys(result.current.renderToolCalls)).toHaveLength(0);
     });
 
@@ -456,7 +460,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["noRenderTool"]).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "noRenderTool" })).toBeDefined();
       const noRenderTool = result.current.renderToolCalls.find(rc => rc.name === "noRenderTool");
       expect(noRenderTool).toBeUndefined();
     });
@@ -481,7 +485,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["followUpTool"]?.followUp).toBe(false);
+      expect(result.current.copilotkit.getTool({ toolName: "followUpTool" })?.followUp).toBe(false);
     });
   });
 });

@@ -1,4 +1,5 @@
 import { useAgent } from "@/hooks/use-agent";
+import { CopilotAgentIdProvider } from "@/hooks/use-copilot-agent-id";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
@@ -78,14 +79,16 @@ export function CopilotChat({
   );
 
   return (
-    <CopilotChatConfigurationProvider
-      inputValue={inputValue}
-      onSubmitInput={onSubmitInput}
-      onChangeInput={setInputValue}
-    >
-      <CopilotChatView
-        {...{ messages: agent?.messages ?? [], ...mergedProps }}
-      />
-    </CopilotChatConfigurationProvider>
+    <CopilotAgentIdProvider agentId={agentId}>
+      <CopilotChatConfigurationProvider
+        inputValue={inputValue}
+        onSubmitInput={onSubmitInput}
+        onChangeInput={setInputValue}
+      >
+        <CopilotChatView
+          {...{ messages: agent?.messages ?? [], ...mergedProps }}
+        />
+      </CopilotChatConfigurationProvider>
+    </CopilotAgentIdProvider>
   );
 }

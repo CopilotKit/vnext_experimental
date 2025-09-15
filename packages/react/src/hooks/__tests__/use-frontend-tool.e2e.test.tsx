@@ -984,7 +984,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
   });
 
   describe("Agent Scoping", () => {
-    it.skip("FAILS - Core bug: multiple tools with same name but different agentId override each other", async () => {
+    it("supports multiple tools with same name but different agentId", async () => {
       // Track which handlers are called
       let defaultAgentHandlerCalled = false;
       let specificAgentHandlerCalled = false;
@@ -1099,8 +1099,8 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       await waitFor(() => {
         // The default agent tool should render (it's scoped to our agent)
         const defaultTool = screen.queryByTestId("default-agent-tool");
-        expect(defaultTool).toBeDefined();
-        expect(defaultTool?.textContent).toContain("test message");
+        expect(defaultTool).not.toBeNull();
+        expect(defaultTool!.textContent).toContain("test message");
       });
       
       // Complete the agent to trigger handler execution

@@ -162,17 +162,13 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   // Combine all tools for CopilotKitCore
   const allTools = useMemo(() => {
-    const tools: Record<string, FrontendTool> = {};
+    const tools: FrontendTool[] = [];
 
     // Add frontend tools
-    frontendToolsList.forEach((tool) => {
-      tools[tool.name] = tool;
-    });
+    tools.push(...frontendToolsList);
 
     // Add processed human-in-the-loop tools
-    processedHumanInTheLoopTools.tools.forEach((tool) => {
-      tools[tool.name] = tool;
-    });
+    tools.push(...processedHumanInTheLoopTools.tools);
 
     return tools;
   }, [frontendToolsList, processedHumanInTheLoopTools]);
