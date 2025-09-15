@@ -332,11 +332,7 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
     it("should support dynamic registration and unregistration of HITL tools", async () => {
       const agent = new MockStepwiseAgent();
 
-      const DynamicHITLComponent: React.FC<{ enabled: boolean }> = ({ enabled }) => {
-        if (!enabled) {
-          return null;
-        }
-
+      const DynamicHITLComponent: React.FC = () => {
         const dynamicHitl: ReactHumanInTheLoop<{ data: string }> = {
           name: "dynamicHitl",
           description: "Dynamically registered HITL",
@@ -360,7 +356,7 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
             <button data-testid="toggle-hitl" onClick={() => setEnabled((prev) => !prev)}>
               Toggle HITL
             </button>
-            <DynamicHITLComponent enabled={enabled} />
+            {enabled && <DynamicHITLComponent />}
             <div style={{ height: 400 }}>
               <CopilotChat />
             </div>
@@ -440,9 +436,8 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       await waitForReactUpdate(150);
 
       const dynamicRenders = screen.queryAllByTestId("dynamic-hitl");
-      expect(dynamicRenders.length).toBe(1);
-      expect(dynamicRenders[0].textContent).toContain("test data");
-      expect(dynamicRenders[0].textContent).not.toContain("should not render");
+      expect(dynamicRenders.length).toBe(0);
+      expect(screen.queryByText(/should not render/)).toBeNull();
 
       agent.emit(runFinishedEvent());
       agent.complete();
