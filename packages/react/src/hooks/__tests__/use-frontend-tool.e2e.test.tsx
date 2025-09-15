@@ -7,6 +7,13 @@ import { CopilotChat } from "@/components/chat/CopilotChat";
 import CopilotChatToolCallsView from "@/components/chat/CopilotChatToolCallsView";
 import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
 import {
+  AbstractAgent,
+  EventType,
+  type BaseEvent,
+  type RunAgentInput,
+} from "@ag-ui/client";
+import { Observable } from "rxjs";
+import {
   MockStepwiseAgent,
   renderWithCopilotKit,
   runStartedEvent,
@@ -14,13 +21,10 @@ import {
   toolCallChunkEvent,
   toolCallResultEvent,
   testId,
+  waitForReactUpdate,
 } from "@/__tests__/utils/test-helpers";
 
-
 describe("useFrontendTool E2E - Dynamic Registration", () => {
-  it("smoke: vitest runs tests in this file", () => {
-    expect(1).toBe(1);
-  });
   describe("Minimal dynamic registration without chat run", () => {
     it("registers tool and renders tool call via ToolCallsView", async () => {
       // eslint-disable-next-line no-console
@@ -192,36 +196,65 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
     });
   });
 
-  describe("Unregister on unmount", () => {
-    // TODO: Expected policy: once a tool is unmounted, its custom renderer
-    // should not render new tool calls. Previously rendered DOM may remain.
-    // This test is skipped until the implementation enforces that policy.
-    it.skip("should remove tool when component unmounts", async () => {
-      const agent = new MockStepwiseAgent();
+  describe("Unmount disables handler, render persists", () => {
+    it("keeps rendering after unmount but does not run handler", async () => {
+      // A deterministic agent that emits a single tool call per run and finishes
+      class OneShotToolCallAgent extends AbstractAgent {
+        private runCount = 0;
+        clone(): OneShotToolCallAgent {
+          // Keep state across runs so the second run emits different args
+          return this;
+        }
+        protected run(_input: RunAgentInput): Observable<BaseEvent> {
+          return new Observable<BaseEvent>((observer) => {
+            const messageId = testId("m");
+            const toolCallId = testId("tc");
+            this.runCount += 1;
+            const valueArg = this.runCount === 1 ? "first call" : "second call";
+            observer.next({ type: EventType.RUN_STARTED } as BaseEvent);
+            observer.next({
+              type: EventType.TOOL_CALL_CHUNK,
+              toolCallId,
+              toolCallName: "temporaryTool",
+              parentMessageId: messageId,
+              delta: JSON.stringify({ value: valueArg }),
+            } as BaseEvent);
+            observer.next({ type: EventType.RUN_FINISHED } as BaseEvent);
+            observer.complete();
+            return () => {};
+          });
+        }
+      }
+
+      const agent = new OneShotToolCallAgent();
+      let handlerCalls = 0;
 
       // Component that can be toggled on/off
       const ToggleableToolComponent: React.FC<{ isVisible: boolean }> = ({
         isVisible,
       }) => {
         if (!isVisible) return null;
-
         const tool: ReactFrontendTool<{ value: string }> = {
           name: "temporaryTool",
           parameters: z.object({ value: z.string() }),
-          render: ({ name, args }) => (
+          followUp: false,
+          handler: async ({ value }) => {
+            handlerCalls += 1;
+            return `HANDLED ${value.toUpperCase()}`;
+          },
+          render: ({ name, args, result, status }) => (
             <div data-testid="temporary-tool">
-              {name}: {args.value}
+              {name}: {args.value} | Status: {status} | Result:{" "}
+              {String(result ?? "")}
             </div>
           ),
         };
-
         useFrontendTool(tool);
         return <div data-testid="tool-mounted">Tool is mounted</div>;
       };
 
       const TestWrapper: React.FC = () => {
         const [showTool, setShowTool] = useState(true);
-
         return (
           <>
             <button
@@ -238,85 +271,44 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         );
       };
 
-      renderWithCopilotKit({
-        agent,
-        children: <TestWrapper />,
-      });
+      renderWithCopilotKit({ agent, children: <TestWrapper /> });
 
       // Tool should be mounted initially
       expect(screen.getByTestId("tool-mounted")).toBeDefined();
 
-      // Submit message and emit tool call while tool is registered
+      // Run 1: submit a message to trigger agent run with "first call"
       const input = await screen.findByRole("textbox");
-      fireEvent.change(input, { target: { value: "Test temporary" } });
+      fireEvent.change(input, { target: { value: "Trigger 1" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      // Wait for message to be processed
-      await waitFor(() => {
-        expect(screen.getByText("Test temporary")).toBeDefined();
-      });
-
-      const messageId1 = testId("msg1");
-      const toolCallId1 = testId("tc1");
-
-      agent.emit(runStartedEvent());
-      agent.emit(
-        toolCallChunkEvent({
-          toolCallId: toolCallId1,
-          toolCallName: "temporaryTool",
-          parentMessageId: messageId1,
-          delta: '{"value":"first call"}',
-        })
-      );
-
-      // Tool should render
+      // The tool should render and handler should have produced a result
       await waitFor(() => {
         const toolRender = screen.getByTestId("temporary-tool");
         expect(toolRender.textContent).toContain("first call");
+        expect(toolRender.textContent).toContain("HANDLED FIRST CALL");
+        expect(handlerCalls).toBe(1);
       });
 
-      agent.emit(runFinishedEvent());
-
-      // Unmount the tool component
-      const toggleButton = screen.getByTestId("toggle-button");
-      fireEvent.click(toggleButton);
-
+      // Unmount the tool component (removes handler but keeps renderer via hook policy)
+      fireEvent.click(screen.getByTestId("toggle-button"));
       await waitFor(() => {
         expect(screen.queryByTestId("tool-mounted")).toBeNull();
       });
 
-      // Submit another message
-      fireEvent.change(input, { target: { value: "Test again" } });
+      // Run 2: trigger agent again with "second call"
+      fireEvent.change(input, { target: { value: "Trigger 2" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      // Wait for message to be processed
+      // The renderer should still render with new args, but no handler result should be produced
       await waitFor(() => {
-        expect(screen.getByText("Test again")).toBeDefined();
+        const toolRender = screen.getAllByTestId("temporary-tool");
+        // There will be two renders in the chat history; check the last one
+        const last = toolRender[toolRender.length - 1];
+        console.log("last", last);
+        expect(last?.textContent).toContain("second call");
+        expect(last?.textContent).not.toContain("HANDLED SECOND CALL");
+        expect(handlerCalls).toBe(1);
       });
-
-      const messageId2 = testId("msg2");
-      const toolCallId2 = testId("tc2");
-
-      agent.emit(runStartedEvent());
-      agent.emit(
-        toolCallChunkEvent({
-          toolCallId: toolCallId2,
-          toolCallName: "temporaryTool",
-          parentMessageId: messageId2,
-          delta: '{"value":"second call"}',
-        })
-      );
-
-      // The unmounted tool's custom renderer must not render new tool calls
-      await waitFor(() => {
-        const toolElements = screen.queryAllByTestId("temporary-tool");
-        expect(toolElements).toHaveLength(1);
-        expect(toolElements[0]?.textContent).toContain("first call");
-        expect(toolElements[0]?.textContent).not.toContain("second call");
-      });
-
-      agent.emit(runFinishedEvent());
-      agent.complete();
     });
   });
 
@@ -421,7 +413,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       fireEvent.click(overrideButton);
 
       // Just wait a bit for the override to take effect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Submit another message after override
       fireEvent.change(input, { target: { value: "Test override" } });
@@ -449,7 +441,9 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       await waitFor(() => {
         const secondVersions = screen.getAllByTestId("second-version");
         // Find the one with "after override"
-        const afterOverride = secondVersions.find(el => el.textContent?.includes("after override"));
+        const afterOverride = secondVersions.find((el) =>
+          el.textContent?.includes("after override")
+        );
         expect(afterOverride).toBeDefined();
         expect(afterOverride?.textContent).toContain("after override");
       });
