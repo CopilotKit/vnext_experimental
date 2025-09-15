@@ -1352,9 +1352,9 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
 
   describe("Error Propagation", () => {
     it("should propagate handler errors to renderer", async () => {
-      // Note: Error propagation may work differently in test environment
-      // This test verifies basic error handling
       const agent = new MockStepwiseAgent();
+      let handlerCalled = false;
+      let errorThrown = false;
 
       const ErrorTool: React.FC = () => {
         const tool: ReactFrontendTool<{
@@ -1366,14 +1366,19 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             shouldError: z.boolean(),
             message: z.string(),
           }),
-          render: ({ args, status }) => (
+          render: ({ args, status, result }) => (
             <div data-testid="error-tool">
               <div data-testid="error-status">{status}</div>
               <div data-testid="error-message">{args.message}</div>
+              <div data-testid="error-result">
+                {result ? String(result) : "no-result"}
+              </div>
             </div>
           ),
           handler: async (args) => {
+            handlerCalled = true;
             if (args.shouldError) {
+              errorThrown = true;
               throw new Error(`Handler error: ${args.message}`);
             }
             return { success: true, message: args.message };
@@ -1406,27 +1411,45 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       });
 
       // Emit tool call that will error
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+      
       agent.emit(runStartedEvent());
       agent.emit(
         toolCallChunkEvent({
-          toolCallId: testId("tc"),
+          toolCallId,
           toolCallName: "errorTool",
-          parentMessageId: testId("msg"),
+          parentMessageId: messageId,
           delta: '{"shouldError":true,"message":"test error"}',
         })
       );
-
+      agent.emit(runFinishedEvent());
+      
       // Wait for tool to render
       await waitFor(() => {
         expect(screen.getByTestId("error-tool")).toBeDefined();
       });
-
-      // Handler should attempt to execute and throw error
-      // In test environment, error handling may vary
-      // We just verify the tool renders and can handle error scenarios
-
-      agent.emit(runFinishedEvent());
+      
+      // Complete the agent to trigger handler execution
       agent.complete();
+      
+      // Wait for handler to be called and error to be thrown
+      await waitFor(() => {
+        expect(handlerCalled).toBe(true);
+        expect(errorThrown).toBe(true);
+      });
+      
+      // Wait for the error result to be displayed in the renderer
+      await waitFor(() => {
+        const resultEl = screen.getByTestId("error-result");
+        const resultText = resultEl.textContent || "";
+        expect(resultText).not.toBe("no-result");
+        expect(resultText).toContain("Error:");
+        expect(resultText).toContain("Handler error: test error");
+      });
+      
+      // Status should be complete even with error
+      expect(screen.getByTestId("error-status").textContent).toBe(ToolCallStatus.Complete);
     });
 
     it("should handle async errors in handler", async () => {

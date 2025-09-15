@@ -119,10 +119,10 @@ Partially Implemented Tests:
    - Solution: The test needed to properly trigger handler execution by completing the agent after emitting tool calls
    - The handler now executes and all three states are captured correctly
 
-5. Error Propagation
-   - Simplified: Doesn't verify that the error result is actually propagated to the renderer
-   - Comment: "Error propagation may work differently in test environment"
-   - Just verifies the tool renders, doesn't check if error messages appear in the result
+5. Error Propagation - ✅ RESOLVED
+   - Fixed: Now properly verifies that error results are propagated to the renderer
+   - The test confirms that when a handler throws an error, it's caught by the core and passed to the renderer as `Error: <message>`
+   - Verifies both that the handler executes and that the error message appears in the result
 
 6. Agent Scoping
    - Simplified: Only tests global tools, not agent-specific scoping
