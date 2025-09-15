@@ -2,11 +2,10 @@ import React, { useEffect, useState, useReducer } from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
 import { useFrontendTool } from "../use-frontend-tool";
-import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { ReactFrontendTool } from "@/types";
 import { CopilotChat } from "@/components/chat/CopilotChat";
 import CopilotChatToolCallsView from "@/components/chat/CopilotChatToolCallsView";
-import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
+import { AssistantMessage, Message } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import {
   AbstractAgent,
@@ -862,8 +861,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       const agent = new MockStepwiseAgent();
 
       const ExecutingStateTool: React.FC = () => {
-        const { copilotkit } = useCopilotKit();
-        
         const tool: ReactFrontendTool<{ value: string }> = {
           name: "executingStateTool",
           parameters: z.object({ value: z.string() }),
@@ -872,7 +869,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             useEffect(() => {
               if (!statusHistory.includes(status)) {
                 statusHistory.push(status);
-                console.log("Status changed to:", status);
               }
             }, [status]);
 
@@ -887,31 +883,18 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             );
           },
           handler: async (args) => {
-            console.log("Handler started");
             handlerStarted = true;
-            // Give React a chance to re-render with Executing status
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Simulate async work to allow React to re-render with Executing status
+            await new Promise((resolve) => setTimeout(resolve, 50));
             handlerCompleted = true;
             handlerResult = { processed: args.value.toUpperCase() };
-            console.log("Handler completed with result:", handlerResult);
             return handlerResult;
           },
         };
 
         useFrontendTool(tool);
         
-        // Subscribe to execution events to verify they're being called
-        useEffect(() => {
-          const unsubscribe = copilotkit.subscribe({
-            onToolExecutingStart: ({ toolCallId }) => {
-              console.log("Tool executing start:", toolCallId);
-            },
-            onToolExecutingEnd: ({ toolCallId }) => {
-              console.log("Tool executing end:", toolCallId);
-            },
-          });
-          return unsubscribe;
-        }, [copilotkit]);
+        // No need for subscription here - the hook already subscribes internally
         
         return null;
       };
@@ -961,11 +944,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         expect(screen.getByTestId("tool-status").textContent).toBe(ToolCallStatus.InProgress);
       });
       
-      console.log("Tool rendered with InProgress status");
-      
-      // NOW complete the agent to trigger handler execution
-      // This delay ensures React has rendered the InProgress state
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Complete the agent to trigger handler execution
       agent.complete();
       
       // Trigger another run to process the tool
@@ -976,9 +955,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         },
         { timeout: 3000 }
       );
-      
-      console.log("Handler started! Waiting for completion...");
-      
       // Wait for handler to complete
       await waitFor(
         () => {
@@ -986,35 +962,24 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         },
         { timeout: 3000 }
       );
-      
-      console.log("Handler completed!");
-      
-      // Check final status
-      const finalStatus = screen.getByTestId("tool-status").textContent;
-      console.log("Final status:", finalStatus);
-      console.log("Status history:", statusHistory);
-      
-      // The test passes if we see the handler execute
-      // Even if we don't capture the Executing state perfectly due to timing
+      // Verify the handler executed
       expect(handlerStarted).toBe(true);
       expect(handlerCompleted).toBe(true);
       expect(handlerResult).toEqual({ processed: "TEST" });
       
-      // Verify we at least saw InProgress and Complete
+      // Verify we captured all three states in the correct order
       expect(statusHistory).toContain(ToolCallStatus.InProgress);
-      // The Executing state might be missed due to timing, but handler should have run
-      if (statusHistory.includes(ToolCallStatus.Executing)) {
-        console.log("Successfully captured Executing state!");
-        const inProgressIndex = statusHistory.indexOf(ToolCallStatus.InProgress);
-        const executingIndex = statusHistory.indexOf(ToolCallStatus.Executing);
-        const completeIndex = statusHistory.indexOf(ToolCallStatus.Complete);
-        expect(executingIndex).toBeGreaterThan(inProgressIndex);
-        if (completeIndex >= 0) {
-          expect(completeIndex).toBeGreaterThan(executingIndex);
-        }
-      } else {
-        console.log("Executing state not captured, but handler did execute");
-      }
+      expect(statusHistory).toContain(ToolCallStatus.Executing);
+      expect(statusHistory).toContain(ToolCallStatus.Complete);
+      
+      // Verify the order is correct
+      const inProgressIndex = statusHistory.indexOf(ToolCallStatus.InProgress);
+      const executingIndex = statusHistory.indexOf(ToolCallStatus.Executing);
+      const completeIndex = statusHistory.indexOf(ToolCallStatus.Complete);
+      
+      expect(inProgressIndex).toBeGreaterThanOrEqual(0);
+      expect(executingIndex).toBeGreaterThan(inProgressIndex);
+      expect(completeIndex).toBeGreaterThan(executingIndex);
     });
   });
 
