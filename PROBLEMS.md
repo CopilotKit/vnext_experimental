@@ -103,33 +103,29 @@ All core functionality is still tested by the 194 passing tests.
 Placeholder/Incomplete Tests:
 
 1. Wildcard Handler (describe("Wildcard Handler"))
+   - Status: Empty placeholder
+   - Comment: "Skip this test for now - wildcard functionality may not be fully implemented or may require special handling
 
+in the test environment"
 
-    - Status: Empty placeholder
-    - Comment: "Skip this test for now - wildcard functionality may not be fully implemented or may require special handling
+2. Renderer Precedence (describe("Renderer Precedence")) - Status: Empty placeholder - Comment: "Skip this test for now - wildcard precedence may require special handling"
 
-in the test environment" 2. Renderer Precedence (describe("Renderer Precedence")) - Status: Empty placeholder - Comment: "Skip this test for now - wildcard precedence may require special handling" 3. Async Error Handler (it("should handle async errors in handler")) - Status: Empty placeholder - Comment: "Skip detailed async error test - covered by basic error test above"
+3. Async Error Handler (it("should handle async errors in handler")) - Status: Empty placeholder - Comment: "Skip detailed async error test - covered by basic error test above"
 
 Partially Implemented Tests:
 
 4. Tool Executing State
-
-
-    - Simplified: Removed check for ToolCallStatus.Executing state
-    - Comment: "The handler execution might not trigger Executing status in test environment"
-    - Only verifies InProgress → Complete transition, not the full InProgress → Executing → Complete flow
+   - Simplified: Removed check for ToolCallStatus.Executing state
+   - Comment: "The handler execution might not trigger Executing status in test environment"
+   - Only verifies InProgress → Complete transition, not the full InProgress → Executing → Complete flow
 
 5. Error Propagation
-
-
-    - Simplified: Doesn't verify that the error result is actually propagated to the renderer
-    - Comment: "Error propagation may work differently in test environment"
-    - Just verifies the tool renders, doesn't check if error messages appear in the result
+   - Simplified: Doesn't verify that the error result is actually propagated to the renderer
+   - Comment: "Error propagation may work differently in test environment"
+   - Just verifies the tool renders, doesn't check if error messages appear in the result
 
 6. Agent Scoping
-
-
-    - Simplified: Only tests global tools, not agent-specific scoping
-    - Comment: "Testing agent-specific scoping would require multiple agents configured which is beyond the scope of this
+   - Simplified: Only tests global tools, not agent-specific scoping
+   - Comment: "Testing agent-specific scoping would require multiple agents configured which is beyond the scope of this
 
 unit test"
