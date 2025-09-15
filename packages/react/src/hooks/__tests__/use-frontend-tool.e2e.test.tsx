@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-// eslint-disable-next-line no-console
-console.log("[E2E] use-frontend-tool.e2e.test.tsx loaded");
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
 import { useFrontendTool } from "../use-frontend-tool";
@@ -18,12 +16,9 @@ import {
   testId,
 } from "@/__tests__/utils/test-helpers";
 
-console.log("IN THE FILE");
 
 describe("useFrontendTool E2E - Dynamic Registration", () => {
   it("smoke: vitest runs tests in this file", () => {
-    // eslint-disable-next-line no-console
-    console.log("[E2E] smoke test executed");
     expect(1).toBe(1);
   });
   describe("Minimal dynamic registration without chat run", () => {
@@ -83,8 +78,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       });
       // Explicitly unmount to avoid any lingering handles
       ui.unmount();
-      // eslint-disable-next-line no-console
-      console.log("[E2E] minimal dynamic registration test end");
     });
   });
   describe("Register at runtime", () => {
@@ -200,6 +193,9 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
   });
 
   describe("Unregister on unmount", () => {
+    // TODO: Expected policy: once a tool is unmounted, its custom renderer
+    // should not render new tool calls. Previously rendered DOM may remain.
+    // This test is skipped until the implementation enforces that policy.
     it.skip("should remove tool when component unmounts", async () => {
       const agent = new MockStepwiseAgent();
 
@@ -311,24 +307,13 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         })
       );
 
-      // Tool should render with a fallback or not at all for the second call
-      // Since the tool is unmounted, it might show a fallback renderer
-      // Wait a bit to see what renders
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Check if the second tool call rendered
-      const toolElements = screen.queryAllByTestId("temporary-tool");
-      // If it rendered twice, the unmount didn't work properly
-      // The test is revealing a bug - when a tool is unmounted, its renderer is removed
-      // but already rendered tool calls remain in the DOM
-      // New tool calls after unmount should not render with the custom renderer
-      if (toolElements.length === 2) {
-        // This means the tool still rendered after unmount - this is the bug
-        expect(toolElements[1].textContent).not.toContain("second call");
-      } else {
+      // The unmounted tool's custom renderer must not render new tool calls
+      await waitFor(() => {
+        const toolElements = screen.queryAllByTestId("temporary-tool");
         expect(toolElements).toHaveLength(1);
         expect(toolElements[0]?.textContent).toContain("first call");
-      }
+        expect(toolElements[0]?.textContent).not.toContain("second call");
+      });
 
       agent.emit(runFinishedEvent());
       agent.complete();
