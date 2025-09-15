@@ -114,10 +114,10 @@ in the test environment"
 
 Partially Implemented Tests:
 
-4. Tool Executing State
-   - Simplified: Removed check for ToolCallStatus.Executing state
-   - Comment: "The handler execution might not trigger Executing status in test environment"
-   - Only verifies InProgress → Complete transition, not the full InProgress → Executing → Complete flow
+4. Tool Executing State - ✅ RESOLVED
+   - Fixed: Now properly verifies the full InProgress → Executing → Complete flow
+   - Solution: The test needed to properly trigger handler execution by completing the agent after emitting tool calls
+   - The handler now executes and all three states are captured correctly
 
 5. Error Propagation
    - Simplified: Doesn't verify that the error result is actually propagated to the renderer
