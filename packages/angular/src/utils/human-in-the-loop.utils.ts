@@ -1,28 +1,28 @@
-import { 
-  DestroyRef, 
-  inject, 
-  signal, 
+import {
+  DestroyRef,
+  inject,
+  signal,
   Signal,
   Type,
-  TemplateRef
-} from '@angular/core';
-import { CopilotKitService } from '../core/copilotkit.service';
-import { 
-  AngularHumanInTheLoop, 
+  TemplateRef,
+} from "@angular/core";
+import { CopilotKit } from "../core/copilotkit";
+import {
+  AngularHumanInTheLoop,
   ToolCallStatus,
   HumanInTheLoopState,
   HumanInTheLoopProps,
-  AngularFrontendTool
-} from '../core/copilotkit.types';
+  AngularFrontendTool,
+} from "../core/copilotkit.types";
 
 /**
  * Registers a human-in-the-loop tool that requires user interaction.
  * Must be called within an injection context.
  * Automatically cleans up when the component/service is destroyed.
- * 
+ *
  * @param tool - The human-in-the-loop tool configuration
  * @returns The tool ID
- * 
+ *
  * @example
  * ```typescript
  * export class ApprovalComponent {
@@ -35,16 +35,16 @@ import {
  * }
  * ```
  */
-export function registerHumanInTheLoop<T extends Record<string, any> = Record<string, any>>(
-  tool: AngularHumanInTheLoop<T>
-): string {
-  const service = inject(CopilotKitService);
+export function registerHumanInTheLoop<
+  T extends Record<string, any> = Record<string, any>,
+>(tool: AngularHumanInTheLoop<T>): string {
+  const service = inject(CopilotKit);
   const destroyRef = inject(DestroyRef);
-  
+
   // Create state management
   const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let resolvePromise: ((result: unknown) => void) | null = null;
-  
+
   // Create respond function
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
@@ -53,7 +53,7 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
       resolvePromise = null;
     }
   };
-  
+
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
@@ -61,29 +61,33 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
       resolvePromise = resolve;
     });
   };
-  
+
   // Create enhanced render function
-  const enhancedRender = createEnhancedRender(tool.render, statusSignal, respond);
-  
+  const enhancedRender = createEnhancedRender(
+    tool.render,
+    statusSignal,
+    respond
+  );
+
   // Create the frontend tool
   const frontendTool: AngularFrontendTool<T> = {
     ...tool,
     handler,
-    render: enhancedRender
+    render: enhancedRender,
   };
-  
+
   // Add the tool (returns void, so we use the tool name as ID)
   service.copilotkit.addTool(frontendTool);
   const toolId = frontendTool.name;
-  
+
   // Register tool render if provided
   if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
       name: frontendTool.name,
-      render: frontendTool.render
+      render: frontendTool.render,
     });
   }
-  
+
   // Cleanup on destroy
   destroyRef.onDestroy(() => {
     service.copilotkit.removeTool(toolId);
@@ -91,25 +95,25 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
       service.unregisterToolRender(frontendTool.name);
     }
   });
-  
+
   return toolId;
 }
 
 /**
  * Adds a human-in-the-loop tool with explicit service parameter.
  * Returns a cleanup function.
- * 
- * @param service - The CopilotKitService instance
+ *
+ * @param service - The CopilotKit instance
  * @param tool - The human-in-the-loop tool configuration
  * @returns Cleanup function to remove the tool
- * 
+ *
  * @example
  * ```typescript
  * export class MyComponent implements OnInit, OnDestroy {
  *   private cleanup?: () => void;
- *   
- *   constructor(private copilotkit: CopilotKitService) {}
- *   
+ *
+ *   constructor(private copilotkit: CopilotKit) {}
+ *
  *   ngOnInit() {
  *     this.cleanup = addHumanInTheLoop(this.copilotkit, {
  *       name: 'requireApproval',
@@ -118,21 +122,20 @@ export function registerHumanInTheLoop<T extends Record<string, any> = Record<st
  *       render: ApprovalDialogComponent
  *     });
  *   }
- *   
+ *
  *   ngOnDestroy() {
  *     this.cleanup?.();
  *   }
  * }
  * ```
  */
-export function addHumanInTheLoop<T extends Record<string, any> = Record<string, any>>(
-  service: CopilotKitService,
-  tool: AngularHumanInTheLoop<T>
-): () => void {
+export function addHumanInTheLoop<
+  T extends Record<string, any> = Record<string, any>,
+>(service: CopilotKit, tool: AngularHumanInTheLoop<T>): () => void {
   // Create state management
   const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let resolvePromise: ((result: unknown) => void) | null = null;
-  
+
   // Create respond function
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
@@ -141,7 +144,7 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
       resolvePromise = null;
     }
   };
-  
+
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
@@ -149,29 +152,33 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
       resolvePromise = resolve;
     });
   };
-  
+
   // Create enhanced render function
-  const enhancedRender = createEnhancedRender(tool.render, statusSignal, respond);
-  
+  const enhancedRender = createEnhancedRender(
+    tool.render,
+    statusSignal,
+    respond
+  );
+
   // Create the frontend tool
   const frontendTool: AngularFrontendTool<T> = {
     ...tool,
     handler,
-    render: enhancedRender
+    render: enhancedRender,
   };
-  
+
   // Add the tool (returns void, so we use the tool name as ID)
   service.copilotkit.addTool(frontendTool);
   const toolId = frontendTool.name;
-  
+
   // Register tool render if provided
   if (frontendTool.render) {
     service.registerToolRender(frontendTool.name, {
       name: frontendTool.name,
-      render: frontendTool.render
+      render: frontendTool.render,
     });
   }
-  
+
   // Return cleanup function
   return () => {
     service.copilotkit.removeTool(toolId);
@@ -183,11 +190,11 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
 
 /**
  * Creates a human-in-the-loop tool with dynamic update capabilities.
- * 
- * @param service - The CopilotKitService instance
+ *
+ * @param service - The CopilotKit instance
  * @param tool - The human-in-the-loop tool configuration
  * @returns Object with status signal, update and destroy methods
- * 
+ *
  * @example
  * ```typescript
  * export class MyComponent {
@@ -197,27 +204,31 @@ export function addHumanInTheLoop<T extends Record<string, any> = Record<string,
  *     args: z.object({ action: z.string() }),
  *     render: ApprovalDialogComponent
  *   });
- *   
+ *
  *   updateDescription(newDesc: string) {
  *     this.humanInTheLoop.update({ description: newDesc });
  *   }
- *   
+ *
  *   ngOnDestroy() {
  *     this.humanInTheLoop.destroy();
  *   }
  * }
  * ```
  */
-export function createHumanInTheLoop<T extends Record<string, any> = Record<string, any>>(
-  service: CopilotKitService,
+export function createHumanInTheLoop<
+  T extends Record<string, any> = Record<string, any>,
+>(
+  service: CopilotKit,
   tool: AngularHumanInTheLoop<T>
-): HumanInTheLoopState & { update: (updates: Partial<AngularHumanInTheLoop<T>>) => void } {
+): HumanInTheLoopState & {
+  update: (updates: Partial<AngularHumanInTheLoop<T>>) => void;
+} {
   // Create state management
   const statusSignal = signal<ToolCallStatus>(ToolCallStatus.InProgress);
   let currentTool = { ...tool };
-  let toolId: string = '';
+  let toolId: string = "";
   let resolvePromise: ((result: unknown) => void) | null = null;
-  
+
   // Create respond function
   const respond = async (result: unknown): Promise<void> => {
     if (resolvePromise) {
@@ -226,7 +237,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
       resolvePromise = null;
     }
   };
-  
+
   // Create handler that returns a Promise
   const handler = async (_args: T): Promise<unknown> => {
     return new Promise((resolve) => {
@@ -234,35 +245,39 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
       resolvePromise = resolve;
     });
   };
-  
+
   // Function to add the tool
   const addTool = () => {
     // Create enhanced render function
-    const enhancedRender = createEnhancedRender(currentTool.render, statusSignal, respond);
-    
+    const enhancedRender = createEnhancedRender(
+      currentTool.render,
+      statusSignal,
+      respond
+    );
+
     // Create the frontend tool
     const frontendTool: AngularFrontendTool<T> = {
       ...currentTool,
       handler,
-      render: enhancedRender
+      render: enhancedRender,
     };
-    
+
     // Add tool (returns void, so we use the tool name as ID)
     service.copilotkit.addTool(frontendTool);
     toolId = frontendTool.name;
-    
+
     // Register tool render if provided
     if (frontendTool.render) {
       service.registerToolRender(frontendTool.name, {
         name: frontendTool.name,
-        render: frontendTool.render
+        render: frontendTool.render,
       });
     }
   };
-  
+
   // Initialize the tool
   addTool();
-  
+
   return {
     status: statusSignal.asReadonly(),
     toolId,
@@ -272,10 +287,10 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
       if (currentTool.render) {
         service.unregisterToolRender(currentTool.name);
       }
-      
+
       // Update tool configuration
       currentTool = { ...currentTool, ...updates };
-      
+
       // Re-add with new configuration
       addTool();
     },
@@ -284,7 +299,7 @@ export function createHumanInTheLoop<T extends Record<string, any> = Record<stri
       if (currentTool.render) {
         service.unregisterToolRender(currentTool.name);
       }
-    }
+    },
   };
 }
 
@@ -304,7 +319,7 @@ function createEnhancedRender<T extends Record<string, any>>(
     // For now, we'll return the original and rely on prop injection
     return originalRender;
   }
-  
+
   // For templates, we can't easily wrap them
   // The template context will be enhanced in the render component
   return originalRender;
@@ -314,14 +329,14 @@ function createEnhancedRender<T extends Record<string, any>>(
  * Helper function to check if a value is a component class
  */
 function isComponentClass(value: any): value is Type<any> {
-  return typeof value === 'function' && value.prototype;
+  return typeof value === "function" && value.prototype;
 }
 
 /**
  * Enhanced component wrapper for human-in-the-loop.
  * This would be used internally by the tool render component to inject
  * the respond function based on status.
- * 
+ *
  * @internal
  */
 export function enhancePropsForHumanInTheLoop<T>(
@@ -333,24 +348,24 @@ export function enhancePropsForHumanInTheLoop<T>(
     return {
       ...props,
       status: ToolCallStatus.Executing,
-      respond
+      respond,
     } as HumanInTheLoopProps<T>;
   }
-  
+
   if (status === ToolCallStatus.Complete) {
     return {
       ...props,
       status: ToolCallStatus.Complete,
-      result: typeof props.result === 'string' ? props.result : '',
-      respond: undefined
+      result: typeof props.result === "string" ? props.result : "",
+      respond: undefined,
     } as HumanInTheLoopProps<T>;
   }
-  
+
   // InProgress
   return {
     ...props,
     status: ToolCallStatus.InProgress,
     result: undefined,
-    respond: undefined
+    respond: undefined,
   } as HumanInTheLoopProps<T>;
 }

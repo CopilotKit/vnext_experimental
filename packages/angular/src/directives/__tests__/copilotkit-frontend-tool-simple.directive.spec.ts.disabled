@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitFrontendToolDirective } from "../copilotkit-frontend-tool.directive";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKitFrontendTool } from "../copilotkit-frontend-tool";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 
@@ -18,14 +18,14 @@ vi.mock("@copilotkitnext/core", () => ({
   })),
 }));
 
-describe("CopilotKitFrontendToolDirective - Simple", () => {
-  let service: CopilotKitService;
+describe("CopilotKitFrontendTool - Simple", () => {
+  let service: CopilotKit;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideCopilotKit({})],
     });
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
   });
 
   afterEach(() => {

@@ -1,4 +1,5 @@
-import { AssistantMessage } from '@ag-ui/client';
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import { AssistantMessage } from "@ag-ui/client";
 
 // Context interfaces for slots
 export interface AssistantMessageMarkdownRendererContext {

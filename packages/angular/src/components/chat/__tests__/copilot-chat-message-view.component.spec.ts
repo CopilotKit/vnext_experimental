@@ -1,32 +1,30 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, TemplateRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CopilotChatMessageViewComponent } from '../copilot-chat-message-view.component';
-import { CopilotChatMessageViewCursorComponent } from '../copilot-chat-message-view-cursor.component';
-import { CopilotChatAssistantMessageComponent } from '../copilot-chat-assistant-message.component';
-import { CopilotChatUserMessageComponent } from '../copilot-chat-user-message.component';
-import { CopilotChatViewHandlersService } from '../copilot-chat-view-handlers.service';
+import { CopilotChatMessageView } from '../copilot-chat-message-view';
+import { CopilotChatMessageViewCursor } from '../copilot-chat-message-view-cursor';
+import { CopilotChatAssistantMessage } from '../copilot-chat-assistant-message';
+import { CopilotChatUserMessage } from '../copilot-chat-user-message';
+import { CopilotChatViewHandlers } from '../copilot-chat-view-handlers';
 import { provideCopilotKit } from '../../../core/copilotkit.providers';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { Message, AssistantMessage, UserMessage } from '@ag-ui/client';
 
-describe('CopilotChatMessageViewComponent', () => {
-  let component: CopilotChatMessageViewComponent;
-  let fixture: ComponentFixture<CopilotChatMessageViewComponent>;
+describe('CopilotChatMessageView', () => {
+  let component: CopilotChatMessageView;
+  let fixture: ComponentFixture<CopilotChatMessageView>;
 
   const mockAssistantMessage: AssistantMessage = {
     id: 'assistant-1',
     role: 'assistant',
-    content: 'Hello! How can I help you today?',
-    createdAt: new Date()
-  };
+    content: 'Hello! How can I help you today?'
+  } as any;
 
   const mockUserMessage: UserMessage = {
     id: 'user-1',
     role: 'user',
-    content: 'I need help with Angular',
-    createdAt: new Date()
-  };
+    content: 'I need help with Angular'
+  } as any;
 
   const mockMessages: Message[] = [
     mockUserMessage,
@@ -37,19 +35,19 @@ describe('CopilotChatMessageViewComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
-        CopilotChatMessageViewCursorComponent,
-        CopilotChatAssistantMessageComponent,
-        CopilotChatUserMessageComponent
+        CopilotChatMessageView,
+        CopilotChatMessageViewCursor,
+        CopilotChatAssistantMessage,
+        CopilotChatUserMessage
       ],
       providers: [
         provideCopilotKit({}),
         provideCopilotChatConfiguration({}),
-        CopilotChatViewHandlersService
+        CopilotChatViewHandlers
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CopilotChatMessageViewComponent);
+    fixture = TestBed.createComponent(CopilotChatMessageView);
     component = fixture.componentInstance;
   });
 
@@ -67,7 +65,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should render empty when no messages provided', () => {
-      component.messages = [];
+      fixture.componentRef.setInput('messages', []);
       fixture.detectChanges();
       
       const messages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message, copilot-chat-user-message');
@@ -75,7 +73,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should render single assistant message', () => {
-      component.messages = [mockAssistantMessage];
+      fixture.componentRef.setInput('messages', [mockAssistantMessage]);
       fixture.detectChanges();
       
       const assistantMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message');
@@ -86,7 +84,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should render single user message', () => {
-      component.messages = [mockUserMessage];
+      fixture.componentRef.setInput('messages', [mockUserMessage]);
       fixture.detectChanges();
       
       const assistantMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message');
@@ -97,7 +95,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should render mixed messages in order', () => {
-      component.messages = mockMessages;
+      fixture.componentRef.setInput('messages', mockMessages);
       fixture.detectChanges();
       
       const assistantMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message');
@@ -114,7 +112,7 @@ describe('CopilotChatMessageViewComponent', () => {
         content: 'System message'
       };
       
-      component.messages = [...mockMessages, invalidMessage];
+      fixture.componentRef.setInput('messages', [...mockMessages, invalidMessage]);
       fixture.detectChanges();
       
       const assistantMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message');
@@ -125,7 +123,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should handle null/undefined messages gracefully', () => {
-      component.messages = [null as any, undefined as any, mockAssistantMessage];
+      fixture.componentRef.setInput('messages', [null as any, undefined as any, mockAssistantMessage]);
       fixture.detectChanges();
       
       const assistantMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message');
@@ -140,7 +138,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should show cursor when showCursor is true', () => {
-      component.showCursor = true;
+      fixture.componentRef.setInput('showCursor', true);
       fixture.detectChanges();
       
       const cursor = fixture.nativeElement.querySelector('copilot-chat-message-view-cursor');
@@ -148,7 +146,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should apply correct cursor classes', () => {
-      component.showCursor = true;
+      fixture.componentRef.setInput('showCursor', true);
       fixture.detectChanges();
       
       const cursorDiv = fixture.nativeElement.querySelector('copilot-chat-message-view-cursor div');
@@ -162,8 +160,8 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should apply custom cursor class', () => {
-      component.showCursor = true;
-      component.cursorClass = 'custom-cursor-class';
+      fixture.componentRef.setInput('showCursor', true);
+      fixture.componentRef.setInput('cursorClass', 'custom-cursor-class');
       fixture.detectChanges();
       
       const cursorDiv = fixture.nativeElement.querySelector('copilot-chat-message-view-cursor div');
@@ -177,7 +175,7 @@ describe('CopilotChatMessageViewComponent', () => {
 
   describe('CSS Class Handling', () => {
     it('should merge custom classes with default classes', () => {
-      component.inputClass = 'custom-container-class';
+      fixture.componentRef.setInput('inputClass', 'custom-container-class');
       fixture.detectChanges();
       
       const container = fixture.nativeElement.querySelector('div');
@@ -187,8 +185,8 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should apply custom assistant message class', () => {
-      component.messages = [mockAssistantMessage];
-      component.assistantMessageClass = 'custom-assistant-class';
+      fixture.componentRef.setInput('messages', [mockAssistantMessage]);
+      fixture.componentRef.setInput('assistantMessageClass', 'custom-assistant-class');
       fixture.detectChanges();
       
       const assistantMessage = fixture.nativeElement.querySelector('copilot-chat-assistant-message');
@@ -197,8 +195,8 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should apply custom user message class', () => {
-      component.messages = [mockUserMessage];
-      component.userMessageClass = 'custom-user-class';
+      fixture.componentRef.setInput('messages', [mockUserMessage]);
+      fixture.componentRef.setInput('userMessageClass', 'custom-user-class');
       fixture.detectChanges();
       
       const userMessage = fixture.nativeElement.querySelector('copilot-chat-user-message');
@@ -209,7 +207,7 @@ describe('CopilotChatMessageViewComponent', () => {
 
   describe('Slot System', () => {
     it('should pass message prop to assistant message component', () => {
-      component.messages = [mockAssistantMessage];
+      fixture.componentRef.setInput('messages', [mockAssistantMessage]);
       fixture.detectChanges();
       
       const assistantMessage = fixture.nativeElement.querySelector('copilot-chat-assistant-message');
@@ -218,7 +216,7 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should pass message prop to user message component', () => {
-      component.messages = [mockUserMessage];
+      fixture.componentRef.setInput('messages', [mockUserMessage]);
       fixture.detectChanges();
       
       const userMessage = fixture.nativeElement.querySelector('copilot-chat-user-message');
@@ -227,8 +225,8 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should support custom assistant message props', () => {
-      component.messages = [mockAssistantMessage];
-      component.assistantMessageClass = 'custom-class';
+      fixture.componentRef.setInput('messages', [mockAssistantMessage]);
+      fixture.componentRef.setInput('assistantMessageClass', 'custom-class');
       fixture.detectChanges();
       
       // Props are merged and passed to slot system
@@ -241,8 +239,8 @@ describe('CopilotChatMessageViewComponent', () => {
     });
 
     it('should support custom user message props', () => {
-      component.messages = [mockUserMessage];
-      component.userMessageClass = 'custom-class';
+      fixture.componentRef.setInput('messages', [mockUserMessage]);
+      fixture.componentRef.setInput('userMessageClass', 'custom-class');
       fixture.detectChanges();
       
       // Props are merged and passed to slot system
@@ -255,7 +253,8 @@ describe('CopilotChatMessageViewComponent', () => {
 
   describe('Custom Layout Template', () => {
     @Component({
-      template: `
+  standalone: true,
+template: `
         <copilot-chat-message-view [messages]="messages" [showCursor]="showCursor">
           <ng-template #customLayout let-messages="messages" let-showCursor="showCursor" let-messageElements="messageElements">
             <div class="custom-layout">
@@ -267,8 +266,7 @@ describe('CopilotChatMessageViewComponent', () => {
           </ng-template>
         </copilot-chat-message-view>
       `,
-      standalone: true,
-      imports: [CommonModule, CopilotChatMessageViewComponent]
+      imports: [CommonModule, CopilotChatMessageView]
     })
     class TestHostComponent {
       messages = mockMessages;
@@ -305,7 +303,7 @@ describe('CopilotChatMessageViewComponent', () => {
         } as Message);
       }
       
-      component.messages = largeMessageList;
+      fixture.componentRef.setInput('messages', largeMessageList);
       fixture.detectChanges();
       
       const allMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message, copilot-chat-user-message');
@@ -332,7 +330,7 @@ describe('CopilotChatMessageViewComponent', () => {
         content: ''
       } as Message;
       
-      component.messages = [emptyMessage];
+      fixture.componentRef.setInput('messages', [emptyMessage]);
       fixture.detectChanges();
       
       const assistantMessage = fixture.nativeElement.querySelector('copilot-chat-assistant-message');
@@ -346,7 +344,7 @@ describe('CopilotChatMessageViewComponent', () => {
         content: '   '
       } as Message;
       
-      component.messages = [whitespaceMessage];
+      fixture.componentRef.setInput('messages', [whitespaceMessage]);
       fixture.detectChanges();
       
       const userMessage = fixture.nativeElement.querySelector('copilot-chat-user-message');
@@ -361,7 +359,7 @@ describe('CopilotChatMessageViewComponent', () => {
         { id: '4', role: 'assistant', content: 'Fourth' } as Message
       ];
       
-      component.messages = orderedMessages;
+      fixture.componentRef.setInput('messages', orderedMessages);
       fixture.detectChanges();
       
       const allMessages = fixture.nativeElement.querySelectorAll('copilot-chat-assistant-message, copilot-chat-user-message');

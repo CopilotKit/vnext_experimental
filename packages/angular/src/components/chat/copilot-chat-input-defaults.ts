@@ -1,14 +1,14 @@
-import { CopilotChatTextareaComponent } from "./copilot-chat-textarea.component";
-import { CopilotChatAudioRecorderComponent } from "./copilot-chat-audio-recorder.component";
+import { CopilotChatTextarea } from "./copilot-chat-textarea";
+import { CopilotChatAudioRecorder } from "./copilot-chat-audio-recorder";
 import {
-  CopilotChatSendButtonComponent,
-  CopilotChatStartTranscribeButtonComponent,
-  CopilotChatCancelTranscribeButtonComponent,
-  CopilotChatFinishTranscribeButtonComponent,
-  CopilotChatAddFileButtonComponent,
-} from "./copilot-chat-buttons.component";
-import { CopilotChatToolbarComponent } from "./copilot-chat-toolbar.component";
-import { CopilotChatToolsMenuComponent } from "./copilot-chat-tools-menu.component";
+  CopilotChatSendButton,
+  CopilotChatStartTranscribeButton,
+  CopilotChatCancelTranscribeButton,
+  CopilotChatFinishTranscribeButton,
+  CopilotChatAddFileButton,
+} from "./copilot-chat-buttons";
+import { CopilotChatToolbar } from "./copilot-chat-toolbar";
+import { CopilotChatToolsMenu } from "./copilot-chat-tools-menu";
 
 /**
  * Default components used by CopilotChatInput.
@@ -19,7 +19,8 @@ import { CopilotChatToolsMenuComponent } from "./copilot-chat-tools-menu.compone
  * import { CopilotChatInputDefaults } from '@copilotkitnext/angular';
  *
  * @Component({
- *   template: `
+  standalone: true,
+*   template: `
  *     <copilot-chat-input [sendButtonSlot]="CustomSendButton">
  *     </copilot-chat-input>
  *   `
@@ -32,16 +33,13 @@ import { CopilotChatToolsMenuComponent } from "./copilot-chat-tools-menu.compone
  * ```
  */
 export class CopilotChatInputDefaults {
-  static readonly TextArea = CopilotChatTextareaComponent;
-  static readonly AudioRecorder = CopilotChatAudioRecorderComponent;
-  static readonly SendButton = CopilotChatSendButtonComponent;
-  static readonly StartTranscribeButton =
-    CopilotChatStartTranscribeButtonComponent;
-  static readonly CancelTranscribeButton =
-    CopilotChatCancelTranscribeButtonComponent;
-  static readonly FinishTranscribeButton =
-    CopilotChatFinishTranscribeButtonComponent;
-  static readonly AddFileButton = CopilotChatAddFileButtonComponent;
-  static readonly Toolbar = CopilotChatToolbarComponent;
-  static readonly ToolsMenu = CopilotChatToolsMenuComponent;
+  static readonly TextArea = CopilotChatTextarea;
+  static readonly AudioRecorder = CopilotChatAudioRecorder;
+  static readonly SendButton = CopilotChatSendButton;
+  static readonly StartTranscribeButton = CopilotChatStartTranscribeButton;
+  static readonly CancelTranscribeButton = CopilotChatCancelTranscribeButton;
+  static readonly FinishTranscribeButton = CopilotChatFinishTranscribeButton;
+  static readonly AddFileButton = CopilotChatAddFileButton;
+  static readonly Toolbar = CopilotChatToolbar;
+  static readonly ToolsMenu = CopilotChatToolsMenu;
 }

@@ -1,12 +1,12 @@
 import { TestBed } from "@angular/core/testing";
 import { Component } from "@angular/core";
 import { addFrontendTool, removeFrontendTool } from "../frontend-tool.utils";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -20,13 +20,13 @@ vi.mock("@copilotkitnext/core", () => ({
 
 // Mock component for testing
 @Component({
-  template: `<div>Mock Tool Render</div>`,
   standalone: true,
+template: `<div>Mock Tool Render</div>`,
 })
 class MockRenderComponent {}
 
 describe("Frontend Tool Utils", () => {
-  let service: CopilotKitService;
+  let service: CopilotKit;
   let addToolSpy: any;
   let removeToolSpy: any;
 
@@ -35,7 +35,7 @@ describe("Frontend Tool Utils", () => {
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     addToolSpy = vi.spyOn(service.copilotkit, "addTool");
     removeToolSpy = vi.spyOn(service.copilotkit, "removeTool");
   });

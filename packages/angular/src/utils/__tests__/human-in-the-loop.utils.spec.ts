@@ -6,7 +6,7 @@ import {
   createHumanInTheLoop,
   enhancePropsForHumanInTheLoop,
 } from "../human-in-the-loop.utils";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 import {
@@ -26,7 +26,7 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()),
 };
 
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
   ToolCallStatus: {
     InProgress: "inProgress",
@@ -37,16 +37,18 @@ vi.mock("@copilotkitnext/core", () => ({
 
 // Test component for rendering
 @Component({
-  selector: "test-approval",
+  standalone: true,
+selector: "test-approval",
   template: `
     <div class="approval-dialog">
       <p>{{ props.args.action }}</p>
-      <button *ngIf="props.respond" (click)="approve()">Approve</button>
-      <button *ngIf="props.respond" (click)="reject()">Reject</button>
+      @if (props.respond) {
+        <button (click)="approve()">Approve</button>
+        <button (click)="reject()">Reject</button>
+      }
       <span class="status">{{ props.status }}</span>
     </div>
   `,
-  standalone: true,
 })
 class TestApprovalComponent {
   props!: HumanInTheLoopProps<{ action: string }>;
@@ -61,7 +63,7 @@ class TestApprovalComponent {
 }
 
 describe("Human-in-the-Loop Utilities", () => {
-  let service: CopilotKitService;
+  let service: CopilotKit;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -69,7 +71,7 @@ describe("Human-in-the-Loop Utilities", () => {
       declarations: [],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     vi.clearAllMocks();
   });
 
@@ -80,8 +82,8 @@ describe("Human-in-the-Loop Utilities", () => {
   describe("registerHumanInTheLoop", () => {
     it("should register a tool with handler that returns a Promise", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -108,8 +110,8 @@ describe("Human-in-the-Loop Utilities", () => {
 
     it("should cleanup on component destroy", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -133,8 +135,8 @@ describe("Human-in-the-Loop Utilities", () => {
 
     it("should handle Promise resolution when respond is called", async () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {

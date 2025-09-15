@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CopilotKitService } from '../copilotkit.service';
+import { CopilotKit } from '../copilotkit';
 import { Component } from '@angular/core';
 import { provideCopilotKit } from '../copilotkit.providers';
 import { createCopilotKitTestingModule } from '../../testing/testing.utils';
@@ -7,9 +7,9 @@ import { AngularFrontendTool } from '../../types/frontend-tool';
 import { AngularHumanInTheLoop } from '../../types/human-in-the-loop';
 import { z } from 'zod';
 
-describe('CopilotKitService - Wildcard Tool - Frontend', () => {
+describe('CopilotKit - Wildcard Tool - Frontend', () => {
   it('should register wildcard frontend tool', () => {
-    const wildcardHandler = vi.fn(async ({ toolName, args }) => 
+    const wildcardHandler = vi.fn(async ({ toolName, args }: any) => 
       `Handled ${toolName}`
     );
     
@@ -21,9 +21,9 @@ describe('CopilotKitService - Wildcard Tool - Frontend', () => {
 
     createCopilotKitTestingModule({
       frontendTools: [wildcardTool],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     expect(service.copilotkit.tools['*']).toBeDefined();
     expect(service.copilotkit.tools['*'].name).toBe('*');
@@ -31,7 +31,7 @@ describe('CopilotKitService - Wildcard Tool - Frontend', () => {
   });
 });
 
-describe('CopilotKitService - Wildcard Tool - With Specific', () => {
+describe('CopilotKit - Wildcard Tool - With Specific', () => {
   it('should register wildcard alongside specific tools', () => {
     const specificHandler = vi.fn();
     const wildcardHandler = vi.fn();
@@ -48,21 +48,21 @@ describe('CopilotKitService - Wildcard Tool - With Specific', () => {
 
     createCopilotKitTestingModule({
       frontendTools: [specificTool, wildcardTool],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     expect(service.copilotkit.tools['specific']).toBeDefined();
     expect(service.copilotkit.tools['*']).toBeDefined();
   });
 });
 
-describe('CopilotKitService - Wildcard Tool - With Render', () => {
+describe('CopilotKit - Wildcard Tool - With Render', () => {
   it('should register wildcard with render component', () => {
     @Component({
-      selector: 'app-wildcard-render',
+  standalone: true,
+selector: 'app-wildcard-render',
       template: '<div>Unknown tool: {{ args.toolName }}</div>',
-      standalone: true,
     })
     class WildcardRenderComponent {
       args: any;
@@ -80,9 +80,9 @@ describe('CopilotKitService - Wildcard Tool - With Render', () => {
 
     createCopilotKitTestingModule({
       frontendTools: [wildcardTool],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     const renderToolCalls = service.renderToolCalls();
     const wildcardRender = renderToolCalls.find(r => r.name === '*');
@@ -91,7 +91,7 @@ describe('CopilotKitService - Wildcard Tool - With Render', () => {
   });
 });
 
-describe('CopilotKitService - Wildcard Tool - With AgentId', () => {
+describe('CopilotKit - Wildcard Tool - With AgentId', () => {
   it('should support wildcard with agentId', () => {
     const wildcardHandler = vi.fn();
     const wildcardTool: AngularFrontendTool = {
@@ -102,20 +102,20 @@ describe('CopilotKitService - Wildcard Tool - With AgentId', () => {
 
     createCopilotKitTestingModule({
       frontendTools: [wildcardTool],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     expect(service.copilotkit.tools['*'].agentId).toBe('specificAgent');
   });
 });
 
-describe('CopilotKitService - Wildcard Human-in-the-Loop', () => {
+describe('CopilotKit - Wildcard Human-in-the-Loop', () => {
   it('should register wildcard human-in-the-loop tool', () => {
     @Component({
-      selector: 'app-wildcard-interaction',
+    standalone: true,
+selector: 'app-wildcard-interaction',
       template: '<div>Unknown interaction: {{ args.toolName }}</div>',
-      standalone: true,
     })
     class WildcardInteractionComponent {
       args: any;
@@ -128,14 +128,14 @@ describe('CopilotKitService - Wildcard Human-in-the-Loop', () => {
         toolName: z.string(),
         args: z.unknown(),
       }),
-      render: WildcardInteractionComponent,
-    };
+      render: WildcardInteractionComponent as any,
+    } as any;
 
     createCopilotKitTestingModule({
       humanInTheLoop: [wildcardHitl],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     expect(service.copilotkit.tools['*']).toBeDefined();
     const renderToolCalls = service.renderToolCalls();
@@ -145,12 +145,12 @@ describe('CopilotKitService - Wildcard Human-in-the-Loop', () => {
   });
 });
 
-describe('CopilotKitService - Wildcard HITL With AgentId', () => {
+describe('CopilotKit - Wildcard HITL With AgentId', () => {
   it('should support wildcard human-in-the-loop with agentId', () => {
     @Component({
-      selector: 'app-wildcard',
+    standalone: true,
+selector: 'app-wildcard',
       template: '<div>Wildcard</div>',
-      standalone: true,
     })
     class WildcardComponent {}
     
@@ -160,15 +160,15 @@ describe('CopilotKitService - Wildcard HITL With AgentId', () => {
         toolName: z.string(),
         args: z.unknown(),
       }),
-      render: WildcardComponent,
+      render: WildcardComponent as any,
       agentId: 'agent1',
-    };
+    } as any;
 
     createCopilotKitTestingModule({
       humanInTheLoop: [wildcardHitl],
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     expect(service.copilotkit.tools['*'].agentId).toBe('agent1');
     const renderToolCalls = service.renderToolCalls();
@@ -177,12 +177,12 @@ describe('CopilotKitService - Wildcard HITL With AgentId', () => {
   });
 });
 
-describe('CopilotKitService - Wildcard Render Tool Calls', () => {
+describe('CopilotKit - Wildcard Render Tool Calls', () => {
   it('should register wildcard in renderToolCalls', () => {
     @Component({
-      selector: 'app-wildcard-render',
+    standalone: true,
+selector: 'app-wildcard-render',
       template: '<div>Fallback render</div>',
-      standalone: true,
     })
     class WildcardRenderComponent {}
     
@@ -196,10 +196,10 @@ describe('CopilotKitService - Wildcard Render Tool Calls', () => {
     }];
 
     createCopilotKitTestingModule({
-      renderToolCalls,
-    }, undefined, [CopilotKitService]);
+      renderToolCalls: renderToolCalls as any,
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     const currentRenderToolCalls = service.renderToolCalls();
     const wildcardRender = currentRenderToolCalls.find(r => r.name === '*');
@@ -208,12 +208,12 @@ describe('CopilotKitService - Wildcard Render Tool Calls', () => {
   });
 });
 
-describe('CopilotKitService - Wildcard Render With AgentId', () => {
+describe('CopilotKit - Wildcard Render With AgentId', () => {
   it('should support wildcard render with agentId', () => {
     @Component({
-      selector: 'app-agent-wildcard',
+    standalone: true,
+selector: 'app-agent-wildcard',
       template: '<div>Agent wildcard</div>',
-      standalone: true,
     })
     class AgentWildcardComponent {}
     
@@ -228,10 +228,10 @@ describe('CopilotKitService - Wildcard Render With AgentId', () => {
     }];
 
     createCopilotKitTestingModule({
-      renderToolCalls,
-    }, undefined, [CopilotKitService]);
+      renderToolCalls: renderToolCalls as any,
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     const currentRenderToolCalls = service.renderToolCalls();
     const wildcardRender = currentRenderToolCalls.find(r => r.name === '*');
@@ -239,19 +239,19 @@ describe('CopilotKitService - Wildcard Render With AgentId', () => {
   });
 });
 
-describe('CopilotKitService - Combined wildcard and specific', () => {
+describe('CopilotKit - Combined wildcard and specific', () => {
   it('should handle both wildcard and specific tools together', () => {
     @Component({
-      selector: 'app-specific',
+    standalone: true,
+selector: 'app-specific',
       template: '<div>Specific</div>',
-      standalone: true,
     })
     class SpecificRenderComponent {}
     
     @Component({
-      selector: 'app-wildcard',
+    standalone: true,
+selector: 'app-wildcard',
       template: '<div>Wildcard</div>',
-      standalone: true,
     })
     class WildcardRenderComponent {}
     
@@ -275,9 +275,9 @@ describe('CopilotKitService - Combined wildcard and specific', () => {
 
     createCopilotKitTestingModule({
       frontendTools,
-    }, undefined, [CopilotKitService]);
+    }, undefined, [CopilotKit]);
     
-    const service = TestBed.inject(CopilotKitService);
+    const service = TestBed.inject(CopilotKit);
     
     // Both tools should be registered
     expect(service.copilotkit.tools['specificTool']).toBeDefined();

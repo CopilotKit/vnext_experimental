@@ -1,7 +1,7 @@
 import { TestBed } from "@angular/core/testing";
 import { Component, OnInit, DestroyRef, inject, Injector } from "@angular/core";
 import { watchAgent, watchAgentWith, getAgent, subscribeToAgent } from "../agent.utils";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { AbstractAgent } from "@ag-ui/client";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
@@ -9,7 +9,7 @@ import { effect } from "@angular/core";
 
 // Mock CopilotKitCore
 const mockAgent = {
-  subscribe: vi.fn((callbacks) => ({
+  subscribe: vi.fn((callbacks: any) => ({
     unsubscribe: vi.fn(),
   })),
   id: "test-agent",
@@ -30,19 +30,19 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function directly
 };
 
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
 }));
 
 describe("Agent Utilities", () => {
-  let service: CopilotKitService;
+  let service: CopilotKit;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     vi.clearAllMocks();
   });
 
@@ -117,8 +117,8 @@ describe("Agent Utilities", () => {
   describe("watchAgent", () => {
     it("should return reactive signals within component context", () => {
       @Component({
-        template: "",
-        standalone: true,
+  standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -152,8 +152,8 @@ describe("Agent Utilities", () => {
 
     it("should cleanup on component destroy", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -179,8 +179,8 @@ describe("Agent Utilities", () => {
 
     it("should use default agent ID when not provided", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -199,8 +199,8 @@ describe("Agent Utilities", () => {
   describe("watchAgentWith", () => {
     it("should create agent watcher with injector context", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -228,8 +228,8 @@ describe("Agent Utilities", () => {
 
     it("should handle default agent ID when not provided", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -250,7 +250,7 @@ describe("Agent Utilities", () => {
     });
   });
 
-  describe("CopilotKitService.getAgent", () => {
+  describe("CopilotKit.getAgent", () => {
     it("should delegate to core getAgent", () => {
       const agent = service.getAgent("test-agent");
       expect(agent).toBe(mockAgent);

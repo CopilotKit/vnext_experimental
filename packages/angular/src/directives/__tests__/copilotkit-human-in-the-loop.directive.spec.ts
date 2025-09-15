@@ -1,7 +1,7 @@
 import { Component, TemplateRef, ViewChild } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitHumanInTheLoopDirective } from "../copilotkit-human-in-the-loop.directive";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKitHumanInTheLoop } from "../copilotkit-human-in-the-loop";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 import { By } from "@angular/platform-browser";
@@ -18,7 +18,7 @@ const mockCopilotKitCore = {
   subscribe: vi.fn(() => vi.fn()),
 };
 
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => mockCopilotKitCore),
   ToolCallStatus: {
     InProgress: "inProgress",
@@ -29,7 +29,8 @@ vi.mock("@copilotkitnext/core", () => ({
 
 // Test approval component
 @Component({
-  selector: "test-approval",
+  standalone: true,
+selector: "test-approval",
   template: `
     <div class="approval-dialog">
       <p>{{ action }}</p>
@@ -37,22 +38,21 @@ vi.mock("@copilotkitnext/core", () => ({
       <button class="reject-btn">Reject</button>
     </div>
   `,
-  standalone: true,
 })
 class TestApprovalComponent {
   action = "";
   respond?: (result: unknown) => Promise<void>;
 }
 
-describe("CopilotKitHumanInTheLoopDirective", () => {
-  let service: CopilotKitService;
+describe("CopilotKitHumanInTheLoop", () => {
+  let service: CopilotKit;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     vi.clearAllMocks();
   });
 
@@ -63,7 +63,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
   describe("Basic Usage", () => {
     it("should register tool when directive is applied", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -72,8 +73,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [render]="approvalComponent"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -92,9 +92,9 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
 
     it("should support config object input", () => {
       @Component({
-        template: ` <div [copilotkitHumanInTheLoop]="config"></div> `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+    standalone: true,
+template: ` <div [copilotkitHumanInTheLoop]="config"></div> `,
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         config = {
@@ -115,7 +115,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
 
     it("should not register when enabled is false", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -125,8 +126,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [enabled]="false"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -145,7 +145,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
       let statusChanges: string[] = [];
 
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -155,8 +156,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             (statusChange)="onStatusChange($event)"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -172,10 +172,10 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
 
       // Get the directive instance
       const directiveEl = fixture.debugElement.query(
-        By.directive(CopilotKitHumanInTheLoopDirective)
+        By.directive(CopilotKitHumanInTheLoop)
       );
       const directive = directiveEl.injector.get(
-        CopilotKitHumanInTheLoopDirective
+        CopilotKitHumanInTheLoop
       );
 
       // Initial status should be 'inProgress'
@@ -195,7 +195,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
       let executionArgs: any;
 
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -205,8 +206,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             (executionStarted)="onExecutionStarted($event)"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -231,7 +231,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
 
     it("should support two-way binding for status", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -241,8 +242,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [(status)]="currentStatus"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -262,7 +262,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
   describe("Template Support", () => {
     it("should work with template ref", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -274,12 +275,11 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
           <ng-template #approvalTemplate let-props>
             <div class="template-approval">
               <p>{{ props.args.action }}</p>
-              <button *ngIf="props.respond">Approve</button>
+              @if (props.respond) {<button>Approve</button>}
             </div>
           </ng-template>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         @ViewChild("approvalTemplate", { static: true })
@@ -299,7 +299,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
   describe("Dynamic Updates", () => {
     it("should re-register tool when inputs change", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="toolName"
@@ -308,8 +309,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [render]="approvalComponent"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         toolName = "requireApproval";
@@ -339,7 +339,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
 
     it("should handle enabling/disabling", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -349,8 +350,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [enabled]="isEnabled"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -382,7 +382,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
   describe("Cleanup", () => {
     it("should unregister tool on destroy", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -391,8 +392,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [render]="approvalComponent"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -416,7 +416,8 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
   describe("Respond Method", () => {
     it("should provide respond method on directive", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitHumanInTheLoop
             [name]="'requireApproval'"
@@ -425,8 +426,7 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
             [render]="approvalComponent"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitHumanInTheLoopDirective],
+        imports: [CopilotKitHumanInTheLoop],
       })
       class TestComponent {
         parametersSchema = z.object({ action: z.string() });
@@ -437,10 +437,10 @@ describe("CopilotKitHumanInTheLoopDirective", () => {
       fixture.detectChanges();
 
       const directiveEl = fixture.debugElement.query(
-        By.directive(CopilotKitHumanInTheLoopDirective)
+        By.directive(CopilotKitHumanInTheLoop)
       );
       const directive = directiveEl.injector.get(
-        CopilotKitHumanInTheLoopDirective
+        CopilotKitHumanInTheLoop
       );
 
       expect(typeof directive.respond).toBe("function");

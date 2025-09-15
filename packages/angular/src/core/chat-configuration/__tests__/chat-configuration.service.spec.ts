@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { CopilotChatConfigurationService } from '../chat-configuration.service';
+import { CopilotChatConfigurationService } from '../chat-configuration';
 import { provideCopilotChatConfiguration } from '../chat-configuration.providers';
 import { 
   COPILOT_CHAT_DEFAULT_LABELS,

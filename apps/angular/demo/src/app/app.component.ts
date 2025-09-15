@@ -1,10 +1,10 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { CopilotKitConfigDirective } from "@copilotkitnext/angular";
-import { HeadlessChatComponent } from "./routes/headless/headless-chat.component";
-import { CustomInputChatComponent } from "./routes/custom-input/custom-input-chat.component";
-import { DefaultChatComponent } from "./routes/default/default-chat.component";
-import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port.component";
+import { HeadlessChatComponent } from "./routes/headless/headless-chat";
+import { CustomInputChatComponent } from "./routes/custom-input/custom-input-chat";
+import { DefaultChatComponent } from "./routes/default/default-chat";
+import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port";
 
 @Component({
   selector: "app-root",

@@ -6,7 +6,7 @@ import {
   CopilotChatComponent,
   provideCopilotChatConfiguration,
 } from "@copilotkitnext/angular";
-import { CustomChatInputComponent } from "./custom-chat-input.component";
+import { CustomChatInputComponent } from "./custom-chat-input";
 
 @Component({
   selector: "nextgen-custom-input-chat",

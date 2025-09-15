@@ -2,9 +2,7 @@ import { TestBed, TestModuleMetadata } from "@angular/core/testing";
 import { DestroyRef } from "@angular/core";
 import { provideCopilotKit } from "../core/copilotkit.providers";
 import { provideCopilotChatConfiguration } from "../core/chat-configuration/chat-configuration.providers";
-import { CopilotKitCoreConfig } from "@copilotkitnext/core";
 import { CopilotChatConfiguration } from "../core/chat-configuration/chat-configuration.types";
-import { vi } from "vitest";
 
 /**
  * Creates a CopilotKit testing module with mock providers.
@@ -55,7 +53,7 @@ export class MockDestroyRef implements DestroyRef {
 }
 
 export function createCopilotKitTestingModule(
-  config?: Partial<CopilotKitCoreConfig>,
+  config?: any,
   chatConfig?: Partial<CopilotChatConfiguration>,
   additionalProviders?: any[]
 ): any {

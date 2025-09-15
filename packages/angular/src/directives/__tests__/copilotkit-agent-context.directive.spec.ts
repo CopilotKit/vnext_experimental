@@ -1,12 +1,12 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitAgentContextDirective } from "../copilotkit-agent-context.directive";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKitAgentContext } from "../copilotkit-agent-context";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addContext: vi.fn().mockImplementation(() => "context-id-" + Math.random()),
     removeContext: vi.fn(),
@@ -20,15 +20,15 @@ vi.mock("@copilotkitnext/core", () => ({
 
 // Test components
 @Component({
-  template: `
+  standalone: true,
+template: `
     <div
       copilotkitAgentContext
       [description]="description"
       [value]="value"
     ></div>
   `,
-  standalone: true,
-  imports: [CopilotKitAgentContextDirective],
+  imports: [CopilotKitAgentContext],
   providers: [provideCopilotKit({})],
 })
 class TestComponentWithInputs {
@@ -37,9 +37,9 @@ class TestComponentWithInputs {
 }
 
 @Component({
-  template: ` <div [copilotkitAgentContext]="context"></div> `,
-  standalone: true,
-  imports: [CopilotKitAgentContextDirective],
+    standalone: true,
+template: ` <div [copilotkitAgentContext]="context"></div> `,
+  imports: [CopilotKitAgentContext],
   providers: [provideCopilotKit({})],
 })
 class TestComponentWithContext {
@@ -50,16 +50,17 @@ class TestComponentWithContext {
 }
 
 @Component({
-  template: `
-    <div
-      *ngIf="showContext"
-      copilotkitAgentContext
-      description="Conditional"
-      [value]="value"
-    ></div>
+    standalone: true,
+template: `
+    @if (showContext) {
+      <div
+        copilotkitAgentContext
+        description="Conditional"
+        [value]="value"
+      ></div>
+    }
   `,
-  standalone: true,
-  imports: [CommonModule, CopilotKitAgentContextDirective],
+  imports: [CommonModule, CopilotKitAgentContext],
   providers: [provideCopilotKit({})],
 })
 class TestComponentConditional {
@@ -67,8 +68,8 @@ class TestComponentConditional {
   value = { data: "conditional" };
 }
 
-describe("CopilotKitAgentContextDirective", () => {
-  let service: CopilotKitService;
+describe("CopilotKitAgentContext", () => {
+  let service: CopilotKit;
   let addContextSpy: any;
   let removeContextSpy: any;
 
@@ -77,7 +78,7 @@ describe("CopilotKitAgentContextDirective", () => {
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     addContextSpy = vi.spyOn(service.copilotkit, "addContext");
     removeContextSpy = vi.spyOn(service.copilotkit, "removeContext");
   });
@@ -111,9 +112,9 @@ describe("CopilotKitAgentContextDirective", () => {
 
     it("should not add context if inputs are undefined", () => {
       @Component({
-        template: `<div copilotkitAgentContext></div>`,
-        standalone: true,
-        imports: [CopilotKitAgentContextDirective],
+    standalone: true,
+template: `<div copilotkitAgentContext></div>`,
+        imports: [CopilotKitAgentContext],
       })
       class EmptyComponent {}
 
@@ -243,9 +244,9 @@ describe("CopilotKitAgentContextDirective", () => {
 
     it("should not throw when removing non-existent context", () => {
       @Component({
-        template: `<div copilotkitAgentContext></div>`,
-        standalone: true,
-        imports: [CopilotKitAgentContextDirective],
+    standalone: true,
+template: `<div copilotkitAgentContext></div>`,
+        imports: [CopilotKitAgentContext],
       })
       class EmptyComponent {}
 
@@ -261,7 +262,8 @@ describe("CopilotKitAgentContextDirective", () => {
   describe("Complex Scenarios", () => {
     it("should handle multiple directives on the same page", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             copilotkitAgentContext
             description="Context 1"
@@ -273,8 +275,7 @@ describe("CopilotKitAgentContextDirective", () => {
             [value]="value2"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitAgentContextDirective],
+        imports: [CopilotKitAgentContext],
       })
       class MultipleContextComponent {
         value1 = { id: 1 };
@@ -354,15 +355,15 @@ describe("CopilotKitAgentContextDirective", () => {
   describe("Priority of Inputs", () => {
     it("should prioritize context object over individual inputs", () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div
             [copilotkitAgentContext]="context"
             [description]="description"
             [value]="value"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitAgentContextDirective],
+        imports: [CopilotKitAgentContext],
       })
       class PriorityComponent {
         context = { description: "Context object", value: "context-value" };

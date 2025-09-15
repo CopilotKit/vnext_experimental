@@ -41,7 +41,6 @@ export type ToolCallProps<T = unknown> =
       status: ToolCallStatus.Complete;
       result: string;
     };
-1;
 
 // Angular-specific tool call render definition with proper typing
 export interface AngularToolCallRender {

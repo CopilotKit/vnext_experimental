@@ -1,5 +1,5 @@
 import { Provider } from '@angular/core';
-import { CopilotChatConfigurationService } from './chat-configuration.service';
+import { CopilotChatConfigurationService } from './chat-configuration';
 import { 
   CopilotChatConfiguration,
   COPILOT_CHAT_INITIAL_CONFIG 
@@ -19,7 +19,8 @@ import {
  * export const appConfig: ApplicationConfig = {
  *   providers: [
  *     provideCopilotChatConfiguration({
- *       labels: {
+    standalone: true,
+*       labels: {
  *         chatInputPlaceholder: "How can I help you today?"
  *       }
  *     })
@@ -28,7 +29,8 @@ import {
  * 
  * // Component-scoped configuration
  * @Component({
- *   selector: 'customer-support-chat',
+  standalone: true,
+*   selector: 'customer-support-chat',
  *   providers: [
  *     provideCopilotChatConfiguration({
  *       labels: {
@@ -43,7 +45,8 @@ import {
  * 
  * // Multiple independent chats
  * @Component({
- *   selector: 'sales-chat',
+    standalone: true,
+*   selector: 'sales-chat',
  *   providers: [
  *     provideCopilotChatConfiguration({
  *       labels: {

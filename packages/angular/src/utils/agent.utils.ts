@@ -7,7 +7,7 @@ import {
   runInInjectionContext,
 } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
-import { CopilotKitService } from "../core/copilotkit.service";
+import { CopilotKit } from "../core/copilotkit";
 import {
   AgentSubscriptionCallbacks,
   AgentWatchResult,
@@ -41,7 +41,7 @@ import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
  */
 export function watchAgent(config?: { agentId?: string }): AgentWatchResult {
   // Use inject() internally to get required services
-  const service = inject(CopilotKitService);
+  const service = inject(CopilotKit);
   const destroyRef = inject(DestroyRef);
   const effectiveAgentId = config?.agentId ?? DEFAULT_AGENT_ID;
 
@@ -144,14 +144,14 @@ export function watchAgent(config?: { agentId?: string }): AgentWatchResult {
 /**
  * Gets an agent by ID without subscribing to changes.
  *
- * @param service - The CopilotKitService instance
+ * @param service - The CopilotKit instance
  * @param agentId - Optional agent ID (defaults to DEFAULT_AGENT_ID)
  * @returns The agent or undefined if not found
  *
  * @example
  * ```typescript
  * export class MyComponent {
- *   constructor(private copilotkit: CopilotKitService) {}
+ *   constructor(private copilotkit: CopilotKit) {}
  *
  *   getCurrentAgent() {
  *     return getAgent(this.copilotkit, 'my-agent');
@@ -160,7 +160,7 @@ export function watchAgent(config?: { agentId?: string }): AgentWatchResult {
  * ```
  */
 export function getAgent(
-  service: CopilotKitService,
+  service: CopilotKit,
   agentId?: string
 ): AbstractAgent | undefined {
   const effectiveAgentId = agentId ?? DEFAULT_AGENT_ID;
@@ -204,7 +204,7 @@ export function watchAgentWith(
  * Subscribes to an agent's events with custom callbacks.
  * Returns a cleanup function that should be called to unsubscribe.
  *
- * @param service - The CopilotKitService instance
+ * @param service - The CopilotKit instance
  * @param agentId - Optional agent ID (defaults to DEFAULT_AGENT_ID)
  * @param callbacks - Event callbacks
  * @returns Cleanup function to unsubscribe
@@ -214,7 +214,7 @@ export function watchAgentWith(
  * export class MyComponent implements OnInit, OnDestroy {
  *   private unsubscribe?: () => void;
  *
- *   constructor(private copilotkit: CopilotKitService) {}
+ *   constructor(private copilotkit: CopilotKit) {}
  *
  *   ngOnInit() {
  *     this.unsubscribe = subscribeToAgent(this.copilotkit, 'my-agent', {
@@ -231,7 +231,7 @@ export function watchAgentWith(
  * ```
  */
 export function subscribeToAgent(
-  service: CopilotKitService,
+  service: CopilotKit,
   agentId?: string,
   callbacks?: AgentSubscriptionCallbacks
 ): () => void {

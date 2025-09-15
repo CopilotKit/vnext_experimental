@@ -3,24 +3,24 @@ import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Custom Actions",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -40,7 +40,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const ThumbsUpDown: Story = {
   parameters: {
@@ -50,9 +50,9 @@ export const ThumbsUpDown: Story = {
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -89,9 +89,9 @@ class CustomDisclaimerComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomDisclaimerComponent
   ],
   providers: [

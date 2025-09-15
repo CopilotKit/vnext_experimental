@@ -1,5 +1,5 @@
-import { Type, TemplateRef } from '@angular/core';
-import { Message } from '@ag-ui/client';
+import { Type, TemplateRef } from "@angular/core";
+import { Message } from "@ag-ui/client";
 
 /**
  * Props for CopilotChatView component
@@ -7,31 +7,31 @@ import { Message } from '@ag-ui/client';
 export interface CopilotChatViewProps {
   messages?: Message[];
   autoScroll?: boolean;
-  
+
   // Slot configurations
   messageViewComponent?: Type<any>;
   messageViewTemplate?: TemplateRef<any>;
   messageViewClass?: string;
-  
+
   scrollViewComponent?: Type<any>;
   scrollViewTemplate?: TemplateRef<any>;
   scrollViewClass?: string;
-  
+
   scrollToBottomButtonComponent?: Type<any>;
   scrollToBottomButtonTemplate?: TemplateRef<any>;
   scrollToBottomButtonClass?: string;
-  
+
   inputComponent?: Type<any>;
   inputTemplate?: TemplateRef<any>;
-  
+
   inputContainerComponent?: Type<any>;
   inputContainerTemplate?: TemplateRef<any>;
   inputContainerClass?: string;
-  
+
   featherComponent?: Type<any>;
   featherTemplate?: TemplateRef<any>;
   featherClass?: string;
-  
+
   disclaimerComponent?: Type<any>;
   disclaimerTemplate?: TemplateRef<any>;
   disclaimerClass?: string;

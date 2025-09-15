@@ -1,14 +1,14 @@
 import { inject } from "@angular/core";
-import { CopilotKitService } from "../core/copilotkit.service";
+import { CopilotKit } from "../core/copilotkit";
 
 /**
  * Utility function to inject the CopilotKit service in a component or directive.
- * 
+ *
  * @example
  * ```typescript
  * export class MyComponent {
  *   private copilotkit = injectCopilotKit();
- *   
+ *
  *   sendMessage() {
  *     this.copilotkit.copilotkit.sendMessage(...);
  *   }
@@ -16,5 +16,5 @@ import { CopilotKitService } from "../core/copilotkit.service";
  * ```
  */
 export function injectCopilotKit() {
-  return inject(CopilotKitService);
+  return inject(CopilotKit);
 }

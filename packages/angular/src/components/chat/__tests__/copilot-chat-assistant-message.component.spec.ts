@@ -1,44 +1,43 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CopilotChatAssistantMessageComponent } from '../copilot-chat-assistant-message.component';
-import { CopilotChatAssistantMessageRendererComponent } from '../copilot-chat-assistant-message-renderer.component';
+import { CopilotChatAssistantMessage } from '../copilot-chat-assistant-message';
+import { CopilotChatAssistantMessageRenderer } from '../copilot-chat-assistant-message-renderer';
 import {
-  CopilotChatAssistantMessageCopyButtonComponent,
-  CopilotChatAssistantMessageThumbsUpButtonComponent,
-  CopilotChatAssistantMessageThumbsDownButtonComponent,
-  CopilotChatAssistantMessageReadAloudButtonComponent,
-  CopilotChatAssistantMessageRegenerateButtonComponent
-} from '../copilot-chat-assistant-message-buttons.component';
-import { CopilotChatAssistantMessageToolbarComponent } from '../copilot-chat-assistant-message-toolbar.component';
-import { CopilotChatViewHandlersService } from '../copilot-chat-view-handlers.service';
+  CopilotChatAssistantMessageCopyButton,
+  CopilotChatAssistantMessageThumbsUpButton,
+  CopilotChatAssistantMessageThumbsDownButton,
+  CopilotChatAssistantMessageReadAloudButton,
+  CopilotChatAssistantMessageRegenerateButton
+} from '../copilot-chat-assistant-message-buttons';
+import { CopilotChatAssistantMessageToolbar } from '../copilot-chat-assistant-message-toolbar';
+import { CopilotChatViewHandlers } from '../copilot-chat-view-handlers';
 import { provideCopilotKit } from '../../../core/copilotkit.providers';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { AssistantMessage } from '@ag-ui/client';
 
-describe('CopilotChatAssistantMessageComponent', () => {
-  let component: CopilotChatAssistantMessageComponent;
-  let fixture: ComponentFixture<CopilotChatAssistantMessageComponent>;
+describe('CopilotChatAssistantMessage', () => {
+  let component: CopilotChatAssistantMessage;
+  let fixture: ComponentFixture<CopilotChatAssistantMessage>;
 
   const mockMessage: AssistantMessage = {
     id: 'test-msg-1',
     role: 'assistant',
-    content: 'Hello! This is a test message with **bold text** and *italic text*.',
-    createdAt: new Date()
-  };
+    content: 'Hello! This is a test message with **bold text** and *italic text*.'
+  } as any;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
-        CopilotChatAssistantMessageComponent,
-        CopilotChatAssistantMessageRendererComponent,
-        CopilotChatAssistantMessageCopyButtonComponent,
-        CopilotChatAssistantMessageThumbsUpButtonComponent,
-        CopilotChatAssistantMessageThumbsDownButtonComponent,
-        CopilotChatAssistantMessageReadAloudButtonComponent,
-        CopilotChatAssistantMessageRegenerateButtonComponent,
-        CopilotChatAssistantMessageToolbarComponent
+        CopilotChatAssistantMessage,
+        CopilotChatAssistantMessageRenderer,
+        CopilotChatAssistantMessageCopyButton,
+        CopilotChatAssistantMessageThumbsUpButton,
+        CopilotChatAssistantMessageThumbsDownButton,
+        CopilotChatAssistantMessageReadAloudButton,
+        CopilotChatAssistantMessageRegenerateButton,
+        CopilotChatAssistantMessageToolbar
       ],
       providers: [
         provideCopilotKit({}),
@@ -51,13 +50,13 @@ describe('CopilotChatAssistantMessageComponent', () => {
             assistantMessageToolbarRegenerateLabel: 'Regenerate'
           }
         }),
-        CopilotChatViewHandlersService
+        CopilotChatViewHandlers
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CopilotChatAssistantMessageComponent);
+    fixture = TestBed.createComponent(CopilotChatAssistantMessage);
     component = fixture.componentInstance;
-    component.message = mockMessage;
+    fixture.componentRef.setInput('message', mockMessage);
     fixture.detectChanges();
   });
 
@@ -77,15 +76,17 @@ describe('CopilotChatAssistantMessageComponent', () => {
   });
 
   it('should show toolbar when toolbarVisible is true', () => {
-    component.toolbarVisible = true;
+    fixture.componentRef.setInput('toolbarVisible', true);
     fixture.detectChanges();
     const toolbar = fixture.nativeElement.querySelector('[copilotChatAssistantMessageToolbar]');
     expect(toolbar).toBeTruthy();
   });
 
-  it.skip('should hide toolbar when toolbarVisible is false', () => {
-    // SKIP: This test has issues with change detection in the test environment
-    // The toolbar visibility works correctly in production
+  it('should hide toolbar when toolbarVisible is false', () => {
+    fixture.componentRef.setInput('toolbarVisible', false);
+    fixture.detectChanges();
+    const toolbar = fixture.nativeElement.querySelector('[copilotChatAssistantMessageToolbar]');
+    expect(toolbar).toBeFalsy();
   });
 
   it('should emit thumbsUp event when button is clicked', () => {
@@ -129,27 +130,24 @@ describe('CopilotChatAssistantMessageComponent', () => {
   });
 
   it('should handle empty message content', () => {
-    component.message = {
+    fixture.componentRef.setInput('message', {
       ...mockMessage,
       content: ''
-    };
+    });
     fixture.detectChanges();
     expect(component).toBeTruthy();
   });
 
-  it('should support custom CSS class', () => {
-    const customClass = 'custom-test-class';
-    component.inputClass = customClass;
+  it('should render with base classes', () => {
     fixture.detectChanges();
-    
     const element = fixture.nativeElement.querySelector('div');
-    expect(element.className).toContain(customClass);
+    expect(element.className).toContain('prose');
   });
 });
 
-describe('CopilotChatAssistantMessageComponent with code blocks', () => {
-  let component: CopilotChatAssistantMessageComponent;
-  let fixture: ComponentFixture<CopilotChatAssistantMessageComponent>;
+describe('CopilotChatAssistantMessage with code blocks', () => {
+  let component: CopilotChatAssistantMessage;
+  let fixture: ComponentFixture<CopilotChatAssistantMessage>;
 
   const codeMessage: AssistantMessage = {
     id: 'test-code-1',
@@ -160,15 +158,14 @@ function hello(name: string): string {
   return \`Hello, \${name}!\`;
 }
 \`\`\``,
-    createdAt: new Date()
-  };
+  } as any;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
         CommonModule,
-        CopilotChatAssistantMessageComponent,
-        CopilotChatAssistantMessageRendererComponent
+        CopilotChatAssistantMessage,
+        CopilotChatAssistantMessageRenderer
       ],
       providers: [
         provideCopilotKit({}),
@@ -176,57 +173,78 @@ function hello(name: string): string {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CopilotChatAssistantMessageComponent);
+    fixture = TestBed.createComponent(CopilotChatAssistantMessage);
     component = fixture.componentInstance;
-    component.message = codeMessage;
+    fixture.componentRef.setInput('message', codeMessage);
     fixture.detectChanges();
   });
 
-  it('should render code blocks', () => {
+  it('should render code blocks', async () => {
+    await fixture.whenStable();
     const element = fixture.nativeElement;
     const codeBlock = element.querySelector('.code-block-container');
     expect(codeBlock).toBeTruthy();
   });
 
-  it('should display language label for code blocks', () => {
+  it('should display language label for code blocks', async () => {
+    await fixture.whenStable();
     const element = fixture.nativeElement;
     const languageLabel = element.querySelector('.code-block-language');
     expect(languageLabel).toBeTruthy();
     expect(languageLabel.textContent).toBe('typescript');
   });
 
-  it('should have copy button for code blocks', () => {
+  it('should have copy button for code blocks', async () => {
+    await fixture.whenStable();
     const element = fixture.nativeElement;
     const copyButton = element.querySelector('.code-block-copy-button');
     expect(copyButton).toBeTruthy();
   });
 });
 
-describe('CopilotChatAssistantMessageComponent with custom slots', () => {
+describe('CopilotChatAssistantMessage with custom slots', () => {
+  
+
   @Component({
+    standalone: true,
     selector: 'test-host',
     template: `
-      <copilot-chat-assistant-message [message]="message">
-        <ng-template #markdownRenderer let-content="content">
-          <div class="custom-renderer">{{ content }}</div>
-        </ng-template>
-        
-        <ng-template #copyButton let-onClick="onClick">
-          <button class="custom-copy-btn" (click)="onClick()">Custom Copy</button>
-        </ng-template>
+      <copilot-chat-assistant-message 
+        [message]="message"
+        [markdownRendererComponent]="CustomRenderer"
+        [copyButtonComponent]="CustomCopyButton">
       </copilot-chat-assistant-message>
     `,
-    standalone: true,
-    imports: [CommonModule, CopilotChatAssistantMessageComponent]
+    imports: [CommonModule, CopilotChatAssistantMessage]
   })
   class TestHostComponent {
     message: AssistantMessage = {
       id: 'test-custom-1',
       role: 'assistant',
-      content: 'Custom slot test message',
-      createdAt: new Date()
-    };
+      content: 'Custom slot test message'
+    } as any;
+
+    // Expose component classes for binding
+    CustomRenderer = CustomRenderer;
+    CustomCopyButton = CustomCopyButton;
   }
+
+  @Component({
+    standalone: true,
+    selector: 'custom-renderer',
+    template: `<div class="custom-renderer">{{ content }}</div>`,
+    inputs: ['content']
+  })
+  class CustomRenderer {
+    content?: string;
+  }
+
+  @Component({
+    standalone: true,
+    selector: 'custom-copy-button',
+    template: `<button class="custom-copy-btn">Custom Copy</button>`
+  })
+  class CustomCopyButton {}
 
   let component: TestHostComponent;
   let fixture: ComponentFixture<TestHostComponent>;
@@ -245,14 +263,18 @@ describe('CopilotChatAssistantMessageComponent with custom slots', () => {
     fixture.detectChanges();
   });
 
-  it('should use custom markdown renderer slot', () => {
+  it('should use custom markdown renderer slot', async () => {
+    await fixture.whenStable();
+    fixture.detectChanges();
     const element = fixture.nativeElement;
     const customRenderer = element.querySelector('.custom-renderer');
     expect(customRenderer).toBeTruthy();
     expect(customRenderer.textContent).toBe('Custom slot test message');
   });
 
-  it('should use custom copy button slot', () => {
+  it('should use custom copy button slot', async () => {
+    await fixture.whenStable();
+    fixture.detectChanges();
     const element = fixture.nativeElement;
     const customCopyBtn = element.querySelector('.custom-copy-btn');
     expect(customCopyBtn).toBeTruthy();

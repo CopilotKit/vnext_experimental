@@ -4,9 +4,9 @@ import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   CopilotChatConfigurationService,
   provideCopilotChatConfiguration,
   provideCopilotKit,
@@ -14,17 +14,17 @@ import {
 import { Message } from "@ag-ui/client";
 
 // Custom input components defined after imports
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Customized with Templates",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
         FormsModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -44,7 +44,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const CustomDisclaimerTemplate: Story = {
   render: () => {

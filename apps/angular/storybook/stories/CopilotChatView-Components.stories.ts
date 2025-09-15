@@ -4,28 +4,28 @@ import { CommonModule } from "@angular/common";
 import { Component } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   CopilotChatConfigurationService,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
-import { CustomDisclaimerComponent } from "../components/custom-disclaimer.component";
-import { CustomInputComponent } from "../components/custom-input.component";
-import { CustomScrollButtonComponent } from "../components/custom-scroll-button.component";
+import { CustomDisclaimerComponent } from "../components/custom-disclaimer";
+import { CustomInputComponent } from "../components/custom-input";
+import { CustomScrollButtonComponent } from "../components/custom-scroll-button";
 
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Customized with Components",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -45,7 +45,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const CustomDisclaimer: Story = {
   parameters: {
@@ -55,9 +55,9 @@ export const CustomDisclaimer: Story = {
         code: `import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -105,9 +105,9 @@ class CustomDisclaimerComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomDisclaimerComponent
   ],
   providers: [
@@ -189,9 +189,9 @@ export const CustomInput: Story = {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   CopilotChatConfigurationService,
   provideCopilotKit,
   provideCopilotChatConfiguration
@@ -264,9 +264,9 @@ class CustomInputComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomInputComponent
   ],
   providers: [
@@ -347,9 +347,9 @@ export const CustomScrollButton: Story = {
         code: `import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -416,9 +416,9 @@ class CustomScrollButtonComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomScrollButtonComponent
   ],
   providers: [
@@ -496,9 +496,9 @@ export const NoFeatherEffect: Story = {
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -509,9 +509,9 @@ import { Message } from '@ag-ui/client';
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput
   ],
   providers: [
     provideCopilotKit({}),
@@ -602,9 +602,9 @@ which is the idiomatic Angular approach for cross-component communication.
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   CopilotChatConfigurationService,
   provideCopilotKit,
   provideCopilotChatConfiguration
@@ -683,9 +683,9 @@ class ServiceBasedInputComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     ServiceBasedInputComponent
   ],
   providers: [

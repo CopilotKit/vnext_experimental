@@ -9,7 +9,7 @@ import {
   setChatInputValue,
   createChatConfigController
 } from '../chat-config.utils';
-import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration.service';
+import { CopilotChatConfigurationService } from '../../core/chat-configuration/chat-configuration';
 import { provideCopilotChatConfiguration } from '../../core/chat-configuration/chat-configuration.providers';
 import { COPILOT_CHAT_DEFAULT_LABELS } from '../../core/chat-configuration/chat-configuration.types';
 import { effect } from '@angular/core';
@@ -18,8 +18,8 @@ describe('Chat Configuration Utilities', () => {
   describe('watchChatConfig', () => {
     it('should return reactive configuration within component context', () => {
       @Component({
-        template: '',
-        standalone: true,
+  standalone: true,
+template: '',
         providers: provideCopilotChatConfiguration({
           labels: { chatInputPlaceholder: 'Test placeholder' },
           inputValue: 'test value'
@@ -46,8 +46,8 @@ describe('Chat Configuration Utilities', () => {
       });
       
       @Component({
-        template: '',
-        standalone: true
+    standalone: true,
+template: '',
       })
       class TestComponent {
         config = watchChatConfig();
@@ -73,8 +73,8 @@ describe('Chat Configuration Utilities', () => {
       const changeHandler = vi.fn();
 
       @Component({
-        template: '',
-        standalone: true,
+    standalone: true,
+template: '',
         providers: provideCopilotChatConfiguration({
           onSubmitInput: submitHandler,
           onChangeInput: changeHandler
@@ -104,8 +104,8 @@ describe('Chat Configuration Utilities', () => {
       });
       
       @Component({
-        template: '',
-        standalone: true
+    standalone: true,
+template: '',
       })
       class TestComponent {
         constructor() {
@@ -134,8 +134,8 @@ describe('Chat Configuration Utilities', () => {
       });
       
       @Component({
-        template: '',
-        standalone: true
+    standalone: true,
+template: '',
       })
       class TestComponent {
         constructor() {

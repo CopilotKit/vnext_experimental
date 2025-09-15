@@ -1,28 +1,28 @@
-import { inject, Signal } from '@angular/core';
-import { CopilotChatConfigurationService } from '../core/chat-configuration/chat-configuration.service';
-import { 
+import { inject, Signal } from "@angular/core";
+import { CopilotChatConfigurationService } from "../core/chat-configuration/chat-configuration";
+import {
   CopilotChatConfiguration,
-  CopilotChatLabels
-} from '../core/chat-configuration/chat-configuration.types';
+  CopilotChatLabels,
+} from "../core/chat-configuration/chat-configuration.types";
 
 /**
  * Watches chat configuration and provides reactive access to all configuration values.
  * Must be called within an injection context.
- * 
+ *
  * @returns Object with reactive signals and handler functions
- * 
+ *
  * @example
  * ```typescript
  * export class ChatInputComponent {
  *   config = watchChatConfig();
- *   
+ *
  *   constructor() {
  *     effect(() => {
  *       const placeholder = this.config.labels().chatInputPlaceholder;
  *       console.log('Placeholder:', placeholder);
  *     });
  *   }
- *   
+ *
  *   handleSubmit(value: string) {
  *     this.config.submitInput(value);
  *   }
@@ -36,21 +36,21 @@ export function watchChatConfig(): {
   changeInput: (value: string) => void;
 } {
   const service = inject(CopilotChatConfigurationService);
-  
+
   return {
     labels: service.labels,
     inputValue: service.inputValue,
     submitInput: (value: string) => service.submitInput(value),
-    changeInput: (value: string) => service.changeInput(value)
+    changeInput: (value: string) => service.changeInput(value),
   };
 }
 
 /**
  * Registers chat configuration within an injection context.
  * Automatically updates the configuration when called.
- * 
+ *
  * @param config - The configuration to register
- * 
+ *
  * @example
  * ```typescript
  * export class ChatComponent {
@@ -72,10 +72,10 @@ export function registerChatConfig(config: CopilotChatConfiguration): void {
 
 /**
  * Gets the current chat labels signal.
- * 
+ *
  * @param service - The CopilotChatConfigurationService instance
  * @returns Signal containing the current labels
- * 
+ *
  * @example
  * ```typescript
  * export class ChatComponent {
@@ -96,10 +96,10 @@ export function getChatLabels(
 
 /**
  * Updates chat labels.
- * 
+ *
  * @param service - The CopilotChatConfigurationService instance
  * @param labels - Partial labels to merge with defaults
- * 
+ *
  * @example
  * ```typescript
  * export class ChatComponent {
@@ -120,15 +120,15 @@ export function setChatLabels(
 
 /**
  * Gets the current input value signal.
- * 
+ *
  * @param service - The CopilotChatConfigurationService instance
  * @returns Signal containing the current input value
- * 
+ *
  * @example
  * ```typescript
  * export class ChatInputComponent {
  *   inputValue = getChatInputValue(this.chatConfig);
- *   
+ *
  *   constructor(private chatConfig: CopilotChatConfigurationService) {
  *     effect(() => {
  *       const value = this.inputValue();
@@ -148,10 +148,10 @@ export function getChatInputValue(
 
 /**
  * Sets the current input value.
- * 
+ *
  * @param service - The CopilotChatConfigurationService instance
  * @param value - The new input value
- * 
+ *
  * @example
  * ```typescript
  * export class ChatInputComponent {
@@ -172,26 +172,26 @@ export function setChatInputValue(
 /**
  * Creates a chat configuration controller with dynamic update capabilities.
  * This is useful when you need to programmatically manage configuration.
- * 
+ *
  * @param service - The CopilotChatConfigurationService instance
  * @param initialConfig - Optional initial configuration
  * @returns Controller object with update and reset methods
- * 
+ *
  * @example
  * ```typescript
  * export class ChatManagerComponent {
  *   chatController = createChatConfigController(this.chatConfig, {
  *     labels: { chatInputPlaceholder: "Ask me..." }
  *   });
- *   
+ *
  *   constructor(private chatConfig: CopilotChatConfigurationService) {}
- *   
+ *
  *   updateForSupportMode() {
  *     this.chatController.update({
  *       labels: { chatInputPlaceholder: "Describe your issue..." }
  *     });
  *   }
- *   
+ *
  *   resetToDefaults() {
  *     this.chatController.reset();
  *   }
@@ -211,11 +211,12 @@ export function createChatConfigController(
   if (initialConfig) {
     service.updateConfiguration(initialConfig);
   }
-  
+
   return {
-    update: (config: CopilotChatConfiguration) => service.updateConfiguration(config),
+    update: (config: CopilotChatConfiguration) =>
+      service.updateConfiguration(config),
     reset: () => service.reset(),
     getLabels: () => service.labels(),
-    getInputValue: () => service.inputValue()
+    getInputValue: () => service.inputValue(),
   };
 }

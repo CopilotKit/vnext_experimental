@@ -1,10 +1,10 @@
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -17,13 +17,13 @@ vi.mock("@copilotkitnext/core", () => ({
 }));
 
 describe("Frontend Tool Integration", () => {
-  let service: CopilotKitService;
+  let service: CopilotKit;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideCopilotKit({})],
     });
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
   });
 
   describe("Service Tool Render Methods", () => {

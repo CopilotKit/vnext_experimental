@@ -1,10 +1,10 @@
-export * from "./core/copilotkit.service";
+export * from "./core/copilotkit";
 export * from "./core/copilotkit.types";
 export * from "./core/copilotkit.providers";
 // Re-export types from @ag-ui/core for convenience
 export type { Message, ToolCall, ToolMessage } from "@ag-ui/core";
 export * from "./core/chat-configuration/chat-configuration.types";
-export * from "./core/chat-configuration/chat-configuration.service";
+export * from "./core/chat-configuration/chat-configuration";
 export * from "./core/chat-configuration/chat-configuration.providers";
 export * from "./utils/copilotkit.utils";
 export * from "./utils/agent-context.utils";
@@ -22,84 +22,84 @@ export * from "./utils/chat-config.utils";
 // Slot utilities are internal only, not exported
 // export * from "./lib/slots/slot.types";
 // export * from "./lib/slots/slot.utils";
-// export { CopilotSlotComponent } from "./lib/slots/copilot-slot.component";
-export { CopilotTooltipDirective } from "./lib/directives/tooltip.directive";
-export { CopilotKitConfigDirective } from "./directives/copilotkit-config.directive";
-export { CopilotKitAgentContextDirective } from "./directives/copilotkit-agent-context.directive";
-export { CopilotKitFrontendToolDirective } from "./directives/copilotkit-frontend-tool.directive";
-export { CopilotKitAgentDirective } from "./directives/copilotkit-agent.directive";
+// export { CopilotSlot } from "./lib/slots/copilot-slot";
+export { CopilotTooltip } from "./lib/directives/tooltip";
+export { CopilotKitConfig } from "./directives/copilotkit-config";
+export { CopilotKitAgentContext } from "./directives/copilotkit-agent-context";
+export { CopilotKitFrontendTool } from "./directives/copilotkit-frontend-tool";
+export { CopilotKitAgent } from "./directives/copilotkit-agent";
 export {
-  CopilotKitHumanInTheLoopDirective,
-  CopilotKitHumanInTheLoopRespondDirective,
-} from "./directives/copilotkit-human-in-the-loop.directive";
-export { CopilotKitChatConfigDirective } from "./directives/copilotkit-chat-config.directive";
-export { CopilotKitToolRenderComponent } from "./components/copilotkit-tool-render.component";
+  CopilotKitHumanInTheLoop,
+  CopilotKitHumanInTheLoopRespond,
+} from "./directives/copilotkit-human-in-the-loop";
+export { CopilotKitChatConfig } from "./directives/copilotkit-chat-config";
+export { CopilotKitToolRender } from "./components/copilotkit-tool-render";
 
 // Chat Input Components
 export * from "./components/chat/copilot-chat-input.types";
-export { CopilotChatInputComponent } from "./components/chat/copilot-chat-input.component";
+export { CopilotChatInput } from "./components/chat/copilot-chat-input";
 export { CopilotChatInputDefaults } from "./components/chat/copilot-chat-input-defaults";
-export { CopilotChatTextareaComponent } from "./components/chat/copilot-chat-textarea.component";
-export { CopilotChatAudioRecorderComponent } from "./components/chat/copilot-chat-audio-recorder.component";
+export { CopilotChatTextarea } from "./components/chat/copilot-chat-textarea";
+export { CopilotChatAudioRecorder } from "./components/chat/copilot-chat-audio-recorder";
 export {
-  CopilotChatSendButtonComponent,
-  CopilotChatToolbarButtonComponent,
-  CopilotChatStartTranscribeButtonComponent,
-  CopilotChatCancelTranscribeButtonComponent,
-  CopilotChatFinishTranscribeButtonComponent,
-  CopilotChatAddFileButtonComponent,
-} from "./components/chat/copilot-chat-buttons.component";
-export { CopilotChatToolbarComponent } from "./components/chat/copilot-chat-toolbar.component";
-export { CopilotChatToolsMenuComponent } from "./components/chat/copilot-chat-tools-menu.component";
+  CopilotChatSendButton,
+  CopilotChatToolbarButton,
+  CopilotChatStartTranscribeButton,
+  CopilotChatCancelTranscribeButton,
+  CopilotChatFinishTranscribeButton,
+  CopilotChatAddFileButton,
+} from "./components/chat/copilot-chat-buttons";
+export { CopilotChatToolbar } from "./components/chat/copilot-chat-toolbar";
+export { CopilotChatToolsMenu } from "./components/chat/copilot-chat-tools-menu";
 
 // Chat User Message Components
 export * from "./components/chat/copilot-chat-user-message.types";
-export { CopilotChatUserMessageComponent } from "./components/chat/copilot-chat-user-message.component";
-export { CopilotChatUserMessageRendererComponent } from "./components/chat/copilot-chat-user-message-renderer.component";
+export { CopilotChatUserMessage } from "./components/chat/copilot-chat-user-message";
+export { CopilotChatUserMessageRenderer } from "./components/chat/copilot-chat-user-message-renderer";
 export {
-  CopilotChatUserMessageToolbarButtonComponent,
-  CopilotChatUserMessageCopyButtonComponent,
-  CopilotChatUserMessageEditButtonComponent,
-} from "./components/chat/copilot-chat-user-message-buttons.component";
-export { CopilotChatUserMessageToolbarComponent } from "./components/chat/copilot-chat-user-message-toolbar.component";
-export { CopilotChatUserMessageBranchNavigationComponent } from "./components/chat/copilot-chat-user-message-branch-navigation.component";
+  CopilotChatUserMessageToolbarButton,
+  CopilotChatUserMessageCopyButton,
+  CopilotChatUserMessageEditButton,
+} from "./components/chat/copilot-chat-user-message-buttons";
+export { CopilotChatUserMessageToolbar } from "./components/chat/copilot-chat-user-message-toolbar";
+export { CopilotChatUserMessageBranchNavigation } from "./components/chat/copilot-chat-user-message-branch-navigation";
 
 // Chat Assistant Message Components
 export * from "./components/chat/copilot-chat-assistant-message.types";
-export { CopilotChatAssistantMessageComponent } from "./components/chat/copilot-chat-assistant-message.component";
-export { CopilotChatAssistantMessageRendererComponent } from "./components/chat/copilot-chat-assistant-message-renderer.component";
+export { CopilotChatAssistantMessage } from "./components/chat/copilot-chat-assistant-message";
+export { CopilotChatAssistantMessageRenderer } from "./components/chat/copilot-chat-assistant-message-renderer";
 export {
-  CopilotChatAssistantMessageToolbarButtonComponent,
-  CopilotChatAssistantMessageCopyButtonComponent,
-  CopilotChatAssistantMessageThumbsUpButtonComponent,
-  CopilotChatAssistantMessageThumbsDownButtonComponent,
-  CopilotChatAssistantMessageReadAloudButtonComponent,
-  CopilotChatAssistantMessageRegenerateButtonComponent,
-} from "./components/chat/copilot-chat-assistant-message-buttons.component";
-export { CopilotChatAssistantMessageToolbarComponent } from "./components/chat/copilot-chat-assistant-message-toolbar.component";
+  CopilotChatAssistantMessageToolbarButton,
+  CopilotChatAssistantMessageCopyButton,
+  CopilotChatAssistantMessageThumbsUpButton,
+  CopilotChatAssistantMessageThumbsDownButton,
+  CopilotChatAssistantMessageReadAloudButton,
+  CopilotChatAssistantMessageRegenerateButton,
+} from "./components/chat/copilot-chat-assistant-message-buttons";
+export { CopilotChatAssistantMessageToolbar } from "./components/chat/copilot-chat-assistant-message-toolbar";
 
 // Chat Message View Components
 export * from "./components/chat/copilot-chat-message-view.types";
-export { CopilotChatMessageViewComponent } from "./components/chat/copilot-chat-message-view.component";
-export { CopilotChatMessageViewCursorComponent } from "./components/chat/copilot-chat-message-view-cursor.component";
-export { CopilotChatToolCallsViewComponent } from "./components/chat/copilot-chat-tool-calls-view.component";
+export { CopilotChatMessageView } from "./components/chat/copilot-chat-message-view";
+export { CopilotChatMessageViewCursor } from "./components/chat/copilot-chat-message-view-cursor";
+export { CopilotChatToolCallsView } from "./components/chat/copilot-chat-tool-calls-view";
 
 // Chat View Components
 export * from "./components/chat/copilot-chat-view.types";
-export { CopilotChatViewComponent } from "./components/chat/copilot-chat-view.component";
-export { CopilotChatViewScrollViewComponent } from "./components/chat/copilot-chat-view-scroll-view.component";
-export { CopilotChatViewScrollToBottomButtonComponent } from "./components/chat/copilot-chat-view-scroll-to-bottom-button.component";
-export { CopilotChatViewFeatherComponent } from "./components/chat/copilot-chat-view-feather.component";
-export { CopilotChatViewInputContainerComponent } from "./components/chat/copilot-chat-view-input-container.component";
-export { CopilotChatViewDisclaimerComponent } from "./components/chat/copilot-chat-view-disclaimer.component";
+export { CopilotChatView } from "./components/chat/copilot-chat-view";
+export { CopilotChatViewScrollView } from "./components/chat/copilot-chat-view-scroll-view";
+export { CopilotChatViewScrollToBottomButton } from "./components/chat/copilot-chat-view-scroll-to-bottom-button";
+export { CopilotChatViewFeather } from "./components/chat/copilot-chat-view-feather";
+export { CopilotChatViewInputContainer } from "./components/chat/copilot-chat-view-input-container";
+export { CopilotChatViewDisclaimer } from "./components/chat/copilot-chat-view-disclaimer";
 
 // Main Chat Component
-export { CopilotChatComponent } from "./components/chat/copilot-chat.component";
+export { CopilotChat } from "./components/chat/copilot-chat";
 
 // Services and Directives for Chat View
-export { ScrollPositionService } from "./services/scroll-position.service";
-export { ResizeObserverService } from "./services/resize-observer.service";
-export { StickToBottomDirective } from "./directives/stick-to-bottom.directive";
+export { ScrollPosition } from "./services/scroll-position";
+export { ResizeObserverService } from "./services/resize-observer";
+export { StickToBottom } from "./directives/stick-to-bottom";
 
 // Testing utilities are not exported from the main entry point
 // They should be imported directly from '@copilotkitnext/angular/testing' if needed

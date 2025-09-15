@@ -1,12 +1,12 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitFrontendToolDirective } from "../copilotkit-frontend-tool.directive";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKitFrontendTool } from "../copilotkit-frontend-tool";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -18,8 +18,8 @@ vi.mock("@copilotkitnext/core", () => ({
   })),
 }));
 
-describe("CopilotKitFrontendToolDirective", () => {
-  let service: CopilotKitService;
+describe("CopilotKitFrontendTool", () => {
+  let service: CopilotKit;
   let addToolSpy: any;
   let removeToolSpy: any;
 
@@ -28,7 +28,7 @@ describe("CopilotKitFrontendToolDirective", () => {
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     addToolSpy = vi.spyOn(service.copilotkit, "addTool");
     removeToolSpy = vi.spyOn(service.copilotkit, "removeTool");
   });
@@ -40,15 +40,15 @@ describe("CopilotKitFrontendToolDirective", () => {
   describe("Basic Registration", () => {
     it("should register tool with static values", () => {
       @Component({
-        template: `
+  standalone: true,
+template: `
           <div
             copilotkitFrontendTool
             name="testTool"
             description="Test tool"
           ></div>
         `,
-        standalone: true,
-        imports: [CopilotKitFrontendToolDirective],
+        imports: [CopilotKitFrontendTool],
       })
       class TestComponent {}
 
@@ -67,9 +67,9 @@ describe("CopilotKitFrontendToolDirective", () => {
       const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       @Component({
-        template: `<div copilotkitFrontendTool></div>`,
-        standalone: true,
-        imports: [CopilotKitFrontendToolDirective],
+    standalone: true,
+template: `<div copilotkitFrontendTool></div>`,
+        imports: [CopilotKitFrontendTool],
       })
       class MissingNameComponent {}
 
@@ -78,7 +78,7 @@ describe("CopilotKitFrontendToolDirective", () => {
 
       expect(addToolSpy).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
-        'CopilotKitFrontendToolDirective: "name" is required. Please provide a name via [name]="toolName" or [copilotkitFrontendTool]="{ name: \'toolName\', ... }"'
+        'CopilotKitFrontendTool: "name" is required. Please provide a name via [name]="toolName" or [copilotkitFrontendTool]="{ name: \'toolName\', ... }"'
       );
 
       consoleSpy.mockRestore();
@@ -88,9 +88,9 @@ describe("CopilotKitFrontendToolDirective", () => {
   describe("Cleanup", () => {
     it("should remove tool on destroy", () => {
       @Component({
-        template: ` <div copilotkitFrontendTool name="cleanupTool"></div> `,
-        standalone: true,
-        imports: [CopilotKitFrontendToolDirective],
+    standalone: true,
+template: ` <div copilotkitFrontendTool name="cleanupTool"></div> `,
+        imports: [CopilotKitFrontendTool],
       })
       class CleanupComponent {}
 

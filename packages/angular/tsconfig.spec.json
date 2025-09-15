@@ -1,10 +1,13 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.lib.json",
   "compilerOptions": {
-    "target": "es2016",
-    "types": ["vitest/globals", "node"]
+    "target": "ES2022",
+    "types": ["node"],
+    "declaration": false,
+    "declarationMap": false,
+    "outDir": "./dist-spec"
   },
-  "files": ["src/test-setup.ts"],
+  "files": ["setup-jest.ts", "src/vitest-compat.d.ts"],
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",

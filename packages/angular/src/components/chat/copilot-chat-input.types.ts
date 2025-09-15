@@ -1,9 +1,9 @@
-import type { Type, TemplateRef } from '@angular/core';
+import type { Type, TemplateRef } from "@angular/core";
 
 /**
  * Mode of the chat input component
  */
-export type CopilotChatInputMode = 'input' | 'transcribe' | 'processing';
+export type CopilotChatInputMode = "input" | "transcribe" | "processing";
 
 /**
  * Represents a menu item in the tools menu
@@ -17,14 +17,14 @@ export type ToolsMenuItem = {
     }
   | {
       action?: never;
-      items: (ToolsMenuItem | '-')[];
+      items: (ToolsMenuItem | "-")[];
     }
 );
 
 /**
  * Audio recorder state
  */
-export type AudioRecorderState = 'idle' | 'recording' | 'processing';
+export type AudioRecorderState = "idle" | "recording" | "processing";
 
 /**
  * Error class for audio recorder failures
@@ -32,7 +32,7 @@ export type AudioRecorderState = 'idle' | 'recording' | 'processing';
 export class AudioRecorderError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AudioRecorderError';
+    this.name = "AudioRecorderError";
   }
 }
 
@@ -53,7 +53,7 @@ export interface CopilotChatTextareaProps {
   cols?: number;
   readonly?: boolean;
   spellcheck?: boolean;
-  wrap?: 'hard' | 'soft' | 'off';
+  wrap?: "hard" | "soft" | "off";
 }
 
 /**
@@ -64,7 +64,7 @@ export interface CopilotChatButtonProps {
   onClick?: () => void;
   inputClass?: string;
   style?: any;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
   ariaLabel?: string;
   ariaPressed?: boolean;
   ariaExpanded?: boolean;
@@ -77,14 +77,14 @@ export interface CopilotChatButtonProps {
 export interface CopilotChatToolbarButtonProps extends CopilotChatButtonProps {
   icon?: TemplateRef<any>;
   tooltip?: string;
-  variant?: 'primary' | 'secondary';
+  variant?: "primary" | "secondary";
 }
 
 /**
  * Props for tools menu button
  */
 export interface CopilotChatToolsButtonProps extends CopilotChatButtonProps {
-  toolsMenu?: (ToolsMenuItem | '-')[];
+  toolsMenu?: (ToolsMenuItem | "-")[];
 }
 
 /**
@@ -104,8 +104,8 @@ export interface CopilotChatAudioRecorderProps {
 export interface CopilotChatToolbarProps {
   inputClass?: string;
   style?: any;
-  position?: 'top' | 'bottom';
-  alignment?: 'left' | 'center' | 'right' | 'space-between';
+  position?: "top" | "bottom";
+  alignment?: "left" | "center" | "right" | "space-between";
 }
 
 /**
@@ -128,7 +128,7 @@ export interface CopilotChatInputSlots {
  */
 export interface CopilotChatInputConfig {
   mode?: CopilotChatInputMode;
-  toolsMenu?: (ToolsMenuItem | '-')[];
+  toolsMenu?: (ToolsMenuItem | "-")[];
   autoFocus?: boolean;
   additionalToolbarItems?: TemplateRef<any>;
   value?: string;

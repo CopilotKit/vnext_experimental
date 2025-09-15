@@ -5,7 +5,7 @@ import {
   provideCopilotChatConfiguration,
   CopilotChatComponent,
 } from "@copilotkitnext/angular";
-import { CustomChatInputComponent } from "../custom-input/custom-chat-input.component";
+import { CustomChatInputComponent } from "../custom-input/custom-chat-input";
 
 @Component({
   selector: "ukg-co-pilot-port",

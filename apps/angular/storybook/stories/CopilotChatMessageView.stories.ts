@@ -3,9 +3,9 @@ import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { Component, Input, signal, Injectable } from "@angular/core";
 import {
-  CopilotChatMessageViewComponent,
-  CopilotChatMessageViewCursorComponent,
-  CopilotKitService,
+  CopilotChatMessageView,
+  CopilotChatMessageViewCursor,
+  CopilotKit,
   provideCopilotKit,
   provideCopilotChatConfiguration,
   Message,
@@ -15,9 +15,9 @@ import {
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { z } from "zod"; // Schema validation
 
-const meta: Meta<CopilotChatMessageViewComponent> = {
+const meta: Meta<CopilotChatMessageView> = {
   title: "UI/CopilotChatMessageView",
-  component: CopilotChatMessageViewComponent,
+  component: CopilotChatMessageView,
   parameters: {
     docs: {
       description: {
@@ -30,8 +30,8 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
-        CopilotChatMessageViewCursorComponent,
+        CopilotChatMessageView,
+        CopilotChatMessageViewCursor,
       ],
       providers: [
         provideCopilotChatConfiguration({
@@ -53,7 +53,7 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatMessageViewComponent>;
+type Story = StoryObj<CopilotChatMessageView>;
 
 // Default story with full conversation - matches React exactly
 export const Default: Story = {
@@ -63,12 +63,12 @@ export const Default: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -217,12 +217,12 @@ export const ShowCursor: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -488,8 +488,8 @@ export const WithToolCalls: Story = {
         code: `import { Component, Input, signal, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
-  CopilotChatMessageViewComponent, 
-  CopilotKitService,
+  CopilotChatMessageView, 
+  CopilotKit,
   Message, 
   ToolCall, 
   ToolMessage,
@@ -696,13 +696,13 @@ class WildcardToolRenderComponent {
   selector: 'app-chat',
   standalone: true,
   imports: [
-    CopilotChatMessageViewComponent,
+    CopilotChatMessageView,
     SearchToolRenderComponent,
     CalculatorToolRenderComponent,
     WildcardToolRenderComponent
   ],
   providers: [
-    CopilotKitService,
+    CopilotKit,
     provideCopilotKit({
       renderToolCalls: [
         {
@@ -813,13 +813,13 @@ export class ChatComponent {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
+        CopilotChatMessageView,
         SearchToolRenderComponent,
         CalculatorToolRenderComponent,
         WildcardToolRenderComponent,
       ],
       providers: [
-        CopilotKitService,
+        CopilotKit,
         provideCopilotKit({
           runtimeUrl: undefined, // Explicitly provide undefined to avoid null injector error
           renderToolCalls: [

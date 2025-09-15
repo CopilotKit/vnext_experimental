@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import {
-  CopilotChatUserMessageComponent,
+  CopilotChatUserMessage,
   provideCopilotChatConfiguration,
   type UserMessage,
 } from "@copilotkitnext/angular";
@@ -66,12 +66,12 @@ const shortMessage: UserMessage = {
   timestamp: new Date(),
 };
 
-const meta: Meta<CopilotChatUserMessageComponent> = {
+const meta: Meta<CopilotChatUserMessage> = {
   title: "UI/CopilotChatUserMessage",
-  component: CopilotChatUserMessageComponent,
+  component: CopilotChatUserMessage,
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, CopilotChatUserMessageComponent],
+      imports: [CommonModule, CopilotChatUserMessage],
       providers: [provideCopilotChatConfiguration({})],
     }),
   ],
@@ -102,7 +102,7 @@ const meta: Meta<CopilotChatUserMessageComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatUserMessageComponent>;
+type Story = StoryObj<CopilotChatUserMessage>;
 
 export const Default: Story = {
   parameters: {
@@ -110,12 +110,12 @@ export const Default: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message"
@@ -150,12 +150,12 @@ export const LongMessage: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message"
@@ -200,12 +200,12 @@ export const WithEditButton: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message"
@@ -242,12 +242,12 @@ export const WithoutEditButton: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message">
@@ -280,12 +280,12 @@ export const CodeRelatedMessage: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message"
@@ -339,12 +339,12 @@ export const ShortQuestion: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <copilot-chat-user-message
       [message]="message"
@@ -408,12 +408,12 @@ export const WithAdditionalToolbarItems: Story = {
       source: {
         type: "code",
         code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
-import { CopilotChatUserMessageComponent, UserMessage } from '@copilotkitnext/angular';
+import { CopilotChatUserMessage, UserMessage } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatUserMessageComponent],
+  imports: [CopilotChatUserMessage],
   template: \`
     <ng-template #additionalItems>
       <button

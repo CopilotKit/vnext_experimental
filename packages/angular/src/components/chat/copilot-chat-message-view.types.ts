@@ -1,5 +1,5 @@
-import { Message } from '@ag-ui/client';
-import { Type, TemplateRef } from '@angular/core';
+import { Message } from "@ag-ui/client";
+import { Type, TemplateRef } from "@angular/core";
 
 // Context interfaces for template slots
 export interface MessageViewContext {
@@ -18,17 +18,17 @@ export interface CopilotChatMessageViewProps {
   messages?: Message[];
   showCursor?: boolean;
   inputClass?: string;
-  
+
   // Assistant message slots
   assistantMessageComponent?: Type<any>;
   assistantMessageTemplate?: TemplateRef<any>;
   assistantMessageClass?: string;
-  
+
   // User message slots
   userMessageComponent?: Type<any>;
   userMessageTemplate?: TemplateRef<any>;
   userMessageClass?: string;
-  
+
   // Cursor slots
   cursorComponent?: Type<any>;
   cursorTemplate?: TemplateRef<any>;

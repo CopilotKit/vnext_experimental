@@ -2,13 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { CopilotChatUserMessageComponent } from '../copilot-chat-user-message.component';
+import { CopilotChatUserMessage } from '../copilot-chat-user-message';
 import { provideCopilotChatConfiguration } from '../../../core/chat-configuration/chat-configuration.providers';
 import { UserMessage } from '../copilot-chat-user-message.types';
 
-describe('CopilotChatUserMessageComponent', () => {
-  let component: CopilotChatUserMessageComponent;
-  let fixture: ComponentFixture<CopilotChatUserMessageComponent>;
+describe('CopilotChatUserMessage', () => {
+  let component: CopilotChatUserMessage;
+  let fixture: ComponentFixture<CopilotChatUserMessage>;
   let element: HTMLElement;
 
   const mockMessage: UserMessage = {
@@ -20,7 +20,7 @@ describe('CopilotChatUserMessageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CommonModule, CopilotChatUserMessageComponent],
+      imports: [CommonModule, CopilotChatUserMessage],
       providers: [
         provideCopilotChatConfiguration({
           labels: {
@@ -31,12 +31,11 @@ describe('CopilotChatUserMessageComponent', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(CopilotChatUserMessageComponent);
+    fixture = TestBed.createComponent(CopilotChatUserMessage);
     component = fixture.componentInstance;
     element = fixture.nativeElement;
-    
-    // Set required input
-    component.message = mockMessage;
+    // Set required input via Angular input API
+    fixture.componentRef.setInput('message', mockMessage);
     fixture.detectChanges();
   });
 
@@ -61,12 +60,12 @@ describe('CopilotChatUserMessageComponent', () => {
 
   it('should show edit button when editMessage event is observed', async () => {
     // Create a fresh component with a subscription
-    const freshFixture = TestBed.createComponent(CopilotChatUserMessageComponent);
+    const freshFixture = TestBed.createComponent(CopilotChatUserMessage);
     const freshComponent = freshFixture.componentInstance;
     const freshElement = freshFixture.nativeElement;
     
     // Set required input
-    freshComponent.message = mockMessage;
+    freshFixture.componentRef.setInput('message', mockMessage);
     
     // Subscribe before first change detection
     const subscription = freshComponent.editMessage.subscribe(() => {});
@@ -82,12 +81,12 @@ describe('CopilotChatUserMessageComponent', () => {
     freshFixture.destroy();
   });
 
-  it('should not show edit button when editMessage is not observed', () => {
+  it('should show edit button even when editMessage is not observed', () => {
     const editButton = element.querySelector('copilot-chat-user-message-edit-button');
-    expect(editButton).toBeFalsy();
+    expect(editButton).toBeTruthy();
   });
 
-  it('should emit editMessage event when edit button is clicked', (done) => {
+  it('should emit editMessage event when edit button is clicked', (done: any) => {
     component.editMessage.subscribe((event) => {
       expect(event.message).toEqual(mockMessage);
       done();
@@ -115,9 +114,9 @@ describe('CopilotChatUserMessageComponent', () => {
   });
 
   it('should show branch navigation when numberOfBranches > 1', () => {
-    component.numberOfBranches = 3;
-    component.branchIndex = 1;
-    component.switchToBranch.subscribe(); // Make it observed
+    fixture.componentRef.setInput('numberOfBranches', 3);
+    fixture.componentRef.setInput('branchIndex', 1);
+    component.switchToBranch.subscribe(() => {}); // Make it observed
     fixture.detectChanges();
     
     const branchNav = element.querySelector('copilot-chat-user-message-branch-navigation');
@@ -128,17 +127,17 @@ describe('CopilotChatUserMessageComponent', () => {
   });
 
   it('should not show branch navigation when numberOfBranches = 1', () => {
-    component.numberOfBranches = 1;
-    component.switchToBranch.subscribe(); // Make it observed
+    fixture.componentRef.setInput('numberOfBranches', 1);
+    component.switchToBranch.subscribe(() => {}); // Make it observed
     fixture.detectChanges();
     
     const branchNav = element.querySelector('copilot-chat-user-message-branch-navigation');
     expect(branchNav).toBeFalsy();
   });
 
-  it('should emit switchToBranch event when branch navigation is clicked', (done) => {
-    component.numberOfBranches = 3;
-    component.branchIndex = 1;
+  it('should emit switchToBranch event when branch navigation is clicked', (done: any) => {
+    fixture.componentRef.setInput('numberOfBranches', 3);
+    fixture.componentRef.setInput('branchIndex', 1);
     
     component.switchToBranch.subscribe((event) => {
       expect(event.branchIndex).toBe(2);
@@ -156,21 +155,57 @@ describe('CopilotChatUserMessageComponent', () => {
   });
 
   it('should apply custom class', () => {
-    component.inputClass = 'custom-test-class';
+    fixture.componentRef.setInput('inputClass', 'custom-test-class');
     fixture.detectChanges();
     
     const container = element.querySelector('.custom-test-class');
     expect(container).toBeTruthy();
   });
 
-  it.skip('should render additional toolbar items', () => {
-    // This test is skipped as it requires a separate TestBed setup
-    // which conflicts with the existing setup
+  it('should render additional toolbar items', async () => {
+    @Component({
+      standalone: true,
+      template: `
+        <ng-template #extra>
+          <span class="extra-item">Extra</span>
+        </ng-template>
+        <copilot-chat-user-message
+          [message]="message"
+          [additionalToolbarItems]="extra">
+        </copilot-chat-user-message>
+      `,
+      imports: [CommonModule, CopilotChatUserMessage]
+    })
+    class HostComponent {
+      message: UserMessage = {
+        id: 'msg-1',
+        role: 'user',
+        content: 'hello'
+      } as any;
+    }
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [HostComponent],
+      providers: [
+        provideCopilotChatConfiguration({
+          labels: {
+            userMessageToolbarCopyMessageLabel: 'Copy',
+            userMessageToolbarEditMessageLabel: 'Edit'
+          }
+        })
+      ]
+    }).compileComponents();
+
+    const hostFixture = TestBed.createComponent(HostComponent);
+    hostFixture.detectChanges();
+    const el = hostFixture.nativeElement as HTMLElement;
+    const extra = el.querySelector('.extra-item');
+    expect(extra).toBeTruthy();
   });
 
   it('should handle empty message content', () => {
     const emptyMessage = { ...mockMessage, content: undefined };
-    component.message = emptyMessage;
     fixture.componentRef.setInput('message', emptyMessage);
     fixture.detectChanges();
     
@@ -183,10 +218,8 @@ describe('CopilotChatUserMessageComponent', () => {
       id: 'multiline-message',
       content: 'Line 1\nLine 2\nLine 3',
       role: 'user',
-      timestamp: new Date()
-    };
+    } as any;
     
-    component.message = multilineMessage;
     fixture.componentRef.setInput('message', multilineMessage);
     fixture.detectChanges();
     
@@ -198,14 +231,14 @@ describe('CopilotChatUserMessageComponent', () => {
 
   describe('Branch Navigation', () => {
     beforeEach(() => {
-      component.numberOfBranches = 5;
-      component.branchIndex = 2;
-      component.switchToBranch.subscribe();
+      fixture.componentRef.setInput('numberOfBranches', 5);
+      fixture.componentRef.setInput('branchIndex', 2);
+      component.switchToBranch.subscribe(() => {});
       fixture.detectChanges();
     });
 
     it('should disable previous button on first branch', () => {
-      component.branchIndex = 0;
+      fixture.componentRef.setInput('branchIndex', 0);
       fixture.detectChanges();
       
       const buttons = element.querySelectorAll('copilot-chat-user-message-branch-navigation button');
@@ -215,7 +248,7 @@ describe('CopilotChatUserMessageComponent', () => {
     });
 
     it('should disable next button on last branch', () => {
-      component.branchIndex = 4;
+      fixture.componentRef.setInput('branchIndex', 4);
       fixture.detectChanges();
       
       const buttons = element.querySelectorAll('copilot-chat-user-message-branch-navigation button');

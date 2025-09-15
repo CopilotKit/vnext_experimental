@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export interface UserMessage {
   id: string;
   content?: string;
-  role: 'user';
+  role: "user";
   timestamp?: Date;
   [key: string]: any; // Allow additional properties
 }
@@ -33,7 +34,9 @@ export interface EditButtonContext {
 export interface BranchNavigationContext {
   currentBranch: number;
   numberOfBranches: number;
-  onSwitchToBranch?: (props: CopilotChatUserMessageOnSwitchToBranchProps) => void;
+  onSwitchToBranch?: (
+    props: CopilotChatUserMessageOnSwitchToBranchProps
+  ) => void;
   message: UserMessage;
 }
 

@@ -4,13 +4,13 @@ import {
   registerFrontendTool,
   createDynamicFrontendTool,
 } from "../frontend-tool.utils";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 import { z } from "zod";
 import { signal } from "@angular/core";
 
 // Mock CopilotKitCore
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     addTool: vi.fn(),
     removeTool: vi.fn(),
@@ -24,13 +24,13 @@ vi.mock("@copilotkitnext/core", () => ({
 
 // Mock component for testing
 @Component({
-  template: `<div>Mock Render</div>`,
   standalone: true,
+template: `<div>Mock Render</div>`,
 })
 class MockRenderComponent {}
 
 describe("Frontend Tool Inject Functions", () => {
-  let service: CopilotKitService;
+  let service: CopilotKit;
   let addToolSpy: any;
   let removeToolSpy: any;
 
@@ -39,7 +39,7 @@ describe("Frontend Tool Inject Functions", () => {
       providers: [provideCopilotKit({})],
     });
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
     addToolSpy = vi.spyOn(service.copilotkit, "addTool");
     removeToolSpy = vi.spyOn(service.copilotkit, "removeTool");
   });
@@ -51,8 +51,8 @@ describe("Frontend Tool Inject Functions", () => {
   describe("registerFrontendTool", () => {
     it("should register tool within component context", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
@@ -83,8 +83,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should register render when provided", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -106,8 +106,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should cleanup on component destroy", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -140,8 +140,8 @@ describe("Frontend Tool Inject Functions", () => {
       });
 
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -171,8 +171,8 @@ describe("Frontend Tool Inject Functions", () => {
   describe("createDynamicFrontendTool", () => {
     it("should create tool with initial configuration", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
@@ -204,8 +204,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should handle dynamic updates", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
@@ -238,8 +238,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should support dynamic description", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
@@ -270,8 +270,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should cleanup on manual destroy", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent implements OnInit {
@@ -296,8 +296,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should auto-cleanup on component destroy", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {
@@ -321,8 +321,8 @@ describe("Frontend Tool Inject Functions", () => {
 
     it("should support dynamic render", () => {
       @Component({
-        template: "",
-        standalone: true,
+    standalone: true,
+template: "",
         providers: [provideCopilotKit({})],
       })
       class TestComponent {

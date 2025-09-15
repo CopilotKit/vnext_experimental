@@ -1,11 +1,11 @@
 import { Component } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
-import { CopilotKitConfigDirective } from "../copilotkit-config.directive";
-import { CopilotKitService } from "../../core/copilotkit.service";
+import { CopilotKitConfig } from "../copilotkit-config";
+import { CopilotKit } from "../../core/copilotkit";
 import { provideCopilotKit } from "../../core/copilotkit.providers";
 
 // Mock CopilotKitCore to prevent network calls
-vi.mock("@copilotkitnext/core", () => ({
+jest.mock("@copilotkitnext/core", () => ({
   CopilotKitCore: vi.fn().mockImplementation(() => ({
     setRuntimeUrl: vi.fn(),
     setHeaders: vi.fn(),
@@ -16,9 +16,9 @@ vi.mock("@copilotkitnext/core", () => ({
 }));
 
 @Component({
-  template: ` <div [copilotkitConfig]="config"></div> `,
   standalone: true,
-  imports: [CopilotKitConfigDirective],
+template: ` <div [copilotkitConfig]="config"></div> `,
+  imports: [CopilotKitConfig],
 })
 class TestComponent {
   config = {
@@ -27,16 +27,16 @@ class TestComponent {
   };
 }
 
-describe("CopilotKitConfigDirective", () => {
-  let service: CopilotKitService;
+describe("CopilotKitConfig", () => {
+  let service: CopilotKit;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestComponent, CopilotKitConfigDirective],
+      imports: [TestComponent, CopilotKitConfig],
       providers: [provideCopilotKit({})],
     }).compileComponents();
 
-    service = TestBed.inject(CopilotKitService);
+    service = TestBed.inject(CopilotKit);
   });
 
   it("should update service when config changes", () => {
