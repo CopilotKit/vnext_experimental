@@ -333,45 +333,30 @@ describe("Streaming in-progress without timers", () => {
 });
 
 describe("Executing State Transitions", () => {
-  it.skip("should show Executing status while tool handler is running", async () => {
+  it("should show Executing status while tool handler is running", async () => {
     const agent = new MockStepwiseAgent();
-    
-    // Component that uses useFrontendTool with a deferred promise
+    let resolveHandler: (() => void) | null = null;
+
     const ToolWithDeferredHandler: React.FC = () => {
-      const [resolvePromise, setResolvePromise] = React.useState<(() => void) | null>(null);
-      
       const tool: ReactFrontendTool<{ value: string }> = {
         name: "slowTool",
         parameters: z.object({ value: z.string() }),
-        handler: async () => {
-          return new Promise((resolve) => {
-            // Store resolve function to control when promise resolves
-            setResolvePromise(() => () => resolve({ result: "done" }));
-            // Auto-resolve after a short delay to prevent hanging
-            setTimeout(() => resolve({ result: "done" }), 100);
-          });
-        },
+        handler: async () =>
+          new Promise((resolve) => {
+            resolveHandler = () => resolve({ result: "done" });
+          }),
         render: ({ name, status, args, result }) => (
           <div data-testid="slow-tool-status">
-            Tool: {name} | Status: {status} | Value: {args.value} | Result: {String(result) ? "Complete" : "Pending"}
+            Tool: {name} | Status: {status} | Value: {args.value} | Result:{" "}
+            {result ? "Complete" : "Pending"}
           </div>
         ),
       };
-      
+
       useFrontendTool(tool);
-      
-      // Expose resolve function for test control
-      React.useEffect(() => {
-        if (resolvePromise) {
-          (window as any).resolveSlowTool = () => {
-            resolvePromise();
-          };
-        }
-      }, [resolvePromise]);
-      
       return null;
     };
-    
+
     render(
       <CopilotKitProvider agents={{ default: agent }}>
         <ToolWithDeferredHandler />
@@ -381,12 +366,10 @@ describe("Executing State Transitions", () => {
       </CopilotKitProvider>
     );
 
-    // Submit message
     const input = await screen.findByRole("textbox");
     fireEvent.change(input, { target: { value: "Run slow tool" } });
     fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-    // Allow React to process the state update
     await waitFor(() => {
       expect(screen.getByText("Run slow tool")).toBeDefined();
     });
@@ -394,7 +377,6 @@ describe("Executing State Transitions", () => {
     const messageId = "m_exec";
     const toolCallId = "tc_exec";
 
-    // Stream tool call
     agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
@@ -404,23 +386,23 @@ describe("Executing State Transitions", () => {
       delta: '{"value":"test"}',
     } as BaseEvent);
 
-    // Complete the agent run to let core start the handler (Executing)
+    await waitFor(() => {
+      const status = screen.getByTestId("slow-tool-status");
+      expect(status.textContent).toMatch(/Status: inProgress/i);
+      expect(status.textContent).toMatch(/Value: test/);
+    });
+
     agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
     agent.complete();
 
-    // Expect Executing status while handler promise is pending
     await waitFor(() => {
       const status = screen.getByTestId("slow-tool-status");
-      expect(status.textContent).toMatch(/Tool: slowTool/);
       expect(status.textContent).toMatch(/Status: executing/i);
-      expect(status.textContent).toMatch(/Value: test/);
-      expect(status.textContent).toMatch(/Result: Pending/);
+      expect(resolveHandler).toBeTruthy();
     });
 
-    // Resolve the deferred promise to complete the tool
-    (window as any).resolveSlowTool?.();
+    resolveHandler?.();
 
-    // After resolution, status should become Complete
     await waitFor(() => {
       const status = screen.getByTestId("slow-tool-status");
       expect(status.textContent).toMatch(/Status: complete/i);
