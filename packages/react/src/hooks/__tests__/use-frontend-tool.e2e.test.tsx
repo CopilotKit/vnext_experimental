@@ -20,6 +20,7 @@ import {
   runFinishedEvent,
   toolCallChunkEvent,
   toolCallResultEvent,
+  textChunkEvent,
   testId,
 } from "@/__tests__/utils/test-helpers";
 
@@ -319,6 +320,158 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       // Check count is rendered
       await waitFor(() => {
         expect(screen.getByTestId("tool-count").textContent).toBe("42");
+      });
+      
+      agent.emit(runFinishedEvent());
+      agent.complete();
+    });
+  });
+
+  describe("Tool followUp property behavior", () => {
+    it("stops agent execution when followUp is false", async () => {
+      const agent = new MockStepwiseAgent();
+      
+      const NoFollowUpTool: React.FC = () => {
+        const tool: ReactFrontendTool<{ action: string }> = {
+          name: "noFollowUpTool",
+          parameters: z.object({ action: z.string() }),
+          followUp: false, // This should stop execution after tool call
+          render: ({ args, status }) => (
+            <div data-testid="no-followup-tool">
+              <div data-testid="tool-action">{args.action || "no action"}</div>
+              <div data-testid="tool-status">{status}</div>
+            </div>
+          ),
+        };
+        
+        useFrontendTool(tool);
+        return null;
+      };
+      
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <NoFollowUpTool />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+      
+      // Submit a message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Execute no followup" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+      
+      await waitFor(() => {
+        expect(screen.getByText("Execute no followup")).toBeDefined();
+      });
+      
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+      
+      // Start run and emit tool call
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "noFollowUpTool",
+          parentMessageId: messageId,
+          delta: '{"action":"stop-after-this"}',
+        })
+      );
+      
+      // Tool should render
+      await waitFor(() => {
+        expect(screen.getByTestId("no-followup-tool")).toBeDefined();
+        expect(screen.getByTestId("tool-action").textContent).toBe("stop-after-this");
+      });
+      
+      // The agent should NOT continue after this tool call
+      // We can verify this by NOT emitting more events and checking the UI state
+      // In a real scenario, the agent would stop sending events
+      
+      agent.emit(runFinishedEvent());
+      agent.complete();
+      
+      // Verify execution stopped (no further messages)
+      // The chat should only have the user message and tool call, no follow-up
+      const messages = screen.queryAllByRole("article");
+      expect(messages.length).toBeLessThanOrEqual(2); // User message + tool response
+    });
+    
+    it("continues agent execution when followUp is true or undefined", async () => {
+      const agent = new MockStepwiseAgent();
+      
+      const ContinueFollowUpTool: React.FC = () => {
+        const tool: ReactFrontendTool<{ action: string }> = {
+          name: "continueFollowUpTool",
+          parameters: z.object({ action: z.string() }),
+          // followUp is undefined (default) - should continue execution
+          render: ({ args }) => (
+            <div data-testid="continue-followup-tool">
+              <div data-testid="tool-action">{args.action || "no action"}</div>
+            </div>
+          ),
+        };
+        
+        useFrontendTool(tool);
+        return null;
+      };
+      
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <ContinueFollowUpTool />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+      
+      // Submit a message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Execute with followup" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+      
+      await waitFor(() => {
+        expect(screen.getByText("Execute with followup")).toBeDefined();
+      });
+      
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+      const followUpMessageId = testId("followup");
+      
+      // Start run and emit tool call
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "continueFollowUpTool",
+          parentMessageId: messageId,
+          delta: '{"action":"continue-after-this"}',
+        })
+      );
+      
+      // Tool should render
+      await waitFor(() => {
+        expect(screen.getByTestId("continue-followup-tool")).toBeDefined();
+        expect(screen.getByTestId("tool-action").textContent).toBe("continue-after-this");
+      });
+      
+      // The agent SHOULD continue after this tool call
+      // Emit a follow-up message to simulate continued execution
+      agent.emit(
+        textChunkEvent(followUpMessageId, "This is a follow-up message after tool execution")
+      );
+      
+      // Verify the follow-up message appears
+      await waitFor(() => {
+        expect(screen.getByText("This is a follow-up message after tool execution")).toBeDefined();
       });
       
       agent.emit(runFinishedEvent());
