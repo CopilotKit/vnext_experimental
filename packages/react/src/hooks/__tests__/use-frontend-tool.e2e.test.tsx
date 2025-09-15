@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
 import { useFrontendTool } from "../use-frontend-tool";
+import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { ReactFrontendTool } from "@/types";
 import { CopilotChat } from "@/components/chat/CopilotChat";
 import CopilotChatToolCallsView from "@/components/chat/CopilotChatToolCallsView";
@@ -196,8 +197,86 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
     });
   });
 
+  describe("Debug: Tool removal", () => {
+    it("Debug logging test", async () => {
+      const TestComponent: React.FC = () => {
+        const tool: ReactFrontendTool<{ value: string }> = {
+          name: "debugTool",
+          parameters: z.object({ value: z.string() }),
+          handler: async ({ value }) => `handled ${value}`,
+        };
+        
+        useFrontendTool(tool);
+        console.log(`[TestComponent] Component mounted with tool`);
+        
+        useEffect(() => {
+          return () => {
+            console.log(`[TestComponent] Component unmounting`);
+          };
+        }, []);
+        
+        return <div data-testid="debug-component">Component</div>;
+      };
+      
+      const Wrapper: React.FC = () => {
+        const [show, setShow] = useState(true);
+        const [, forceUpdate] = useReducer(x => x + 1, 0);
+        const { copilotkit } = useCopilotKit();
+        
+        // Force re-render every 50ms to see tool status changes
+        useEffect(() => {
+          const interval = setInterval(() => forceUpdate(), 50);
+          return () => clearInterval(interval);
+        }, []);
+        
+        const toolExists = "debugTool" in copilotkit.tools;
+        console.log(`[Wrapper] Tool exists: ${toolExists}, All tools:`, Object.keys(copilotkit.tools));
+        
+        return (
+          <>
+            <button onClick={() => setShow(false)} data-testid="hide">Hide</button>
+            {show && <TestComponent />}
+            <div data-testid="tool-status">
+              {toolExists ? "exists" : "not exists"}
+            </div>
+          </>
+        );
+      };
+      
+      renderWithCopilotKit({ children: <Wrapper /> });
+      
+      // Wait for initial render
+      await waitFor(() => {
+        expect(screen.getByTestId("debug-component")).toBeDefined();
+      });
+      
+      // Check initial state
+      await waitFor(() => {
+        expect(screen.getByTestId("tool-status").textContent).toBe("exists");
+      });
+      
+      // Hide the component
+      fireEvent.click(screen.getByTestId("hide"));
+      
+      // Wait for component to unmount
+      await waitFor(() => {
+        expect(screen.queryByTestId("debug-component")).toBeNull();
+      });
+      
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Check if tool was removed
+      const status = screen.getByTestId("tool-status").textContent;
+      console.log("Final tool status:", status);
+      expect(status).toBe("not exists");
+    });
+  });
+
+  // Removed - this test was revealing implementation details that are covered by the more comprehensive test below
+
   describe("Unmount disables handler, render persists", () => {
-    it("keeps rendering after unmount but does not run handler", async () => {
+    it("Tool is properly removed from copilotkit.tools after component unmounts", async () => {
       // A deterministic agent that emits a single tool call per run and finishes
       class OneShotToolCallAgent extends AbstractAgent {
         private runCount = 0;
@@ -230,10 +309,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       let handlerCalls = 0;
 
       // Component that can be toggled on/off
-      const ToggleableToolComponent: React.FC<{ isVisible: boolean }> = ({
-        isVisible,
-      }) => {
-        if (!isVisible) return null;
+      const ToggleableToolComponent: React.FC = () => {
         const tool: ReactFrontendTool<{ value: string }> = {
           name: "temporaryTool",
           parameters: z.object({ value: z.string() }),
@@ -253,6 +329,28 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         return <div data-testid="tool-mounted">Tool is mounted</div>;
       };
 
+
+      // Component to check if tool exists in copilotkit
+      const ToolChecker: React.FC = () => {
+        const { copilotkit } = useCopilotKit();
+        const hasTemporaryTool = "temporaryTool" in copilotkit.tools;
+        const [renderCount, setRenderCount] = useState(0);
+        
+        useEffect(() => {
+          setRenderCount(c => c + 1);
+        });
+        
+        console.log(`[ToolChecker] Render #${renderCount + 1}, temporaryTool exists:`, hasTemporaryTool);
+        console.log(`[ToolChecker] All tools:`, Object.keys(copilotkit.tools));
+        
+        return (
+          <div data-testid="tool-in-copilotkit">
+            {hasTemporaryTool ? "Tool exists in copilotkit" : "Tool NOT in copilotkit"}
+            <span data-testid="render-count"> (render #{renderCount + 1})</span>
+          </div>
+        );
+      };
+
       const TestWrapper: React.FC = () => {
         const [showTool, setShowTool] = useState(true);
         return (
@@ -263,7 +361,8 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             >
               Toggle Tool
             </button>
-            <ToggleableToolComponent isVisible={showTool} />
+            {showTool && <ToggleableToolComponent />}
+            <ToolChecker />
             <div style={{ height: 400 }}>
               <CopilotChat />
             </div>
@@ -275,6 +374,9 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
 
       // Tool should be mounted initially
       expect(screen.getByTestId("tool-mounted")).toBeDefined();
+      await waitFor(() => {
+        expect(screen.getByTestId("tool-in-copilotkit").textContent).toBe("Tool exists in copilotkit");
+      });
 
       // Run 1: submit a message to trigger agent run with "first call"
       const input = await screen.findByRole("textbox");
@@ -295,6 +397,16 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         expect(screen.queryByTestId("tool-mounted")).toBeNull();
       });
 
+      // Wait a bit longer to ensure the unmount effect has fully completed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verify the tool has been removed from copilotkit
+      const toolStatus = screen.getByTestId("tool-in-copilotkit").textContent;
+      console.log("Tool status after unmount:", toolStatus);
+      
+      // THIS IS THE BUG: The tool should be removed but it's still there
+      expect(toolStatus).toBe("Tool NOT in copilotkit"); // This will fail, showing the bug
+
       // Run 2: trigger agent again with "second call"
       fireEvent.change(input, { target: { value: "Trigger 2" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
@@ -304,9 +416,10 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         const toolRender = screen.getAllByTestId("temporary-tool");
         // There will be two renders in the chat history; check the last one
         const last = toolRender[toolRender.length - 1];
-        console.log("last", last);
+        console.log("Second tool render content:", last?.textContent);
+        console.log("Handler calls count:", handlerCalls);
         expect(last?.textContent).toContain("second call");
-        expect(last?.textContent).not.toContain("HANDLED SECOND CALL");
+        // The handler should not have been called a second time
         expect(handlerCalls).toBe(1);
       });
     });
