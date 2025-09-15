@@ -889,8 +889,8 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
           handler: async (args) => {
             console.log("Handler started");
             handlerStarted = true;
-            // Simulate async work that takes time
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            // Give React a chance to re-render with Executing status
+            await new Promise((resolve) => setTimeout(resolve, 100));
             handlerCompleted = true;
             handlerResult = { processed: args.value.toUpperCase() };
             console.log("Handler completed with result:", handlerResult);
@@ -951,27 +951,22 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
           delta: '{"value":"test"}',
         })
       );
-      
-      // Don't emit result yet - let the handler execute
       agent.emit(runFinishedEvent());
       
-      // Wait for tool to render
+      // Wait for tool to render with InProgress status
       await waitFor(() => {
         const toolEl = screen.getByTestId("executing-tool");
         expect(toolEl).toBeDefined();
         expect(screen.getByTestId("tool-value").textContent).toBe("test");
+        expect(screen.getByTestId("tool-status").textContent).toBe(ToolCallStatus.InProgress);
       });
       
-      // At this point, the tool should be InProgress
-      expect(screen.getByTestId("tool-status").textContent).toBe(ToolCallStatus.InProgress);
+      console.log("Tool rendered with InProgress status");
       
-      // Now we need to trigger another agent run to execute the handler
-      // The handler should execute when copilotkit.runAgent is called again
-      console.log("Triggering handler execution by completing agent...");
+      // NOW complete the agent to trigger handler execution
+      // This delay ensures React has rendered the InProgress state
+      await new Promise(resolve => setTimeout(resolve, 50));
       agent.complete();
-      
-      // Give time for the handler to execute
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Trigger another run to process the tool
       await waitFor(
