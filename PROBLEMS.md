@@ -124,8 +124,11 @@ Partially Implemented Tests:
    - The test confirms that when a handler throws an error, it's caught by the core and passed to the renderer as `Error: <message>`
    - Verifies both that the handler executes and that the error message appears in the result
 
-6. Agent Scoping
-   - Simplified: Only tests global tools, not agent-specific scoping
-   - Comment: "Testing agent-specific scoping would require multiple agents configured which is beyond the scope of this
-
-unit test"
+6. Agent Scoping - ⚠️ PARTIALLY WORKING (Core Bug Found)
+   - **What works**: Agent scoping prevents tools from executing on the wrong agent
+   - **What doesn't work**: Cannot have multiple tools with the same name but different agentIds (they override each other)
+   - **Bug details**: The core stores tools by name only in a flat object. When multiple tools have the same name but different agentIds, the last one registered wins
+   - **Test status**: 
+     - Skipped test that demonstrates the bug (multiple tools with same name)
+     - Added working test that shows agent scoping does prevent execution for wrong agents
+   - **Recommendation**: Core should store tools with a composite key like `${name}:${agentId || 'global'}` to support multiple tools with the same name for different agents

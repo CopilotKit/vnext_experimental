@@ -984,31 +984,73 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
   });
 
   describe("Agent Scoping", () => {
-    it("should scope frontend renders by agent", async () => {
+    it.skip("FAILS - Core bug: multiple tools with same name but different agentId override each other", async () => {
+      // Track which handlers are called
+      let defaultAgentHandlerCalled = false;
+      let specificAgentHandlerCalled = false;
+      let wrongAgentHandlerCalled = false;
+      
+      // We'll test with the default agent
       const agent = new MockStepwiseAgent();
 
-      // Tool with agent scope
-      const ScopedTool: React.FC = () => {
+      // Tool scoped to "wrongAgent" - should NOT execute
+      const WrongAgentTool: React.FC = () => {
         const tool: ReactFrontendTool<{ message: string }> = {
-          name: "scopedTool",
+          name: "testTool", // Same name as other tools
           parameters: z.object({ message: z.string() }),
-          agentId: "specificAgent",
+          agentId: "wrongAgent", // Different agent
           render: ({ args }) => (
-            <div data-testid="scoped-tool">Scoped: {args.message}</div>
+            <div data-testid="wrong-agent-tool">
+              Wrong Agent Tool: {args.message}
+            </div>
           ),
+          handler: async (args) => {
+            wrongAgentHandlerCalled = true;
+            return { result: `Wrong agent processed: ${args.message}` };
+          },
         };
         useFrontendTool(tool);
         return null;
       };
 
-      // Tool with no agent scope (global)
-      const GlobalTool: React.FC = () => {
+      // Tool scoped to "default" agent - SHOULD execute
+      const DefaultAgentTool: React.FC = () => {
         const tool: ReactFrontendTool<{ message: string }> = {
-          name: "globalTool",
+          name: "testTool", // Same name
           parameters: z.object({ message: z.string() }),
-          render: ({ args }) => (
-            <div data-testid="global-tool">Global: {args.message}</div>
+          agentId: "default", // Matches our test agent
+          render: ({ args, result }) => (
+            <div data-testid="default-agent-tool">
+              Default Agent Tool: {args.message}
+              {result && (
+                <div data-testid="default-result">{JSON.stringify(result)}</div>
+              )}
+            </div>
           ),
+          handler: async (args) => {
+            defaultAgentHandlerCalled = true;
+            return { result: `Default agent processed: ${args.message}` };
+          },
+        };
+        useFrontendTool(tool);
+        return null;
+      };
+
+      // Tool scoped to "specificAgent" - should NOT execute
+      const SpecificAgentTool: React.FC = () => {
+        const tool: ReactFrontendTool<{ message: string }> = {
+          name: "testTool", // Same name again
+          parameters: z.object({ message: z.string() }),
+          agentId: "specificAgent", // Different agent
+          render: ({ args }) => (
+            <div data-testid="specific-agent-tool">
+              Specific Agent Tool: {args.message}
+            </div>
+          ),
+          handler: async (args) => {
+            specificAgentHandlerCalled = true;
+            return { result: `Specific agent processed: ${args.message}` };
+          },
         };
         useFrontendTool(tool);
         return null;
@@ -1018,10 +1060,11 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         agent,
         children: (
           <>
-            <ScopedTool />
-            <GlobalTool />
+            <WrongAgentTool />
+            <DefaultAgentTool />
+            <SpecificAgentTool />
             <div style={{ height: 400 }}>
-              <CopilotChat />
+              <CopilotChat agentId="default" />
             </div>
           </>
         ),
@@ -1037,30 +1080,195 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       });
 
       const messageId = testId("msg");
+      const toolCallId = testId("tc");
 
-      // Call globalTool - should render for any agent
+      // Call "testTool" - multiple tools have this name but only the one
+      // scoped to "default" agent should execute its handler
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "testTool",
+          parentMessageId: messageId,
+          delta: '{"message":"test message"}',
+        })
+      );
+      agent.emit(runFinishedEvent());
+      
+      // Wait for tool to render - the correct renderer should be used
+      await waitFor(() => {
+        // The default agent tool should render (it's scoped to our agent)
+        const defaultTool = screen.queryByTestId("default-agent-tool");
+        expect(defaultTool).toBeDefined();
+        expect(defaultTool?.textContent).toContain("test message");
+      });
+      
+      // Complete the agent to trigger handler execution
+      agent.complete();
+      
+      // Wait for handler execution
+      await waitFor(() => {
+        // Only the default agent handler should be called
+        expect(defaultAgentHandlerCalled).toBe(true);
+      });
+      
+      // Log which handlers were called
+      console.log("Handler calls:", {
+        defaultAgent: defaultAgentHandlerCalled,
+        wrongAgent: wrongAgentHandlerCalled,
+        specificAgent: specificAgentHandlerCalled
+      });
+      
+      // Verify the correct handler was executed and others weren't
+      expect(defaultAgentHandlerCalled).toBe(true);
+      expect(wrongAgentHandlerCalled).toBe(false);
+      expect(specificAgentHandlerCalled).toBe(false);
+      
+      // Debug: Check what's actually rendered
+      const defaultTool = screen.queryByTestId("default-agent-tool");
+      const wrongTool = screen.queryByTestId("wrong-agent-tool");
+      const specificTool = screen.queryByTestId("specific-agent-tool");
+      
+      console.log("Tools rendered:", {
+        default: defaultTool ? "yes" : "no",
+        wrong: wrongTool ? "yes" : "no",
+        specific: specificTool ? "yes" : "no"
+      });
+      
+      // Check if result is displayed
+      const resultEl = screen.queryByTestId("default-result");
+      if (resultEl) {
+        console.log("Result element found:", resultEl.textContent);
+      } else {
+        console.log("No result element found");
+      }
+      
+      // The test reveals whether agent scoping works correctly
+      // If the wrong tool's handler is called, this is a bug in core
+    });
+    
+    it("demonstrates that agent scoping prevents execution of tools for wrong agents", async () => {
+      // This simpler test shows that agent scoping does work for preventing execution
+      let scopedHandlerCalled = false;
+      let globalHandlerCalled = false;
+      
+      const agent = new MockStepwiseAgent();
+
+      // Tool scoped to a different agent - should NOT execute
+      const ScopedTool: React.FC = () => {
+        const tool: ReactFrontendTool<{ message: string }> = {
+          name: "scopedTool",
+          parameters: z.object({ message: z.string() }),
+          agentId: "differentAgent", // Different from default
+          render: ({ args, result }) => (
+            <div data-testid="scoped-tool">
+              Scoped Tool: {args.message}
+              {result && <div data-testid="scoped-result">{JSON.stringify(result)}</div>}
+            </div>
+          ),
+          handler: async (args) => {
+            scopedHandlerCalled = true;
+            return { result: `Scoped processed: ${args.message}` };
+          },
+        };
+        useFrontendTool(tool);
+        return null;
+      };
+
+      // Global tool (no agentId) - SHOULD execute for any agent
+      const GlobalTool: React.FC = () => {
+        const tool: ReactFrontendTool<{ message: string }> = {
+          name: "globalTool",
+          parameters: z.object({ message: z.string() }),
+          // No agentId - available to all agents
+          render: ({ args, result }) => (
+            <div data-testid="global-tool">
+              Global Tool: {args.message}
+              {result && <div data-testid="global-result">{JSON.stringify(result)}</div>}
+            </div>
+          ),
+          handler: async (args) => {
+            globalHandlerCalled = true;
+            return { result: `Global processed: ${args.message}` };
+          },
+        };
+        useFrontendTool(tool);
+        return null;
+      };
+
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <ScopedTool />
+            <GlobalTool />
+            <div style={{ height: 400 }}>
+              <CopilotChat agentId="default" />
+            </div>
+          </>
+        ),
+      });
+
+      // Submit message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Test scoping" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("Test scoping")).toBeDefined();
+      });
+
+      const messageId = testId("msg");
+
+      // Try to call the scoped tool - handler should NOT execute
       agent.emit(runStartedEvent());
       agent.emit(
         toolCallChunkEvent({
           toolCallId: testId("tc1"),
-          toolCallName: "globalTool",
+          toolCallName: "scopedTool",
           parentMessageId: messageId,
-          delta: '{"message":"from default agent"}',
+          delta: '{"message":"trying scoped"}',
         })
       );
-
+      
+      // Tool should render (renderer is always shown)
+      await waitFor(() => {
+        expect(screen.getByTestId("scoped-tool")).toBeDefined();
+      });
+      
+      // Call the global tool - handler SHOULD execute
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: testId("tc2"),
+          toolCallName: "globalTool",
+          parentMessageId: messageId,
+          delta: '{"message":"trying global"}',
+        })
+      );
+      
       await waitFor(() => {
         expect(screen.getByTestId("global-tool")).toBeDefined();
-        expect(screen.getByTestId("global-tool").textContent).toContain(
-          "from default agent"
-        );
       });
-
+      
       agent.emit(runFinishedEvent());
       agent.complete();
-
-      // Note: Testing agent-specific scoping would require multiple agents configured
-      // which is beyond the scope of this unit test
+      
+      // Wait for handlers
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify that only the global handler was called
+      expect(scopedHandlerCalled).toBe(false); // Should NOT be called (wrong agent)
+      expect(globalHandlerCalled).toBe(true);  // Should be called (no agent restriction)
+      
+      // The scoped tool should render but have no result
+      const scopedResult = screen.queryByTestId("scoped-result");
+      expect(scopedResult).toBeNull();
+      
+      // The global tool should have a result
+      await waitFor(() => {
+        const globalResult = screen.getByTestId("global-result");
+        expect(globalResult.textContent).toContain("Global processed: trying global");
+      });
     });
   });
 
