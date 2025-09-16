@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { useCopilotAgentId } from "./use-copilot-agent-id";
+import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { partialJSONParse } from "@copilotkitnext/shared";
 
 export interface UseRenderToolCallProps {
@@ -19,7 +19,7 @@ export interface UseRenderToolCallProps {
  */
 export function useRenderToolCall() {
   const { currentRenderToolCalls, copilotkit } = useCopilotKit();
-  const agentId = useCopilotAgentId();
+  const { agentId } = useCopilotChatConfiguration();
   const [executingToolCallIds, setExecutingToolCallIds] = useState<
     ReadonlySet<string>
   >(() => new Set());

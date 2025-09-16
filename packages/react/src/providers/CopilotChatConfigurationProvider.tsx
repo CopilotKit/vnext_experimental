@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode } from "react";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 
 // Default labels
 export const CopilotChatDefaultLabels = {
@@ -29,6 +30,8 @@ export interface CopilotChatConfigurationValue {
   inputValue?: string;
   onSubmitInput?: (value: string) => void;
   onChangeInput?: (value: string) => void;
+  agentId: string;
+  threadId?: string;
 }
 
 // Create the configuration context
@@ -42,12 +45,22 @@ export interface CopilotChatConfigurationProviderProps {
   inputValue?: string;
   onSubmitInput?: (value: string) => void;
   onChangeInput?: (value: string) => void;
+  agentId?: string;
+  threadId?: string;
 }
 
 // Provider component
 export const CopilotChatConfigurationProvider: React.FC<
   CopilotChatConfigurationProviderProps
-> = ({ children, labels = {}, inputValue, onSubmitInput, onChangeInput }) => {
+> = ({
+  children,
+  labels = {},
+  inputValue,
+  onSubmitInput,
+  onChangeInput,
+  agentId,
+  threadId,
+}) => {
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
     ...CopilotChatDefaultLabels,
@@ -59,6 +72,8 @@ export const CopilotChatConfigurationProvider: React.FC<
     inputValue,
     onSubmitInput,
     onChangeInput,
+    agentId: agentId ?? DEFAULT_AGENT_ID,
+    threadId,
   };
 
   return (

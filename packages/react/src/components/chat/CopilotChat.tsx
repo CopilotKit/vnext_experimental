@@ -1,5 +1,4 @@
 import { useAgent } from "@/hooks/use-agent";
-import { CopilotAgentIdProvider } from "@/hooks/use-copilot-agent-id";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
@@ -21,7 +20,10 @@ export function CopilotChat({
   const { agent } = useAgent({ agentId });
   const { copilotkit } = useCopilotKit();
   const [isLoading, setIsLoading] = useState(false);
-  threadId = threadId ?? useMemo(() => randomUUID(), []);
+  const resolvedThreadId = useMemo(
+    () => threadId ?? randomUUID(),
+    [threadId]
+  );
 
   const subscriber = {
     onTextMessageStartEvent: () => setIsLoading(false),
@@ -37,7 +39,7 @@ export function CopilotChat({
       setIsLoading(false);
     };
     if (agent) {
-      agent.threadId = threadId;
+      agent.threadId = resolvedThreadId;
       if (agent instanceof CopilotRuntimeAgent) {
         connect();
       } else {
@@ -45,7 +47,7 @@ export function CopilotChat({
       }
     }
     return () => {};
-  }, [threadId, agent, copilotkit, agentId]);
+  }, [resolvedThreadId, agent, copilotkit, agentId]);
 
   const [inputValue, setInputValue] = useState("");
   const onSubmitInput = useCallback(
@@ -80,16 +82,14 @@ export function CopilotChat({
   );
 
   return (
-    <CopilotAgentIdProvider agentId={agentId}>
-      <CopilotChatConfigurationProvider
-        inputValue={inputValue}
-        onSubmitInput={onSubmitInput}
-        onChangeInput={setInputValue}
-      >
-        <CopilotChatView
-          {...{ messages: agent?.messages ?? [], ...mergedProps }}
-        />
-      </CopilotChatConfigurationProvider>
-    </CopilotAgentIdProvider>
+    <CopilotChatConfigurationProvider
+      inputValue={inputValue}
+      onSubmitInput={onSubmitInput}
+      onChangeInput={setInputValue}
+      agentId={agentId}
+      threadId={resolvedThreadId}
+    >
+      <CopilotChatView {...{ messages: agent?.messages ?? [], ...mergedProps }} />
+    </CopilotChatConfigurationProvider>
   );
 }

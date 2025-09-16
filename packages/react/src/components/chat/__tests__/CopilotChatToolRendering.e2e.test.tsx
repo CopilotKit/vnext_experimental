@@ -12,6 +12,7 @@ import {
 import { Observable, Subject } from "rxjs";
 import { defineToolCallRender, ReactToolCallRender, ReactFrontendTool } from "@/types";
 import CopilotChatToolCallsView from "../CopilotChatToolCallsView";
+import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useFrontendTool } from "@/hooks/use-frontend-tool";
@@ -172,11 +173,16 @@ describe("Tool render status narrowing", () => {
 
     return render(
       <CopilotKitProvider renderToolCalls={renderToolCalls}>
-        <CopilotChatToolCallsView
-          message={assistantMessage}
-          messages={messages}
-          isLoading={isLoading}
-        />
+        <CopilotChatConfigurationProvider
+          agentId="default"
+          threadId="test-thread"
+        >
+          <CopilotChatToolCallsView
+            message={assistantMessage}
+            messages={messages}
+            isLoading={isLoading}
+          />
+        </CopilotChatConfigurationProvider>
       </CopilotKitProvider>
     );
   }

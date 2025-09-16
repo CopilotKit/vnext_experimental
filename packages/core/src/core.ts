@@ -4,7 +4,13 @@ import {
   RuntimeInfo,
 } from "@copilotkitnext/shared";
 import { logger } from "@copilotkitnext/shared";
-import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
+import {
+  AbstractAgent,
+  Context,
+  HttpAgent,
+  Message,
+  RunAgentResult,
+} from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { CopilotRuntimeAgent } from "./agent";
 
@@ -275,12 +281,11 @@ export class CopilotKitCore {
     this.subscribers.delete(subscriber);
   }
 
-  // TODO: AG-UI needs to expose the runAgent result type
   async runAgent({
     agent,
     withMessages,
     agentId,
-  }: RunAgentParams): Promise<Awaited<ReturnType<typeof agent.runAgent>>> {
+  }: RunAgentParams): Promise<RunAgentResult> {
     if (withMessages) {
       agent.addMessages(withMessages);
     }
