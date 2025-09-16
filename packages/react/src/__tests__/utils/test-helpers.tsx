@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
 import { CopilotChat } from "@/components/chat/CopilotChat";
 import {
@@ -22,14 +22,18 @@ export class MockStepwiseAgent extends AbstractAgent {
    * Emit a single agent event
    */
   emit(event: BaseEvent) {
-    this.subject.next(event);
+    act(() => {
+      this.subject.next(event);
+    });
   }
 
   /**
    * Complete the agent stream
    */
   complete() {
-    this.subject.complete();
+    act(() => {
+      this.subject.complete();
+    });
   }
 
   clone(): MockStepwiseAgent {
