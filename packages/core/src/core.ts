@@ -12,7 +12,7 @@ import {
   RunAgentResult,
 } from "@ag-ui/client";
 import { FrontendTool } from "./types";
-import { CopilotRuntimeAgent } from "./agent";
+import { ProxiedCopilotRuntimeAgent } from "./agent";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
@@ -104,7 +104,7 @@ export class CopilotKitCore {
 
     const agents: Record<string, AbstractAgent> = Object.fromEntries(
       Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
-        const agent = new CopilotRuntimeAgent({
+        const agent = new ProxiedCopilotRuntimeAgent({
           runtimeUrl: this.runtimeUrl,
           agentId: id,
           description: description,

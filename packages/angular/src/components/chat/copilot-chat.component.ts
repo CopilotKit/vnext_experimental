@@ -25,7 +25,7 @@ import {
 import { watchAgent, watchAgentWith } from "../../utils/agent.utils";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { Message, AbstractAgent } from "@ag-ui/client";
-import { CopilotRuntimeAgent } from "@copilotkitnext/core";
+import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
 
 /**
  * CopilotChat component - Angular equivalent of React's <CopilotChat>
@@ -89,7 +89,7 @@ export class CopilotChatComponent implements OnInit, OnChanges {
         a.threadId = this.threadId || this.generatedThreadId;
         if (!this.hasConnectedOnce) {
           this.hasConnectedOnce = true;
-          if (a instanceof CopilotRuntimeAgent) {
+          if (a instanceof ProxiedCopilotRuntimeAgent) {
             this.connectToAgent(a);
           } else {
             // Not a CopilotKit agent: ensure UI not showing loading cursor

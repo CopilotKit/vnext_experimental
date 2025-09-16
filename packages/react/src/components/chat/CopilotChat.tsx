@@ -5,7 +5,7 @@ import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { CopilotRuntimeAgent } from "@copilotkitnext/core";
+import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -20,10 +20,7 @@ export function CopilotChat({
   const { agent } = useAgent({ agentId });
   const { copilotkit } = useCopilotKit();
   const [isLoading, setIsLoading] = useState(false);
-  const resolvedThreadId = useMemo(
-    () => threadId ?? randomUUID(),
-    [threadId]
-  );
+  const resolvedThreadId = useMemo(() => threadId ?? randomUUID(), [threadId]);
 
   const subscriber = {
     onTextMessageStartEvent: () => setIsLoading(false),
@@ -40,7 +37,7 @@ export function CopilotChat({
     };
     if (agent) {
       agent.threadId = resolvedThreadId;
-      if (agent instanceof CopilotRuntimeAgent) {
+      if (agent instanceof ProxiedCopilotRuntimeAgent) {
         connect();
       } else {
         setIsLoading(false);
@@ -89,7 +86,9 @@ export function CopilotChat({
       agentId={agentId}
       threadId={resolvedThreadId}
     >
-      <CopilotChatView {...{ messages: agent?.messages ?? [], ...mergedProps }} />
+      <CopilotChatView
+        {...{ messages: agent?.messages ?? [], ...mergedProps }}
+      />
     </CopilotChatConfigurationProvider>
   );
 }
