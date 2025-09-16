@@ -11,7 +11,7 @@ describe("CopilotKitCore Basic", () => {
   it("should create an instance", () => {
     expect(copilotKitCore).toBeDefined();
     expect(copilotKitCore.agents).toEqual({});
-    expect(copilotKitCore.tools).toEqual({});
+    expect(copilotKitCore.getAllTools()).toEqual([]);
   });
 
   it("should add a tool", () => {
@@ -22,6 +22,6 @@ describe("CopilotKitCore Basic", () => {
     
     copilotKitCore.addTool(tool);
     
-    expect(copilotKitCore.tools["testTool"]).toBe(tool);
+    expect(copilotKitCore.getTool({ toolName: "testTool" })).toBe(tool);
   });
 });

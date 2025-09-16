@@ -1,9 +1,11 @@
 import { useAgent } from "@/hooks/use-agent";
+import { CopilotAgentIdProvider } from "@/hooks/use-copilot-agent-id";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
+import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -16,6 +18,7 @@ export function CopilotChat({
   ...props
 }: CopilotChatProps) {
   const { agent } = useAgent({ agentId });
+  const { copilotkit } = useCopilotKit();
   const [isLoading, setIsLoading] = useState(false);
   threadId = threadId ?? useMemo(() => randomUUID(), []);
 
@@ -27,12 +30,9 @@ export function CopilotChat({
   useEffect(() => {
     const connect = async () => {
       setIsLoading(true);
-      await agent?.runAgent(
-        {
-          forwardedProps: { __copilotkitConnect: true },
-        },
-        subscriber
-      );
+      if (agent) {
+        await copilotkit.runAgent({ agent, agentId });
+      }
       setIsLoading(false);
     };
     if (agent) {
@@ -44,7 +44,7 @@ export function CopilotChat({
       }
     }
     return () => {};
-  }, [threadId, agent]);
+  }, [threadId, agent, copilotkit, agentId]);
 
   const [inputValue, setInputValue] = useState("");
   const onSubmitInput = useCallback(
@@ -56,10 +56,12 @@ export function CopilotChat({
         content: value,
       });
       setIsLoading(true);
-      await agent?.runAgent({}, subscriber);
+      if (agent) {
+        await copilotkit.runAgent({ agent, agentId });
+      }
       setIsLoading(false);
     },
-    [agent]
+    [agent, copilotkit, agentId]
   );
 
   const mergedProps = merge(
@@ -77,14 +79,16 @@ export function CopilotChat({
   );
 
   return (
-    <CopilotChatConfigurationProvider
-      inputValue={inputValue}
-      onSubmitInput={onSubmitInput}
-      onChangeInput={setInputValue}
-    >
-      <CopilotChatView
-        {...{ messages: agent?.messages ?? [], ...mergedProps }}
-      />
-    </CopilotChatConfigurationProvider>
+    <CopilotAgentIdProvider agentId={agentId}>
+      <CopilotChatConfigurationProvider
+        inputValue={inputValue}
+        onSubmitInput={onSubmitInput}
+        onChangeInput={setInputValue}
+      >
+        <CopilotChatView
+          {...{ messages: agent?.messages ?? [], ...mergedProps }}
+        />
+      </CopilotChatConfigurationProvider>
+    </CopilotAgentIdProvider>
   );
 }

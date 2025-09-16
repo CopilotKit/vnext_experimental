@@ -27,14 +27,36 @@ vi.mock("@copilotkitnext/core", () => {
       mockSubscribers = [];
       
       // Properly initialize tools from config
-      const tools = config?.tools || {};
-      
+      const tools = Array.isArray(config?.tools) ? config?.tools : [];
+      const toolRegistry = new Map<string, any>();
+
+      const upsertTools = (nextTools: any[] = []) => {
+        toolRegistry.clear();
+        nextTools.forEach((tool) => {
+          const agentKey = tool.agentId ?? "global";
+          toolRegistry.set(`${agentKey}:${tool.name}`, tool);
+        });
+      };
+
+      upsertTools(tools);
+
       const instance = {
         setRuntimeUrl: vi.fn(),
         setHeaders: vi.fn(),
         setProperties: vi.fn(),
         setAgents: vi.fn(),
-        tools: tools, // Use the initialized tools
+        setTools: vi.fn((nextTools) => {
+          upsertTools(nextTools);
+          instance.tools = nextTools;
+        }),
+        getTool: vi.fn(({ toolName, agentId }) => {
+          const scopedKey = `${agentId ?? "global"}:${toolName}`;
+          return (
+            toolRegistry.get(scopedKey) ||
+            (agentId ? toolRegistry.get(`global:${toolName}`) : undefined)
+          );
+        }),
+        tools,
         subscribe: vi.fn((callbacks) => {
           mockSubscribers.push(callbacks);
           // Return unsubscribe function
@@ -498,8 +520,8 @@ describe("CopilotKitService - Frontend Tools", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     expect(serviceWithTools.frontendTools()).toEqual([calculateTool]);
-    expect(serviceWithTools.copilotkit.tools["calculate"]).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["calculate"].name).toBe(
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "calculate" })).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "calculate" }).name).toBe(
       "calculate"
     );
   });
@@ -588,9 +610,9 @@ describe("CopilotKitService - Human-in-the-Loop", () => {
 
     expect(serviceWithTools.humanInTheLoop()).toEqual([approvalTool]);
     expect(
-      serviceWithTools.copilotkit.tools["requestApproval"]
+      serviceWithTools.copilotkit.getTool({ toolName: "requestApproval" })
     ).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["requestApproval"].name).toBe(
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "requestApproval" }).name).toBe(
       "requestApproval"
     );
   });
@@ -620,7 +642,7 @@ describe("CopilotKitService - Human-in-the-Loop", () => {
     
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
-    const tool = serviceWithTools.copilotkit.tools["getUserInput"];
+    const tool = serviceWithTools.copilotkit.getTool({ toolName: "getUserInput" });
     expect(tool.handler).toBeDefined();
 
     const result = await tool.handler({ prompt: "Enter value" });
@@ -717,18 +739,18 @@ describe("CopilotKitService - Agent ID Constraints", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check all tools are registered
-    expect(serviceWithTools.copilotkit.tools["globalTool"]).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["agent1Tool"]).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["agent2Tool"]).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "globalTool" })).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "agent1Tool", agentId: "agent1" })).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "agent2Tool", agentId: "agent2" })).toBeDefined();
 
     // Check agentId is preserved
     expect(
-      serviceWithTools.copilotkit.tools["globalTool"].agentId
+      serviceWithTools.copilotkit.getTool({ toolName: "globalTool" }).agentId
     ).toBeUndefined();
-    expect(serviceWithTools.copilotkit.tools["agent1Tool"].agentId).toBe(
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "agent1Tool", agentId: "agent1" }).agentId).toBe(
       "agent1"
     );
-    expect(serviceWithTools.copilotkit.tools["agent2Tool"].agentId).toBe(
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "agent2Tool", agentId: "agent2" }).agentId).toBe(
       "agent2"
     );
   });
@@ -806,12 +828,9 @@ describe("CopilotKitService - Agent ID Constraints", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check tool is registered with agentId
-    expect(
-      serviceWithTools.copilotkit.tools["agentSpecificTool"]
-    ).toBeDefined();
-    expect(
-      serviceWithTools.copilotkit.tools["agentSpecificTool"].agentId
-    ).toBe("specificAgent");
+    const tool = serviceWithTools.copilotkit.getTool({ toolName: "agentSpecificTool", agentId: "specificAgent" });
+    expect(tool).toBeDefined();
+    expect(tool.agentId).toBe("specificAgent");
 
     // Check render is registered with agentId
     const renderToolCalls = serviceWithTools.renderToolCalls();
@@ -846,10 +865,9 @@ describe("CopilotKitService - Agent ID Constraints", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check tool is registered with agentId
-    expect(serviceWithTools.copilotkit.tools["agentApproval"]).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["agentApproval"].agentId).toBe(
-      "approvalAgent"
-    );
+    const tool = serviceWithTools.copilotkit.getTool({ toolName: "agentApproval", agentId: "approvalAgent" });
+    expect(tool).toBeDefined();
+    expect(tool.agentId).toBe("approvalAgent");
 
     // Check render is registered with agentId
     const renderToolCalls = serviceWithTools.renderToolCalls();
@@ -897,15 +915,12 @@ describe("CopilotKitService - Agent ID Constraints", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check tools registration with correct agentId
-    expect(
-      serviceWithTools.copilotkit.tools["globalTool"].agentId
-    ).toBeUndefined();
-    expect(serviceWithTools.copilotkit.tools["specificTool"].agentId).toBe(
-      "specificAgent"
-    );
-    expect(serviceWithTools.copilotkit.tools["hitlTool"].agentId).toBe(
-      "hitlAgent"
-    );
+    const registeredGlobalTool = serviceWithTools.copilotkit.getTool({ toolName: "globalTool" });
+    expect(registeredGlobalTool.agentId).toBeUndefined();
+    const registeredSpecificTool = serviceWithTools.copilotkit.getTool({ toolName: "specificTool", agentId: "specificAgent" });
+    expect(registeredSpecificTool.agentId).toBe("specificAgent");
+    const registeredHitlTool = serviceWithTools.copilotkit.getTool({ toolName: "hitlTool", agentId: "hitlAgent" });
+    expect(registeredHitlTool.agentId).toBe("hitlAgent");
 
     // Check render registration
     const renderToolCalls = serviceWithTools.renderToolCalls();
@@ -976,8 +991,8 @@ describe("CopilotKitService - Combined Tools and Renders", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check all tools are registered
-    expect(serviceWithTools.copilotkit.tools["frontendTool"]).toBeDefined();
-    expect(serviceWithTools.copilotkit.tools["hitlTool"]).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "frontendTool" })).toBeDefined();
+    expect(serviceWithTools.copilotkit.getTool({ toolName: "hitlTool" })).toBeDefined();
 
     // Check all render calls are combined
     const renderToolCalls = serviceWithTools.renderToolCalls();

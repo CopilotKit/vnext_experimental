@@ -24,9 +24,10 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["*"]).toBeDefined();
-      expect(result.current.copilotkit.tools["*"]?.name).toBe("*");
-      expect(result.current.copilotkit.tools["*"]?.handler).toBe(wildcardHandler);
+      const retrievedTool = result.current.copilotkit.getTool({ toolName: "*" });
+      expect(retrievedTool).toBeDefined();
+      expect(retrievedTool?.name).toBe("*");
+      expect(retrievedTool?.handler).toBe(wildcardHandler);
     });
 
     it("should register wildcard alongside specific tools", () => {
@@ -51,8 +52,8 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["specific"]).toBeDefined();
-      expect(result.current.copilotkit.tools["*"]).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "specific" })).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "*" })).toBeDefined();
     });
 
     it("should register wildcard with render component", () => {
@@ -99,7 +100,8 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["*"]?.agentId).toBe("specificAgent");
+      const retrievedTool = result.current.copilotkit.getTool({ toolName: "*", agentId: "specificAgent" });
+      expect(retrievedTool?.agentId).toBe("specificAgent");
     });
   });
 
@@ -127,7 +129,7 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["*"]).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "*" })).toBeDefined();
       const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
       expect(wildcardRender).toBeDefined();
       expect(wildcardRender?.render).toBe(WildcardComponent);
@@ -154,7 +156,8 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      expect(result.current.copilotkit.tools["*"]?.agentId).toBe("agent1");
+      const retrievedTool = result.current.copilotkit.getTool({ toolName: "*", agentId: "agent1" });
+      expect(retrievedTool?.agentId).toBe("agent1");
     });
   });
 
@@ -248,8 +251,8 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
       });
 
       // Both tools should be registered
-      expect(result.current.copilotkit.tools["specificTool"]).toBeDefined();
-      expect(result.current.copilotkit.tools["*"]).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "specificTool" })).toBeDefined();
+      expect(result.current.copilotkit.getTool({ toolName: "*" })).toBeDefined();
       
       // Both renders should be registered
       const specificToolRender = result.current.renderToolCalls.find(rc => rc.name === "specificTool");

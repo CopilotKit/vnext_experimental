@@ -15,8 +15,9 @@ describe('CopilotKitCore - Wildcard Tool Simple', () => {
     };
     
     core.addTool(wildcardTool);
-    expect(core.tools['*']).toBeDefined();
-    expect(core.tools['*']?.name).toBe('*');
+    const retrievedTool = core.getTool({ toolName: '*' });
+    expect(retrievedTool).toBeDefined();
+    expect(retrievedTool?.name).toBe('*');
   });
 
   it('should not interfere with specific tools', () => {
@@ -38,8 +39,8 @@ describe('CopilotKitCore - Wildcard Tool Simple', () => {
     core.addTool(specificTool);
     core.addTool(wildcardTool);
     
-    expect(core.tools['specific']).toBeDefined();
-    expect(core.tools['*']).toBeDefined();
-    expect(Object.keys(core.tools).length).toBe(2);
+    expect(core.getTool({ toolName: 'specific' })).toBeDefined();
+    expect(core.getTool({ toolName: '*' })).toBeDefined();
+    expect(core.getAllTools().length).toBe(2);
   });
 });

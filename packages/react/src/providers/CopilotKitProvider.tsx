@@ -162,17 +162,13 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   // Combine all tools for CopilotKitCore
   const allTools = useMemo(() => {
-    const tools: Record<string, FrontendTool> = {};
+    const tools: FrontendTool[] = [];
 
     // Add frontend tools
-    frontendToolsList.forEach((tool) => {
-      tools[tool.name] = tool;
-    });
+    tools.push(...frontendToolsList);
 
     // Add processed human-in-the-loop tools
-    processedHumanInTheLoopTools.tools.forEach((tool) => {
-      tools[tool.name] = tool;
-    });
+    tools.push(...processedHumanInTheLoopTools.tools);
 
     return tools;
   }, [frontendToolsList, processedHumanInTheLoopTools]);
@@ -213,12 +209,38 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allTools]);
 
-  // Keep currentRenderToolCalls in sync with computed render tool calls
-  // so that updates to the render functions/closures propagate.
+  // Merge computed render tool calls with any dynamically registered ones.
+  // Computed entries (from props) take precedence for the same name/agentId.
   useEffect(() => {
-    setCurrentRenderToolCalls((prev) =>
-      prev === allRenderToolCalls ? prev : allRenderToolCalls
-    );
+    setCurrentRenderToolCalls((prev) => {
+      // Build a map from computed entries
+      const keyOf = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const computedMap = new Map<string, ReactToolCallRender<unknown>>();
+      for (const rc of allRenderToolCalls) {
+        computedMap.set(keyOf(rc), rc);
+      }
+
+      // Start with computed, then add any dynamic entries not present
+      const merged: ReactToolCallRender<unknown>[] = [...computedMap.values()];
+      for (const rc of prev) {
+        const k = keyOf(rc);
+        if (!computedMap.has(k)) merged.push(rc);
+      }
+
+      // If equal by shallow key comparison and reference order, avoid updates
+      const sameLength = merged.length === prev.length;
+      if (sameLength) {
+        let same = true;
+        for (let i = 0; i < merged.length; i++) {
+          if (merged[i] !== prev[i]) {
+            same = false;
+            break;
+          }
+        }
+        if (same) return prev;
+      }
+      return merged;
+    });
   }, [allRenderToolCalls]);
 
   useEffect(() => {
@@ -227,6 +249,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setProperties(properties);
     copilotkit.setAgents(agents);
   }, [runtimeUrl, headers, properties, agents]);
+
 
   return (
     <CopilotKitContext.Provider

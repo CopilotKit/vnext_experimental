@@ -68,7 +68,7 @@ export class CopilotKitService {
 
   // Computed signals for processed values
   private readonly _allTools: ReturnType<
-    typeof computed<Record<string, FrontendTool<any>>>
+    typeof computed<FrontendTool<any>[]>
   >;
   private readonly _allRenderToolCalls: ReturnType<
     typeof computed<ToolCallRender[]>
@@ -147,31 +147,29 @@ export class CopilotKitService {
 
     // Initialize computed signals for processed values
     this._allTools = computed(() => {
-      const tools: Record<string, FrontendTool<any>> = {};
+      const toolMap = new Map<string, FrontendTool<any>>();
 
-      // Add frontend tools
       this._frontendTools().forEach((tool) => {
-        tools[tool.name] = tool as FrontendTool<any>;
+        toolMap.set(tool.name, tool as FrontendTool<any>);
       });
 
-      // Process human-in-the-loop tools
       this._humanInTheLoop().forEach((tool) => {
         const frontendTool: FrontendTool<any> = {
           name: tool.name,
           description: tool.description,
           parameters: tool.parameters,
           followUp: tool.followUp,
-          handler: async (args: any) => {
+          handler: async () => {
             console.warn(
               `Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`
             );
             return undefined;
           },
         };
-        tools[tool.name] = frontendTool;
+        toolMap.set(tool.name, frontendTool);
       });
 
-      return tools;
+      return Array.from(toolMap.values());
     });
 
     this._allRenderToolCalls = computed(() => {
@@ -253,15 +251,15 @@ export class CopilotKitService {
     humanInTheLoop: AngularHumanInTheLoop<any>[],
     renderToolCalls: ToolCallRender[]
   ): {
-    allTools: Record<string, FrontendTool<any>>;
+    allTools: FrontendTool<any>[];
     allRenderToolCalls: ToolCallRender[];
   } {
-    const allTools: Record<string, FrontendTool<any>> = {};
+    const toolMap = new Map<string, FrontendTool<any>>();
     const allRenderToolCalls: ToolCallRender[] = [...renderToolCalls];
 
     // Add frontend tools
     frontendTools.forEach((tool) => {
-      allTools[tool.name] = tool as FrontendTool<any>;
+      toolMap.set(tool.name, tool as FrontendTool<any>);
 
       // Add render component if provided
       if (tool.render) {
@@ -290,7 +288,7 @@ export class CopilotKitService {
           return undefined;
         },
       };
-      allTools[tool.name] = frontendTool;
+      toolMap.set(tool.name, frontendTool);
 
       // Add the render component
       if (tool.render) {
@@ -302,7 +300,7 @@ export class CopilotKitService {
       }
     });
 
-    return { allTools, allRenderToolCalls };
+    return { allTools: Array.from(toolMap.values()), allRenderToolCalls };
   }
 
   /**
@@ -373,9 +371,11 @@ export class CopilotKitService {
     // Sync tools - computed from frontend tools and human-in-the-loop
     effect(() => {
       const tools = this._allTools();
-      // Update copilotkit.tools directly since there's no setTools method
       untracked(() => {
-        this.copilotkit.tools = tools;
+        const setTools = (this.copilotkit as any)?.setTools;
+        if (typeof setTools === "function") {
+          setTools.call(this.copilotkit, tools);
+        }
       });
     });
   }
