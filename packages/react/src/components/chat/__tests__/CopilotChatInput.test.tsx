@@ -74,6 +74,21 @@ describe("CopilotChatInput", () => {
     expect(mockOnSubmitMessage).toHaveBeenCalledWith("test message");
   });
 
+  it("manages text state internally when uncontrolled", () => {
+    renderWithProvider(
+      <CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />
+    );
+
+    const input = screen.getByPlaceholderText("Type a message...");
+    const button = screen.getByRole("button");
+
+    fireEvent.change(input, { target: { value: "hello" } });
+    fireEvent.click(button);
+
+    expect(mockOnSubmitMessage).toHaveBeenCalledWith("hello");
+    expect((input as HTMLTextAreaElement).value).toBe("");
+  });
+
   it("does not send when Enter is pressed with Shift key", () => {
     const mockOnChange = vi.fn();
     renderWithProvider(
@@ -118,6 +133,17 @@ describe("CopilotChatInput", () => {
     );
     fireEvent.click(button);
     expect(mockOnSubmitMessage).not.toHaveBeenCalled();
+  });
+
+  it("keeps input value when no submit handler is provided", () => {
+    renderWithProvider(<CopilotChatInput />);
+
+    const input = screen.getByPlaceholderText("Type a message...");
+
+    fireEvent.change(input, { target: { value: "draft" } });
+    fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
+
+    expect((input as HTMLTextAreaElement).value).toBe("draft");
   });
 
   it("enables button based on value prop", () => {

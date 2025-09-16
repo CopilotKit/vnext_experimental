@@ -101,12 +101,16 @@ export function CopilotChatInput({
   className,
   ...props
 }: CopilotChatInputProps) {
-  const { inputValue, onSubmitInput, onChangeInput } =
-    useCopilotChatConfiguration();
+  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState<string>(() => value ?? "");
 
-  value ??= inputValue;
-  onSubmitMessage ??= onSubmitInput;
-  onChange ??= onChangeInput;
+  useEffect(() => {
+    if (!isControlled && value !== undefined) {
+      setInternalValue(value);
+    }
+  }, [isControlled, value]);
+
+  const resolvedValue = isControlled ? value ?? "" : internalValue;
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef =
@@ -132,7 +136,11 @@ export function CopilotChatInput({
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    onChange?.(e.target.value);
+    const nextValue = e.target.value;
+    if (!isControlled) {
+      setInternalValue(nextValue);
+    }
+    onChange?.(nextValue);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -143,19 +151,29 @@ export function CopilotChatInput({
   };
 
   const send = () => {
-    const trimmed = value?.trim();
-    if (trimmed) {
-      onSubmitMessage?.(trimmed);
-      // Refocus input after sending
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
+    if (!onSubmitMessage) {
+      return;
+    }
+    const trimmed = resolvedValue.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    onSubmitMessage(trimmed);
+
+    if (!isControlled) {
+      setInternalValue("");
+      onChange?.("");
+    }
+
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
 
   const BoundTextArea = renderSlot(textArea, CopilotChatInput.TextArea, {
     ref: inputRef,
-    value,
+    value: resolvedValue,
     onChange: handleChange,
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
@@ -171,7 +189,7 @@ export function CopilotChatInput({
 
   const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
     onClick: send,
-    disabled: !value?.trim() || !onSubmitMessage,
+    disabled: !resolvedValue.trim() || !onSubmitMessage,
   });
 
   const BoundStartTranscribeButton = renderSlot(

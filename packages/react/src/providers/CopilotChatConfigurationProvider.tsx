@@ -27,9 +27,6 @@ export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
 // Define the full configuration interface
 export interface CopilotChatConfigurationValue {
   labels: CopilotChatLabels;
-  inputValue?: string;
-  onSubmitInput?: (value: string) => void;
-  onChangeInput?: (value: string) => void;
   agentId: string;
   threadId: string;
 }
@@ -42,9 +39,6 @@ const CopilotChatConfiguration =
 export interface CopilotChatConfigurationProviderProps {
   children: ReactNode;
   labels?: Partial<CopilotChatLabels>;
-  inputValue?: string;
-  onSubmitInput?: (value: string) => void;
-  onChangeInput?: (value: string) => void;
   agentId?: string;
   threadId: string;
 }
@@ -55,9 +49,6 @@ export const CopilotChatConfigurationProvider: React.FC<
 > = ({
   children,
   labels = {},
-  inputValue,
-  onSubmitInput,
-  onChangeInput,
   agentId,
   threadId,
 }) => {
@@ -69,9 +60,6 @@ export const CopilotChatConfigurationProvider: React.FC<
 
   const configurationValue: CopilotChatConfigurationValue = {
     labels: mergedLabels,
-    inputValue,
-    onSubmitInput,
-    onChangeInput,
     agentId: agentId ?? DEFAULT_AGENT_ID,
     threadId,
   };

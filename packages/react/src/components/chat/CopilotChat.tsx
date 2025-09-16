@@ -46,10 +46,8 @@ export function CopilotChat({
     return () => {};
   }, [resolvedThreadId, agent, copilotkit, agentId]);
 
-  const [inputValue, setInputValue] = useState("");
   const onSubmitInput = useCallback(
     async (value: string) => {
-      setInputValue("");
       agent?.addMessage({
         id: randomUUID(),
         role: "user",
@@ -64,30 +62,40 @@ export function CopilotChat({
     [agent, copilotkit, agentId]
   );
 
+  const {
+    inputProps: providedInputProps,
+    messageView: providedMessageView,
+    ...restProps
+  } = props;
+
   const mergedProps = merge(
     {
       messageView: { isLoading },
     },
     {
-      ...props,
-      ...(typeof props.messageView === "string"
-        ? { messageView: { className: props.messageView } }
-        : props.messageView !== undefined
-          ? { messageView: props.messageView }
+      ...restProps,
+      ...(typeof providedMessageView === "string"
+        ? { messageView: { className: providedMessageView } }
+        : providedMessageView !== undefined
+          ? { messageView: providedMessageView }
           : {}),
     }
   );
 
   return (
     <CopilotChatConfigurationProvider
-      inputValue={inputValue}
-      onSubmitInput={onSubmitInput}
-      onChangeInput={setInputValue}
       agentId={agentId}
       threadId={resolvedThreadId}
     >
       <CopilotChatView
-        {...{ messages: agent?.messages ?? [], ...mergedProps }}
+        {...{
+          messages: agent?.messages ?? [],
+          inputProps: {
+            onSubmitMessage: onSubmitInput,
+            ...providedInputProps,
+          },
+          ...mergedProps,
+        }}
       />
     </CopilotChatConfigurationProvider>
   );
