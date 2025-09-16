@@ -7,10 +7,12 @@ import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChat
 // Mock onSubmitMessage function to track calls
 const mockOnSubmitMessage = vi.fn();
 
+const TEST_THREAD_ID = "test-thread";
+
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatConfigurationProvider>
+    <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
       {component}
     </CopilotChatConfigurationProvider>
   );
@@ -106,7 +108,7 @@ describe("CopilotChatInput", () => {
 
     // Test whitespace only
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value="   "
           onChange={mockOnChange}
@@ -135,7 +137,7 @@ describe("CopilotChatInput", () => {
 
     // Test with non-empty value
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value="hello"
           onChange={mockOnChange}
@@ -147,7 +149,7 @@ describe("CopilotChatInput", () => {
 
     // Test with empty value again
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value=""
           onChange={mockOnChange}
@@ -493,7 +495,7 @@ describe("CopilotChatInput", () => {
 
       // Simulate parent component updating the value
       rerender(
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
           <CopilotChatInput
             value="updated"
             onChange={mockOnChange}

@@ -28,6 +28,7 @@ const meta = {
         >
           <div style={{ width: "100%", maxWidth: "640px" }}>
             <CopilotChatConfigurationProvider
+              threadId="storybook-thread"
               inputValue={inputValue}
               onChangeInput={setInputValue}
               onSubmitInput={(value) => {
@@ -69,6 +70,7 @@ function ChatComponent() {
   
   return (
     <CopilotChatConfigurationProvider
+      threadId="demo-thread"
       inputValue={inputValue}
       onChangeInput={setInputValue}
       onSubmitInput={(value) => {
@@ -399,6 +401,7 @@ Initialize the input with pre-populated text.
 
 \`\`\`tsx
 <CopilotChatConfigurationProvider
+  threadId="demo-thread"
   inputValue="Hello, this is a prefilled message!"
   onChangeInput={setInputValue}
 >

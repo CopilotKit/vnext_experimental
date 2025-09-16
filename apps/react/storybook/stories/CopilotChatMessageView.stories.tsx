@@ -8,6 +8,8 @@ import {
 import { z } from "zod";
 import { ToolCallStatus } from "@copilotkitnext/core";
 
+const STORYBOOK_THREAD_ID = "storybook-thread";
+
 const meta = {
   title: "UI/CopilotChatMessageView",
   parameters: {
@@ -95,7 +97,7 @@ In this example:
 
     return (
       <CopilotKitProvider>
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId={STORYBOOK_THREAD_ID}>
           <div style={{ height: "100%" }}>
             <CopilotChatMessageView
               messages={messages}
@@ -138,7 +140,7 @@ export const ShowCursor: Story = {
 
     return (
       <CopilotKitProvider>
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId={STORYBOOK_THREAD_ID}>
           <div style={{ height: "100%" }}>
             <CopilotChatMessageView
               messages={messages}
@@ -309,7 +311,7 @@ export function WithToolCallsExample() {
 
   return (
     <CopilotKitProvider renderToolCalls={renderToolCalls}>
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={STORYBOOK_THREAD_ID}>
         <div style={{ height: "100%" }}>
           <CopilotChatMessageView messages={messages} />
         </div>
@@ -627,7 +629,7 @@ export function WithToolCallsExample() {
 
     return (
       <CopilotKitProvider renderToolCalls={renderToolCalls}>
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId={STORYBOOK_THREAD_ID}>
           <div style={{ height: "100%" }}>
             <CopilotChatMessageView messages={messages} />
           </div>

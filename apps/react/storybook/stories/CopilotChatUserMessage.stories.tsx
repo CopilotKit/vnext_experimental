@@ -77,7 +77,7 @@ const meta = {
         }}
       >
         <div style={{ width: "100%", maxWidth: "640px" }}>
-          <CopilotChatConfigurationProvider>
+          <CopilotChatConfigurationProvider threadId="storybook-thread">
             <Story />
           </CopilotChatConfigurationProvider>
         </div>

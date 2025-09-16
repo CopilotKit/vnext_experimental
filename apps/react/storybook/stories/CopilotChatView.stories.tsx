@@ -94,7 +94,7 @@ In this example:
 
     return (
       <CopilotKitProvider>
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId="storybook-thread">
           <div style={{ height: "100%" }}>
             <CopilotChatView
               messages={messages}

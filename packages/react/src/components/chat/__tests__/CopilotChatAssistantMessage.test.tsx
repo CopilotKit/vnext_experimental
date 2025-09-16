@@ -23,10 +23,12 @@ const mockOnReadAloud = vi.fn();
 const mockOnRegenerate = vi.fn();
 
 // Helper to render components with context providers
+const TEST_THREAD_ID = "test-thread";
+
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
     <CopilotKitProvider runtimeUrl="/test">
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         {component}
       </CopilotChatConfigurationProvider>
     </CopilotKitProvider>

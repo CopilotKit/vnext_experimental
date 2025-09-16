@@ -141,7 +141,7 @@ const meta = {
       >
         <div style={{ width: "100%", maxWidth: "640px" }}>
           <CopilotKitProvider publicApiKey="test">
-            <CopilotChatConfigurationProvider>
+            <CopilotChatConfigurationProvider threadId="storybook-thread">
               <Story />
             </CopilotChatConfigurationProvider>
           </CopilotKitProvider>

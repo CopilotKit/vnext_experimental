@@ -31,7 +31,7 @@ export interface CopilotChatConfigurationValue {
   onSubmitInput?: (value: string) => void;
   onChangeInput?: (value: string) => void;
   agentId: string;
-  threadId?: string;
+  threadId: string;
 }
 
 // Create the configuration context
@@ -46,7 +46,7 @@ export interface CopilotChatConfigurationProviderProps {
   onSubmitInput?: (value: string) => void;
   onChangeInput?: (value: string) => void;
   agentId?: string;
-  threadId?: string;
+  threadId: string;
 }
 
 // Provider component
