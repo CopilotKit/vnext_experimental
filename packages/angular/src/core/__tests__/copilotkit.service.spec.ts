@@ -27,14 +27,36 @@ vi.mock("@copilotkitnext/core", () => {
       mockSubscribers = [];
       
       // Properly initialize tools from config
-      const tools = config?.tools || {};
-      
+      const tools = Array.isArray(config?.tools) ? config?.tools : [];
+      const toolRegistry = new Map<string, any>();
+
+      const upsertTools = (nextTools: any[] = []) => {
+        toolRegistry.clear();
+        nextTools.forEach((tool) => {
+          const agentKey = tool.agentId ?? "global";
+          toolRegistry.set(`${agentKey}:${tool.name}`, tool);
+        });
+      };
+
+      upsertTools(tools);
+
       const instance = {
         setRuntimeUrl: vi.fn(),
         setHeaders: vi.fn(),
         setProperties: vi.fn(),
         setAgents: vi.fn(),
-        tools: tools, // Use the initialized tools
+        setTools: vi.fn((nextTools) => {
+          upsertTools(nextTools);
+          instance.tools = nextTools;
+        }),
+        getTool: vi.fn(({ toolName, agentId }) => {
+          const scopedKey = `${agentId ?? "global"}:${toolName}`;
+          return (
+            toolRegistry.get(scopedKey) ||
+            (agentId ? toolRegistry.get(`global:${toolName}`) : undefined)
+          );
+        }),
+        tools,
         subscribe: vi.fn((callbacks) => {
           mockSubscribers.push(callbacks);
           // Return unsubscribe function
@@ -893,12 +915,12 @@ describe("CopilotKitService - Agent ID Constraints", () => {
     const serviceWithTools = TestBed.inject(CopilotKitService);
 
     // Check tools registration with correct agentId
-    const globalTool = serviceWithTools.copilotkit.getTool({ toolName: "globalTool" });
-    expect(globalTool.agentId).toBeUndefined();
-    const specificTool = serviceWithTools.copilotkit.getTool({ toolName: "specificTool", agentId: "specificAgent" });
-    expect(specificTool.agentId).toBe("specificAgent");
-    const hitlTool = serviceWithTools.copilotkit.getTool({ toolName: "hitlTool", agentId: "hitlAgent" });
-    expect(hitlTool.agentId).toBe("hitlAgent");
+    const registeredGlobalTool = serviceWithTools.copilotkit.getTool({ toolName: "globalTool" });
+    expect(registeredGlobalTool.agentId).toBeUndefined();
+    const registeredSpecificTool = serviceWithTools.copilotkit.getTool({ toolName: "specificTool", agentId: "specificAgent" });
+    expect(registeredSpecificTool.agentId).toBe("specificAgent");
+    const registeredHitlTool = serviceWithTools.copilotkit.getTool({ toolName: "hitlTool", agentId: "hitlAgent" });
+    expect(registeredHitlTool.agentId).toBe("hitlAgent");
 
     // Check render registration
     const renderToolCalls = serviceWithTools.renderToolCalls();

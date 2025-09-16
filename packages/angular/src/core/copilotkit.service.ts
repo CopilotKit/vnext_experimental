@@ -372,7 +372,10 @@ export class CopilotKitService {
     effect(() => {
       const tools = this._allTools();
       untracked(() => {
-        this.copilotkit.setTools(tools);
+        const setTools = (this.copilotkit as any)?.setTools;
+        if (typeof setTools === "function") {
+          setTools.call(this.copilotkit, tools);
+        }
       });
     });
   }
