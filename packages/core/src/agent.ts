@@ -8,16 +8,15 @@ import {
 } from "@ag-ui/client";
 import { Observable } from "rxjs";
 
-export interface CopilotKitHttpAgentConfig
+export interface CopilotRuntimeAgentConfig
   extends Omit<HttpAgentConfig, "url"> {
   runtimeUrl?: string;
 }
 
-export class CopilotKitHttpAgent extends HttpAgent {
-  isCopilotKitAgent = true;
+export class CopilotRuntimeAgent extends HttpAgent {
   runtimeUrl?: string;
 
-  constructor(config: CopilotKitHttpAgentConfig) {
+  constructor(config: CopilotRuntimeAgentConfig) {
     super({
       ...config,
       url: `${config.runtimeUrl}/agent/${config.agentId}/run`,

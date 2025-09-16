@@ -6,6 +6,7 @@ import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useState, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
+import { CopilotRuntimeAgent } from "@copilotkitnext/core";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -37,7 +38,7 @@ export function CopilotChat({
     };
     if (agent) {
       agent.threadId = threadId;
-      if ("isCopilotKitAgent" in agent) {
+      if (agent instanceof CopilotRuntimeAgent) {
         connect();
       } else {
         setIsLoading(false);

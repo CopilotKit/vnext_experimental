@@ -6,7 +6,7 @@ import {
 import { logger } from "@copilotkitnext/shared";
 import { AbstractAgent, Context, HttpAgent, Message } from "@ag-ui/client";
 import { FrontendTool } from "./types";
-import { CopilotKitHttpAgent } from "./agent";
+import { CopilotRuntimeAgent } from "./agent";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
@@ -98,7 +98,7 @@ export class CopilotKitCore {
 
     const agents: Record<string, AbstractAgent> = Object.fromEntries(
       Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
-        const agent = new CopilotKitHttpAgent({
+        const agent = new CopilotRuntimeAgent({
           runtimeUrl: this.runtimeUrl,
           agentId: id,
           description: description,
