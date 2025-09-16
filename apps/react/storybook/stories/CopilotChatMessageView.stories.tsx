@@ -144,7 +144,7 @@ export const ShowCursor: Story = {
           <div style={{ height: "100%" }}>
             <CopilotChatMessageView
               messages={messages}
-              isLoading={true}
+              isRunning={true}
               assistantMessage={{
                 onThumbsUp: () => {
                   alert("thumbsUp");

@@ -8,7 +8,7 @@ import { partialJSONParse } from "@copilotkitnext/shared";
 export interface UseRenderToolCallProps {
   toolCall: ToolCall;
   toolMessage?: ToolMessage;
-  isLoading: boolean;
+  isRunning: boolean;
 }
 
 /**
@@ -50,7 +50,7 @@ export function useRenderToolCall() {
     ({
       toolCall,
       toolMessage,
-      isLoading,
+      isRunning,
     }: UseRenderToolCallProps): React.ReactElement | null => {
       // Find the render config for this tool call by name
       // For rendering, we show all tool calls regardless of agentId
@@ -104,7 +104,7 @@ export function useRenderToolCall() {
             result={undefined}
           />
         );
-      } else if (isLoading) {
+      } else if (isRunning) {
         // In progress status when loading
         return (
           <RenderComponent

@@ -122,9 +122,9 @@ describe("CopilotChat tool rendering with mock agent", () => {
 
 describe("Tool render status narrowing", () => {
   function renderStatusWithProvider({
-    isLoading,
+    isRunning,
     withResult,
-  }: { isLoading: boolean; withResult: boolean }) {
+  }: { isRunning: boolean; withResult: boolean }) {
     const renderToolCalls = [
       defineToolCallRender({
         name: "getWeather",
@@ -180,30 +180,30 @@ describe("Tool render status narrowing", () => {
           <CopilotChatToolCallsView
             message={assistantMessage}
             messages={messages}
-            isLoading={isLoading}
+            isRunning={isRunning}
           />
         </CopilotChatConfigurationProvider>
       </CopilotKitProvider>
     );
   }
 
-  it("renders InProgress when loading and no result", async () => {
-    renderStatusWithProvider({ isLoading: true, withResult: false });
+  it("renders InProgress when running and no result", async () => {
+    renderStatusWithProvider({ isRunning: true, withResult: false });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/INPROGRESS/);
     expect(el.textContent).toMatch(/Berlin/);
   });
 
   it("renders Complete with result when tool message exists", async () => {
-    renderStatusWithProvider({ isLoading: false, withResult: true });
+    renderStatusWithProvider({ isRunning: false, withResult: true });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/COMPLETE/);
     expect(el.textContent).toMatch(/Berlin/);
     expect(el.textContent).toMatch(/Sunny/);
   });
 
-  it("renders Complete with empty result when not loading and no tool result", async () => {
-    renderStatusWithProvider({ isLoading: false, withResult: false });
+  it("renders Complete with empty result when not running and no tool result", async () => {
+    renderStatusWithProvider({ isRunning: false, withResult: false });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/COMPLETE/);
     expect(el.textContent).toMatch(/Berlin/);

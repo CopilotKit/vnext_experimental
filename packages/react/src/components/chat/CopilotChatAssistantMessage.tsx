@@ -45,7 +45,7 @@ export type CopilotChatAssistantMessageProps = WithSlots<
     onRegenerate?: (message: AssistantMessage) => void;
     message: AssistantMessage;
     messages?: Message[];
-    isLoading?: boolean;
+    isRunning?: boolean;
     additionalToolbarItems?: React.ReactNode;
     toolbarVisible?: boolean;
   } & React.HTMLAttributes<HTMLDivElement>
@@ -54,7 +54,7 @@ export type CopilotChatAssistantMessageProps = WithSlots<
 export function CopilotChatAssistantMessage({
   message,
   messages,
-  isLoading,
+  isRunning,
   onThumbsUp,
   onThumbsDown,
   onReadAloud,
@@ -152,7 +152,7 @@ export function CopilotChatAssistantMessage({
     {
       message,
       messages,
-      isLoading,
+      isRunning,
     }
   );
 
@@ -170,7 +170,7 @@ export function CopilotChatAssistantMessage({
           regenerateButton: boundRegenerateButton,
           message,
           messages,
-          isLoading,
+          isRunning,
           onThumbsUp,
           onThumbsDown,
           onReadAloud,

@@ -28,6 +28,7 @@ export type CopilotChatViewProps = WithSlots<
     messages?: Message[];
     autoScroll?: boolean;
     inputProps?: Partial<Omit<CopilotChatInputProps, "children">>;
+    isRunning?: boolean;
   } & React.HTMLAttributes<HTMLDivElement>
 >;
 
@@ -42,6 +43,7 @@ export function CopilotChatView({
   messages = [],
   autoScroll = true,
   inputProps,
+  isRunning = false,
   children,
   className,
   ...props
@@ -97,6 +99,7 @@ export function CopilotChatView({
 
   const BoundMessageView = renderSlot(messageView, CopilotChatMessageView, {
     messages,
+    isRunning,
   });
 
   const BoundInput = renderSlot(
