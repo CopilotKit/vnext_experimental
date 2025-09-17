@@ -51,11 +51,11 @@ export interface CopilotKitCoreSubscriber {
   onRuntimeLoadError?: (event: {
     copilotkit: CopilotKitCore;
   }) => void | Promise<void>;
-  onToolExecutingStart?: (event: {
+  onToolExecutionStart?: (event: {
     toolCallId: string;
     agentId?: string;
   }) => void | Promise<void>;
-  onToolExecutingEnd?: (event: {
+  onToolExecutionEnd?: (event: {
     toolCallId: string;
     agentId?: string;
   }) => void | Promise<void>;
@@ -398,13 +398,13 @@ export class CopilotKitCore {
                   this.executingToolCallIds.add(toolCall.id);
                   for (const sub of this.subscribers) {
                     try {
-                      await sub.onToolExecutingStart?.({
+                      await sub.onToolExecutionStart?.({
                         toolCallId: toolCall.id,
                         agentId,
                       });
                     } catch (err) {
                       logger.error(
-                        "Subscriber onToolExecutingStart error:",
+                        "Subscriber onToolExecutionStart error:",
                         err
                       );
                     }
@@ -424,12 +424,12 @@ export class CopilotKitCore {
                   this.executingToolCallIds.delete(toolCall.id);
                   for (const sub of this.subscribers) {
                     try {
-                      await sub.onToolExecutingEnd?.({
+                      await sub.onToolExecutionEnd?.({
                         toolCallId: toolCall.id,
                         agentId,
                       });
                     } catch (err) {
-                      logger.error("Subscriber onToolExecutingEnd error:", err);
+                      logger.error("Subscriber onToolExecutionEnd error:", err);
                     }
                   }
                 }
@@ -471,7 +471,7 @@ export class CopilotKitCore {
                     this.executingToolCallIds.add(toolCall.id);
                     for (const sub of this.subscribers) {
                       try {
-                        await sub.onToolExecutingStart?.({
+                        await sub.onToolExecutionStart?.({
                           toolCallId: toolCall.id,
                           agentId,
                         });
@@ -497,7 +497,7 @@ export class CopilotKitCore {
                     this.executingToolCallIds.delete(toolCall.id);
                     for (const sub of this.subscribers) {
                       try {
-                        await sub.onToolExecutingEnd?.({
+                        await sub.onToolExecutionEnd?.({
                           toolCallId: toolCall.id,
                           agentId,
                         });

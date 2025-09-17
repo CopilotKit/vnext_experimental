@@ -25,8 +25,8 @@ export function useRenderToolCall() {
   >(() => new Set());
 
   useEffect(() => {
-    const unsubscribe = (copilotkit as any).subscribe({
-      onToolExecutingStart: ({ toolCallId }: { toolCallId: string }) => {
+    const unsubscribe = copilotkit.subscribe({
+      onToolExecutionStart: ({ toolCallId }: { toolCallId: string }) => {
         setExecutingToolCallIds((prev) => {
           if (prev.has(toolCallId)) return prev;
           const next = new Set(prev);
@@ -34,7 +34,7 @@ export function useRenderToolCall() {
           return next;
         });
       },
-      onToolExecutingEnd: ({ toolCallId }: { toolCallId: string }) => {
+      onToolExecutionEnd: ({ toolCallId }: { toolCallId: string }) => {
         setExecutingToolCallIds((prev) => {
           if (!prev.has(toolCallId)) return prev;
           const next = new Set(prev);
@@ -61,9 +61,9 @@ export function useRenderToolCall() {
       const exactMatches = currentRenderToolCalls.filter(
         (rc) => rc.name === toolCall.function.name
       );
-      
+
       // If multiple renderers with same name exist, prefer the one matching our agentId
-      const renderConfig = 
+      const renderConfig =
         exactMatches.find((rc) => rc.agentId === agentId) ||
         exactMatches.find((rc) => !rc.agentId) ||
         exactMatches[0] ||
