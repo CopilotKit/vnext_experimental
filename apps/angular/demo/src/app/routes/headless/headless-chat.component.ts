@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy } from "@angular/core";
+import { Component, ChangeDetectionStrategy, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { watchAgent } from "@copilotkitnext/angular";
+import { CopilotKitService, watchAgent } from "@copilotkitnext/angular";
 import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
 
 @Component({
@@ -10,8 +10,14 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
   imports: [CommonModule, FormsModule, CopilotChatToolCallsViewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="headless-container" style="display:flex;flex-direction:column;height:100vh;width:100vw;">
-      <div class="messages" style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;">
+    <div
+      class="headless-container"
+      style="display:flex;flex-direction:column;height:100vh;width:100vw;"
+    >
+      <div
+        class="messages"
+        style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;"
+      >
         <div *ngFor="let m of messages()" style="margin-bottom:16px;">
           <div style="font-weight:600;color:#374151;">
             {{ m.role | titlecase }}
@@ -30,7 +36,10 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
         </div>
       </div>
 
-      <form (ngSubmit)="send()" style="display:flex;gap:8px;padding:12px;background:#ffffff;border-top:1px solid #e5e7eb;">
+      <form
+        (ngSubmit)="send()"
+        style="display:flex;gap:8px;padding:12px;background:#ffffff;border-top:1px solid #e5e7eb;"
+      >
         <input
           name="message"
           [(ngModel)]="inputValue"
@@ -54,6 +63,7 @@ export class HeadlessChatComponent {
   protected agent!: ReturnType<typeof watchAgent>["agent"];
   protected messages!: ReturnType<typeof watchAgent>["messages"];
   protected isRunning!: ReturnType<typeof watchAgent>["isRunning"];
+  protected copilotkitService!: CopilotKitService;
 
   inputValue = "";
 
@@ -63,6 +73,7 @@ export class HeadlessChatComponent {
       messages: this.messages,
       isRunning: this.isRunning,
     } = watchAgent());
+    this.copilotkitService = inject(CopilotKitService);
   }
 
   async send() {
@@ -74,7 +85,10 @@ export class HeadlessChatComponent {
     this.inputValue = "";
 
     try {
-      await agent.runAgent();
+      await this.copilotkitService.copilotkit.runAgent({
+        agent,
+        agentId: agent.agentId,
+      });
     } catch (e) {
       console.error("Agent run error", e);
     }
