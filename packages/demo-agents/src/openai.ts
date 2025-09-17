@@ -27,6 +27,8 @@ export class OpenAIAgent extends AbstractAgent {
         runId: input.runId,
       } as BaseEvent);
 
+      console.log("input", input);
+
       this.openai.chat.completions
         .create({
           model: "gpt-4o",
