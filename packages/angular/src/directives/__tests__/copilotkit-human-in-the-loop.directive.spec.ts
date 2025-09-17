@@ -7,15 +7,22 @@ import { z } from "zod";
 import { By } from "@angular/platform-browser";
 
 // Mock CopilotKitCore
+const runtimeUrlSetter = vi.fn();
 const mockCopilotKitCore = {
   addTool: vi.fn(() => "tool-id-123"),
   removeTool: vi.fn(),
-  setRuntimeUrl: vi.fn(),
   setHeaders: vi.fn(),
   setProperties: vi.fn(),
   setAgents: vi.fn(),
   getAgent: vi.fn(),
   subscribe: vi.fn(() => vi.fn()),
+  set runtimeUrl(url: string | undefined) {
+    runtimeUrlSetter(url);
+  },
+  get runtimeUrl() {
+    return undefined;
+  },
+  __runtimeUrlSetter: runtimeUrlSetter,
 };
 
 vi.mock("@copilotkitnext/core", () => ({

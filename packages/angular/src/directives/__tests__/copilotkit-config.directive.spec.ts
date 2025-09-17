@@ -6,13 +6,22 @@ import { provideCopilotKit } from "../../core/copilotkit.providers";
 
 // Mock CopilotKitCore to prevent network calls
 vi.mock("@copilotkitnext/core", () => ({
-  CopilotKitCore: vi.fn().mockImplementation(() => ({
-    setRuntimeUrl: vi.fn(),
-    setHeaders: vi.fn(),
-    setProperties: vi.fn(),
-    setAgents: vi.fn(),
-    subscribe: vi.fn(() => () => {}), // Return unsubscribe function
-  })),
+  CopilotKitCore: vi.fn().mockImplementation(() => {
+    const runtimeUrlSetter = vi.fn();
+    return {
+      setHeaders: vi.fn(),
+      setProperties: vi.fn(),
+      setAgents: vi.fn(),
+      subscribe: vi.fn(() => () => {}), // Return unsubscribe function
+      set runtimeUrl(url: string | undefined) {
+        runtimeUrlSetter(url);
+      },
+      get runtimeUrl() {
+        return undefined;
+      },
+      __runtimeUrlSetter: runtimeUrlSetter,
+    };
+  }),
 }));
 
 @Component({

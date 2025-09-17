@@ -17,10 +17,10 @@ const mockAgent = {
   messages: [],
 };
 
+const runtimeUrlSetter = vi.fn();
 const mockCopilotKitCore = {
   addTool: vi.fn(),
   removeTool: vi.fn(),
-  setRuntimeUrl: vi.fn(),
   setHeaders: vi.fn(),
   setProperties: vi.fn(),
   setAgents: vi.fn(),
@@ -28,6 +28,13 @@ const mockCopilotKitCore = {
     id === "test-agent" ? mockAgent : undefined
   ),
   subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function directly
+  set runtimeUrl(url: string | undefined) {
+    runtimeUrlSetter(url);
+  },
+  get runtimeUrl() {
+    return undefined;
+  },
+  __runtimeUrlSetter: runtimeUrlSetter,
 };
 
 vi.mock("@copilotkitnext/core", () => ({

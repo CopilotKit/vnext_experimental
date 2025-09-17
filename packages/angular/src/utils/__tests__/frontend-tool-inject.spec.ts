@@ -11,15 +11,24 @@ import { signal } from "@angular/core";
 
 // Mock CopilotKitCore
 vi.mock("@copilotkitnext/core", () => ({
-  CopilotKitCore: vi.fn().mockImplementation(() => ({
-    addTool: vi.fn(),
-    removeTool: vi.fn(),
-    setRuntimeUrl: vi.fn(),
-    setHeaders: vi.fn(),
-    setProperties: vi.fn(),
-    setAgents: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
-  })),
+  CopilotKitCore: vi.fn().mockImplementation(() => {
+    const runtimeUrlSetter = vi.fn();
+    return {
+      addTool: vi.fn(),
+      removeTool: vi.fn(),
+      setHeaders: vi.fn(),
+      setProperties: vi.fn(),
+      setAgents: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+      set runtimeUrl(url: string | undefined) {
+        runtimeUrlSetter(url);
+      },
+      get runtimeUrl() {
+        return undefined;
+      },
+      __runtimeUrlSetter: runtimeUrlSetter,
+    };
+  }),
 }));
 
 // Mock component for testing

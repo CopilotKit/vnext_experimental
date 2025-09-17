@@ -62,8 +62,10 @@ export interface CopilotKitCoreSubscriber {
 }
 
 export class CopilotKitCore {
-  runtimeUrl?: string;
-  didLoadRuntime: boolean = false;
+  private _didLoadRuntime: boolean = false;
+  get didLoadRuntime(): boolean {
+    return this._didLoadRuntime;
+  }
 
   context: Record<string, Context> = {};
   agents: Record<string, AbstractAgent> = {};
@@ -71,13 +73,17 @@ export class CopilotKitCore {
   headers: Record<string, string>;
   properties: Record<string, unknown>;
 
-  runtimeVersion?: string;
+  private _runtimeVersion?: string;
+  get runtimeVersion(): string | undefined {
+    return this._runtimeVersion;
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private tools: FrontendTool<any>[] = [];
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
+  private _runtimeUrl?: string;
 
   constructor({
     runtimeUrl,
@@ -92,7 +98,25 @@ export class CopilotKitCore {
     this.agents = this.localAgents;
     this.tools = tools;
 
-    this.setRuntimeUrl(runtimeUrl);
+    this.runtimeUrl = runtimeUrl;
+  }
+
+  get runtimeUrl(): string | undefined {
+    return this._runtimeUrl;
+  }
+
+  set runtimeUrl(runtimeUrl: string | undefined) {
+    const normalizedRuntimeUrl = runtimeUrl
+      ? runtimeUrl.replace(/\/$/, "")
+      : undefined;
+
+    if (this._runtimeUrl === normalizedRuntimeUrl) {
+      return;
+    }
+
+    this._runtimeUrl = normalizedRuntimeUrl;
+
+    void this.fetchRuntimeInfo();
   }
 
   private async fetchRuntimeInfo() {
@@ -125,8 +149,8 @@ export class CopilotKitCore {
 
       this.remoteAgents = agents;
       this.agents = { ...this.localAgents, ...this.remoteAgents };
-      this.didLoadRuntime = true;
-      this.runtimeVersion = version;
+      this._didLoadRuntime = true;
+      this._runtimeVersion = version;
 
       this.subscribers.forEach(async (subscriber) => {
         try {
@@ -151,7 +175,9 @@ export class CopilotKitCore {
       });
       const message =
         error instanceof Error ? error.message : JSON.stringify(error);
-      logger.warn(`Failed to load runtime info: ${message}`);
+      logger.warn(
+        `Failed to load runtime info (${this.runtimeUrl}/info): ${message}`
+      );
     }
   }
 
@@ -174,7 +200,7 @@ export class CopilotKitCore {
     if (id in this.agents) {
       return this.agents[id] as AbstractAgent;
     } else {
-      if (!this.didLoadRuntime) {
+      if (!this._didLoadRuntime) {
         return undefined;
       } else {
         throw new Error(`Agent ${id} not found`);
@@ -190,11 +216,6 @@ export class CopilotKitCore {
 
   removeContext(id: string) {
     delete this.context[id];
-  }
-
-  setRuntimeUrl(runtimeUrl?: string) {
-    this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
-    this.fetchRuntimeInfo();
   }
 
   addTool<T extends Record<string, unknown> = Record<string, unknown>>(

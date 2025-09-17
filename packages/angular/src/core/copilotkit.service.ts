@@ -347,7 +347,9 @@ export class CopilotKitService {
     // Sync runtime URL
     effect(() => {
       const url = this.runtimeUrl();
-      untracked(() => this.copilotkit.setRuntimeUrl(url));
+      untracked(() => {
+        this.copilotkit.runtimeUrl = url;
+      });
     });
 
     // Sync headers
