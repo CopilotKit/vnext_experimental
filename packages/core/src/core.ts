@@ -33,6 +33,11 @@ export interface RunAgentParams {
   agentId?: string;
 }
 
+export interface ConnectAgentParams {
+  agent: AbstractAgent;
+  agentId?: string;
+}
+
 export interface GetToolParams {
   toolName: string;
   agentId?: string;
@@ -281,6 +286,17 @@ export class CopilotKitCore {
     this.subscribers.delete(subscriber);
   }
 
+  async connectAgent({
+    agent,
+    agentId,
+  }: ConnectAgentParams): Promise<RunAgentResult> {
+    const runAgentResult = await agent.connectAgent({
+      forwardedProps: this.properties,
+    });
+
+    return this.processAgentResult({ runAgentResult, agent, agentId });
+  }
+
   async runAgent({
     agent,
     withMessages,
@@ -289,11 +305,21 @@ export class CopilotKitCore {
     if (withMessages) {
       agent.addMessages(withMessages);
     }
-
     const runAgentResult = await agent.runAgent({
       forwardedProps: this.properties,
     });
+    return this.processAgentResult({ runAgentResult, agent, agentId });
+  }
 
+  private async processAgentResult({
+    runAgentResult,
+    agent,
+    agentId,
+  }: {
+    runAgentResult: RunAgentResult;
+    agent: AbstractAgent;
+    agentId: string | undefined;
+  }): Promise<RunAgentResult> {
     const { newMessages } = runAgentResult;
 
     let needsFollowUp = false;

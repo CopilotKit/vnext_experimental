@@ -5,7 +5,7 @@ import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
+import { AbstractAgent, AGUIConnectNotImplementedError } from "@ag-ui/client";
 
 export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
   agentId?: string;
@@ -22,16 +22,20 @@ export function CopilotChat({
   const resolvedThreadId = useMemo(() => threadId ?? randomUUID(), [threadId]);
 
   useEffect(() => {
-    const connect = async () => {
-      if (agent) {
-        await copilotkit.runAgent({ agent, agentId });
+    const connect = async (agent: AbstractAgent) => {
+      try {
+        await copilotkit.connectAgent({ agent, agentId });
+      } catch (error) {
+        if (error instanceof AGUIConnectNotImplementedError) {
+          // connect not implemented, ignore
+        } else {
+          throw error;
+        }
       }
     };
     if (agent) {
       agent.threadId = resolvedThreadId;
-      if (agent instanceof ProxiedCopilotRuntimeAgent) {
-        connect();
-      }
+      connect(agent);
     }
     return () => {};
   }, [resolvedThreadId, agent, copilotkit, agentId]);

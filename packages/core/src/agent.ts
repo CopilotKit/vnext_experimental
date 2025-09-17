@@ -24,13 +24,11 @@ export class ProxiedCopilotRuntimeAgent extends HttpAgent {
     this.runtimeUrl = config.runtimeUrl;
   }
 
-  run(input: RunAgentInput): Observable<BaseEvent> {
-    const url = (
-      input.forwardedProps.__copilotkitConnect === true
-        ? `${this.runtimeUrl}/agent/${this.agentId}/connect`
-        : this.url
-    ) as string;
-    const httpEvents = runHttpRequest(url, this.requestInit(input));
+  connect(input: RunAgentInput): Observable<BaseEvent> {
+    const httpEvents = runHttpRequest(
+      `${this.runtimeUrl}/agent/${this.agentId}/connect`,
+      this.requestInit(input)
+    );
     return transformHttpEventStream(httpEvents);
   }
 }
