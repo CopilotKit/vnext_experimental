@@ -13,6 +13,7 @@ import {
 } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export interface CopilotKitCoreConfig {
   runtimeUrl?: string;
@@ -60,6 +61,40 @@ export interface CopilotKitCoreSubscriber {
   }) => void | Promise<void>;
 }
 
+const EMPTY_TOOL_SCHEMA = {
+  type: "object",
+  properties: {},
+  additionalProperties: false,
+} as const satisfies Record<string, unknown>;
+
+function createToolSchema(tool: FrontendTool<any>): Record<string, unknown> {
+  if (!tool.parameters) {
+    return EMPTY_TOOL_SCHEMA;
+  }
+
+  const rawSchema = zodToJsonSchema(tool.parameters, {
+    $refStrategy: "none",
+  });
+
+  if (!rawSchema || typeof rawSchema !== "object") {
+    return { ...EMPTY_TOOL_SCHEMA };
+  }
+
+  const { $schema, ...schema } = rawSchema as Record<string, unknown>;
+
+  if (typeof schema.type !== "string") {
+    schema.type = "object";
+  }
+  if (typeof schema.properties !== "object" || schema.properties === null) {
+    schema.properties = {};
+  }
+  if (schema.additionalProperties === undefined) {
+    schema.additionalProperties = false;
+  }
+
+  return schema;
+}
+
 export class CopilotKitCore {
   runtimeUrl?: string;
   didLoadRuntime: boolean = false;
@@ -93,6 +128,16 @@ export class CopilotKitCore {
     this.tools = tools;
 
     this.setRuntimeUrl(runtimeUrl);
+  }
+
+  private buildFrontendTools(agentId?: string) {
+    return this.tools
+      .filter((tool) => !tool.agentId || tool.agentId === agentId)
+      .map((tool) => ({
+        name: tool.name,
+        description: tool.description ?? "",
+        parameters: createToolSchema(tool),
+      }));
   }
 
   private async getRuntimeInfo() {
@@ -292,6 +337,7 @@ export class CopilotKitCore {
   }: ConnectAgentParams): Promise<RunAgentResult> {
     const runAgentResult = await agent.connectAgent({
       forwardedProps: this.properties,
+      tools: this.buildFrontendTools(agentId),
     });
 
     return this.processAgentResult({ runAgentResult, agent, agentId });
@@ -307,6 +353,7 @@ export class CopilotKitCore {
     }
     const runAgentResult = await agent.runAgent({
       forwardedProps: this.properties,
+      tools: this.buildFrontendTools(agentId),
     });
     return this.processAgentResult({ runAgentResult, agent, agentId });
   }
