@@ -61,40 +61,6 @@ export interface CopilotKitCoreSubscriber {
   }) => void | Promise<void>;
 }
 
-const EMPTY_TOOL_SCHEMA = {
-  type: "object",
-  properties: {},
-  additionalProperties: false,
-} as const satisfies Record<string, unknown>;
-
-function createToolSchema(tool: FrontendTool<any>): Record<string, unknown> {
-  if (!tool.parameters) {
-    return EMPTY_TOOL_SCHEMA;
-  }
-
-  const rawSchema = zodToJsonSchema(tool.parameters, {
-    $refStrategy: "none",
-  });
-
-  if (!rawSchema || typeof rawSchema !== "object") {
-    return { ...EMPTY_TOOL_SCHEMA };
-  }
-
-  const { $schema, ...schema } = rawSchema as Record<string, unknown>;
-
-  if (typeof schema.type !== "string") {
-    schema.type = "object";
-  }
-  if (typeof schema.properties !== "object" || schema.properties === null) {
-    schema.properties = {};
-  }
-  if (schema.additionalProperties === undefined) {
-    schema.additionalProperties = false;
-  }
-
-  return schema;
-}
-
 export class CopilotKitCore {
   runtimeUrl?: string;
   didLoadRuntime: boolean = false;
@@ -105,14 +71,13 @@ export class CopilotKitCore {
   headers: Record<string, string>;
   properties: Record<string, unknown>;
 
-  version?: string;
+  runtimeVersion?: string;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private tools: FrontendTool<any>[] = [];
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
-  private executingToolCallIds: Set<string> = new Set();
 
   constructor({
     runtimeUrl,
@@ -130,75 +95,63 @@ export class CopilotKitCore {
     this.setRuntimeUrl(runtimeUrl);
   }
 
-  private buildFrontendTools(agentId?: string) {
-    return this.tools
-      .filter((tool) => !tool.agentId || tool.agentId === agentId)
-      .map((tool) => ({
-        name: tool.name,
-        description: tool.description ?? "",
-        parameters: createToolSchema(tool),
-      }));
-  }
+  private async fetchRuntimeInfo() {
+    if (!this.runtimeUrl) {
+      return;
+    }
 
-  private async getRuntimeInfo() {
-    const response = await fetch(`${this.runtimeUrl}/info`, {
-      headers: this.headers,
-    });
-    const {
-      version,
-      ...runtimeInfo
-    }: {
-      agents: Record<string, AgentDescription>;
-      version: string;
-    } = (await response.json()) as RuntimeInfo;
+    try {
+      const response = await fetch(`${this.runtimeUrl}/info`, {
+        headers: this.headers,
+      });
+      const {
+        version,
+        ...runtimeInfo
+      }: {
+        agents: Record<string, AgentDescription>;
+        version: string;
+      } = (await response.json()) as RuntimeInfo;
 
-    const agents: Record<string, AbstractAgent> = Object.fromEntries(
-      Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
-        const agent = new ProxiedCopilotRuntimeAgent({
-          runtimeUrl: this.runtimeUrl,
-          agentId: id,
-          description: description,
-        });
-        return [id, agent];
-      })
-    );
-
-    return { agents, version };
-  }
-
-  private async fetchRemoteAgents() {
-    if (this.runtimeUrl) {
-      this.getRuntimeInfo()
-        .then(({ agents, version }) => {
-          this.remoteAgents = agents;
-          this.agents = { ...this.localAgents, ...this.remoteAgents };
-          this.didLoadRuntime = true;
-          this.version = version;
-
-          this.subscribers.forEach(async (subscriber) => {
-            try {
-              await subscriber.onRuntimeLoaded?.({ copilotkit: this });
-            } catch (error) {
-              logger.error(
-                "Error in CopilotKitCore subscriber (onRuntimeLoaded):",
-                error
-              );
-            }
+      const agents: Record<string, AbstractAgent> = Object.fromEntries(
+        Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
+          const agent = new ProxiedCopilotRuntimeAgent({
+            runtimeUrl: this.runtimeUrl,
+            agentId: id,
+            description: description,
           });
+          return [id, agent];
         })
-        .catch((error) => {
-          this.subscribers.forEach(async (subscriber) => {
-            try {
-              await subscriber.onRuntimeLoadError?.({ copilotkit: this });
-            } catch (error) {
-              logger.error(
-                "Error in CopilotKitCore subscriber (onRuntimeLoadError):",
-                error
-              );
-            }
-          });
-          logger.warn(`Failed to load runtime info: ${error.message}`);
-        });
+      );
+
+      this.remoteAgents = agents;
+      this.agents = { ...this.localAgents, ...this.remoteAgents };
+      this.didLoadRuntime = true;
+      this.runtimeVersion = version;
+
+      this.subscribers.forEach(async (subscriber) => {
+        try {
+          await subscriber.onRuntimeLoaded?.({ copilotkit: this });
+        } catch (error) {
+          logger.error(
+            "Error in CopilotKitCore subscriber (onRuntimeLoaded):",
+            error
+          );
+        }
+      });
+    } catch (error) {
+      this.subscribers.forEach(async (subscriber) => {
+        try {
+          await subscriber.onRuntimeLoadError?.({ copilotkit: this });
+        } catch (err) {
+          logger.error(
+            "Error in CopilotKitCore subscriber (onRuntimeLoadError):",
+            err
+          );
+        }
+      });
+      const message =
+        error instanceof Error ? error.message : JSON.stringify(error);
+      logger.warn(`Failed to load runtime info: ${message}`);
     }
   }
 
@@ -241,7 +194,7 @@ export class CopilotKitCore {
 
   setRuntimeUrl(runtimeUrl?: string) {
     this.runtimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
-    this.fetchRemoteAgents();
+    this.fetchRuntimeInfo();
   }
 
   addTool<T extends Record<string, unknown> = Record<string, unknown>>(
@@ -395,7 +348,6 @@ export class CopilotKitCore {
                 const args = JSON.parse(toolCall.function.arguments);
                 try {
                   // mark executing start
-                  this.executingToolCallIds.add(toolCall.id);
                   for (const sub of this.subscribers) {
                     try {
                       await sub.onToolExecutionStart?.({
@@ -421,7 +373,7 @@ export class CopilotKitCore {
                   toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
                 } finally {
                   // mark executing end
-                  this.executingToolCallIds.delete(toolCall.id);
+
                   for (const sub of this.subscribers) {
                     try {
                       await sub.onToolExecutionEnd?.({
@@ -468,7 +420,6 @@ export class CopilotKitCore {
                   };
                   try {
                     // mark executing start
-                    this.executingToolCallIds.add(toolCall.id);
                     for (const sub of this.subscribers) {
                       try {
                         await sub.onToolExecutionStart?.({
@@ -494,7 +445,6 @@ export class CopilotKitCore {
                     toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
                   } finally {
                     // mark executing end
-                    this.executingToolCallIds.delete(toolCall.id);
                     for (const sub of this.subscribers) {
                       try {
                         await sub.onToolExecutionEnd?.({
@@ -539,7 +489,47 @@ export class CopilotKitCore {
     return runAgentResult;
   }
 
-  getExecutingToolCallIds(): ReadonlySet<string> {
-    return this.executingToolCallIds;
+  private buildFrontendTools(agentId?: string) {
+    return this.tools
+      .filter((tool) => !tool.agentId || tool.agentId === agentId)
+      .map((tool) => ({
+        name: tool.name,
+        description: tool.description ?? "",
+        parameters: createToolSchema(tool),
+      }));
   }
+}
+
+const EMPTY_TOOL_SCHEMA = {
+  type: "object",
+  properties: {},
+  additionalProperties: false,
+} as const satisfies Record<string, unknown>;
+
+function createToolSchema(tool: FrontendTool<any>): Record<string, unknown> {
+  if (!tool.parameters) {
+    return EMPTY_TOOL_SCHEMA;
+  }
+
+  const rawSchema = zodToJsonSchema(tool.parameters, {
+    $refStrategy: "none",
+  });
+
+  if (!rawSchema || typeof rawSchema !== "object") {
+    return { ...EMPTY_TOOL_SCHEMA };
+  }
+
+  const { $schema, ...schema } = rawSchema as Record<string, unknown>;
+
+  if (typeof schema.type !== "string") {
+    schema.type = "object";
+  }
+  if (typeof schema.properties !== "object" || schema.properties === null) {
+    schema.properties = {};
+  }
+  if (schema.additionalProperties === undefined) {
+    schema.additionalProperties = false;
+  }
+
+  return schema;
 }
