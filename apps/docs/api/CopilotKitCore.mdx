@@ -7,6 +7,15 @@ description: "CopilotKitCore"
 
 `CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your application's UI, local agents, and the remote Copilot runtime.
 
+## What Makes CopilotKitCore Essential
+
+CopilotKitCore solves several complex challenges in building AI-powered applications:
+
+1. **Unified Agent Management**: It seamlessly merges local browser-based agents with remote server-side agents, presenting them through a single interface
+2. **Tool Execution Orchestration**: When agents need to call frontend tools (like updating UI or accessing browser APIs), CopilotKitCore handles the entire lifecycle - parsing arguments, executing handlers, and automatically re-running agents with tool results
+3. **State Synchronization**: It maintains consistent state across your application, ensuring all components have access to the latest agents, tools, and context
+4. **Framework Independence**: Works with any frontend framework, providing a consistent API whether you're using React, Angular, Vue, or vanilla JavaScript
+
 At its heart, CopilotKitCore maintains the authoritative state for three critical elements:
 
 - **Agents**: Both local and remote AI agents that power your application's intelligence
@@ -105,14 +114,38 @@ Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't e
 
 ### `connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>`
 
-Establishes a connection with an agent, allowing it to maintain state across interactions. This is useful for agents that need to track conversation history.
+Establishes a live connection with an agent, restoring any existing conversation history and subscribing to real-time events. This method is particularly useful when:
+
+- Reconnecting to an agent that's already running (displays new events as they occur)
+- Restoring conversation history after a page refresh
+- Setting up an agent that will receive updates from background processes
+
+The connection process:
+1. Provides the agent with current properties and available tools
+2. Sets up error event subscribers for proper error handling
+3. Restores any existing message history
+4. Returns immediately without triggering a new agent run
 
 - `params.agent`: The agent to connect
 - `params.agentId?`: Override the agent's default identifier
 
 ### `runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>`
 
-Executes an agent with optional initial messages. The agent processes the request and returns its response.
+Executes an agent and intelligently handles the complete request-response cycle, including automatic tool execution and follow-up runs.
+
+The execution flow:
+1. Sends initial messages (if provided) to the agent
+2. Agent processes the request and may request tool calls
+3. CopilotKitCore automatically executes any requested frontend tools
+4. Tool results are added back to the message history
+5. If tools were executed and have `followUp` enabled (default), the agent is automatically re-run with the tool results
+6. This cycle continues until the agent completes without requesting more tools
+
+Key behaviors:
+- **Automatic Tool Execution**: When an agent requests a tool call, CopilotKitCore finds the matching tool, executes it, and adds the result to the conversation
+- **Smart Follow-ups**: After executing tools, it automatically re-runs the agent so it can process the tool results and continue its work
+- **Error Recovery**: Tool execution errors are captured and returned to the agent, allowing it to handle failures gracefully
+- **Wildcard Tools**: Supports a special "*" tool that can handle any undefined tool request
 
 - `params.agent`: The agent to execute
 - `params.withMessages?`: Initial messages to send to the agent
@@ -171,6 +204,35 @@ Registers a subscriber to receive events. The returned function can be called to
 ### `unsubscribe(subscriber: CopilotKitCoreSubscriber): void`
 
 Manually removes a subscriber if you prefer explicit cleanup over using the returned function.
+
+## Tool Execution Lifecycle
+
+Understanding how CopilotKitCore handles tool execution is crucial for building responsive AI applications. Here's the complete lifecycle:
+
+### 1. Tool Request
+When an agent needs to interact with your application, it returns a tool call request with:
+- Tool name
+- Structured arguments (JSON)
+- Unique call ID for tracking
+
+### 2. Tool Resolution
+CopilotKitCore uses a two-tier resolution strategy:
+- First checks for agent-specific tools (scoped to that particular agent)
+- Falls back to global tools available to all agents
+- Special wildcard tool (`*`) can handle any unmatched tool requests
+
+### 3. Execution & Error Handling
+The tool handler is invoked with parsed arguments:
+- Successful results are stringified and added to the conversation
+- Errors are caught and returned to the agent for graceful handling
+- Subscribers are notified of start and completion events
+
+### 4. Automatic Follow-up
+By default, after tool execution completes:
+- The tool result is inserted into the message history
+- The agent is automatically re-run to process the results
+- This continues until no more tools are requested
+- You can disable follow-up by setting `followUp: false` on specific tools
 
 ## Understanding Runtime Connections
 

@@ -9,6 +9,7 @@ import {
   AbstractAgent,
   AgentSubscriber,
   Context,
+  HttpAgent,
   Message,
   RunAgentResult,
 } from "@ag-ui/client";
@@ -583,6 +584,10 @@ export class CopilotKitCore {
     agentId,
   }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
+      if (agent instanceof HttpAgent) {
+        agent.headers = { ...this.headers };
+      }
+
       const runAgentResult = await agent.connectAgent(
         {
           forwardedProps: this.properties,
@@ -613,6 +618,10 @@ export class CopilotKitCore {
     withMessages,
     agentId,
   }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
+    if (agent instanceof HttpAgent) {
+      agent.headers = { ...this.headers };
+    }
+
     if (withMessages) {
       agent.addMessages(withMessages);
     }
