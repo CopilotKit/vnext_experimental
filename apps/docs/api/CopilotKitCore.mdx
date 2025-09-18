@@ -8,6 +8,7 @@ description: "CopilotKitCore"
 `CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your application's UI, local agents, and the remote Copilot runtime.
 
 At its heart, CopilotKitCore maintains the authoritative state for three critical elements:
+
 - **Agents**: Both local and remote AI agents that power your application's intelligence
 - **Frontend Tools**: Functions that agents can call to interact with your UI
 - **Runtime Metadata**: Connection status, versioning, and configuration details
@@ -90,6 +91,7 @@ Replaces all local agents while preserving remote agents from the runtime. This 
 ### `addAgent(params: CopilotKitCoreAddAgentParams): void`
 
 Adds a single agent to your application. The agent is immediately available for use.
+
 - `params.id`: A unique identifier for the agent
 - `params.agent`: The agent instance to add
 
@@ -104,12 +106,14 @@ Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't e
 ### `connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>`
 
 Establishes a connection with an agent, allowing it to maintain state across interactions. This is useful for agents that need to track conversation history.
+
 - `params.agent`: The agent to connect
 - `params.agentId?`: Override the agent's default identifier
 
 ### `runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>`
 
 Executes an agent with optional initial messages. The agent processes the request and returns its response.
+
 - `params.agent`: The agent to execute
 - `params.withMessages?`: Initial messages to send to the agent
 - `params.agentId?`: Override the agent's default identifier
@@ -121,6 +125,7 @@ Context provides agents with additional information about the current state of y
 ### `addContext(context: Context): string`
 
 Adds contextual information that agents can reference. Returns a unique identifier for later removal.
+
 - `context.description`: A human-readable description of what this context represents
 - `context.value`: The actual context data
 
@@ -139,12 +144,14 @@ Registers a new frontend tool. If a tool with the same name and agent scope alre
 ### `removeTool(id: string, agentId?: string): void`
 
 Removes a tool from the registry. You can remove tools globally or for specific agents:
+
 - When `agentId` is provided, removes the tool only for that agent
 - When `agentId` is omitted, removes only global tools with the matching name
 
 ### `getTool(params: CopilotKitCoreGetToolParams): FrontendTool<any> | undefined`
 
 Retrieves a tool by name, with intelligent fallback behavior:
+
 - `params.toolName`: The tool's name
 - `params.agentId?`: Look for agent-specific tools first
 - If an agent-specific tool isn't found, it falls back to global tools
@@ -324,52 +331,3 @@ interface CopilotKitCoreConfig {
   tools?: FrontendTool<any>[];
 }
 ```
-
-### `CopilotKitCoreAddAgentParams`
-
-Parameters for adding an agent after initialization:
-
-```typescript
-interface CopilotKitCoreAddAgentParams {
-  id: string;
-  agent: AbstractAgent;
-}
-```
-
-### `CopilotKitCoreRunAgentParams`
-
-Configuration for running an agent:
-
-```typescript
-interface CopilotKitCoreRunAgentParams {
-  agent: AbstractAgent;
-  withMessages?: Message[];
-  agentId?: string;
-}
-```
-
-### `CopilotKitCoreConnectAgentParams`
-
-Parameters for connecting to an agent:
-
-```typescript
-interface CopilotKitCoreConnectAgentParams {
-  agent: AbstractAgent;
-  agentId?: string;
-}
-```
-
-### `CopilotKitCoreGetToolParams`
-
-Configuration for retrieving tools:
-
-```typescript
-interface CopilotKitCoreGetToolParams {
-  toolName: string;
-  agentId?: string;
-}
-```
-
-### `CopilotKitCoreSubscriber`
-
-The complete interface for event subscribers. Implement any combination of these handlers based on your needs. See the Event Subscription section above for detailed information about each event.
