@@ -26,7 +26,7 @@ export function useRenderToolCall() {
 
   useEffect(() => {
     const unsubscribe = copilotkit.subscribe({
-      onToolExecutionStart: ({ toolCallId }: { toolCallId: string }) => {
+      onToolExecutionStart: ({ toolCallId }) => {
         setExecutingToolCallIds((prev) => {
           if (prev.has(toolCallId)) return prev;
           const next = new Set(prev);
@@ -34,7 +34,7 @@ export function useRenderToolCall() {
           return next;
         });
       },
-      onToolExecutionEnd: ({ toolCallId }: { toolCallId: string }) => {
+      onToolExecutionEnd: ({ toolCallId }) => {
         setExecutingToolCallIds((prev) => {
           if (!prev.has(toolCallId)) return prev;
           const next = new Set(prev);

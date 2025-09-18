@@ -1,5 +1,6 @@
 import {
   AgentDescription,
+  DEFAULT_AGENT_ID,
   randomUUID,
   RuntimeInfo,
   logger,
@@ -50,12 +51,35 @@ export interface CopilotKitCoreSubscriber {
     status: CopilotKitCoreRuntimeConnectionStatus;
   }) => void | Promise<void>;
   onToolExecutionStart?: (event: {
+    copilotkit: CopilotKitCore;
     toolCallId: string;
-    agentId?: string;
+    agentId: string;
+    toolName: string;
+    args: unknown;
   }) => void | Promise<void>;
   onToolExecutionEnd?: (event: {
+    copilotkit: CopilotKitCore;
     toolCallId: string;
-    agentId?: string;
+    agentId: string;
+    toolName: string;
+    result: string;
+    error?: string;
+  }) => void | Promise<void>;
+  onAgentsChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    agents: Readonly<Record<string, AbstractAgent>>;
+  }) => void | Promise<void>;
+  onContextChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    context: Readonly<Record<string, Context>>;
+  }) => void | Promise<void>;
+  onPropertiesChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    properties: Readonly<Record<string, unknown>>;
+  }) => void | Promise<void>;
+  onHeadersChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    headers: Readonly<Record<string, string>>;
   }) => void | Promise<void>;
 }
 
@@ -93,10 +117,57 @@ export class CopilotKitCore {
   }: CopilotKitCoreConfig) {
     this.headers = headers;
     this.properties = properties;
-    this.localAgents = agents;
+    this.localAgents = this.assignAgentIds(agents);
     this._agents = this.localAgents;
     this._tools = tools;
     this.setRuntimeUrl(runtimeUrl);
+  }
+
+  private assignAgentIds(agents: Record<string, AbstractAgent>) {
+    Object.entries(agents).forEach(([id, agent]) => {
+      if (agent && !agent.agentId) {
+        agent.agentId = id;
+      }
+    });
+    return agents;
+  }
+
+  private async notifySubscribers(
+    handler: (subscriber: CopilotKitCoreSubscriber) =>
+      | void
+      | Promise<void>,
+    errorMessage: string
+  ) {
+    await Promise.all(
+      Array.from(this.subscribers).map(async (subscriber) => {
+        try {
+          await handler(subscriber);
+        } catch (error) {
+          logger.error(errorMessage, error);
+        }
+      })
+    );
+  }
+
+  private resolveAgentId(
+    agent: AbstractAgent,
+    providedAgentId?: string
+  ): string {
+    if (providedAgentId) {
+      return providedAgentId;
+    }
+    if (agent.agentId) {
+      return agent.agentId;
+    }
+    const found = Object.entries(this._agents).find(([, storedAgent]) => {
+      return storedAgent === agent;
+    });
+    if (found) {
+      agent.agentId = found[0];
+      return found[0];
+    }
+    agent.agentId = DEFAULT_AGENT_ID;
+    return DEFAULT_AGENT_ID;
   }
 
   /**
@@ -150,38 +221,37 @@ export class CopilotKitCore {
       this.remoteAgents = {};
       this._agents = this.localAgents;
 
-      this.subscribers.forEach(async (subscriber) => {
-        try {
-          await subscriber.onRuntimeConnectionStatusChanged?.({
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Disconnected,
-          });
-        } catch (error) {
-          logger.error(
-            "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
-            error
-          );
-        }
-      });
+          }),
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+      );
+
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onAgentsChanged?.({
+            copilotkit: this,
+            agents: this._agents,
+          }),
+        "Subscriber onAgentsChanged error:"
+      );
       return;
     }
 
     this._runtimeConnectionStatus =
       CopilotKitCoreRuntimeConnectionStatus.Connecting;
 
-    this.subscribers.forEach(async (subscriber) => {
-      try {
-        await subscriber.onRuntimeConnectionStatusChanged?.({
+    await this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onRuntimeConnectionStatusChanged?.({
           copilotkit: this,
           status: CopilotKitCoreRuntimeConnectionStatus.Connecting,
-        });
-      } catch (error) {
-        logger.error(
-          "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
-          error
-        );
-      }
-    });
+        }),
+      "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+    );
 
     try {
       const response = await fetch(`${this.runtimeUrl}/info`, {
@@ -212,19 +282,23 @@ export class CopilotKitCore {
         CopilotKitCoreRuntimeConnectionStatus.Connected;
       this._runtimeVersion = version;
 
-      this.subscribers.forEach(async (subscriber) => {
-        try {
-          await subscriber.onRuntimeConnectionStatusChanged?.({
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Connected,
-          });
-        } catch (error) {
-          logger.error(
-            "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
-            error
-          );
-        }
-      });
+          }),
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+      );
+
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onAgentsChanged?.({
+            copilotkit: this,
+            agents: this._agents,
+          }),
+        "Subscriber onAgentsChanged error:"
+      );
     } catch (error) {
       this._runtimeConnectionStatus =
         CopilotKitCoreRuntimeConnectionStatus.Error;
@@ -232,19 +306,23 @@ export class CopilotKitCore {
       this.remoteAgents = {};
       this._agents = this.localAgents;
 
-      this.subscribers.forEach(async (subscriber) => {
-        try {
-          await subscriber.onRuntimeConnectionStatusChanged?.({
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Error,
-          });
-        } catch (err) {
-          logger.error(
-            "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
-            err
-          );
-        }
-      });
+          }),
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+      );
+
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onAgentsChanged?.({
+            copilotkit: this,
+            agents: this._agents,
+          }),
+        "Subscriber onAgentsChanged error:"
+      );
       const message =
         error instanceof Error ? error.message : JSON.stringify(error);
       logger.warn(
@@ -258,25 +336,68 @@ export class CopilotKitCore {
    */
   setHeaders(headers: Record<string, string>) {
     this.headers = headers;
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onHeadersChanged?.({
+          copilotkit: this,
+          headers: this.headers,
+        }),
+      "Subscriber onHeadersChanged error:"
+    );
   }
 
   setProperties(properties: Record<string, unknown>) {
     this.properties = properties;
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onPropertiesChanged?.({
+          copilotkit: this,
+          properties: this.properties,
+        }),
+      "Subscriber onPropertiesChanged error:"
+    );
   }
 
   setAgents(agents: Record<string, AbstractAgent>) {
-    this.localAgents = agents;
+    this.localAgents = this.assignAgentIds(agents);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onAgentsChanged?.({
+          copilotkit: this,
+          agents: this._agents,
+        }),
+      "Subscriber onAgentsChanged error:"
+    );
   }
 
   addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
     this.localAgents[id] = agent;
+    if (!agent.agentId) {
+      agent.agentId = id;
+    }
     this._agents = { ...this.localAgents, ...this.remoteAgents };
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onAgentsChanged?.({
+          copilotkit: this,
+          agents: this._agents,
+        }),
+      "Subscriber onAgentsChanged error:"
+    );
   }
 
   removeAgent(id: string) {
     delete this.localAgents[id];
     this._agents = { ...this.localAgents, ...this.remoteAgents };
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onAgentsChanged?.({
+          copilotkit: this,
+          agents: this._agents,
+        }),
+      "Subscriber onAgentsChanged error:"
+    );
   }
 
   getAgent(id: string): AbstractAgent | undefined {
@@ -304,11 +425,27 @@ export class CopilotKitCore {
   addContext({ description, value }: Context): string {
     const id = randomUUID();
     this._context[id] = { description, value };
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onContextChanged?.({
+          copilotkit: this,
+          context: this._context,
+        }),
+      "Subscriber onContextChanged error:"
+    );
     return id;
   }
 
   removeContext(id: string) {
     delete this._context[id];
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onContextChanged?.({
+          copilotkit: this,
+          context: this._context,
+        }),
+      "Subscriber onContextChanged error:"
+    );
   }
 
   /**
@@ -428,6 +565,7 @@ export class CopilotKitCore {
     agentId: string | undefined;
   }): Promise<RunAgentResult> {
     const { newMessages } = runAgentResult;
+    const effectiveAgentId = this.resolveAgentId(agent, agentId);
 
     let needsFollowUp = false;
 
@@ -439,74 +577,99 @@ export class CopilotKitCore {
               (m) => m.role === "tool" && m.toolCallId === toolCall.id
             ) === -1
           ) {
-            const tool = this.getTool({
-              toolName: toolCall.function.name,
-              agentId,
-            });
-            if (tool) {
-              // Check if tool is constrained to a specific agent
-              if (tool?.agentId && tool.agentId !== agentId) {
-                // Tool is not available for this agent, skip it
-                continue;
-              }
+              const tool = this.getTool({
+                toolName: toolCall.function.name,
+                agentId,
+              });
+              if (tool) {
+                // Check if tool is constrained to a specific agent
+                if (tool?.agentId && tool.agentId !== agentId) {
+                  // Tool is not available for this agent, skip it
+                  continue;
+                }
 
               let toolCallResult = "";
+              let errorMessage: string | undefined;
+              let isArgumentError = false;
               if (tool?.handler) {
-                const args = JSON.parse(toolCall.function.arguments);
+                let parsedArgs: unknown;
                 try {
-                  // mark executing start
-                  for (const sub of this.subscribers) {
-                    try {
-                      await sub.onToolExecutionStart?.({
-                        toolCallId: toolCall.id,
-                        agentId,
-                      });
-                    } catch (err) {
-                      logger.error(
-                        "Subscriber onToolExecutionStart error:",
-                        err
-                      );
-                    }
-                  }
-                  const result = await tool.handler(args);
-                  if (result === undefined || result === null) {
-                    toolCallResult = "";
-                  } else if (typeof result === "string") {
-                    toolCallResult = result;
-                  } else {
-                    toolCallResult = JSON.stringify(result);
-                  }
+                  parsedArgs = JSON.parse(toolCall.function.arguments);
                 } catch (error) {
-                  toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
-                } finally {
-                  // mark executing end
+                  errorMessage =
+                    error instanceof Error
+                      ? error.message
+                      : String(error);
+                  isArgumentError = true;
+                }
 
-                  for (const sub of this.subscribers) {
-                    try {
-                      await sub.onToolExecutionEnd?.({
-                        toolCallId: toolCall.id,
-                        agentId,
-                      });
-                    } catch (err) {
-                      logger.error("Subscriber onToolExecutionEnd error:", err);
+                await this.notifySubscribers(
+                  (subscriber) =>
+                    subscriber.onToolExecutionStart?.({
+                      copilotkit: this,
+                      toolCallId: toolCall.id,
+                      agentId: effectiveAgentId,
+                      toolName: toolCall.function.name,
+                      args: parsedArgs,
+                    }),
+                  "Subscriber onToolExecutionStart error:"
+                );
+
+                if (!errorMessage) {
+                  try {
+                    const result = await tool.handler(parsedArgs as any);
+                    if (result === undefined || result === null) {
+                      toolCallResult = "";
+                    } else if (typeof result === "string") {
+                      toolCallResult = result;
+                    } else {
+                      toolCallResult = JSON.stringify(result);
                     }
+                  } catch (error) {
+                    errorMessage =
+                      error instanceof Error
+                        ? error.message
+                        : String(error);
                   }
+                }
+
+                if (errorMessage) {
+                  toolCallResult = `Error: ${errorMessage}`;
+                }
+
+                await this.notifySubscribers(
+                  (subscriber) =>
+                    subscriber.onToolExecutionEnd?.({
+                      copilotkit: this,
+                      toolCallId: toolCall.id,
+                      agentId: effectiveAgentId,
+                      toolName: toolCall.function.name,
+                      result: errorMessage ? "" : toolCallResult,
+                      error: errorMessage,
+                    }),
+                  "Subscriber onToolExecutionEnd error:"
+                );
+
+                if (isArgumentError) {
+                  throw new Error(errorMessage ?? "Tool execution failed");
                 }
               }
 
-              const messageIndex = agent.messages.findIndex(
-                (m) => m.id === message.id
-              );
-              const toolMessage = {
-                id: randomUUID(),
-                role: "tool" as const,
-                toolCallId: toolCall.id,
-                content: toolCallResult,
-              };
-              agent.messages.splice(messageIndex + 1, 0, toolMessage);
+              if (!errorMessage || !isArgumentError) {
+                const messageIndex = agent.messages.findIndex(
+                  (m) => m.id === message.id
+                );
+                const toolMessage = {
+                  id: randomUUID(),
+                  role: "tool" as const,
+                  toolCallId: toolCall.id,
+                  content: toolCallResult,
+                };
+                agent.messages.splice(messageIndex + 1, 0, toolMessage);
 
-              if (tool?.followUp !== false) {
-                needsFollowUp = true;
+                if (!errorMessage && tool?.followUp !== false) {
+                  needsFollowUp = true;
+                }
               }
             } else {
               // Wildcard fallback for undefined tools
@@ -519,68 +682,92 @@ export class CopilotKitCore {
                 }
 
                 let toolCallResult = "";
+                let errorMessage: string | undefined;
+                let isArgumentError = false;
                 if (wildcardTool?.handler) {
-                  // Pass both the tool name and original args to the wildcard handler
+                  let parsedArgs: unknown;
+                  try {
+                    parsedArgs = JSON.parse(toolCall.function.arguments);
+                  } catch (error) {
+                    errorMessage =
+                      error instanceof Error
+                        ? error.message
+                        : String(error);
+                    isArgumentError = true;
+                  }
+
                   const wildcardArgs = {
                     toolName: toolCall.function.name,
-                    args: JSON.parse(toolCall.function.arguments),
+                    args: parsedArgs,
                   };
-                  try {
-                    // mark executing start
-                    for (const sub of this.subscribers) {
-                      try {
-                        await sub.onToolExecutionStart?.({
-                          toolCallId: toolCall.id,
-                          agentId,
-                        });
-                      } catch (err) {
-                        logger.error(
-                          "Subscriber onToolExecutingStart error:",
-                          err
-                        );
+
+                  await this.notifySubscribers(
+                    (subscriber) =>
+                      subscriber.onToolExecutionStart?.({
+                        copilotkit: this,
+                        toolCallId: toolCall.id,
+                        agentId: effectiveAgentId,
+                        toolName: toolCall.function.name,
+                        args: wildcardArgs,
+                      }),
+                    "Subscriber onToolExecutionStart error:"
+                  );
+
+                  if (!errorMessage) {
+                    try {
+                      const result = await wildcardTool.handler(wildcardArgs as any);
+                      if (result === undefined || result === null) {
+                        toolCallResult = "";
+                      } else if (typeof result === "string") {
+                        toolCallResult = result;
+                      } else {
+                        toolCallResult = JSON.stringify(result);
                       }
+                    } catch (error) {
+                      errorMessage =
+                        error instanceof Error
+                          ? error.message
+                          : String(error);
                     }
-                    const result = await wildcardTool.handler(wildcardArgs);
-                    if (result === undefined || result === null) {
-                      toolCallResult = "";
-                    } else if (typeof result === "string") {
-                      toolCallResult = result;
-                    } else {
-                      toolCallResult = JSON.stringify(result);
-                    }
-                  } catch (error) {
-                    toolCallResult = `Error: ${error instanceof Error ? error.message : String(error)}`;
-                  } finally {
-                    // mark executing end
-                    for (const sub of this.subscribers) {
-                      try {
-                        await sub.onToolExecutionEnd?.({
-                          toolCallId: toolCall.id,
-                          agentId,
-                        });
-                      } catch (err) {
-                        logger.error(
-                          "Subscriber onToolExecutingEnd error:",
-                          err
-                        );
-                      }
-                    }
+                  }
+
+                  if (errorMessage) {
+                    toolCallResult = `Error: ${errorMessage}`;
+                  }
+
+                  await this.notifySubscribers(
+                    (subscriber) =>
+                      subscriber.onToolExecutionEnd?.({
+                        copilotkit: this,
+                        toolCallId: toolCall.id,
+                        agentId: effectiveAgentId,
+                        toolName: toolCall.function.name,
+                        result: errorMessage ? "" : toolCallResult,
+                        error: errorMessage,
+                      }),
+                    "Subscriber onToolExecutionEnd error:"
+                  );
+
+                  if (isArgumentError) {
+                    throw new Error(errorMessage ?? "Tool execution failed");
                   }
                 }
 
-                const messageIndex = agent.messages.findIndex(
-                  (m) => m.id === message.id
-                );
-                const toolMessage = {
-                  id: randomUUID(),
-                  role: "tool" as const,
-                  toolCallId: toolCall.id,
-                  content: toolCallResult,
-                };
-                agent.messages.splice(messageIndex + 1, 0, toolMessage);
+                if (!errorMessage || !isArgumentError) {
+                  const messageIndex = agent.messages.findIndex(
+                    (m) => m.id === message.id
+                  );
+                  const toolMessage = {
+                    id: randomUUID(),
+                    role: "tool" as const,
+                    toolCallId: toolCall.id,
+                    content: toolCallResult,
+                  };
+                  agent.messages.splice(messageIndex + 1, 0, toolMessage);
 
-                if (wildcardTool?.followUp !== false) {
-                  needsFollowUp = true;
+                  if (!errorMessage && wildcardTool?.followUp !== false) {
+                    needsFollowUp = true;
+                  }
                 }
               }
             }

@@ -48,7 +48,11 @@ export function CopilotChat({
         content: value,
       });
       if (agent) {
-        await copilotkit.runAgent({ agent, agentId });
+        try {
+          await copilotkit.runAgent({ agent, agentId });
+        } catch (error) {
+          console.error("CopilotChat: runAgent failed", error);
+        }
       }
     },
     [agent, copilotkit, agentId]
