@@ -292,9 +292,10 @@ export class CopilotKitCore {
           CopilotKitCoreRuntimeConnectionStatus.Connecting)
     ) {
       return undefined;
+    } else {
+      console.warn(`Agent ${id} not found`);
+      return undefined;
     }
-
-    throw new Error(`Agent ${id} not found`);
   }
 
   /**
