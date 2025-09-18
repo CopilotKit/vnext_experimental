@@ -1,6 +1,5 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { CopilotKitConfigDirective } from "@copilotkitnext/angular";
 import { HeadlessChatComponent } from "./routes/headless/headless-chat.component";
 import { CustomInputChatComponent } from "./routes/custom-input/custom-input-chat.component";
 import { DefaultChatComponent } from "./routes/default/default-chat.component";
@@ -11,7 +10,6 @@ import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port.component"
   standalone: true,
   imports: [
     CommonModule,
-    CopilotKitConfigDirective,
     HeadlessChatComponent,
     CustomInputChatComponent,
     DefaultChatComponent,
@@ -19,7 +17,6 @@ import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port.component"
   ],
   template: `
     <div
-      [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
       style="height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; display: block;"
     >
       <ng-container *ngIf="isHeadless">
@@ -38,11 +35,13 @@ import { CoPilotPortComponent } from "./routes/ukg-port/co-pilot-port.component"
   `,
 })
 export class AppComponent {
-  runtimeUrl = "http://localhost:3001/api/copilotkit";
   isHeadless =
-    typeof window !== "undefined" && window.location?.pathname.startsWith("/headless");
+    typeof window !== "undefined" &&
+    window.location?.pathname.startsWith("/headless");
   isCustomInput =
-    typeof window !== "undefined" && window.location?.pathname.startsWith("/custom-input");
+    typeof window !== "undefined" &&
+    window.location?.pathname.startsWith("/custom-input");
   isUkgPort =
-    typeof window !== "undefined" && window.location?.pathname.startsWith("/ukg-port");
+    typeof window !== "undefined" &&
+    window.location?.pathname.startsWith("/ukg-port");
 }

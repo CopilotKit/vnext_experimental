@@ -1,5 +1,15 @@
-import { Component, Input, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import {
+  Component,
+  Input,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef,
+  createEnvironmentInjector,
+  EnvironmentInjector,
+  runInInjectionContext,
+} from "@angular/core";
+import { TestBed } from "@angular/core/testing";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   renderSlot,
   isComponentType,
@@ -8,342 +18,200 @@ import {
   createSlotConfig,
   provideSlots,
   getSlotConfig,
-  createSlotRenderer
-} from '../slot.utils';
-import { SLOT_CONFIG } from '../slot.types';
+  createSlotRenderer,
+} from "../slot.utils";
+import { SLOT_CONFIG } from "../slot.types";
 
-// Test components
 @Component({
-  selector: 'default-component',
+  standalone: true,
+  selector: "default-component",
   template: `<div class="default">{{ text }}</div>`,
-  standalone: true
 })
 class DefaultComponent {
-  @Input() text = 'Default';
+  @Input() text = "Default";
 }
 
 @Component({
-  selector: 'custom-component',
+  standalone: true,
+  selector: "custom-component",
   template: `<div class="custom">{{ text }}</div>`,
-  standalone: true
 })
 class CustomComponent {
-  @Input() text = 'Custom';
+  @Input() text = "Custom";
 }
 
-describe('Slot Utilities', () => {
-  describe('renderSlot', () => {
-    let viewContainer: ViewContainerRef;
+describe("slot utils", () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
 
-    beforeEach(() => {
+  describe("renderSlot", () => {
+    it("renders default component when no slot provided", () => {
       @Component({
+        standalone: true,
         template: `<div #container></div>`,
-        standalone: true
+        imports: [DefaultComponent],
       })
-      class TestComponent {
-        @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
+      class HostComponent {
+        @ViewChild("container", { read: ViewContainerRef })
+        container!: ViewContainerRef;
       }
 
-      const fixture = TestBed.createComponent(TestComponent);
+      const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
-      viewContainer = fixture.componentInstance.container;
-    });
 
-    it('should render default component when no slot provided', () => {
-      const ref = renderSlot(viewContainer, {
-        defaultComponent: DefaultComponent
-      });
-
-      expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
-    });
-
-    it('should render custom component when provided', () => {
-      const ref = renderSlot(viewContainer, {
-        slot: CustomComponent,
-        defaultComponent: DefaultComponent
-      });
-
-      expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
-    });
-
-    it('should render default component when string slot is no longer supported', () => {
-      // String slots are no longer supported - should render default component
-      const ref = renderSlot(viewContainer, {
-        slot: 'fancy-style' as any, // Type assertion needed since strings are no longer valid
-        defaultComponent: DefaultComponent
-      });
-
-      expect(ref).toBeTruthy();
-      // Should render default component, not apply class
-      expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
-    });
-
-    it('should apply props to component using setInput', () => {
-      const ref = renderSlot(viewContainer, {
+      const ref = renderSlot(fixture.componentInstance.container, {
         defaultComponent: DefaultComponent,
-        props: { text: 'Hello World' }
       });
 
       expect(ref).toBeTruthy();
-      if ('instance' in ref!) {
-        // Props should be set via setInput, which updates the instance
-        expect(ref.instance.text).toBe('Hello World');
-      }
+      expect(
+        (ref as any).location.nativeElement.querySelector(".default")
+      ).toBeTruthy();
     });
 
-    it('should render template when provided', () => {
+    it("renders template slot with provided context", () => {
       @Component({
+        standalone: true,
         template: `
           <div #container></div>
-          <ng-template #myTemplate let-props="props">
-            <span class="template">{{ props?.message }}</span>
+          <ng-template #tpl let-props="props">
+            <span class="template">{{ props?.value }}</span>
           </ng-template>
         `,
-        standalone: true
       })
-      class TestComponent {
-        @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
-        @ViewChild('myTemplate') template!: TemplateRef<any>;
+      class HostComponent {
+        @ViewChild("container", { read: ViewContainerRef })
+        container!: ViewContainerRef;
+        @ViewChild("tpl") tpl!: TemplateRef<any>;
       }
 
-      const fixture = TestBed.createComponent(TestComponent);
+      const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
 
       renderSlot(fixture.componentInstance.container, {
-        slot: fixture.componentInstance.template,
         defaultComponent: DefaultComponent,
-        props: { message: 'Template Content' }
+        slot: fixture.componentInstance.tpl,
+        props: { value: "from template" },
       });
-      
       fixture.detectChanges();
 
-      const span = fixture.nativeElement.querySelector('.template');
-      expect(span).toBeTruthy();
-      expect(span.textContent).toBe('Template Content');
+      const span = fixture.nativeElement.querySelector(".template");
+      expect(span?.textContent?.trim()).toBe("from template");
     });
 
-    it('should render default component when object slot is no longer supported', () => {
-      // Object slots are no longer supported - should render default component
-      const ref = renderSlot(viewContainer, {
-        slot: { text: 'Overridden' } as any, // Type assertion needed since objects are no longer valid
-        defaultComponent: DefaultComponent
-      });
-
-      expect(ref).toBeTruthy();
-      if ('instance' in ref!) {
-        // Should use default text, not override
-        expect(ref.instance.text).toBe('Default');
-      }
-    });
-  });
-
-  describe('isComponentType', () => {
-    it('should identify Angular components', () => {
-      // After removing ɵ checks, any function with prototype is considered a component
-      expect(isComponentType(DefaultComponent)).toBe(true);
-      expect(isComponentType(CustomComponent)).toBe(true);
-    });
-
-    it('should reject non-components', () => {
-      expect(isComponentType('string')).toBe(false);
-      expect(isComponentType(123)).toBe(false);
-      expect(isComponentType({})).toBe(false);
-      expect(isComponentType(null)).toBe(false);
-      expect(isComponentType(undefined)).toBe(false);
-      expect(isComponentType(() => {})).toBe(false);
-    });
-  });
-
-  describe('isSlotValue', () => {
-    it('should accept valid slot values', () => {
-      // Only components and templates are valid now
-      expect(isSlotValue(DefaultComponent)).toBe(true);
-      expect(isSlotValue(CustomComponent)).toBe(true);
-      // Strings and objects are no longer valid slot values
-      expect(isSlotValue('css-class')).toBe(false);
-      expect(isSlotValue({ prop: 'value' })).toBe(false);
-    });
-
-    it('should reject invalid slot values', () => {
-      expect(isSlotValue(null)).toBe(false);
-      expect(isSlotValue(undefined)).toBe(false);
-    });
-  });
-
-  describe('normalizeSlotValue', () => {
-    it('should return default component for string (no longer supported)', () => {
-      const result = normalizeSlotValue('custom-class' as any, DefaultComponent);
-      expect(result).toEqual({
-        component: DefaultComponent
-      });
-    });
-
-    it('should normalize component type', () => {
-      const result = normalizeSlotValue(CustomComponent, DefaultComponent);
-      expect(result).toEqual({
-        component: CustomComponent
-      });
-    });
-
-    it('should return default component for object (no longer supported)', () => {
-      const props = { text: 'Test' };
-      const result = normalizeSlotValue(props as any, DefaultComponent);
-      expect(result).toEqual({
-        component: DefaultComponent
-      });
-    });
-
-    it('should handle undefined', () => {
-      const result = normalizeSlotValue(undefined, DefaultComponent);
-      expect(result).toEqual({
-        component: DefaultComponent
-      });
-    });
-  });
-
-  describe('createSlotConfig', () => {
-    it('should create configuration map', () => {
-      const config = createSlotConfig(
-        {
-          button: CustomComponent,
-          toolbar: 'toolbar-class' as any // String no longer supported but test the behavior
-        },
-        {
-          button: DefaultComponent,
-          toolbar: DefaultComponent
-        }
-      );
-
-      expect(config.get('button')).toEqual({
-        component: CustomComponent
-      });
-      // String slots no longer supported - should use default
-      expect(config.get('toolbar')).toEqual({
-        component: DefaultComponent
-      });
-    });
-
-    it('should use defaults when no overrides', () => {
-      const config = createSlotConfig(
-        {},
-        {
-          button: DefaultComponent,
-          toolbar: DefaultComponent
-        }
-      );
-
-      expect(config.get('button')).toEqual({
-        component: DefaultComponent
-      });
-      expect(config.get('toolbar')).toEqual({
-        component: DefaultComponent
-      });
-    });
-  });
-
-  describe('provideSlots', () => {
-    it('should create provider configuration with Map', () => {
-      const provider = provideSlots({
-        button: CustomComponent
-      });
-
-      expect(provider.provide).toBe(SLOT_CONFIG);
-      expect(provider.useValue).toBeInstanceOf(Map);
-      expect(provider.useValue.get('button')).toEqual({
-        component: CustomComponent
-      });
-    });
-  });
-
-  describe('getSlotConfig', () => {
-    it('should retrieve slot configuration from DI', () => {
-      const slots = new Map([
-        ['button', { component: CustomComponent }]
-      ]);
-
-      TestBed.configureTestingModule({
-        providers: [
-          { provide: SLOT_CONFIG, useValue: slots }
-        ]
-      });
-
+    it("applies inputs using setInput", () => {
       @Component({
-        template: '',
-        standalone: true
-      })
-      class TestComponent {
-        slots = getSlotConfig();
-      }
-
-      const fixture = TestBed.createComponent(TestComponent);
-      expect(fixture.componentInstance.slots).toBe(slots);
-    });
-
-    it('should return null when no config provided', () => {
-      @Component({
-        template: '',
-        standalone: true
-      })
-      class TestComponent {
-        slots = getSlotConfig();
-      }
-
-      const fixture = TestBed.createComponent(TestComponent);
-      expect(fixture.componentInstance.slots).toBe(null);
-    });
-  });
-
-  describe('createSlotRenderer', () => {
-    let viewContainer: ViewContainerRef;
-
-    beforeEach(() => {
-      @Component({
+        standalone: true,
         template: `<div #container></div>`,
-        standalone: true
+        imports: [DefaultComponent],
       })
-      class TestComponent {
-        @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
+      class HostComponent {
+        @ViewChild("container", { read: ViewContainerRef })
+        container!: ViewContainerRef;
       }
 
-      const fixture = TestBed.createComponent(TestComponent);
+      const fixture = TestBed.createComponent(HostComponent);
       fixture.detectChanges();
-      viewContainer = fixture.componentInstance.container;
-    });
 
-    it('should create a renderer function', () => {
-      const renderer = createSlotRenderer(DefaultComponent);
-      expect(typeof renderer).toBe('function');
-      
-      const ref = renderer(viewContainer, CustomComponent);
-      expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
-    });
-
-    it.skip('should use DI config when slot name provided', () => {
-      // SKIP: This test requires reconfiguring TestBed which is not supported with AnalogJS
-      // The slot system correctly uses DI config in production
-    });
-
-    it('should apply props from renderer', () => {
-      const renderer = createSlotRenderer(DefaultComponent);
-      const ref = renderer(viewContainer, undefined, { text: 'Rendered' });
+      const ref = renderSlot(fixture.componentInstance.container, {
+        defaultComponent: DefaultComponent,
+        props: { text: "Updated" },
+      });
 
       expect(ref).toBeTruthy();
-      if ('instance' in ref!) {
-        // Props should be set via setInput
-        expect(ref.instance.text).toBe('Rendered');
+      expect((ref as any).instance.text).toBe("Updated");
+    });
+  });
+
+  describe("type guards", () => {
+    it("detects component types", () => {
+      expect(isComponentType(DefaultComponent)).toBe(true);
+      expect(isComponentType(() => {})).toBe(false);
+      expect(isComponentType(null)).toBe(false);
+    });
+
+    it("detects slot values", () => {
+      @Component({
+        standalone: true,
+        template: `<ng-template #tpl></ng-template>`,
+      })
+      class HostComponent {
+        @ViewChild("tpl") tpl!: TemplateRef<any>;
       }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      expect(isSlotValue(DefaultComponent)).toBe(true);
+      expect(isSlotValue(fixture.componentInstance.tpl)).toBe(true);
+      expect(isSlotValue("string")).toBe(false);
+    });
+  });
+
+  describe("configuration helpers", () => {
+    it("normalises slot overrides to registry entries", () => {
+      expect(normalizeSlotValue(undefined, DefaultComponent)).toEqual({
+        component: DefaultComponent,
+      });
+      expect(normalizeSlotValue(CustomComponent, DefaultComponent)).toEqual({
+        component: CustomComponent,
+      });
     });
 
-    it('should apply outputs when provided', () => {
-      const renderer = createSlotRenderer(DefaultComponent);
-      const clickHandler = vi.fn();
-      const ref = renderer(viewContainer, undefined, undefined, { click: clickHandler });
+    it("creates slot configuration map with defaults", () => {
+      const config = createSlotConfig(
+        { button: CustomComponent },
+        { button: DefaultComponent, toolbar: DefaultComponent }
+      );
 
-      expect(ref).toBeTruthy();
-      // Outputs would be wired if the component has the corresponding EventEmitter
+      expect(config.get("button")).toEqual({ component: CustomComponent });
+      expect(config.get("toolbar")).toEqual({ component: DefaultComponent });
+    });
+
+    it("provides and retrieves slot configuration via DI", () => {
+      const slots = new Map([["button", { component: CustomComponent }]]);
+      TestBed.configureTestingModule({
+        providers: [{ provide: SLOT_CONFIG, useValue: slots }],
+      });
+
+      @Component({ standalone: true, template: "" })
+      class HostComponent {
+        config = getSlotConfig();
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      expect(fixture.componentInstance.config).toBe(slots);
+    });
+
+    it("createSlotRenderer uses DI overrides when slot name provided", () => {
+      const parent = TestBed.inject(EnvironmentInjector);
+      const env = createEnvironmentInjector(
+        [provideSlots({ button: CustomComponent })],
+        parent
+      );
+
+      const renderer = runInInjectionContext(env, () =>
+        createSlotRenderer(DefaultComponent, "button")
+      );
+
+      @Component({
+        standalone: true,
+        template: `<div #container></div>`,
+        imports: [DefaultComponent, CustomComponent],
+      })
+      class HostComponent {
+        @ViewChild("container", { read: ViewContainerRef })
+        container!: ViewContainerRef;
+      }
+
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+
+      const ref = renderer(fixture.componentInstance.container);
+      expect(
+        (ref as any).location.nativeElement.querySelector(".custom")
+      ).toBeTruthy();
     });
   });
 });

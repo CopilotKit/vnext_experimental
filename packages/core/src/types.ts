@@ -1,3 +1,4 @@
+import { ToolCall } from "@ag-ui/client";
 import { z } from "zod";
 
 /**
@@ -6,14 +7,16 @@ import { z } from "zod";
 export enum ToolCallStatus {
   InProgress = "inProgress",
   Executing = "executing",
-  Complete = "complete"
+  Complete = "complete",
 }
 
-export type FrontendTool<T extends Record<string, unknown> = Record<string, unknown>> = {
+export type FrontendTool<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> = {
   name: string;
   description?: string;
   parameters?: z.ZodType<T>;
-  handler?: (args: T) => Promise<unknown>;
+  handler?: (args: T, toolCall: ToolCall) => Promise<unknown>;
   followUp?: boolean;
   /**
    * Optional agent ID to constrain this tool to a specific agent.

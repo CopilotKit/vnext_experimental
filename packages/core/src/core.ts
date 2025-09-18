@@ -726,7 +726,10 @@ export class CopilotKitCore {
 
                 if (!errorMessage) {
                   try {
-                    const result = await tool.handler(parsedArgs as any);
+                    const result = await tool.handler(
+                      parsedArgs as any,
+                      toolCall
+                    );
                     if (result === undefined || result === null) {
                       toolCallResult = "";
                     } else if (typeof result === "string") {
@@ -847,7 +850,8 @@ export class CopilotKitCore {
                   if (!errorMessage) {
                     try {
                       const result = await wildcardTool.handler(
-                        wildcardArgs as any
+                        wildcardArgs as any,
+                        toolCall
                       );
                       if (result === undefined || result === null) {
                         toolCallResult = "";
