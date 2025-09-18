@@ -33,7 +33,12 @@ export function useAgent({ agentId, updates }: UseAgentProps = {}) {
   const agent: AbstractAgent | undefined = useMemo(() => {
     return copilotkit.getAgent(agentId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentId, copilotkit.agents, copilotkit.didLoadRuntime, copilotkit]);
+  }, [
+    agentId,
+    copilotkit.agents,
+    copilotkit.runtimeConnectionStatus,
+    copilotkit,
+  ]);
 
   useEffect(() => {
     setIsRunning(agent?.isRunning ?? false);
