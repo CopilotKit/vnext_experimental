@@ -14,6 +14,7 @@ import {
 } from "../core/copilotkit.types";
 import { AbstractAgent } from "@ag-ui/client";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
+import { RuntimeConnectionStatus } from "@copilotkitnext/core";
 
 /**
  * Watches an agent and provides reactive signals for its state.
@@ -105,15 +106,16 @@ export function watchAgent(config?: { agentId?: string }): AgentWatchResult {
 
   // Subscribe to CopilotKit changes to detect agent updates
   const coreUnsubscribe = service.copilotkit.subscribe({
-    onRuntimeLoaded() {
-      // Re-check agent when runtime loads
-      currentAgent = updateAgent();
-      subscribeToAgent();
-    },
-    onRuntimeLoadError() {
-      // Also re-check agent on runtime load error to ensure consistency
-      currentAgent = updateAgent();
-      subscribeToAgent();
+    onRuntimeConnectionStatusChanged({ status }) {
+      if (
+        status === RuntimeConnectionStatus.Connected ||
+        status === RuntimeConnectionStatus.Disconnected ||
+        status === RuntimeConnectionStatus.Error
+      ) {
+        // Re-check agent when runtime connection state changes
+        currentAgent = updateAgent();
+        subscribeToAgent();
+      }
     },
   });
 

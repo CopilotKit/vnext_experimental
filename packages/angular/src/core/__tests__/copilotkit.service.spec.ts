@@ -21,7 +21,15 @@ let mockSubscribers: Array<any> = [];
 
 vi.mock("@copilotkitnext/core", () => {
   // Don't import the real module at all
+  const RuntimeConnectionStatus = {
+    Disconnected: "disconnected",
+    Connected: "connected",
+    Connecting: "connecting",
+    Error: "error",
+  } as const;
+
   return {
+    RuntimeConnectionStatus,
     CopilotKitCore: vi.fn().mockImplementation((config) => {
       // Reset subscribers for each instance
       mockSubscribers = [];
@@ -69,10 +77,20 @@ vi.mock("@copilotkitnext/core", () => {
         }),
         // Helper to trigger events in tests
         _triggerRuntimeLoaded: () => {
-          mockSubscribers.forEach((sub) => sub.onRuntimeLoaded?.());
+          mockSubscribers.forEach((sub) =>
+            sub.onRuntimeConnectionStatusChanged?.({
+              copilotkit: instance,
+              status: RuntimeConnectionStatus.Connected,
+            })
+          );
         },
         _triggerRuntimeError: () => {
-          mockSubscribers.forEach((sub) => sub.onRuntimeLoadError?.());
+          mockSubscribers.forEach((sub) =>
+            sub.onRuntimeConnectionStatusChanged?.({
+              copilotkit: instance,
+              status: RuntimeConnectionStatus.Error,
+            })
+          );
         },
         _getSubscriberCount: () => mockSubscribers.length,
         isRuntimeReady: false,

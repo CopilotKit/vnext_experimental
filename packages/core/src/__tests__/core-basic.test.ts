@@ -10,7 +10,7 @@ describe("CopilotKitCore Basic", () => {
 
   it("should create an instance", () => {
     expect(copilotKitCore).toBeDefined();
-    expect(copilotKitCore.agents).toEqual({});
+    expect(copilotKitCore._agents).toEqual({});
     expect(copilotKitCore.getAllTools()).toEqual([]);
   });
 
@@ -19,9 +19,9 @@ describe("CopilotKitCore Basic", () => {
       name: "testTool",
       handler: vi.fn(),
     };
-    
+
     copilotKitCore.addTool(tool);
-    
+
     expect(copilotKitCore.getTool({ toolName: "testTool" })).toBe(tool);
   });
 });

@@ -387,12 +387,7 @@ export class CopilotKitService {
    */
   private setupEventSubscription(): void {
     const unsubscribe = this.copilotkit.subscribe({
-      onRuntimeLoaded: () => {
-        // Increment version to notify all consumers that runtime state has changed
-        // This triggers re-evaluation of computed signals that depend on runtime state
-        this.notifyRuntimeStateChange();
-      },
-      onRuntimeLoadError: () => {
+      onRuntimeConnectionStatusChanged: () => {
         // Increment version to notify all consumers that runtime state has changed
         // This triggers re-evaluation of computed signals that depend on runtime state
         this.notifyRuntimeStateChange();
