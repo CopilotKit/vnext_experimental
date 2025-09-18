@@ -13,9 +13,9 @@ vi.mock("@copilotkitnext/core", () => ({
       setProperties: vi.fn(),
       setAgents: vi.fn(),
       subscribe: vi.fn(() => () => {}), // Return unsubscribe function
-      set runtimeUrl(url: string | undefined) {
+      setRuntimeUrl: vi.fn((url: string | undefined) => {
         runtimeUrlSetter(url);
-      },
+      }),
       get runtimeUrl() {
         return undefined;
       },

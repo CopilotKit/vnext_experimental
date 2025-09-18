@@ -24,9 +24,9 @@ const mockCopilotKitCore = {
   setAgents: vi.fn(),
   getAgent: vi.fn(),
   subscribe: vi.fn(() => vi.fn()),
-  set runtimeUrl(url: string | undefined) {
+  setRuntimeUrl: vi.fn((url: string | undefined) => {
     runtimeUrlSetter(url);
-  },
+  }),
   get runtimeUrl() {
     return undefined;
   },

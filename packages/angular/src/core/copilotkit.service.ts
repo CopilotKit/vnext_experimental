@@ -348,7 +348,7 @@ export class CopilotKitService {
     effect(() => {
       const url = this.runtimeUrl();
       untracked(() => {
-        this.copilotkit.runtimeUrl = url;
+        this.copilotkit.setRuntimeUrl(url);
       });
     });
 

@@ -2,8 +2,8 @@ import {
   AgentDescription,
   randomUUID,
   RuntimeInfo,
+  logger,
 } from "@copilotkitnext/shared";
-import { logger } from "@copilotkitnext/shared";
 import { AbstractAgent, Context, Message, RunAgentResult } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
@@ -67,57 +67,22 @@ export enum CopilotKitCoreRuntimeConnectionStatus {
 }
 
 export class CopilotKitCore {
-  _context: Record<string, Context> = {};
-  get context(): Readonly<Record<string, Context>> {
-    return this._context;
-  }
-
-  private _agents: Record<string, AbstractAgent> = {};
-  get agents(): Readonly<Record<string, AbstractAgent>> {
-    return this._agents;
-  }
-
   headers: Record<string, string>;
   properties: Record<string, unknown>;
 
+  private _context: Record<string, Context> = {};
+  private _agents: Record<string, AbstractAgent> = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _tools: FrontendTool<any>[] = [];
-  get tools(): Readonly<FrontendTool<any>[]> {
-    return this._tools;
-  }
-
-  private _runtimeUrl?: string;
-  get runtimeUrl(): string | undefined {
-    return this._runtimeUrl;
-  }
-
-  set runtimeUrl(runtimeUrl: string | undefined) {
-    const normalizedRuntimeUrl = runtimeUrl
-      ? runtimeUrl.replace(/\/$/, "")
-      : undefined;
-
-    if (this._runtimeUrl === normalizedRuntimeUrl) {
-      return;
-    }
-    this._runtimeUrl = normalizedRuntimeUrl;
-    void this.updateRuntimeConnection();
-  }
-
-  private _runtimeVersion?: string;
-  get runtimeVersion(): string | undefined {
-    return this._runtimeVersion;
-  }
-
-  private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
-    CopilotKitCoreRuntimeConnectionStatus.Disconnected;
-
-  get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
-    return this._runtimeConnectionStatus;
-  }
 
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
+
+  private _runtimeUrl?: string;
+  private _runtimeVersion?: string;
+  private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
+    CopilotKitCoreRuntimeConnectionStatus.Disconnected;
 
   constructor({
     runtimeUrl,
@@ -131,9 +96,52 @@ export class CopilotKitCore {
     this.localAgents = agents;
     this._agents = this.localAgents;
     this._tools = tools;
-    this.runtimeUrl = runtimeUrl;
+    this.setRuntimeUrl(runtimeUrl);
   }
 
+  /**
+   * Snapshot accessors
+   */
+  get context(): Readonly<Record<string, Context>> {
+    return this._context;
+  }
+
+  get agents(): Readonly<Record<string, AbstractAgent>> {
+    return this._agents;
+  }
+
+  get tools(): Readonly<FrontendTool<any>[]> {
+    return this._tools;
+  }
+
+  get runtimeUrl(): string | undefined {
+    return this._runtimeUrl;
+  }
+
+  setRuntimeUrl(runtimeUrl: string | undefined) {
+    const normalizedRuntimeUrl = runtimeUrl
+      ? runtimeUrl.replace(/\/$/, "")
+      : undefined;
+
+    if (this._runtimeUrl === normalizedRuntimeUrl) {
+      return;
+    }
+
+    this._runtimeUrl = normalizedRuntimeUrl;
+    void this.updateRuntimeConnection();
+  }
+
+  get runtimeVersion(): string | undefined {
+    return this._runtimeVersion;
+  }
+
+  get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
+    return this._runtimeConnectionStatus;
+  }
+
+  /**
+   * Runtime connection
+   */
   private async updateRuntimeConnection() {
     if (!this.runtimeUrl) {
       this._runtimeConnectionStatus =
@@ -245,6 +253,17 @@ export class CopilotKitCore {
     }
   }
 
+  /**
+   * Configuration updates
+   */
+  setHeaders(headers: Record<string, string>) {
+    this.headers = headers;
+  }
+
+  setProperties(properties: Record<string, unknown>) {
+    this.properties = properties;
+  }
+
   setAgents(agents: Record<string, AbstractAgent>) {
     this.localAgents = agents;
     this._agents = { ...this.localAgents, ...this.remoteAgents };
@@ -263,21 +282,24 @@ export class CopilotKitCore {
   getAgent(id: string): AbstractAgent | undefined {
     if (id in this._agents) {
       return this._agents[id] as AbstractAgent;
-    } else {
-      if (
-        this.runtimeUrl !== undefined &&
-        (this.runtimeConnectionStatus ===
-          CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
-          this.runtimeConnectionStatus ===
-            CopilotKitCoreRuntimeConnectionStatus.Connecting)
-      ) {
-        return undefined;
-      } else {
-        throw new Error(`Agent ${id} not found`);
-      }
     }
+
+    if (
+      this.runtimeUrl !== undefined &&
+      (this.runtimeConnectionStatus ===
+        CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
+        this.runtimeConnectionStatus ===
+          CopilotKitCoreRuntimeConnectionStatus.Connecting)
+    ) {
+      return undefined;
+    }
+
+    throw new Error(`Agent ${id} not found`);
   }
 
+  /**
+   * Context management
+   */
   addContext({ description, value }: Context): string {
     const id = randomUUID();
     this._context[id] = { description, value };
@@ -288,6 +310,9 @@ export class CopilotKitCore {
     delete this._context[id];
   }
 
+  /**
+   * Tool management
+   */
   addTool<T extends Record<string, unknown> = Record<string, unknown>>(
     tool: FrontendTool<T>
   ) {
@@ -346,14 +371,9 @@ export class CopilotKitCore {
     this._tools = [...tools];
   }
 
-  setHeaders(headers: Record<string, string>) {
-    this.headers = headers;
-  }
-
-  setProperties(properties: Record<string, unknown>) {
-    this.properties = properties;
-  }
-
+  /**
+   * Subscription lifecycle
+   */
   subscribe(subscriber: CopilotKitCoreSubscriber): () => void {
     this.subscribers.add(subscriber);
 
@@ -367,6 +387,9 @@ export class CopilotKitCore {
     this.subscribers.delete(subscriber);
   }
 
+  /**
+   * Agent connectivity
+   */
   async connectAgent({
     agent,
     agentId,

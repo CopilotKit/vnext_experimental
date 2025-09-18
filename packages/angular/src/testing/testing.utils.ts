@@ -121,9 +121,9 @@ export function createMockCopilotKitCore() {
     get runtimeUrl() {
       return runtimeUrlGetter();
     },
-    set runtimeUrl(url: string | undefined) {
+    setRuntimeUrl: vi.fn((url: string | undefined) => {
       runtimeUrlSetter(url);
-    },
+    }),
     __runtimeUrlGetter: runtimeUrlGetter,
     __runtimeUrlSetter: runtimeUrlSetter,
   };

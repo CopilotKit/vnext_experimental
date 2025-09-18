@@ -38,9 +38,9 @@ const mockCopilotKitCore = {
     id === "test-agent" ? mockAgent : undefined
   ),
   subscribe: vi.fn(() => vi.fn()), // Returns unsubscribe function directly
-  set runtimeUrl(url: string | undefined) {
+  setRuntimeUrl: vi.fn((url: string | undefined) => {
     runtimeUrlSetter(url);
-  },
+  }),
   get runtimeUrl() {
     return undefined;
   },

@@ -98,10 +98,10 @@ vi.mock("@copilotkitnext/core", () => {
         messages: [],
         // Add any other properties that might be accessed
         state: "idle",
-        set runtimeUrl(url: string | undefined) {
+        setRuntimeUrl: vi.fn((url: string | undefined) => {
           runtimeUrlValue = url;
           runtimeUrlSetter(url);
-        },
+        }),
         get runtimeUrl() {
           return runtimeUrlValue;
         },
