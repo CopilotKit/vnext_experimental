@@ -5,7 +5,13 @@ import {
   RuntimeInfo,
   logger,
 } from "@copilotkitnext/shared";
-import { AbstractAgent, Context, Message, RunAgentResult } from "@ag-ui/client";
+import {
+  AbstractAgent,
+  AgentSubscriber,
+  Context,
+  Message,
+  RunAgentResult,
+} from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -81,6 +87,9 @@ export interface CopilotKitCoreSubscriber {
     copilotkit: CopilotKitCore;
     headers: Readonly<Record<string, string>>;
   }) => void | Promise<void>;
+  onError?: (event: { copilotkit: CopilotKitCore; error: Error }) =>
+    | void
+    | Promise<void>;
 }
 
 export enum CopilotKitCoreRuntimeConnectionStatus {
@@ -328,6 +337,14 @@ export class CopilotKitCore {
       logger.warn(
         `Failed to load runtime info (${this.runtimeUrl}/info): ${message}`
       );
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onError?.({
+            copilotkit: this,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }),
+        "Subscriber onError error:"
+      );
     }
   }
 
@@ -532,12 +549,27 @@ export class CopilotKitCore {
     agent,
     agentId,
   }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
-    const runAgentResult = await agent.connectAgent({
-      forwardedProps: this.properties,
-      tools: this.buildFrontendTools(agentId),
-    });
+    try {
+      const runAgentResult = await agent.connectAgent(
+        {
+          forwardedProps: this.properties,
+          tools: this.buildFrontendTools(agentId),
+        },
+        this.createAgentErrorSubscriber(agent, agentId)
+      );
 
-    return this.processAgentResult({ runAgentResult, agent, agentId });
+      return this.processAgentResult({ runAgentResult, agent, agentId });
+    } catch (error) {
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onError?.({
+            copilotkit: this,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }),
+        "Subscriber onError error:"
+      );
+      throw error;
+    }
   }
 
   async runAgent({
@@ -548,11 +580,26 @@ export class CopilotKitCore {
     if (withMessages) {
       agent.addMessages(withMessages);
     }
-    const runAgentResult = await agent.runAgent({
-      forwardedProps: this.properties,
-      tools: this.buildFrontendTools(agentId),
-    });
-    return this.processAgentResult({ runAgentResult, agent, agentId });
+    try {
+      const runAgentResult = await agent.runAgent(
+        {
+          forwardedProps: this.properties,
+          tools: this.buildFrontendTools(agentId),
+        },
+        this.createAgentErrorSubscriber(agent, agentId)
+      );
+      return this.processAgentResult({ runAgentResult, agent, agentId });
+    } catch (error) {
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onError?.({
+            copilotkit: this,
+            error: error instanceof Error ? error : new Error(String(error)),
+          }),
+        "Subscriber onError error:"
+      );
+      throw error;
+    }
   }
 
   private async processAgentResult({
@@ -596,11 +643,20 @@ export class CopilotKitCore {
                 try {
                   parsedArgs = JSON.parse(toolCall.function.arguments);
                 } catch (error) {
-                  errorMessage =
+                  const parseError =
                     error instanceof Error
-                      ? error.message
-                      : String(error);
+                      ? error
+                      : new Error(String(error));
+                  errorMessage = parseError.message;
                   isArgumentError = true;
+                  await this.notifySubscribers(
+                    (subscriber) =>
+                      subscriber.onError?.({
+                        copilotkit: this,
+                        error: parseError,
+                      }),
+                    "Subscriber onError error:"
+                  );
                 }
 
                 await this.notifySubscribers(
@@ -626,10 +682,19 @@ export class CopilotKitCore {
                       toolCallResult = JSON.stringify(result);
                     }
                   } catch (error) {
-                    errorMessage =
+                    const handlerError =
                       error instanceof Error
-                        ? error.message
-                        : String(error);
+                        ? error
+                        : new Error(String(error));
+                    errorMessage = handlerError.message;
+                    await this.notifySubscribers(
+                      (subscriber) =>
+                        subscriber.onError?.({
+                          copilotkit: this,
+                          error: handlerError,
+                        }),
+                      "Subscriber onError error:"
+                    );
                   }
                 }
 
@@ -689,11 +754,20 @@ export class CopilotKitCore {
                   try {
                     parsedArgs = JSON.parse(toolCall.function.arguments);
                   } catch (error) {
-                    errorMessage =
+                    const parseError =
                       error instanceof Error
-                        ? error.message
-                        : String(error);
+                        ? error
+                        : new Error(String(error));
+                    errorMessage = parseError.message;
                     isArgumentError = true;
+                    await this.notifySubscribers(
+                      (subscriber) =>
+                        subscriber.onError?.({
+                          copilotkit: this,
+                          error: parseError,
+                        }),
+                      "Subscriber onError error:"
+                    );
                   }
 
                   const wildcardArgs = {
@@ -724,10 +798,19 @@ export class CopilotKitCore {
                         toolCallResult = JSON.stringify(result);
                       }
                     } catch (error) {
-                      errorMessage =
+                      const handlerError =
                         error instanceof Error
-                          ? error.message
-                          : String(error);
+                          ? error
+                          : new Error(String(error));
+                      errorMessage = handlerError.message;
+                      await this.notifySubscribers(
+                        (subscriber) =>
+                          subscriber.onError?.({
+                            copilotkit: this,
+                            error: handlerError,
+                          }),
+                        "Subscriber onError error:"
+                      );
                     }
                   }
 
@@ -791,6 +874,39 @@ export class CopilotKitCore {
         description: tool.description ?? "",
         parameters: createToolSchema(tool),
       }));
+  }
+
+  private createAgentErrorSubscriber(
+    agent: AbstractAgent,
+    agentId?: string
+  ): AgentSubscriber {
+    const notifyError = async (error: Error) => {
+      await this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onError?.({
+            copilotkit: this,
+            error,
+          }),
+        "Subscriber onError error:"
+      );
+    };
+
+    return {
+      onRunFailed: async ({ error }: { error: Error }) => {
+        await notifyError(error);
+      },
+      onRunErrorEvent: async ({ event }: { event: { error?: unknown } }) => {
+        const rawError =
+          event && event.error instanceof Error
+            ? event.error
+            : new Error(
+                typeof event?.error === "string"
+                  ? event.error
+                  : "Agent run error"
+              );
+        await notifyError(rawError);
+      },
+    };
   }
 }
 
