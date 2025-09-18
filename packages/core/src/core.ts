@@ -51,6 +51,16 @@ export interface CopilotKitCoreGetToolParams {
   agentId?: string;
 }
 
+export enum CopilotKitCoreErrorCode {
+  RUNTIME_INFO_FETCH_FAILED = "runtime_info_fetch_failed",
+  AGENT_CONNECT_FAILED = "agent_connect_failed",
+  AGENT_RUN_FAILED = "agent_run_failed",
+  AGENT_RUN_FAILED_EVENT = "agent_run_failed_event",
+  AGENT_RUN_ERROR_EVENT = "agent_run_error_event",
+  TOOL_ARGUMENT_PARSE_FAILED = "tool_argument_parse_failed",
+  TOOL_HANDLER_FAILED = "tool_handler_failed",
+}
+
 export interface CopilotKitCoreSubscriber {
   onRuntimeConnectionStatusChanged?: (event: {
     copilotkit: CopilotKitCore;
@@ -87,7 +97,12 @@ export interface CopilotKitCoreSubscriber {
     copilotkit: CopilotKitCore;
     headers: Readonly<Record<string, string>>;
   }) => void | Promise<void>;
-  onError?: (event: { copilotkit: CopilotKitCore; error: Error }) =>
+  onError?: (event: {
+    copilotkit: CopilotKitCore;
+    error: Error;
+    code: CopilotKitCoreErrorCode;
+    context: Record<string, any>;
+  }) =>
     | void
     | Promise<void>;
 }
@@ -155,6 +170,27 @@ export class CopilotKitCore {
           logger.error(errorMessage, error);
         }
       })
+    );
+  }
+
+  private async emitError({
+    error,
+    code,
+    context = {},
+  }: {
+    error: Error;
+    code: CopilotKitCoreErrorCode;
+    context?: Record<string, any>;
+  }) {
+    await this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onError?.({
+          copilotkit: this,
+          error,
+          code,
+          context,
+        }),
+      "Subscriber onError error:"
     );
   }
 
@@ -337,14 +373,15 @@ export class CopilotKitCore {
       logger.warn(
         `Failed to load runtime info (${this.runtimeUrl}/info): ${message}`
       );
-      await this.notifySubscribers(
-        (subscriber) =>
-          subscriber.onError?.({
-            copilotkit: this,
-            error: error instanceof Error ? error : new Error(String(error)),
-          }),
-        "Subscriber onError error:"
-      );
+      const runtimeError =
+        error instanceof Error ? error : new Error(String(error));
+      await this.emitError({
+        error: runtimeError,
+        code: CopilotKitCoreErrorCode.RUNTIME_INFO_FETCH_FAILED,
+        context: {
+          runtimeUrl: this.runtimeUrl,
+        },
+      });
     }
   }
 
@@ -560,14 +597,17 @@ export class CopilotKitCore {
 
       return this.processAgentResult({ runAgentResult, agent, agentId });
     } catch (error) {
-      await this.notifySubscribers(
-        (subscriber) =>
-          subscriber.onError?.({
-            copilotkit: this,
-            error: error instanceof Error ? error : new Error(String(error)),
-          }),
-        "Subscriber onError error:"
-      );
+      const connectError =
+        error instanceof Error ? error : new Error(String(error));
+      const context: Record<string, any> = {};
+      if (agentId ?? agent.agentId) {
+        context.agentId = agentId ?? agent.agentId;
+      }
+      await this.emitError({
+        error: connectError,
+        code: CopilotKitCoreErrorCode.AGENT_CONNECT_FAILED,
+        context,
+      });
       throw error;
     }
   }
@@ -590,14 +630,20 @@ export class CopilotKitCore {
       );
       return this.processAgentResult({ runAgentResult, agent, agentId });
     } catch (error) {
-      await this.notifySubscribers(
-        (subscriber) =>
-          subscriber.onError?.({
-            copilotkit: this,
-            error: error instanceof Error ? error : new Error(String(error)),
-          }),
-        "Subscriber onError error:"
-      );
+      const runError =
+        error instanceof Error ? error : new Error(String(error));
+      const context: Record<string, any> = {};
+      if (agentId ?? agent.agentId) {
+        context.agentId = agentId ?? agent.agentId;
+      }
+      if (withMessages) {
+        context.messageCount = withMessages.length;
+      }
+      await this.emitError({
+        error: runError,
+        code: CopilotKitCoreErrorCode.AGENT_RUN_FAILED,
+        context,
+      });
       throw error;
     }
   }
@@ -649,14 +695,18 @@ export class CopilotKitCore {
                       : new Error(String(error));
                   errorMessage = parseError.message;
                   isArgumentError = true;
-                  await this.notifySubscribers(
-                    (subscriber) =>
-                      subscriber.onError?.({
-                        copilotkit: this,
-                        error: parseError,
-                      }),
-                    "Subscriber onError error:"
-                  );
+                  await this.emitError({
+                    error: parseError,
+                    code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
+                    context: {
+                      agentId: effectiveAgentId,
+                      toolCallId: toolCall.id,
+                      toolName: toolCall.function.name,
+                      rawArguments: toolCall.function.arguments,
+                      toolType: "specific",
+                      messageId: message.id,
+                    },
+                  });
                 }
 
                 await this.notifySubscribers(
@@ -687,14 +737,18 @@ export class CopilotKitCore {
                         ? error
                         : new Error(String(error));
                     errorMessage = handlerError.message;
-                    await this.notifySubscribers(
-                      (subscriber) =>
-                        subscriber.onError?.({
-                          copilotkit: this,
-                          error: handlerError,
-                        }),
-                      "Subscriber onError error:"
-                    );
+                    await this.emitError({
+                      error: handlerError,
+                      code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
+                      context: {
+                        agentId: effectiveAgentId,
+                        toolCallId: toolCall.id,
+                        toolName: toolCall.function.name,
+                        parsedArgs,
+                        toolType: "specific",
+                        messageId: message.id,
+                      },
+                    });
                   }
                 }
 
@@ -760,14 +814,18 @@ export class CopilotKitCore {
                         : new Error(String(error));
                     errorMessage = parseError.message;
                     isArgumentError = true;
-                    await this.notifySubscribers(
-                      (subscriber) =>
-                        subscriber.onError?.({
-                          copilotkit: this,
-                          error: parseError,
-                        }),
-                      "Subscriber onError error:"
-                    );
+                    await this.emitError({
+                      error: parseError,
+                      code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
+                      context: {
+                        agentId: effectiveAgentId,
+                        toolCallId: toolCall.id,
+                        toolName: toolCall.function.name,
+                        rawArguments: toolCall.function.arguments,
+                        toolType: "wildcard",
+                        messageId: message.id,
+                      },
+                    });
                   }
 
                   const wildcardArgs = {
@@ -803,14 +861,18 @@ export class CopilotKitCore {
                           ? error
                           : new Error(String(error));
                       errorMessage = handlerError.message;
-                      await this.notifySubscribers(
-                        (subscriber) =>
-                          subscriber.onError?.({
-                            copilotkit: this,
-                            error: handlerError,
-                          }),
-                        "Subscriber onError error:"
-                      );
+                      await this.emitError({
+                        error: handlerError,
+                        code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
+                        context: {
+                          agentId: effectiveAgentId,
+                          toolCallId: toolCall.id,
+                          toolName: toolCall.function.name,
+                          parsedArgs: wildcardArgs,
+                          toolType: "wildcard",
+                          messageId: message.id,
+                        },
+                      });
                     }
                   }
 
@@ -880,20 +942,27 @@ export class CopilotKitCore {
     agent: AbstractAgent,
     agentId?: string
   ): AgentSubscriber {
-    const notifyError = async (error: Error) => {
-      await this.notifySubscribers(
-        (subscriber) =>
-          subscriber.onError?.({
-            copilotkit: this,
-            error,
-          }),
-        "Subscriber onError error:"
-      );
+    const emitAgentError = async (
+      error: Error,
+      code: CopilotKitCoreErrorCode,
+      extraContext: Record<string, any> = {}
+    ) => {
+      const context: Record<string, any> = { ...extraContext };
+      if (agentId ?? agent.agentId) {
+        context.agentId = agentId ?? agent.agentId;
+      }
+      await this.emitError({
+        error,
+        code,
+        context,
+      });
     };
 
     return {
       onRunFailed: async ({ error }: { error: Error }) => {
-        await notifyError(error);
+        await emitAgentError(error, CopilotKitCoreErrorCode.AGENT_RUN_FAILED_EVENT, {
+          source: "onRunFailed",
+        });
       },
       onRunErrorEvent: async ({ event }) => {
         const eventError =
@@ -914,7 +983,11 @@ export class CopilotKitCore {
           (rawError as any).code = event.code;
         }
 
-        await notifyError(rawError);
+        await emitAgentError(rawError, CopilotKitCoreErrorCode.AGENT_RUN_ERROR_EVENT, {
+          source: "onRunErrorEvent",
+          event,
+          runtimeErrorCode: event?.code,
+        });
       },
     };
   }
