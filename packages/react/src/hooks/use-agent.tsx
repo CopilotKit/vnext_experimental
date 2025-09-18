@@ -1,21 +1,23 @@
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { useMemo, useEffect, useReducer, useState } from "react";
+import { useMemo, useEffect, useReducer } from "react";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import { AbstractAgent } from "@ag-ui/client";
 
-const DEFAULT_UPDATE_FLAGS = Object.freeze({
-  onMessagesChanged: true,
-  onStateChanged: true,
-  onRunStatusChanged: true,
-});
+export enum UseAgentUpdate {
+  OnMessagesChanged = "OnMessagesChanged",
+  OnStateChanged = "OnStateChanged",
+  OnRunStatusChanged = "OnRunStatusChanged",
+}
+
+const ALL_UPDATES: UseAgentUpdate[] = [
+  UseAgentUpdate.OnMessagesChanged,
+  UseAgentUpdate.OnStateChanged,
+  UseAgentUpdate.OnRunStatusChanged,
+];
 
 export interface UseAgentProps {
   agentId?: string;
-  updates?: {
-    onMessagesChanged: boolean;
-    onStateChanged: boolean;
-    onRunStatusChanged: boolean;
-  };
+  updates?: UseAgentUpdate[];
 }
 
 export function useAgent({ agentId, updates }: UseAgentProps = {}) {
@@ -23,11 +25,10 @@ export function useAgent({ agentId, updates }: UseAgentProps = {}) {
 
   const { copilotkit } = useCopilotKit();
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
-  const [isRunning, setIsRunning] = useState(false);
 
   const updateFlags = useMemo(
-    () => updates ?? DEFAULT_UPDATE_FLAGS,
-    [updates]
+    () => updates ?? ALL_UPDATES,
+    [JSON.stringify(updates)]
   );
 
   const agent: AbstractAgent | undefined = useMemo(() => {
@@ -41,63 +42,45 @@ export function useAgent({ agentId, updates }: UseAgentProps = {}) {
   ]);
 
   useEffect(() => {
-    setIsRunning(agent?.isRunning ?? false);
-  }, [agent]);
-
-  useEffect(() => {
     if (!agent) {
       return;
     }
 
-    if (
-      !updateFlags.onMessagesChanged &&
-      !updateFlags.onStateChanged &&
-      !updateFlags.onRunStatusChanged
-    ) {
+    if (updateFlags.length === 0) {
       return;
     }
 
     const handlers: Parameters<AbstractAgent["subscribe"]>[0] = {};
 
-    if (updateFlags.onMessagesChanged) {
+    if (updateFlags.includes(UseAgentUpdate.OnMessagesChanged)) {
       handlers.onMessagesChanged = () => {
         forceUpdate();
       };
     }
 
-    if (updateFlags.onStateChanged) {
+    if (updateFlags.includes(UseAgentUpdate.OnStateChanged)) {
       handlers.onStateChanged = () => {
         forceUpdate();
       };
     }
 
-    if (updateFlags.onRunStatusChanged) {
+    if (updateFlags.includes(UseAgentUpdate.OnRunStatusChanged)) {
       handlers.onRunInitialized = () => {
-        setIsRunning(true);
         forceUpdate();
       };
       handlers.onRunFinalized = () => {
-        setIsRunning(false);
         forceUpdate();
       };
       handlers.onRunFailed = () => {
-        setIsRunning(false);
         forceUpdate();
       };
     }
 
     const subscription = agent.subscribe(handlers);
     return () => subscription.unsubscribe();
-  }, [
-    agent,
-    forceUpdate,
-    updateFlags.onMessagesChanged,
-    updateFlags.onStateChanged,
-    updateFlags.onRunStatusChanged,
-  ]);
+  }, [agent, forceUpdate, JSON.stringify(updateFlags)]);
 
   return {
     agent,
-    isRunning,
   };
 }

@@ -996,7 +996,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
           delta: '{"value":"test"}',
         })
       );
-      agent.emit(runFinishedEvent());
       
       // Wait for tool to render with InProgress status
       await waitFor(() => {
@@ -1005,6 +1004,8 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         expect(screen.getByTestId("tool-value").textContent).toBe("test");
         expect(screen.getByTestId("tool-status").textContent).toBe(ToolCallStatus.InProgress);
       });
+      
+      agent.emit(runFinishedEvent());
       
       // Complete the agent to trigger handler execution
       agent.complete();

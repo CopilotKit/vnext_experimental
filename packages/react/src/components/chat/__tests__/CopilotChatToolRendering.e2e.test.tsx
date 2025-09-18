@@ -215,10 +215,19 @@ class MockStepwiseAgent extends AbstractAgent {
   private subject = new Subject<BaseEvent>();
 
   emit(event: BaseEvent) {
+    if (event.type === EventType.RUN_STARTED) {
+      this.isRunning = true;
+    } else if (
+      event.type === EventType.RUN_FINISHED ||
+      event.type === EventType.RUN_ERROR
+    ) {
+      this.isRunning = false;
+    }
     this.subject.next(event);
   }
 
   complete() {
+    this.isRunning = false;
     this.subject.complete();
   }
 

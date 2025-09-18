@@ -24,6 +24,14 @@ export class MockStepwiseAgent extends AbstractAgent {
    * Emit a single agent event
    */
   emit(event: BaseEvent) {
+    if (event.type === EventType.RUN_STARTED) {
+      this.isRunning = true;
+    } else if (
+      event.type === EventType.RUN_FINISHED ||
+      event.type === EventType.RUN_ERROR
+    ) {
+      this.isRunning = false;
+    }
     act(() => {
       this.subject.next(event);
     });
@@ -33,6 +41,7 @@ export class MockStepwiseAgent extends AbstractAgent {
    * Complete the agent stream
    */
   complete() {
+    this.isRunning = false;
     act(() => {
       this.subject.complete();
     });

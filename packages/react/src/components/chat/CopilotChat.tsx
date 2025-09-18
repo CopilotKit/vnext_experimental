@@ -17,7 +17,7 @@ export function CopilotChat({
   threadId,
   ...props
 }: CopilotChatProps) {
-  const { agent, isRunning } = useAgent({ agentId });
+  const { agent } = useAgent({ agentId });
   const { copilotkit } = useCopilotKit();
   const resolvedThreadId = useMemo(() => threadId ?? randomUUID(), [threadId]);
 
@@ -62,7 +62,7 @@ export function CopilotChat({
 
   const mergedProps = merge(
     {
-      isRunning,
+      isRunning: agent?.isRunning ?? false,
     },
     {
       ...restProps,
