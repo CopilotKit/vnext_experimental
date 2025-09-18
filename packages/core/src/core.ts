@@ -895,15 +895,25 @@ export class CopilotKitCore {
       onRunFailed: async ({ error }: { error: Error }) => {
         await notifyError(error);
       },
-      onRunErrorEvent: async ({ event }: { event: { error?: unknown } }) => {
-        const rawError =
-          event && event.error instanceof Error
-            ? event.error
-            : new Error(
-                typeof event?.error === "string"
-                  ? event.error
-                  : "Agent run error"
-              );
+      onRunErrorEvent: async ({ event }) => {
+        const eventError =
+          event?.rawEvent instanceof Error
+            ? event.rawEvent
+            : event?.rawEvent?.error instanceof Error
+              ? event.rawEvent.error
+              : undefined;
+
+        const errorMessage =
+          typeof event?.rawEvent?.error === "string"
+            ? event.rawEvent.error
+            : event?.message ?? "Agent run error";
+
+        const rawError = eventError ?? new Error(errorMessage);
+
+        if (event?.code && !(rawError as any).code) {
+          (rawError as any).code = event.code;
+        }
+
         await notifyError(rawError);
       },
     };
