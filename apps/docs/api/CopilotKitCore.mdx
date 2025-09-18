@@ -5,173 +5,192 @@ description: "CopilotKitCore"
 
 # CopilotKitCore
 
-`CopilotKitCore` is the client-side cross-framework orchestration layer that keeps the UI, local agents, and the remote Copilot runtime in sync. It acts as the authoritative state holder for **agents**, **frontend tool registrations**, and **runtime metadata**.
+`CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your application's UI, local agents, and the remote Copilot runtime.
 
-## Constructor Arguments
+At its heart, CopilotKitCore maintains the authoritative state for three critical elements:
+- **Agents**: Both local and remote AI agents that power your application's intelligence
+- **Frontend Tools**: Functions that agents can call to interact with your UI
+- **Runtime Metadata**: Connection status, versioning, and configuration details
+
+## Creating a CopilotKitCore Instance
+
+When you instantiate CopilotKitCore, you're setting up the foundation for all AI interactions in your application. Here are the configuration options you can provide:
 
 - `runtimeUrl?`: `string`
-  The endpoint of [[CopilotRuntime]]
+  The endpoint where your CopilotRuntime server is hosted. When provided, CopilotKitCore will automatically connect and discover available remote agents.
 
 - `headers?`: `Record<string, string>`
-  Headers sent with every HTTP request made by `CopilotKitCore`
+  Custom HTTP headers to include with every request. Useful for authentication tokens or tracking headers.
 
 - `properties?`: `Record<string, unknown>`
-  Properties sent as `forwardedProps` to the AG-UI agent
+  Application-specific data that gets forwarded to agents as context. This might include user preferences, application state, or feature flags.
 
 - `agents?`: `Record<string, AbstractAgent>`
-  A mapping from agent name to an `AbstractAgent` instance
+  Local agents that run directly in the browser. The key becomes the agent's identifier.
 
 - `tools?`: `FrontendTool<any>[]`
-  An array of frontend tools
+  Frontend functions that agents can invoke, such as updating UI elements or fetching client-side data.
 
-## Properties
+## Core Properties
 
-- `runtimeUrl?`: `string`
-  Setting runtime URL will cause core to connect to the remote runtime and load agents and metadata.
-  Setting `runtimeUrl` to undefined will disconnect core from the remote runtime
+Once initialized, CopilotKitCore exposes several properties that provide insight into its current state:
 
-- `headers`: `Record<string, string>`
-  Headers sent with every HTTP request made by `CopilotKitCore`. Can be set directly.
+### Runtime Configuration
 
-- `properties`: `Record<string, unknown>`
-  Properties sent as `forwardedProps` to the AG-UI agent. Can be set directly.
-
-- `agents`: `Readonly<Record<string, AbstractAgent>>`
-  A readonly mapping from agent name to `AbstractAgent` that contains all agents set up on the frontend
-  as well as the agents loaded from runtime
-
-- `tools`: `Readonly<FrontendTool<any>[]>`
-  A readonly array of frontend tools
-
-- `context`: `Readonly<Record<string, Context>>`
-  A readonly mapping of context items
+- `runtimeUrl`: `string | undefined`
+  The current runtime endpoint. Changing this property triggers a connection attempt to the new runtime. Setting it to `undefined` gracefully disconnects from the current runtime.
 
 - `runtimeVersion`: `string | undefined`
-  The version of the connected runtime, if available
+  The version of the connected runtime, helpful for compatibility checks and debugging.
 
 - `runtimeConnectionStatus`: `CopilotKitCoreRuntimeConnectionStatus`
-  The current connection status to the runtime
+  Tracks the current connection state, allowing you to respond to connection changes in your UI.
 
-## Methods
+### State Management
 
-### Configuration Methods
+- `headers`: `Record<string, string>`
+  The current request headers. You can modify these directly to update authentication or add new headers on the fly.
 
-#### `setRuntimeUrl(runtimeUrl: string | undefined): void`
+- `properties`: `Record<string, unknown>`
+  The application properties being forwarded to agents. Update these when your application state changes.
 
-Updates the runtime URL and manages the connection to the remote runtime. Setting to `undefined` disconnects from the runtime.
+- `agents`: `Readonly<Record<string, AbstractAgent>>`
+  A combined view of all available agents, merging local agents with those discovered from the runtime. This is read-only to prevent accidental modifications.
 
-#### `setHeaders(headers: Record<string, string>): void`
+- `tools`: `Readonly<FrontendTool<any>[]>`
+  The complete list of registered frontend tools available to agents.
 
-Updates the headers sent with every HTTP request. Notifies subscribers of the change.
+- `context`: `Readonly<Record<string, Context>>`
+  Contextual information that agents can use to make more informed decisions.
 
-#### `setProperties(properties: Record<string, unknown>): void`
+## Working with Configuration
 
-Updates the properties sent as `forwardedProps` to agents. Notifies subscribers of the change.
+These methods allow you to dynamically update CopilotKitCore's configuration after initialization:
 
-### Agent Management
+### `setRuntimeUrl(runtimeUrl: string | undefined): void`
 
-#### `setAgents(agents: Record<string, AbstractAgent>): void`
+Changes the runtime endpoint and manages the connection lifecycle. This is useful when switching between different environments or disconnecting from the runtime entirely.
 
-Replaces all local agents with the provided mapping. Remote agents from runtime are preserved.
+### `setHeaders(headers: Record<string, string>): void`
 
-#### `addAgent(params: CopilotKitCoreAddAgentParams): void`
+Replaces all HTTP headers. Subscribers are notified so they can react to authentication changes or other header updates.
 
-Adds a single agent to the local agents collection.
+### `setProperties(properties: Record<string, unknown>): void`
 
-- `params.id`: The unique identifier for the agent
-- `params.agent`: The `AbstractAgent` instance to add
+Updates the properties forwarded to agents. Use this when your application state changes in ways that might affect agent behavior.
 
-#### `removeAgent(id: string): void`
+## Managing Agents
 
-Removes an agent from the local agents collection by its ID.
+Agents are the AI-powered components that process requests and generate responses. CopilotKitCore provides several methods to manage them:
 
-#### `getAgent(id: string): AbstractAgent | undefined`
+### `setAgents(agents: Record<string, AbstractAgent>): void`
 
-Retrieves an agent by its ID. Returns `undefined` if not found.
+Replaces all local agents while preserving remote agents from the runtime. This is useful for completely reconfiguring your local agent setup.
 
-#### `connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>`
+### `addAgent(params: CopilotKitCoreAddAgentParams): void`
 
-Connects to an agent and returns the result.
+Adds a single agent to your application. The agent is immediately available for use.
+- `params.id`: A unique identifier for the agent
+- `params.agent`: The agent instance to add
 
-- `params.agent`: The agent to connect to
-- `params.agentId?`: Optional agent ID override
+### `removeAgent(id: string): void`
 
-#### `runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>`
+Removes a local agent by its identifier. Remote agents from the runtime cannot be removed this way.
 
-Runs an agent with optional messages and returns the result.
+### `getAgent(id: string): AbstractAgent | undefined`
 
-- `params.agent`: The agent to run
-- `params.withMessages?`: Optional messages to send to the agent
-- `params.agentId?`: Optional agent ID override
+Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't exist or if the runtime is still connecting.
 
-### Context Management
+### `connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>`
 
-#### `addContext(context: Context): string`
+Establishes a connection with an agent, allowing it to maintain state across interactions. This is useful for agents that need to track conversation history.
+- `params.agent`: The agent to connect
+- `params.agentId?`: Override the agent's default identifier
 
-Adds a context item and returns its unique ID.
+### `runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>`
 
-- `context.description`: Description of the context
-- `context.value`: The context value
+Executes an agent with optional initial messages. The agent processes the request and returns its response.
+- `params.agent`: The agent to execute
+- `params.withMessages?`: Initial messages to send to the agent
+- `params.agentId?`: Override the agent's default identifier
 
-#### `removeContext(id: string): void`
+## Managing Context
 
-Removes a context item by its ID.
+Context provides agents with additional information about the current state of your application:
 
-### Tool Management
+### `addContext(context: Context): string`
 
-#### `addTool<T>(tool: FrontendTool<T>): void`
+Adds contextual information that agents can reference. Returns a unique identifier for later removal.
+- `context.description`: A human-readable description of what this context represents
+- `context.value`: The actual context data
 
-Registers a frontend tool. If a tool with the same name and agentId already exists, it will be skipped.
+### `removeContext(id: string): void`
 
-#### `removeTool(id: string, agentId?: string): void`
+Removes previously added context using its identifier.
 
-Unregisters a tool by name and optionally by agent ID.
+## Managing Tools
 
-- If `agentId` is provided, removes the tool for that specific agent
-- If no `agentId` is provided, removes only global tools with matching name
+Tools are functions that agents can call to interact with your application:
 
-#### `getTool(params: CopilotKitCoreGetToolParams): FrontendTool<any> | undefined`
+### `addTool<T>(tool: FrontendTool<T>): void`
 
-Retrieves a tool by name and optionally by agent ID.
+Registers a new frontend tool. If a tool with the same name and agent scope already exists, the registration is skipped to prevent duplicates.
 
-- `params.toolName`: The name of the tool
-- `params.agentId?`: Optional agent ID to find agent-specific tools
-- Falls back to global tools if no agent-specific tool is found
+### `removeTool(id: string, agentId?: string): void`
 
-#### `setTools(tools: FrontendTool<any>[]): void`
+Removes a tool from the registry. You can remove tools globally or for specific agents:
+- When `agentId` is provided, removes the tool only for that agent
+- When `agentId` is omitted, removes only global tools with the matching name
 
-Replaces all tools with the provided array.
+### `getTool(params: CopilotKitCoreGetToolParams): FrontendTool<any> | undefined`
 
-### Subscription System
+Retrieves a tool by name, with intelligent fallback behavior:
+- `params.toolName`: The tool's name
+- `params.agentId?`: Look for agent-specific tools first
+- If an agent-specific tool isn't found, it falls back to global tools
 
-#### `subscribe(subscriber: CopilotKitCoreSubscriber): () => void`
+### `setTools(tools: FrontendTool<any>[]): void`
 
-Adds a subscriber to receive events. Returns an unsubscribe function.
+Replaces all tools at once. Useful for completely reconfiguring available tools.
 
-#### `unsubscribe(subscriber: CopilotKitCoreSubscriber): void`
+## Event Subscription System
 
-Removes a subscriber from receiving events.
+CopilotKitCore implements a robust event system that allows you to react to state changes and agent activities:
 
-## Runtime Connection
+### `subscribe(subscriber: CopilotKitCoreSubscriber): () => void`
 
-When `runtimeUrl` is set, `CopilotKitCore` will fetch agents and additional metadata from [[CopilotRuntime]] by issuing a GET request to `runtimeUrl/info`. For each agent configured in runtime, it will create an instance of [[ProxiedCopilotRuntimeAgent]] to connect to it.
+Registers a subscriber to receive events. The returned function can be called to unsubscribe, making cleanup straightforward.
 
-## Runtime Connection Status
+### `unsubscribe(subscriber: CopilotKitCoreSubscriber): void`
 
-The `runtimeConnectionStatus` property can have one of the following values:
+Manually removes a subscriber if you prefer explicit cleanup over using the returned function.
 
-- `CopilotKitCoreRuntimeConnectionStatus.Disconnected`: Not connected to any runtime
-- `CopilotKitCoreRuntimeConnectionStatus.Connecting`: Currently attempting to connect
-- `CopilotKitCoreRuntimeConnectionStatus.Connected`: Successfully connected to runtime
-- `CopilotKitCoreRuntimeConnectionStatus.Error`: Connection failed or encountered an error
+## Understanding Runtime Connections
 
-## Event Subscription
+When you provide a `runtimeUrl`, CopilotKitCore initiates a connection to your CopilotRuntime server. Here's what happens behind the scenes:
 
-The `CopilotKitCoreSubscriber` interface allows you to listen for various events:
+1. CopilotKitCore sends a GET request to `{runtimeUrl}/info`
+2. The runtime responds with available agents and metadata
+3. For each remote agent, CopilotKitCore creates a ProxiedCopilotRuntimeAgent instance
+4. These remote agents are merged with your local agents
+5. Subscribers are notified of the connection status and agent availability
+
+## Runtime Connection States
+
+The connection to your runtime can be in one of four states:
+
+- `Disconnected`: No runtime URL is configured, or the connection was intentionally closed
+- `Connecting`: Actively attempting to establish a connection with the runtime
+- `Connected`: Successfully connected and remote agents are available
+- `Error`: The connection attempt failed, but CopilotKitCore will continue with local agents only
+
+## Subscribing to Events
+
+The event subscription system allows you to build reactive UIs that respond to CopilotKitCore's state changes. Each event provides both the CopilotKitCore instance and relevant data:
 
 ### `onRuntimeConnectionStatusChanged`
 
-Fired when the runtime connection status changes.
+Notified whenever the connection to the runtime changes state. Use this to show connection indicators in your UI.
 
 ```typescript
 onRuntimeConnectionStatusChanged?: (event: {
@@ -182,7 +201,7 @@ onRuntimeConnectionStatusChanged?: (event: {
 
 ### `onToolExecutionStart`
 
-Fired when a tool execution begins.
+Fired when an agent begins executing a tool. Useful for showing loading states or activity indicators.
 
 ```typescript
 onToolExecutionStart?: (event: {
@@ -196,7 +215,7 @@ onToolExecutionStart?: (event: {
 
 ### `onToolExecutionEnd`
 
-Fired when a tool execution completes.
+Fired when tool execution completes, whether successfully or with an error. Use this to update your UI based on the results.
 
 ```typescript
 onToolExecutionEnd?: (event: {
@@ -211,7 +230,7 @@ onToolExecutionEnd?: (event: {
 
 ### `onAgentsChanged`
 
-Fired when the agents collection changes.
+Notified when agents are added, removed, or updated. This includes both local changes and runtime discovery.
 
 ```typescript
 onAgentsChanged?: (event: {
@@ -222,7 +241,7 @@ onAgentsChanged?: (event: {
 
 ### `onContextChanged`
 
-Fired when the context collection changes.
+Fired when context items are added or removed. Use this to keep UI elements in sync with available context.
 
 ```typescript
 onContextChanged?: (event: {
@@ -233,7 +252,7 @@ onContextChanged?: (event: {
 
 ### `onPropertiesChanged`
 
-Fired when properties are updated.
+Notified when application properties are updated. Useful for debugging or showing current configuration.
 
 ```typescript
 onPropertiesChanged?: (event: {
@@ -244,7 +263,7 @@ onPropertiesChanged?: (event: {
 
 ### `onHeadersChanged`
 
-Fired when headers are updated.
+Fired when HTTP headers are modified. Important for tracking authentication state changes.
 
 ```typescript
 onHeadersChanged?: (event: {
@@ -255,7 +274,7 @@ onHeadersChanged?: (event: {
 
 ### `onError`
 
-Fired when an error occurs.
+The central error handler for all CopilotKitCore operations. Every error includes a code and contextual information to help with debugging.
 
 ```typescript
 onError?: (event: {
@@ -268,23 +287,33 @@ onError?: (event: {
 
 ## Error Handling
 
-`CopilotKitCore` uses error codes to categorize different types of errors:
+CopilotKitCore provides detailed error information through typed error codes, making it easier to handle different failure scenarios appropriately:
 
-### `CopilotKitCoreErrorCode`
+### Understanding Error Codes
 
-- `RUNTIME_INFO_FETCH_FAILED`: Failed to fetch runtime information
-- `AGENT_CONNECT_FAILED`: Failed to connect to an agent
-- `AGENT_RUN_FAILED`: Failed to run an agent
-- `AGENT_RUN_FAILED_EVENT`: Agent run failed event received
-- `AGENT_RUN_ERROR_EVENT`: Agent run error event received
-- `TOOL_ARGUMENT_PARSE_FAILED`: Failed to parse tool arguments
-- `TOOL_HANDLER_FAILED`: Tool handler execution failed
+Each error is categorized with a specific code that indicates what went wrong:
 
-## Types and Interfaces
+- `RUNTIME_INFO_FETCH_FAILED`: The attempt to fetch runtime information failed. This might indicate network issues or an incorrect runtime URL.
+
+- `AGENT_CONNECT_FAILED`: Failed to establish a connection with an agent. Check that the agent is properly configured.
+
+- `AGENT_RUN_FAILED`: The agent execution failed. This could be due to invalid messages or agent-side errors.
+
+- `AGENT_RUN_FAILED_EVENT`: The agent reported a failure through its event stream.
+
+- `AGENT_RUN_ERROR_EVENT`: The agent emitted an error event during execution.
+
+- `TOOL_ARGUMENT_PARSE_FAILED`: The arguments provided to a tool couldn't be parsed. This usually indicates a mismatch between expected and actual parameters.
+
+- `TOOL_HANDLER_FAILED`: A tool's handler function threw an error during execution.
+
+## TypeScript Types and Interfaces
+
+CopilotKitCore is fully typed to provide excellent IDE support and catch errors at compile time:
 
 ### `CopilotKitCoreConfig`
 
-Configuration options for `CopilotKitCore` constructor:
+The configuration object used when creating a new CopilotKitCore instance:
 
 ```typescript
 interface CopilotKitCoreConfig {
@@ -298,7 +327,7 @@ interface CopilotKitCoreConfig {
 
 ### `CopilotKitCoreAddAgentParams`
 
-Parameters for adding an agent:
+Parameters for adding an agent after initialization:
 
 ```typescript
 interface CopilotKitCoreAddAgentParams {
@@ -309,7 +338,7 @@ interface CopilotKitCoreAddAgentParams {
 
 ### `CopilotKitCoreRunAgentParams`
 
-Parameters for running an agent:
+Configuration for running an agent:
 
 ```typescript
 interface CopilotKitCoreRunAgentParams {
@@ -332,7 +361,7 @@ interface CopilotKitCoreConnectAgentParams {
 
 ### `CopilotKitCoreGetToolParams`
 
-Parameters for getting a tool:
+Configuration for retrieving tools:
 
 ```typescript
 interface CopilotKitCoreGetToolParams {
@@ -343,4 +372,4 @@ interface CopilotKitCoreGetToolParams {
 
 ### `CopilotKitCoreSubscriber`
 
-Interface for event subscription handlers. See the Event Subscription section for details on each event handler.
+The complete interface for event subscribers. Implement any combination of these handlers based on your needs. See the Event Subscription section above for detailed information about each event.
