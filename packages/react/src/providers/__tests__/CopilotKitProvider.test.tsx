@@ -102,7 +102,9 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const renderTool = result.current.renderToolCalls.find(rc => rc.name === "renderTool");
+      const renderTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "renderTool"
+      );
       expect(renderTool).toBeDefined();
       expect(renderTool?.render).toBe(TestComponent);
     });
@@ -165,13 +167,17 @@ describe("CopilotKitProvider", () => {
       });
 
       // Check that the tool is registered
-      const tool = result.current.copilotkit.getTool({ toolName: "approvalTool" });
+      const tool = result.current.copilotkit.getTool({
+        toolName: "approvalTool",
+      });
       expect(tool).toBeDefined();
       expect(tool?.name).toBe("approvalTool");
       expect(tool?.handler).toBeDefined();
-      
+
       // Check that render component is registered
-      const approvalTool = result.current.renderToolCalls.find(rc => rc.name === "approvalTool");
+      const approvalTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "approvalTool"
+      );
       expect(approvalTool).toBeDefined();
       expect(approvalTool?.render).toBe(TestComponent);
     });
@@ -197,15 +203,19 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const handler = result.current.copilotkit.getTool({ toolName: "interactiveTool" })?.handler;
+      const handler = result.current.copilotkit.getTool({
+        toolName: "interactiveTool",
+      })?.handler;
       expect(handler).toBeDefined();
 
       // Call the handler and check for warning
       const handlerPromise = handler!({ data: "test" });
-      
+
       await waitFor(() => {
         expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining("Human-in-the-loop tool 'interactiveTool' called")
+          expect.stringContaining(
+            "Human-in-the-loop tool 'interactiveTool' called"
+          )
         );
       });
 
@@ -280,8 +290,12 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.getTool({ toolName: "frontendTool" })).toBeDefined();
-      expect(result.current.copilotkit.getTool({ toolName: "humanTool" })).toBeDefined();
+      expect(
+        result.current.copilotkit.getTool({ toolName: "frontendTool" })
+      ).toBeDefined();
+      expect(
+        result.current.copilotkit.getTool({ toolName: "humanTool" })
+      ).toBeDefined();
     });
 
     it("should handle agentId in frontend tools", () => {
@@ -310,10 +324,15 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const globalTool = result.current.copilotkit.getTool({ toolName: "globalTool" });
+      const globalTool = result.current.copilotkit.getTool({
+        toolName: "globalTool",
+      });
       expect(globalTool).toBeDefined();
       expect(globalTool?.agentId).toBeUndefined();
-      const agentTool = result.current.copilotkit.getTool({ toolName: "agentSpecificTool", agentId: "specificAgent" });
+      const agentTool = result.current.copilotkit.getTool({
+        toolName: "agentSpecificTool",
+        agentId: "specificAgent",
+      });
       expect(agentTool).toBeDefined();
       expect(agentTool?.agentId).toBe("specificAgent");
     });
@@ -361,14 +380,20 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const frontendRenderTool = result.current.renderToolCalls.find(rc => rc.name === "frontendRenderTool");
-      const humanRenderTool = result.current.renderToolCalls.find(rc => rc.name === "humanRenderTool");
-      const directRenderTool = result.current.renderToolCalls.find(rc => rc.name === "directRenderTool");
-      
+      const frontendRenderTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "frontendRenderTool"
+      );
+      const humanRenderTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "humanRenderTool"
+      );
+      const directRenderTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "directRenderTool"
+      );
+
       expect(frontendRenderTool).toBeDefined();
       expect(humanRenderTool).toBeDefined();
       expect(directRenderTool).toBeDefined();
-      
+
       expect(frontendRenderTool?.render).toBe(TestComponent1);
       expect(humanRenderTool?.render).toBe(TestComponent2);
       expect(directRenderTool?.render).toBe(TestComponent3);
@@ -396,7 +421,9 @@ describe("CopilotKitProvider", () => {
       });
 
       await waitFor(() => {
-        const tool1 = result.current.currentRenderToolCalls.find(rc => rc.name === "tool1");
+        const tool1 = result.current.currentRenderToolCalls.find(
+          (rc) => rc.name === "tool1"
+        );
         expect(tool1).toBeDefined();
       });
     });
@@ -422,7 +449,9 @@ describe("CopilotKitProvider", () => {
       result.current.setCurrentRenderToolCalls(newRenderToolCall);
 
       await waitFor(() => {
-        const dynamicTool = result.current.currentRenderToolCalls.find(rc => rc.name === "dynamicTool");
+        const dynamicTool = result.current.currentRenderToolCalls.find(
+          (rc) => rc.name === "dynamicTool"
+        );
         expect(dynamicTool).toBeDefined();
         expect(dynamicTool?.render).toBe(NewComponent);
       });
@@ -439,7 +468,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.getAllTools()).toHaveLength(0);
+      expect(result.current.copilotkit.tools).toHaveLength(0);
       expect(Object.keys(result.current.renderToolCalls)).toHaveLength(0);
     });
 
@@ -460,8 +489,12 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.getTool({ toolName: "noRenderTool" })).toBeDefined();
-      const noRenderTool = result.current.renderToolCalls.find(rc => rc.name === "noRenderTool");
+      expect(
+        result.current.copilotkit.getTool({ toolName: "noRenderTool" })
+      ).toBeDefined();
+      const noRenderTool = result.current.renderToolCalls.find(
+        (rc) => rc.name === "noRenderTool"
+      );
       expect(noRenderTool).toBeUndefined();
     });
 
@@ -485,7 +518,10 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      expect(result.current.copilotkit.getTool({ toolName: "followUpTool" })?.followUp).toBe(false);
+      expect(
+        result.current.copilotkit.getTool({ toolName: "followUpTool" })
+          ?.followUp
+      ).toBe(false);
     });
   });
 });

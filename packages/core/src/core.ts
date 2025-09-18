@@ -4,13 +4,7 @@ import {
   RuntimeInfo,
 } from "@copilotkitnext/shared";
 import { logger } from "@copilotkitnext/shared";
-import {
-  AbstractAgent,
-  Context,
-  HttpAgent,
-  Message,
-  RunAgentResult,
-} from "@ag-ui/client";
+import { AbstractAgent, Context, Message, RunAgentResult } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -34,18 +28,18 @@ export interface CopilotKitCoreAddAgentParams {
   agent: AbstractAgent;
 }
 
-export interface RunAgentParams {
+export interface CopilotKitCoreRunAgentParams {
   agent: AbstractAgent;
   withMessages?: Message[];
   agentId?: string;
 }
 
-export interface ConnectAgentParams {
+export interface CopilotKitCoreConnectAgentParams {
   agent: AbstractAgent;
   agentId?: string;
 }
 
-export interface GetToolParams {
+export interface CopilotKitCoreGetToolParams {
   toolName: string;
   agentId?: string;
 }
@@ -53,7 +47,7 @@ export interface GetToolParams {
 export interface CopilotKitCoreSubscriber {
   onRuntimeConnectionStatusChanged?: (event: {
     copilotkit: CopilotKitCore;
-    status: RuntimeConnectionStatus;
+    status: CopilotKitCoreRuntimeConnectionStatus;
   }) => void | Promise<void>;
   onToolExecutionStart?: (event: {
     toolCallId: string;
@@ -65,7 +59,7 @@ export interface CopilotKitCoreSubscriber {
   }) => void | Promise<void>;
 }
 
-export enum RuntimeConnectionStatus {
+export enum CopilotKitCoreRuntimeConnectionStatus {
   Disconnected = "disconnected",
   Connected = "connected",
   Connecting = "connecting",
@@ -87,7 +81,40 @@ export class CopilotKitCore {
   properties: Record<string, unknown>;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private tools: FrontendTool<any>[] = [];
+  private _tools: FrontendTool<any>[] = [];
+  get tools(): Readonly<FrontendTool<any>[]> {
+    return this._tools;
+  }
+
+  private _runtimeUrl?: string;
+  get runtimeUrl(): string | undefined {
+    return this._runtimeUrl;
+  }
+
+  set runtimeUrl(runtimeUrl: string | undefined) {
+    const normalizedRuntimeUrl = runtimeUrl
+      ? runtimeUrl.replace(/\/$/, "")
+      : undefined;
+
+    if (this._runtimeUrl === normalizedRuntimeUrl) {
+      return;
+    }
+    this._runtimeUrl = normalizedRuntimeUrl;
+    void this.updateRuntimeConnection();
+  }
+
+  private _runtimeVersion?: string;
+  get runtimeVersion(): string | undefined {
+    return this._runtimeVersion;
+  }
+
+  private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
+    CopilotKitCoreRuntimeConnectionStatus.Disconnected;
+
+  get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
+    return this._runtimeConnectionStatus;
+  }
+
   private localAgents: Record<string, AbstractAgent> = {};
   private remoteAgents: Record<string, AbstractAgent> = {};
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
@@ -103,49 +130,14 @@ export class CopilotKitCore {
     this.properties = properties;
     this.localAgents = agents;
     this._agents = this.localAgents;
-    this.tools = tools;
-
+    this._tools = tools;
     this.runtimeUrl = runtimeUrl;
-  }
-
-  /**
-   * Runtime Connection
-   */
-
-  private _runtimeUrl?: string;
-  get runtimeUrl(): string | undefined {
-    return this._runtimeUrl;
-  }
-
-  set runtimeUrl(runtimeUrl: string | undefined) {
-    const normalizedRuntimeUrl = runtimeUrl
-      ? runtimeUrl.replace(/\/$/, "")
-      : undefined;
-
-    if (this._runtimeUrl === normalizedRuntimeUrl) {
-      return;
-    }
-
-    this._runtimeUrl = normalizedRuntimeUrl;
-
-    void this.updateRuntimeConnection();
-  }
-
-  private _runtimeVersion?: string;
-  get runtimeVersion(): string | undefined {
-    return this._runtimeVersion;
-  }
-
-  private _runtimeConnectionStatus: RuntimeConnectionStatus =
-    RuntimeConnectionStatus.Disconnected;
-
-  get runtimeConnectionStatus(): RuntimeConnectionStatus {
-    return this._runtimeConnectionStatus;
   }
 
   private async updateRuntimeConnection() {
     if (!this.runtimeUrl) {
-      this._runtimeConnectionStatus = RuntimeConnectionStatus.Disconnected;
+      this._runtimeConnectionStatus =
+        CopilotKitCoreRuntimeConnectionStatus.Disconnected;
       this._runtimeVersion = undefined;
       this.remoteAgents = {};
       this._agents = this.localAgents;
@@ -154,7 +146,7 @@ export class CopilotKitCore {
         try {
           await subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
-            status: RuntimeConnectionStatus.Disconnected,
+            status: CopilotKitCoreRuntimeConnectionStatus.Disconnected,
           });
         } catch (error) {
           logger.error(
@@ -166,13 +158,14 @@ export class CopilotKitCore {
       return;
     }
 
-    this._runtimeConnectionStatus = RuntimeConnectionStatus.Connecting;
+    this._runtimeConnectionStatus =
+      CopilotKitCoreRuntimeConnectionStatus.Connecting;
 
     this.subscribers.forEach(async (subscriber) => {
       try {
         await subscriber.onRuntimeConnectionStatusChanged?.({
           copilotkit: this,
-          status: RuntimeConnectionStatus.Connecting,
+          status: CopilotKitCoreRuntimeConnectionStatus.Connecting,
         });
       } catch (error) {
         logger.error(
@@ -207,14 +200,15 @@ export class CopilotKitCore {
 
       this.remoteAgents = agents;
       this._agents = { ...this.localAgents, ...this.remoteAgents };
-      this._runtimeConnectionStatus = RuntimeConnectionStatus.Connected;
+      this._runtimeConnectionStatus =
+        CopilotKitCoreRuntimeConnectionStatus.Connected;
       this._runtimeVersion = version;
 
       this.subscribers.forEach(async (subscriber) => {
         try {
           await subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
-            status: RuntimeConnectionStatus.Connected,
+            status: CopilotKitCoreRuntimeConnectionStatus.Connected,
           });
         } catch (error) {
           logger.error(
@@ -224,7 +218,8 @@ export class CopilotKitCore {
         }
       });
     } catch (error) {
-      this._runtimeConnectionStatus = RuntimeConnectionStatus.Error;
+      this._runtimeConnectionStatus =
+        CopilotKitCoreRuntimeConnectionStatus.Error;
       this._runtimeVersion = undefined;
       this.remoteAgents = {};
       this._agents = this.localAgents;
@@ -233,7 +228,7 @@ export class CopilotKitCore {
         try {
           await subscriber.onRuntimeConnectionStatusChanged?.({
             copilotkit: this,
-            status: RuntimeConnectionStatus.Error,
+            status: CopilotKitCoreRuntimeConnectionStatus.Error,
           });
         } catch (err) {
           logger.error(
@@ -272,8 +267,9 @@ export class CopilotKitCore {
       if (
         this.runtimeUrl !== undefined &&
         (this.runtimeConnectionStatus ===
-          RuntimeConnectionStatus.Disconnected ||
-          this.runtimeConnectionStatus === RuntimeConnectionStatus.Connecting)
+          CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
+          this.runtimeConnectionStatus ===
+            CopilotKitCoreRuntimeConnectionStatus.Connecting)
       ) {
         return undefined;
       } else {
@@ -296,7 +292,7 @@ export class CopilotKitCore {
     tool: FrontendTool<T>
   ) {
     // Check if a tool with the same name and agentId already exists
-    const existingToolIndex = this.tools.findIndex(
+    const existingToolIndex = this._tools.findIndex(
       (t) => t.name === tool.name && t.agentId === tool.agentId
     );
 
@@ -307,11 +303,11 @@ export class CopilotKitCore {
       return;
     }
 
-    this.tools.push(tool);
+    this._tools.push(tool);
   }
 
   removeTool(id: string, agentId?: string) {
-    this.tools = this.tools.filter((tool) => {
+    this._tools = this._tools.filter((tool) => {
       // Remove tool if both name and agentId match
       if (agentId !== undefined) {
         return !(tool.name === id && tool.agentId === agentId);
@@ -326,12 +322,12 @@ export class CopilotKitCore {
    * If agentId is provided, it will first look for an agent-specific tool,
    * then fall back to a global tool with the same name.
    */
-  getTool(params: GetToolParams): FrontendTool<any> | undefined {
+  getTool(params: CopilotKitCoreGetToolParams): FrontendTool<any> | undefined {
     const { toolName, agentId } = params;
 
     // If agentId is provided, first look for agent-specific tool
     if (agentId) {
-      const agentTool = this.tools.find(
+      const agentTool = this._tools.find(
         (tool) => tool.name === toolName && tool.agentId === agentId
       );
       if (agentTool) {
@@ -340,22 +336,14 @@ export class CopilotKitCore {
     }
 
     // Fall back to global tool (no agentId)
-    return this.tools.find((tool) => tool.name === toolName && !tool.agentId);
-  }
-
-  /**
-   * Get all tools as an array.
-   * Useful for compatibility with code that needs to iterate over all tools.
-   */
-  getAllTools(): FrontendTool<any>[] {
-    return [...this.tools];
+    return this._tools.find((tool) => tool.name === toolName && !tool.agentId);
   }
 
   /**
    * Set all tools at once. Replaces existing tools.
    */
   setTools(tools: FrontendTool<any>[]) {
-    this.tools = [...tools];
+    this._tools = [...tools];
   }
 
   setHeaders(headers: Record<string, string>) {
@@ -382,7 +370,7 @@ export class CopilotKitCore {
   async connectAgent({
     agent,
     agentId,
-  }: ConnectAgentParams): Promise<RunAgentResult> {
+  }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     const runAgentResult = await agent.connectAgent({
       forwardedProps: this.properties,
       tools: this.buildFrontendTools(agentId),
@@ -395,7 +383,7 @@ export class CopilotKitCore {
     agent,
     withMessages,
     agentId,
-  }: RunAgentParams): Promise<RunAgentResult> {
+  }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
     if (withMessages) {
       agent.addMessages(withMessages);
     }
@@ -585,7 +573,7 @@ export class CopilotKitCore {
   }
 
   private buildFrontendTools(agentId?: string) {
-    return this.tools
+    return this._tools
       .filter((tool) => !tool.agentId || tool.agentId === agentId)
       .map((tool) => ({
         name: tool.name,

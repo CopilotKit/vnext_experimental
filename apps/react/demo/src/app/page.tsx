@@ -26,7 +26,6 @@ export default function Home() {
 
 function Chat() {
   const { copilotkit } = useCopilotKit();
-  console.log("copilotkit tools", copilotkit.getAllTools());
 
   useFrontendTool({
     name: "sayHello",

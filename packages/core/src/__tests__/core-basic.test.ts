@@ -10,8 +10,8 @@ describe("CopilotKitCore Basic", () => {
 
   it("should create an instance", () => {
     expect(copilotKitCore).toBeDefined();
-    expect(copilotKitCore._agents).toEqual({});
-    expect(copilotKitCore.getAllTools()).toEqual([]);
+    expect(copilotKitCore.agents).toEqual({});
+    expect(copilotKitCore.tools).toEqual([]);
   });
 
   it("should add a tool", () => {
