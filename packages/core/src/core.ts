@@ -102,9 +102,7 @@ export interface CopilotKitCoreSubscriber {
     error: Error;
     code: CopilotKitCoreErrorCode;
     context: Record<string, any>;
-  }) =>
-    | void
-    | Promise<void>;
+  }) => void | Promise<void>;
 }
 
 export enum CopilotKitCoreRuntimeConnectionStatus {
@@ -157,9 +155,7 @@ export class CopilotKitCore {
   }
 
   private async notifySubscribers(
-    handler: (subscriber: CopilotKitCoreSubscriber) =>
-      | void
-      | Promise<void>,
+    handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
     errorMessage: string
   ) {
     await Promise.all(
@@ -670,16 +666,16 @@ export class CopilotKitCore {
               (m) => m.role === "tool" && m.toolCallId === toolCall.id
             ) === -1
           ) {
-              const tool = this.getTool({
-                toolName: toolCall.function.name,
-                agentId,
-              });
-              if (tool) {
-                // Check if tool is constrained to a specific agent
-                if (tool?.agentId && tool.agentId !== agentId) {
-                  // Tool is not available for this agent, skip it
-                  continue;
-                }
+            const tool = this.getTool({
+              toolName: toolCall.function.name,
+              agentId,
+            });
+            if (tool) {
+              // Check if tool is constrained to a specific agent
+              if (tool?.agentId && tool.agentId !== agentId) {
+                // Tool is not available for this agent, skip it
+                continue;
+              }
 
               let toolCallResult = "";
               let errorMessage: string | undefined;
@@ -690,9 +686,7 @@ export class CopilotKitCore {
                   parsedArgs = JSON.parse(toolCall.function.arguments);
                 } catch (error) {
                   const parseError =
-                    error instanceof Error
-                      ? error
-                      : new Error(String(error));
+                    error instanceof Error ? error : new Error(String(error));
                   errorMessage = parseError.message;
                   isArgumentError = true;
                   await this.emitError({
@@ -733,9 +727,7 @@ export class CopilotKitCore {
                     }
                   } catch (error) {
                     const handlerError =
-                      error instanceof Error
-                        ? error
-                        : new Error(String(error));
+                      error instanceof Error ? error : new Error(String(error));
                     errorMessage = handlerError.message;
                     await this.emitError({
                       error: handlerError,
@@ -809,9 +801,7 @@ export class CopilotKitCore {
                     parsedArgs = JSON.parse(toolCall.function.arguments);
                   } catch (error) {
                     const parseError =
-                      error instanceof Error
-                        ? error
-                        : new Error(String(error));
+                      error instanceof Error ? error : new Error(String(error));
                     errorMessage = parseError.message;
                     isArgumentError = true;
                     await this.emitError({
@@ -847,7 +837,9 @@ export class CopilotKitCore {
 
                   if (!errorMessage) {
                     try {
-                      const result = await wildcardTool.handler(wildcardArgs as any);
+                      const result = await wildcardTool.handler(
+                        wildcardArgs as any
+                      );
                       if (result === undefined || result === null) {
                         toolCallResult = "";
                       } else if (typeof result === "string") {
@@ -960,9 +952,13 @@ export class CopilotKitCore {
 
     return {
       onRunFailed: async ({ error }: { error: Error }) => {
-        await emitAgentError(error, CopilotKitCoreErrorCode.AGENT_RUN_FAILED_EVENT, {
-          source: "onRunFailed",
-        });
+        await emitAgentError(
+          error,
+          CopilotKitCoreErrorCode.AGENT_RUN_FAILED_EVENT,
+          {
+            source: "onRunFailed",
+          }
+        );
       },
       onRunErrorEvent: async ({ event }) => {
         const eventError =
@@ -975,7 +971,7 @@ export class CopilotKitCore {
         const errorMessage =
           typeof event?.rawEvent?.error === "string"
             ? event.rawEvent.error
-            : event?.message ?? "Agent run error";
+            : (event?.message ?? "Agent run error");
 
         const rawError = eventError ?? new Error(errorMessage);
 
@@ -983,11 +979,15 @@ export class CopilotKitCore {
           (rawError as any).code = event.code;
         }
 
-        await emitAgentError(rawError, CopilotKitCoreErrorCode.AGENT_RUN_ERROR_EVENT, {
-          source: "onRunErrorEvent",
-          event,
-          runtimeErrorCode: event?.code,
-        });
+        await emitAgentError(
+          rawError,
+          CopilotKitCoreErrorCode.AGENT_RUN_ERROR_EVENT,
+          {
+            source: "onRunErrorEvent",
+            event,
+            runtimeErrorCode: event?.code,
+          }
+        );
       },
     };
   }
