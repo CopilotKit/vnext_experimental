@@ -1,26 +1,16 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import {
-  CopilotKitConfigDirective,
-  CopilotChatViewComponent,
+  CopilotChatView,
   provideCopilotChatConfiguration,
-  CopilotChatComponent,
 } from "@copilotkitnext/angular";
 import { CustomChatInputComponent } from "../custom-input/custom-chat-input.component";
 
 @Component({
   selector: "ukg-co-pilot-port",
   standalone: true,
-  imports: [
-    CopilotKitConfigDirective,
-    CopilotChatViewComponent,
-    CustomChatInputComponent,
-    CopilotChatComponent,
-  ],
+  imports: [CopilotChatView],
   template: `
-    <div
-      [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
-      style="display:block;height:100vh;"
-    >
+    <div style="display:block;height:100vh;">
       <copilot-chat-view [inputComponent]="customInput"></copilot-chat-view>
     </div>
   `,
@@ -35,6 +25,5 @@ import { CustomChatInputComponent } from "../custom-input/custom-chat-input.comp
   ],
 })
 export class CoPilotPortComponent {
-  runtimeUrl = "http://localhost:3001/api/copilotkit";
   customInput = CustomChatInputComponent;
 }

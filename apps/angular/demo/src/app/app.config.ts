@@ -9,12 +9,13 @@ import { WildcardToolRenderComponent } from "./components/wildcard-tool-render.c
 export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(BrowserModule),
-    ...provideCopilotKit({
+    provideCopilotKit({
+      runtimeUrl: "http://localhost:3001/api/copilotkit",
       renderToolCalls: [
         {
           name: "*",
-          render: WildcardToolRenderComponent,
-        },
+          component: WildcardToolRenderComponent,
+        } as any,
       ],
     }),
     provideCopilotChatConfiguration({

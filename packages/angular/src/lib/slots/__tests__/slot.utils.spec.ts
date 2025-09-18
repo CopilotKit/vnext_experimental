@@ -1,4 +1,4 @@
-import { Component, Input, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, Input, TemplateRef, ViewChild, ViewContainerRef, runInInjectionContext, createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   renderSlot,
@@ -14,18 +14,18 @@ import { SLOT_CONFIG } from '../slot.types';
 
 // Test components
 @Component({
-  selector: 'default-component',
+  standalone: true,
+selector: 'default-component',
   template: `<div class="default">{{ text }}</div>`,
-  standalone: true
 })
 class DefaultComponent {
   @Input() text = 'Default';
 }
 
 @Component({
-  selector: 'custom-component',
+    standalone: true,
+selector: 'custom-component',
   template: `<div class="custom">{{ text }}</div>`,
-  standalone: true
 })
 class CustomComponent {
   @Input() text = 'Custom';
@@ -37,8 +37,8 @@ describe('Slot Utilities', () => {
 
     beforeEach(() => {
       @Component({
-        template: `<div #container></div>`,
-        standalone: true
+    standalone: true,
+template: `<div #container></div>`,
       })
       class TestComponent {
         @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
@@ -55,7 +55,7 @@ describe('Slot Utilities', () => {
       });
 
       expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
+      expect((ref as any)?.location.nativeElement.querySelector('.default')).toBeTruthy();
     });
 
     it('should render custom component when provided', () => {
@@ -65,7 +65,7 @@ describe('Slot Utilities', () => {
       });
 
       expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
+      expect((ref as any)?.location.nativeElement.querySelector('.custom')).toBeTruthy();
     });
 
     it('should render default component when string slot is no longer supported', () => {
@@ -77,7 +77,7 @@ describe('Slot Utilities', () => {
 
       expect(ref).toBeTruthy();
       // Should render default component, not apply class
-      expect(ref?.location.nativeElement.querySelector('.default')).toBeTruthy();
+      expect((ref as any)?.location.nativeElement.querySelector('.default')).toBeTruthy();
     });
 
     it('should apply props to component using setInput', () => {
@@ -95,13 +95,13 @@ describe('Slot Utilities', () => {
 
     it('should render template when provided', () => {
       @Component({
-        template: `
+    standalone: true,
+template: `
           <div #container></div>
           <ng-template #myTemplate let-props="props">
             <span class="template">{{ props?.message }}</span>
           </ng-template>
         `,
-        standalone: true
       })
       class TestComponent {
         @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
@@ -270,8 +270,8 @@ describe('Slot Utilities', () => {
       });
 
       @Component({
-        template: '',
-        standalone: true
+    standalone: true,
+template: '',
       })
       class TestComponent {
         slots = getSlotConfig();
@@ -283,8 +283,8 @@ describe('Slot Utilities', () => {
 
     it('should return null when no config provided', () => {
       @Component({
-        template: '',
-        standalone: true
+    standalone: true,
+template: '',
       })
       class TestComponent {
         slots = getSlotConfig();
@@ -300,8 +300,8 @@ describe('Slot Utilities', () => {
 
     beforeEach(() => {
       @Component({
-        template: `<div #container></div>`,
-        standalone: true
+    standalone: true,
+template: `<div #container></div>`,
       })
       class TestComponent {
         @ViewChild('container', { read: ViewContainerRef }) container!: ViewContainerRef;
@@ -318,12 +318,25 @@ describe('Slot Utilities', () => {
       
       const ref = renderer(viewContainer, CustomComponent);
       expect(ref).toBeTruthy();
-      expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
+      expect((ref as any)?.location.nativeElement.querySelector('.custom')).toBeTruthy();
     });
 
-    it.skip('should use DI config when slot name provided', () => {
-      // SKIP: This test requires reconfiguring TestBed which is not supported with AnalogJS
-      // The slot system correctly uses DI config in production
+    it('should use DI config when slot name provided', () => {
+      // Provide a SLOT_CONFIG via a custom EnvironmentInjector and run the factory in that context
+      const slots = new Map<string, any>([[
+        'button', { component: CustomComponent }
+      ]]);
+
+      const parent = TestBed.inject(EnvironmentInjector);
+      const env = createEnvironmentInjector([
+        { provide: SLOT_CONFIG, useValue: slots }
+      ], parent);
+
+      const renderer = runInInjectionContext(env, () => createSlotRenderer(DefaultComponent as any, 'button')) as any;
+
+      const ref = renderer(viewContainer);
+      expect(ref).toBeTruthy();
+      expect(ref?.location.nativeElement.querySelector('.custom')).toBeTruthy();
     });
 
     it('should apply props from renderer', () => {

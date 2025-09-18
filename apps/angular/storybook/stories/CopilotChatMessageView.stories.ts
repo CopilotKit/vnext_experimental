@@ -1,23 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
-import { Component, Input, signal, Injectable } from "@angular/core";
+import { Component, Injectable, input, signal } from "@angular/core";
 import {
-  CopilotChatMessageViewComponent,
-  CopilotChatMessageViewCursorComponent,
-  CopilotKitService,
+  CopilotChatMessageView,
+  CopilotChatMessageViewCursor,
+  CopilotKit,
   provideCopilotKit,
   provideCopilotChatConfiguration,
   Message,
-  ToolCall,
-  ToolMessage,
+  ClientToolCall,
+  ClientToolRenderer,
+  ToolCallRendererConfig,
 } from "@copilotkitnext/angular";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { z } from "zod"; // Schema validation
 
-const meta: Meta<CopilotChatMessageViewComponent> = {
+const meta: Meta<CopilotChatMessageView> = {
   title: "UI/CopilotChatMessageView",
-  component: CopilotChatMessageViewComponent,
+  component: CopilotChatMessageView,
   parameters: {
     docs: {
       description: {
@@ -30,8 +31,8 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
-        CopilotChatMessageViewCursorComponent,
+        CopilotChatMessageView,
+        CopilotChatMessageViewCursor,
       ],
       providers: [
         provideCopilotChatConfiguration({
@@ -53,7 +54,7 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatMessageViewComponent>;
+type Story = StoryObj<CopilotChatMessageView>;
 
 // Default story with full conversation - matches React exactly
 export const Default: Story = {
@@ -63,12 +64,12 @@ export const Default: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -217,12 +218,12 @@ export const ShowCursor: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -307,12 +308,26 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
     </div>
   `,
 })
-class SearchToolRenderComponent {
+class SearchToolRenderComponent implements ClientToolRenderer<SearchArgs> {
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: SearchArgs | Partial<SearchArgs>;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall = input.required<ClientToolCall<SearchArgs>>();
+
+  get call(): ClientToolCall<SearchArgs> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<SearchArgs> | SearchArgs {
+    return this.call.args;
+  }
+
+  get status(): ToolCallStatus {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === ToolCallStatus.Complete ? call.result : undefined;
+  }
 
   get containerStyle() {
     return {
@@ -402,18 +417,34 @@ export class CalculatorCounterService {
     </div>
   `,
 })
-class CalculatorToolRenderComponent {
+class CalculatorToolRenderComponent
+  implements ClientToolRenderer<CalculatorArgs>
+{
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: CalculatorArgs | Partial<CalculatorArgs>;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall = input.required<ClientToolCall<CalculatorArgs>>();
 
   counter = signal(0);
 
   // This will be passed from the parent
   constructor(private readonly calcCounter: CalculatorCounterService) {}
   globalCounter = this.calcCounter.counter;
+
+  get call(): ClientToolCall<CalculatorArgs> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<CalculatorArgs> | CalculatorArgs {
+    return this.call.args;
+  }
+
+  get status(): ToolCallStatus {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === ToolCallStatus.Complete ? call.result : undefined;
+  }
 
   get containerStyle() {
     return {
@@ -466,12 +497,30 @@ class CalculatorToolRenderComponent {
     </div>
   `,
 })
-class WildcardToolRenderComponent {
+class WildcardToolRenderComponent
+  implements ClientToolRenderer<Record<string, unknown>>
+{
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: any;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall = input.required<
+    ClientToolCall<Record<string, unknown>>
+  >();
+
+  get call(): ClientToolCall<Record<string, unknown>> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<Record<string, unknown>> {
+    return this.call.args;
+  }
+
+  get status(): ToolCallStatus {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === ToolCallStatus.Complete ? call.result : undefined;
+  }
 
   get argsJson() {
     return JSON.stringify(this.args, null, 2);
@@ -488,8 +537,8 @@ export const WithToolCalls: Story = {
         code: `import { Component, Input, signal, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
-  CopilotChatMessageViewComponent, 
-  CopilotKitService,
+  CopilotChatMessageView, 
+  CopilotKit,
   Message, 
   ToolCall, 
   ToolMessage,
@@ -696,13 +745,13 @@ class WildcardToolRenderComponent {
   selector: 'app-chat',
   standalone: true,
   imports: [
-    CopilotChatMessageViewComponent,
+    CopilotChatMessageView,
     SearchToolRenderComponent,
     CalculatorToolRenderComponent,
     WildcardToolRenderComponent
   ],
   providers: [
-    CopilotKitService,
+    CopilotKit,
     provideCopilotKit({
       renderToolCalls: [
         {
@@ -813,28 +862,31 @@ export class ChatComponent {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
+        CopilotChatMessageView,
         SearchToolRenderComponent,
         CalculatorToolRenderComponent,
         WildcardToolRenderComponent,
       ],
       providers: [
-        CopilotKitService,
+        CopilotKit,
         provideCopilotKit({
           runtimeUrl: undefined, // Explicitly provide undefined to avoid null injector error
           renderToolCalls: [
-            {
+            ({
               name: "search",
-              render: SearchToolRenderComponent,
-            },
-            {
+              args: searchArgsSchema,
+              component: SearchToolRenderComponent,
+            } as unknown as ToolCallRendererConfig),
+            ({
               name: "calculator",
-              render: CalculatorToolRenderComponent,
-            },
-            {
+              args: calculatorArgsSchema,
+              component: CalculatorToolRenderComponent,
+            } as unknown as ToolCallRendererConfig),
+            ({
               name: "*",
-              render: WildcardToolRenderComponent,
-            },
+              args: z.record(z.string(), z.any()),
+              component: WildcardToolRenderComponent,
+            } as unknown as ToolCallRendererConfig),
           ],
         }),
         provideCopilotChatConfiguration({
@@ -913,26 +965,26 @@ export class ChatComponent {
         toolCallId: "search-1",
         content:
           "Found 5 relevant documentation pages about React hooks including useState, useEffect, and custom hooks.",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-calc-1",
         role: "tool" as const,
         toolCallId: "calc-1",
         content: "714",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-calc-2",
         role: "tool" as const,
         toolCallId: "calc-2",
         content: "100",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-weather-1",
         role: "tool" as const,
         toolCallId: "weather-1",
         content:
           "Current weather in San Francisco: 68°F, partly cloudy with a gentle breeze.",
-      } as ToolMessage,
+      } as Message,
     ];
 
     return {

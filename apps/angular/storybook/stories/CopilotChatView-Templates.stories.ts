@@ -1,30 +1,46 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
-import { Component, Input } from "@angular/core";
+import { Component, Injectable, Input, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  CopilotChatConfigurationService,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  ChatState,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
+@Injectable()
+class StoryChatState extends ChatState {
+  readonly inputValue = signal<string>("");
+
+  submitInput(value: string): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    console.log('[Storybook] submitInput', trimmed);
+    this.inputValue.set("");
+  }
+
+  changeInput(value: string): void {
+    this.inputValue.set(value);
+  }
+}
+
 // Custom input components defined after imports
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Customized with Templates",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
         FormsModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -35,6 +51,7 @@ const meta: Meta<CopilotChatViewComponent> = {
               "AI can make mistakes. Please verify important information.",
           },
         }),
+        { provide: ChatState, useClass: StoryChatState },
       ],
     }),
   ],
@@ -44,7 +61,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const CustomDisclaimerTemplate: Story = {
   render: () => {
@@ -175,7 +192,7 @@ export const CustomDisclaimerTemplate: Story = {
 class TemplateCustomInputComponent {
   inputValue = '';
   
-  constructor(private chat: CopilotChatConfigurationService) {}
+  constructor(private chat: ChatState) {}
   
   sendMessage() {
     const value = this.inputValue.trim();
@@ -339,7 +356,7 @@ export const CustomScrollButtonTemplate: Story = {
 class CombinedCustomInputComponent {
   inputValue = '';
   
-  constructor(private chat: CopilotChatConfigurationService) {}
+  constructor(private chat: ChatState) {}
   
   sendMessage() {
     const value = this.inputValue.trim();

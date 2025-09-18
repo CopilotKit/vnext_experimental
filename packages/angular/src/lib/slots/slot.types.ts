@@ -1,13 +1,11 @@
-import { Type, TemplateRef, InjectionToken } from '@angular/core';
+import { Type, TemplateRef, InjectionToken } from "@angular/core";
 
 /**
  * Represents a value that can be used as a slot override.
  * Can be a component type or template reference only.
  * @internal - This type is for internal use only
  */
-export type SlotValue<T = any> = 
-  | Type<T>
-  | TemplateRef<T>;
+export type SlotValue<T = any> = Type<T> | TemplateRef<T>;
 
 /**
  * Configuration for a slot
@@ -50,7 +48,9 @@ export interface RenderSlotOptions<T = any> {
 /**
  * Injection token for slot configuration
  */
-export const SLOT_CONFIG = new InjectionToken<ReadonlyMap<string, SlotRegistryEntry>>('SLOT_CONFIG');
+export const SLOT_CONFIG = new InjectionToken<
+  ReadonlyMap<string, SlotRegistryEntry>
+>("SLOT_CONFIG");
 
 /**
  * Type for components with slots

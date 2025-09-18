@@ -2,24 +2,24 @@ import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Basic Examples",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -39,7 +39,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 // Default story
 export const Default: Story = {
@@ -50,9 +50,9 @@ export const Default: Story = {
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -63,9 +63,9 @@ import { Message } from '@ag-ui/client';
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput
   ],
   providers: [
     provideCopilotKit({}),
@@ -219,7 +219,7 @@ export const ManualScroll: Story = {
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
+  CopilotChatView,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -228,7 +228,7 @@ import { Message } from '@ag-ui/client';
 @Component({
   selector: 'app-chat-scroll',
   standalone: true,
-  imports: [CommonModule, CopilotChatViewComponent],
+  imports: [CommonModule, CopilotChatView],
   providers: [
     provideCopilotKit({}),
     provideCopilotChatConfiguration({
@@ -316,7 +316,7 @@ export const EmptyState: Story = {
         type: 'code',
         code: `import { Component } from '@angular/core';
 import {
-  CopilotChatViewComponent,
+  CopilotChatView,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -324,7 +324,7 @@ import {
 @Component({
   selector: 'app-chat-empty',
   standalone: true,
-  imports: [CopilotChatViewComponent],
+  imports: [CopilotChatView],
   providers: [
     provideCopilotKit({}),
     provideCopilotChatConfiguration({

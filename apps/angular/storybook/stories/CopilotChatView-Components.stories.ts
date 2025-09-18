@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
-import { Component } from "@angular/core";
+import { Component, Injectable, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  CopilotChatConfigurationService,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  ChatState,
   provideCopilotChatConfiguration,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
@@ -16,16 +16,32 @@ import { CustomDisclaimerComponent } from "../components/custom-disclaimer.compo
 import { CustomInputComponent } from "../components/custom-input.component";
 import { CustomScrollButtonComponent } from "../components/custom-scroll-button.component";
 
-const meta: Meta<CopilotChatViewComponent> = {
+@Injectable()
+class StoryChatState extends ChatState {
+  readonly inputValue = signal<string>("");
+
+  submitInput(value: string): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    console.log('[Storybook] submitInput', trimmed);
+    this.inputValue.set("");
+  }
+
+  changeInput(value: string): void {
+    this.inputValue.set(value);
+  }
+}
+
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Customized with Components",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
@@ -36,6 +52,7 @@ const meta: Meta<CopilotChatViewComponent> = {
               "AI can make mistakes. Please verify important information.",
           },
         }),
+        { provide: ChatState, useClass: StoryChatState },
       ],
     }),
   ],
@@ -45,7 +62,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const CustomDisclaimer: Story = {
   parameters: {
@@ -55,9 +72,9 @@ export const CustomDisclaimer: Story = {
         code: `import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -105,9 +122,9 @@ class CustomDisclaimerComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomDisclaimerComponent
   ],
   providers: [
@@ -189,10 +206,10 @@ export const CustomInput: Story = {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  CopilotChatConfigurationService,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  ChatState,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -248,7 +265,7 @@ class CustomInputComponent {
   
   inputValue = '';
   
-  constructor(private chat: CopilotChatConfigurationService) {}
+  constructor(private chat: ChatState) {}
   
   handleSend() {
     const value = this.inputValue.trim();
@@ -264,9 +281,9 @@ class CustomInputComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomInputComponent
   ],
   providers: [
@@ -347,9 +364,9 @@ export const CustomScrollButton: Story = {
         code: `import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -416,9 +433,9 @@ class CustomScrollButtonComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomScrollButtonComponent
   ],
   providers: [
@@ -496,9 +513,9 @@ export const NoFeatherEffect: Story = {
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -509,9 +526,9 @@ import { Message } from '@ag-ui/client';
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput
   ],
   providers: [
     provideCopilotKit({}),
@@ -587,7 +604,7 @@ export const CustomInputServiceBased: Story = {
         story: `
 Demonstrates the recommended approach for custom inputs using service injection.
 
-This pattern uses \`CopilotChatConfigurationService.submitInput()\` to submit messages, 
+This pattern uses \`ChatState.submitInput()\` to submit messages, 
 which is the idiomatic Angular approach for cross-component communication.
 
 **Key differences from React:**
@@ -602,10 +619,10 @@ which is the idiomatic Angular approach for cross-component communication.
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  CopilotChatConfigurationService,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  ChatState,
   provideCopilotKit,
   provideCopilotChatConfiguration
 } from '@copilotkitnext/angular';
@@ -658,7 +675,7 @@ import { Message } from '@ag-ui/client';
         </button>
       </div>
       <p style="color: rgba(255, 255, 255, 0.9); font-size: 12px; margin: 8px 0 0 0;">
-        This component uses CopilotChatConfigurationService.submitInput()
+        This component uses ChatState.submitInput()
       </p>
     </div>
   \`
@@ -666,7 +683,7 @@ import { Message } from '@ag-ui/client';
 class ServiceBasedInputComponent {
   value = '';
   
-  constructor(private chat: CopilotChatConfigurationService) {}
+  constructor(private chat: ChatState) {}
   
   submit() {
     const trimmedValue = this.value.trim();
@@ -683,9 +700,9 @@ class ServiceBasedInputComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     ServiceBasedInputComponent
   ],
   providers: [
@@ -715,7 +732,7 @@ export class ServiceBasedExampleComponent {
     },
     {
       id: 'assistant-1',
-      content: 'The service-based approach uses Angular\\'s dependency injection to access CopilotChatConfigurationService, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!',
+      content: 'The service-based approach uses Angular\\'s dependency injection to access ChatState, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!',
       role: 'assistant'
     }
   ];
@@ -774,7 +791,7 @@ export class ServiceBasedExampleComponent {
             </button>
           </div>
           <p style="color: rgba(255, 255, 255, 0.9); font-size: 12px; margin: 8px 0 0 0;">
-            This component uses CopilotChatConfigurationService.submitInput()
+            This component uses ChatState.submitInput()
           </p>
         </div>
       `
@@ -782,7 +799,7 @@ export class ServiceBasedExampleComponent {
     class StoryServiceInputComponent {
       value = '';
       
-      constructor(private chat: CopilotChatConfigurationService) {}
+      constructor(private chat: ChatState) {}
       
       submit() {
         const trimmedValue = this.value.trim();
@@ -802,7 +819,7 @@ export class ServiceBasedExampleComponent {
       {
         id: "assistant-1",
         content:
-          "The service-based approach uses Angular's dependency injection to access CopilotChatConfigurationService, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!",
+          "The service-based approach uses Angular's dependency injection to access ChatState, which provides the submitInput() method for sending messages. This is the idiomatic Angular pattern!",
         role: "assistant" as const,
       },
     ];

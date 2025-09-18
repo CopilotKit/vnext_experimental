@@ -1,28 +1,32 @@
-import { Component, ChangeDetectionStrategy } from "@angular/core";
+import { Component, ChangeDetectionStrategy, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { watchAgent } from "@copilotkitnext/angular";
-import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
+import { injectAgentStore } from "@copilotkitnext/angular";
+import { RenderToolCalls } from "@copilotkitnext/angular";
 
 @Component({
   selector: "headless-chat",
   standalone: true,
-  imports: [CommonModule, FormsModule, CopilotChatToolCallsViewComponent],
+  imports: [CommonModule, FormsModule, RenderToolCalls],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="headless-container" style="display:flex;flex-direction:column;height:100vh;width:100vw;">
-      <div class="messages" style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;">
-        <div *ngFor="let m of messages()" style="margin-bottom:16px;">
+    <div
+      class="headless-container"
+      style="display:flex;flex-direction:column;height:100vh;width:100vw;"
+    >
+      <div
+        class="messages"
+        style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;"
+      >
+        <div *ngFor="let m of agent()?.messages" style="margin-bottom:16px;">
           <div style="font-weight:600;color:#374151;">
             {{ m.role | titlecase }}
           </div>
           <div style="white-space:pre-wrap">{{ m.content }}</div>
           <ng-container *ngIf="m.role === 'assistant'">
-            <copilot-chat-tool-calls-view
+            <copilot-render-tool-calls
               [message]="m"
-              [messages]="messages()"
-              [isLoading]="isRunning()"
-            ></copilot-chat-tool-calls-view>
+            ></copilot-render-tool-calls>
           </ng-container>
         </div>
         <div *ngIf="isRunning()" style="opacity:0.9;color:#6b7280;">
@@ -30,7 +34,10 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
         </div>
       </div>
 
-      <form (ngSubmit)="send()" style="display:flex;gap:8px;padding:12px;background:#ffffff;border-top:1px solid #e5e7eb;">
+      <form
+        (ngSubmit)="send()"
+        style="display:flex;gap:8px;padding:12px;background:#ffffff;border-top:1px solid #e5e7eb;"
+      >
         <input
           name="message"
           [(ngModel)]="inputValue"
@@ -50,24 +57,16 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
   `,
 })
 export class HeadlessChatComponent {
-  // Signals populated from a single watcher in the constructor
-  protected agent!: ReturnType<typeof watchAgent>["agent"];
-  protected messages!: ReturnType<typeof watchAgent>["messages"];
-  protected isRunning!: ReturnType<typeof watchAgent>["isRunning"];
+  readonly agentWithState = injectAgentStore("default");
+  readonly agent = computed(() => this.agentWithState()?.agent);
+  readonly isRunning = computed(() => !!this.agentWithState()?.isRunning());
 
   inputValue = "";
-
-  constructor() {
-    ({
-      agent: this.agent,
-      messages: this.messages,
-      isRunning: this.isRunning,
-    } = watchAgent());
-  }
 
   async send() {
     const content = this.inputValue.trim();
     const agent = this.agent();
+    const isRunning = this.isRunning();
     if (!agent || !content) return;
 
     agent.addMessage({ id: crypto.randomUUID(), role: "user", content } as any);

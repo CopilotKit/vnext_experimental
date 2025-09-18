@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CopilotChatConfigurationService } from '@copilotkitnext/angular';
+import { ChatState } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'custom-input',
@@ -52,7 +52,7 @@ export class CustomInputComponent {
   
   inputValue = '';
   
-  constructor(private chat: CopilotChatConfigurationService) {}
+  constructor(private chat: ChatState) {}
   
   handleSend() {
     const value = this.inputValue.trim();

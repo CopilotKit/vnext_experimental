@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import {
-  CopilotKitConfigDirective,
-  CopilotChatViewComponent,
-  CopilotChatComponent,
+  CopilotChatView,
+  CopilotChat,
   provideCopilotChatConfiguration,
 } from "@copilotkitnext/angular";
 import { CustomChatInputComponent } from "./custom-chat-input.component";
@@ -11,18 +10,9 @@ import { CustomChatInputComponent } from "./custom-chat-input.component";
 @Component({
   selector: "nextgen-custom-input-chat",
   standalone: true,
-  imports: [
-    CommonModule,
-    CopilotKitConfigDirective,
-    CopilotChatViewComponent,
-    CustomChatInputComponent,
-    CopilotChatComponent,
-  ],
+  imports: [CommonModule, CopilotChat],
   template: `
-    <div
-      [copilotkitConfig]="{ runtimeUrl: runtimeUrl }"
-      style="display:block;height:100vh;"
-    >
+    <div style="display:block;height:100vh;">
       <copilot-chat [inputComponent]="customInput"></copilot-chat>
     </div>
   `,
@@ -38,6 +28,5 @@ import { CustomChatInputComponent } from "./custom-chat-input.component";
   ],
 })
 export class CustomInputChatComponent {
-  runtimeUrl = "http://localhost:3001/api/copilotkit";
   customInput = CustomChatInputComponent;
 }
