@@ -156,6 +156,10 @@ export function CopilotChatAssistantMessage({
     }
   );
 
+  // Don't show toolbar if message has no content (only tool calls)
+  const hasContent = !!(message.content && message.content.trim().length > 0);
+  const shouldShowToolbar = toolbarVisible && hasContent;
+
   if (children) {
     return (
       <>
@@ -176,7 +180,7 @@ export function CopilotChatAssistantMessage({
           onReadAloud,
           onRegenerate,
           additionalToolbarItems,
-          toolbarVisible,
+          toolbarVisible: shouldShowToolbar,
         })}
       </>
     );
@@ -193,7 +197,7 @@ export function CopilotChatAssistantMessage({
     >
       {boundMarkdownRenderer}
       {boundToolCallsView}
-      {toolbarVisible && boundToolbar}
+      {shouldShowToolbar && boundToolbar}
     </div>
   );
 }

@@ -22,8 +22,9 @@ afterEach(() => {
 });
 
 // Mock canvas getContext used by audio recorder during tests
-HTMLCanvasElement.prototype.getContext = () => {
-  return {
+HTMLCanvasElement.prototype.getContext = function(contextId: any) {
+  if (contextId === '2d') {
+    return {
     fillRect: () => {},
     clearRect: () => {},
     getImageData: () => ({ data: [] }),
@@ -47,8 +48,10 @@ HTMLCanvasElement.prototype.getContext = () => {
     transform: () => {},
     rect: () => {},
     clip: () => {},
-  } as unknown as CanvasRenderingContext2D;
-};
+    } as unknown as CanvasRenderingContext2D;
+  }
+  return null;
+} as any;
 
 // Simplify Radix tooltip behavior to avoid act() noise in jsdom
 vi.mock("@radix-ui/react-tooltip", async () => {

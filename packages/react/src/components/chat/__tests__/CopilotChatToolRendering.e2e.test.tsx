@@ -350,7 +350,7 @@ describe("Streaming in-progress without timers", () => {
 describe("Executing State Transitions", () => {
   it("should show Executing status while tool handler is running", async () => {
     const agent = new MockStepwiseAgent();
-    let resolveHandler: (() => void) | null = null;
+    let resolveHandler: (() => void) | undefined;
 
     const ToolWithDeferredHandler: React.FC = () => {
       const tool: ReactFrontendTool<{ value: string }> = {
@@ -416,7 +416,9 @@ describe("Executing State Transitions", () => {
       expect(resolveHandler).toBeTruthy();
     });
 
-    resolveHandler?.();
+    if (resolveHandler) {
+      resolveHandler();
+    }
 
     await waitFor(() => {
       const status = screen.getByTestId("slow-tool-status");

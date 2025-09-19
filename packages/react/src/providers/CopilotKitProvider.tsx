@@ -13,6 +13,7 @@ import React, {
 import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
+import { z } from "zod";
 import {
   CopilotKitCore,
   CopilotKitCoreConfig,
@@ -179,12 +180,16 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
     // Add render components from frontend tools
     frontendToolsList.forEach((tool) => {
-      if (tool.render && tool.parameters) {
-        combined.push({
-          name: tool.name,
-          args: tool.parameters,
-          render: tool.render,
-        } as ReactToolCallRender<unknown>);
+      if (tool.render) {
+        // For wildcard tools without parameters, default to z.any()
+        const args = tool.parameters || (tool.name === "*" ? z.any() : undefined);
+        if (args) {
+          combined.push({
+            name: tool.name,
+            args: args,
+            render: tool.render,
+          } as ReactToolCallRender<unknown>);
+        }
       }
     });
 

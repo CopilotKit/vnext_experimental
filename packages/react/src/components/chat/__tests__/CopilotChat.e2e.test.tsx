@@ -305,6 +305,139 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       agent.complete();
     });
 
+    it("should use wildcard renderer without args definition", async () => {
+      const agent = new MockStepwiseAgent();
+      // Test that wildcard tool works without explicit args definition
+      const renderToolCalls = [
+        defineToolCallRender({
+          name: "*",
+          // No args field - should default to z.any()
+          render: ({ name, args }) => (
+            <div data-testid="wildcard-no-args">
+              <span data-testid="tool-name">{name}</span>
+              <span data-testid="tool-args">{JSON.stringify(args)}</span>
+            </div>
+          ),
+        }),
+      ] as unknown as ReactToolCallRender<unknown>[];
+
+      renderWithCopilotKit({ agent, renderToolCalls });
+
+      // Submit message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Do something" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitForReactUpdate(100);
+
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+
+      agent.emit(runStartedEvent());
+
+      // Call an undefined tool with a specific name
+      agent.emit(toolCallChunkEvent({
+        toolCallId,
+        toolCallName: "myCustomTool",
+        parentMessageId: messageId,
+        delta: '{"param":"test","value":123}',
+      }));
+
+      // Wildcard renderer should receive the actual tool name, not "*"
+      await waitFor(() => {
+        const wildcard = screen.getByTestId("wildcard-no-args");
+        expect(wildcard).toBeDefined();
+
+        // Verify the actual tool name is passed, not "*"
+        const toolName = screen.getByTestId("tool-name");
+        expect(toolName.textContent).toBe("myCustomTool");
+        expect(toolName.textContent).not.toBe("*");
+
+        // Verify args are passed correctly
+        const toolArgs = screen.getByTestId("tool-args");
+        const parsedArgs = JSON.parse(toolArgs.textContent || "{}");
+        expect(parsedArgs.param).toBe("test");
+        expect(parsedArgs.value).toBe(123);
+      });
+
+      agent.emit(runFinishedEvent());
+      agent.complete();
+    });
+
+    it("should not show toolbar for messages with only tool calls and no content", async () => {
+      const agent = new MockStepwiseAgent();
+      const renderToolCalls = [
+        defineToolCallRender({
+          name: "testTool",
+          args: z.object({ value: z.string() }),
+          render: ({ args }) => (
+            <div data-testid="test-tool">Tool: {args.value}</div>
+          ),
+        }),
+      ] as unknown as ReactToolCallRender<unknown>[];
+
+      renderWithCopilotKit({ agent, renderToolCalls });
+
+      // Submit message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Use test tool" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitForReactUpdate(100);
+
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+
+      agent.emit(runStartedEvent());
+
+      // Emit tool call WITHOUT any text content
+      agent.emit(toolCallChunkEvent({
+        toolCallId,
+        toolCallName: "testTool",
+        parentMessageId: messageId,
+        delta: '{"value":"test"}',
+      }));
+
+      // Tool call should be rendered
+      await waitFor(() => {
+        const toolRender = screen.getByTestId("test-tool");
+        expect(toolRender).toBeDefined();
+        expect(toolRender.textContent).toContain("Tool: test");
+      });
+
+      // Toolbar should NOT be visible for assistant message since it has no text content
+      await waitFor(() => {
+        // Find the assistant message container (it should have the tool render)
+        const assistantMessageDiv = screen.getByTestId("test-tool").closest("[data-message-id]");
+
+        if (assistantMessageDiv) {
+          // Check that within the assistant message, there's no copy button
+          const copyButtonsInAssistant = assistantMessageDiv.querySelectorAll("button[aria-label*='Copy' i], button[aria-label*='copy' i]");
+          expect(copyButtonsInAssistant.length).toBe(0);
+        }
+      });
+
+      // Now emit a NEW message WITH text content
+      const messageWithContentId = testId("msg2");
+      agent.emit(textChunkEvent(messageWithContentId, "Here is some actual text content"));
+
+      // Toolbar SHOULD be visible now for the message with content
+      await waitFor(() => {
+        const allMessages = screen.getAllByText(/Here is some actual text content/);
+        expect(allMessages.length).toBeGreaterThan(0);
+
+        // Should now have copy button
+        const toolbarButtons = screen.getAllByRole("button");
+        const copyButton = toolbarButtons.find(btn =>
+          btn.getAttribute("aria-label")?.toLowerCase().includes("copy")
+        );
+        expect(copyButton).toBeDefined();
+      });
+
+      agent.emit(runFinishedEvent());
+      agent.complete();
+    });
+
     it("should prefer specific renderer over wildcard when both exist", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [

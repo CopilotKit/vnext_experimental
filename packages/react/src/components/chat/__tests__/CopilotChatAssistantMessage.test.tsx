@@ -74,8 +74,12 @@ describe("CopilotChatAssistantMessage", () => {
         <CopilotChatAssistantMessage message={emptyMessage} />
       );
 
-      // Should still render the component structure
-      screen.getByRole("button", { name: /copy/i });
+      // Should render the component structure but NOT show toolbar for empty content
+      const container = document.querySelector('[data-message-id="empty-message"]');
+      expect(container).toBeDefined();
+
+      // Should NOT have a copy button since there's no content to copy
+      expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
     });
   });
 
@@ -679,8 +683,12 @@ describe("CopilotChatAssistantMessage", () => {
         <CopilotChatAssistantMessage message={nullContentMessage} />
       );
 
-      // Should still render the component structure
-      expect(screen.getByRole("button", { name: /copy/i })).toBeDefined();
+      // Should render the component structure but NOT show toolbar for empty content
+      const container = document.querySelector('[data-message-id="null-content"]');
+      expect(container).toBeDefined();
+
+      // Should NOT have a copy button since there's no content to copy
+      expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
     });
   });
 });
