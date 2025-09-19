@@ -25,6 +25,7 @@ import {
 import { watchAgent, watchAgentWith } from "../../utils/agent.utils";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { Message, AbstractAgent } from "@ag-ui/client";
+import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
 
 /**
  * CopilotChat component - Angular equivalent of React's <CopilotChat>
@@ -88,7 +89,7 @@ export class CopilotChatComponent implements OnInit, OnChanges {
         a.threadId = this.threadId || this.generatedThreadId;
         if (!this.hasConnectedOnce) {
           this.hasConnectedOnce = true;
-          if ('isCopilotKitAgent' in (a as any)) {
+          if (a instanceof ProxiedCopilotRuntimeAgent) {
             this.connectToAgent(a);
           } else {
             // Not a CopilotKit agent: ensure UI not showing loading cursor
@@ -209,20 +210,19 @@ export class CopilotChatComponent implements OnInit, OnChanges {
     });
   }
 
-
   private createWatcher(desiredAgentId: string) {
     // Tear down previous watcher if it exists to prevent parallel subscriptions
     this.watcher?.unsubscribe();
-    
+
     // Create new watcher using the ergonomic helper
     const w = watchAgentWith(this.injector, { agentId: desiredAgentId });
-    
+
     // Destructure signals directly to class fields
     this.agent = w.agent;
     this.messages = w.messages;
     this.isRunning = w.isRunning;
     this.watcher = w;
-    
+
     // Reset connection state for new agent
     this.hasConnectedOnce = false;
   }

@@ -46,11 +46,11 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "quickstart", "development"]
+      "pages": ["introduction"]
     },
     {
-      "group": "Essentials",
-      "pages": ["essentials/middleware", "essentials/endpoints"]
+      "group": "API Reference",
+      "pages": ["api/copilotkit-core"]
     }
   ],
   "footerSocials": {

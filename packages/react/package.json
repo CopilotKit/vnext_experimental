@@ -53,8 +53,8 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@ag-ui/client": "0.0.36-alpha.1",
-    "@ag-ui/core": "0.0.36-alpha.1",
+    "@ag-ui/client": "0.0.38-alpha.2",
+    "@ag-ui/core": "0.0.38-alpha.2",
     "@copilotkitnext/core": "workspace:*",
     "@copilotkitnext/shared": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.15",

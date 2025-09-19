@@ -5,13 +5,13 @@ import React from "react";
 export type CopilotChatToolCallsViewProps = {
   message: AssistantMessage;
   messages?: Message[];
-  isLoading?: boolean;
+  isRunning?: boolean;
 };
 
 export function CopilotChatToolCallsView({
   message,
   messages = [],
-  isLoading = false,
+  isRunning = false,
 }: CopilotChatToolCallsViewProps) {
   const renderToolCall = useRenderToolCall();
 
@@ -31,7 +31,7 @@ export function CopilotChatToolCallsView({
             {renderToolCall({
               toolCall,
               toolMessage,
-              isLoading,
+              isRunning,
             })}
           </React.Fragment>
         );

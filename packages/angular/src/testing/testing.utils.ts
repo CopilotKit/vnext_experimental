@@ -101,12 +101,14 @@ export function createCopilotKitTestingModule(
  * ```
  */
 export function createMockCopilotKitCore() {
+  const runtimeUrlGetter = vi.fn();
+  const runtimeUrlSetter = vi.fn();
+
   return {
     addContext: vi.fn().mockImplementation(() => "context-id-" + Math.random()),
     removeContext: vi.fn(),
     addTool: vi.fn().mockImplementation(() => "tool-id-" + Math.random()),
     removeTool: vi.fn(),
-    setRuntimeUrl: vi.fn(),
     setHeaders: vi.fn(),
     setProperties: vi.fn(),
     setAgents: vi.fn(),
@@ -116,6 +118,14 @@ export function createMockCopilotKitCore() {
     getState: vi.fn(() => ({})),
     send: vi.fn(),
     render: vi.fn(),
+    get runtimeUrl() {
+      return runtimeUrlGetter();
+    },
+    setRuntimeUrl: vi.fn((url: string | undefined) => {
+      runtimeUrlSetter(url);
+    }),
+    __runtimeUrlGetter: runtimeUrlGetter,
+    __runtimeUrlSetter: runtimeUrlSetter,
   };
 }
 

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { useState } from "react";
 import {
   CopilotChatInput,
   CopilotChatConfigurationProvider,
@@ -11,37 +10,25 @@ const meta = {
   component: CopilotChatInput,
   tags: ["autodocs"],
   decorators: [
-    (Story, args) => {
-      const [inputValue, setInputValue] = useState(args.args.value || "");
-
-      return (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-        >
-          <div style={{ width: "100%", maxWidth: "640px" }}>
-            <CopilotChatConfigurationProvider
-              inputValue={inputValue}
-              onChangeInput={setInputValue}
-              onSubmitInput={(value) => {
-                console.log(`Message sent: ${value}`);
-                args.args.onSubmit?.(value);
-                setInputValue("");
-              }}
-            >
-              <Story />
-            </CopilotChatConfigurationProvider>
-          </div>
+    (Story) => (
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          padding: "16px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: "640px" }}>
+          <CopilotChatConfigurationProvider threadId="storybook-thread">
+            <Story />
+          </CopilotChatConfigurationProvider>
         </div>
-      );
-    },
+      </div>
+    ),
   ],
   parameters: {
     layout: "fullscreen",
@@ -65,18 +52,13 @@ The CopilotChatInput component provides a feature-rich chat input interface for 
 import { CopilotChatInput, CopilotChatConfigurationProvider } from '@copilotkitnext/react';
 
 function ChatComponent() {
-  const [inputValue, setInputValue] = useState("");
-  
   return (
-    <CopilotChatConfigurationProvider
-      inputValue={inputValue}
-      onChangeInput={setInputValue}
-      onSubmitInput={(value) => {
-        console.log('Message:', value);
-        setInputValue("");
-      }}
-    >
-      <CopilotChatInput />
+    <CopilotChatConfigurationProvider threadId="demo-thread">
+      <CopilotChatInput
+        onSubmitMessage={(value) => {
+          console.log('Message:', value);
+        }}
+      />
     </CopilotChatConfigurationProvider>
   );
 }
@@ -136,10 +118,9 @@ See individual stories below for detailed examples of each customization approac
     },
     value: {
       control: { type: "text" },
-      description: "The current input value (controlled through provider)",
+      description: "Current input value when using controlled mode",
       table: {
         type: { summary: "string" },
-        defaultValue: { summary: "" },
         category: "Data",
       },
     },
@@ -175,7 +156,7 @@ See individual stories below for detailed examples of each customization approac
         category: "Events",
       },
     },
-    onSubmit: {
+    onSubmitMessage: {
       action: "submit",
       description: "Callback when message is submitted",
       table: {
@@ -189,6 +170,7 @@ See individual stories below for detailed examples of each customization approac
     onCancelTranscribe: () => console.log("Transcribe cancelled"),
     onFinishTranscribe: () => console.log("Transcribe completed"),
     onAddFile: () => console.log("Add files clicked"),
+    onSubmitMessage: (value: string) => console.log(`Message sent: ${value}`),
   },
 } satisfies Meta<typeof CopilotChatInput>;
 
@@ -398,12 +380,22 @@ export const PrefilledText: Story = {
 Initialize the input with pre-populated text.
 
 \`\`\`tsx
-<CopilotChatConfigurationProvider
-  inputValue="Hello, this is a prefilled message!"
-  onChangeInput={setInputValue}
->
-  <CopilotChatInput />
-</CopilotChatConfigurationProvider>
+function PrefilledChatInput() {
+  const [value, setValue] = useState("Hello, this is a prefilled message!");
+
+  return (
+    <CopilotChatConfigurationProvider threadId="demo-thread">
+      <CopilotChatInput
+        value={value}
+        onChange={setValue}
+        onSubmitMessage={(submitted) => {
+          console.log(submitted);
+          setValue("");
+        }}
+      />
+    </CopilotChatConfigurationProvider>
+  );
+}
 \`\`\`
 
 Useful for:

@@ -275,10 +275,7 @@ export const useCopilotKit = (): CopilotKitContextValue => {
   }
   useEffect(() => {
     const unsubscribe = context.copilotkit.subscribe({
-      onRuntimeLoaded: () => {
-        forceUpdate();
-      },
-      onRuntimeLoadError: () => {
+      onRuntimeConnectionStatusChanged: () => {
         forceUpdate();
       },
     });

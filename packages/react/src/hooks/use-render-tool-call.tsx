@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { useCopilotAgentId } from "./use-copilot-agent-id";
+import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { partialJSONParse } from "@copilotkitnext/shared";
 
 export interface UseRenderToolCallProps {
   toolCall: ToolCall;
   toolMessage?: ToolMessage;
-  isLoading: boolean;
+  isRunning: boolean;
 }
 
 /**
@@ -19,14 +19,14 @@ export interface UseRenderToolCallProps {
  */
 export function useRenderToolCall() {
   const { currentRenderToolCalls, copilotkit } = useCopilotKit();
-  const agentId = useCopilotAgentId();
+  const { agentId } = useCopilotChatConfiguration();
   const [executingToolCallIds, setExecutingToolCallIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
 
   useEffect(() => {
-    const unsubscribe = (copilotkit as any).subscribe({
-      onToolExecutingStart: ({ toolCallId }: { toolCallId: string }) => {
+    const unsubscribe = copilotkit.subscribe({
+      onToolExecutionStart: ({ toolCallId }) => {
         setExecutingToolCallIds((prev) => {
           if (prev.has(toolCallId)) return prev;
           const next = new Set(prev);
@@ -34,7 +34,7 @@ export function useRenderToolCall() {
           return next;
         });
       },
-      onToolExecutingEnd: ({ toolCallId }: { toolCallId: string }) => {
+      onToolExecutionEnd: ({ toolCallId }) => {
         setExecutingToolCallIds((prev) => {
           if (!prev.has(toolCallId)) return prev;
           const next = new Set(prev);
@@ -50,7 +50,7 @@ export function useRenderToolCall() {
     ({
       toolCall,
       toolMessage,
-      isLoading,
+      isRunning,
     }: UseRenderToolCallProps): React.ReactElement | null => {
       // Find the render config for this tool call by name
       // For rendering, we show all tool calls regardless of agentId
@@ -61,9 +61,9 @@ export function useRenderToolCall() {
       const exactMatches = currentRenderToolCalls.filter(
         (rc) => rc.name === toolCall.function.name
       );
-      
+
       // If multiple renderers with same name exist, prefer the one matching our agentId
-      const renderConfig = 
+      const renderConfig =
         exactMatches.find((rc) => rc.agentId === agentId) ||
         exactMatches.find((rc) => !rc.agentId) ||
         exactMatches[0] ||
@@ -104,7 +104,7 @@ export function useRenderToolCall() {
             result={undefined}
           />
         );
-      } else if (isLoading) {
+      } else if (isRunning) {
         // In progress status when loading
         return (
           <RenderComponent

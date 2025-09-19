@@ -15,6 +15,7 @@ import { Observable } from "rxjs";
 import { CopilotKitService } from "../core/copilotkit.service";
 import { AbstractAgent } from "@ag-ui/client";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
+import { CopilotKitCoreRuntimeConnectionStatus } from "@copilotkitnext/core";
 
 /**
  * Directive to watch and interact with CopilotKit agents.
@@ -206,9 +207,14 @@ export class CopilotKitAgentDirective implements OnInit, OnChanges, OnDestroy {
   private subscribeToCore(): void {
     // Subscribe to CopilotKit changes to detect agent updates
     this.coreUnsubscribe = this.copilotkit.copilotkit.subscribe({
-      onRuntimeLoaded: () => {
-        // Re-check agent when runtime loads
-        this.setupAgent();
+      onRuntimeConnectionStatusChanged: ({ status }) => {
+        if (
+          status === CopilotKitCoreRuntimeConnectionStatus.Connected ||
+          status === CopilotKitCoreRuntimeConnectionStatus.Disconnected
+        ) {
+          // Re-check agent when runtime connection changes state
+          this.setupAgent();
+        }
       },
     });
   }

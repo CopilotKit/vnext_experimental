@@ -10,8 +10,10 @@ import { ToolCallStatus } from "@copilotkitnext/core";
 import {
   AbstractAgent,
   EventType,
+  type AgentSubscriber,
   type BaseEvent,
   type RunAgentInput,
+  type RunAgentParameters,
 } from "@ag-ui/client";
 import { Observable } from "rxjs";
 import {
@@ -69,7 +71,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             <CopilotChatToolCallsView
               message={assistantMessage}
               messages={messages}
-              isLoading={true}
+              isRunning={true}
             />
           </>
         ),
@@ -496,6 +498,66 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
 
       agent.emit(runFinishedEvent());
       agent.complete();
+    });
+  });
+
+  describe("Agent input plumbing", () => {
+    it("forwards registered frontend tools to runAgent input", async () => {
+      class InstrumentedMockAgent extends MockStepwiseAgent {
+        public lastRunParameters?: RunAgentParameters;
+
+        async runAgent(parameters?: RunAgentParameters, subscriber?: AgentSubscriber) {
+          this.lastRunParameters = parameters;
+          return super.runAgent(parameters, subscriber);
+        }
+      }
+
+      const agent = new InstrumentedMockAgent();
+
+      const ToolRegistrar: React.FC = () => {
+        const tool: ReactFrontendTool<{ query: string }> = {
+          name: "inspectionTool",
+          parameters: z.object({ query: z.string() }),
+          handler: async ({ query }) => `handled ${query}`,
+        };
+
+        useFrontendTool(tool);
+        return null;
+      };
+
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <ToolRegistrar />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Trigger inspection" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(agent.lastRunParameters).toBeDefined();
+      });
+
+      const messageId = testId("msg");
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallResultEvent({
+          toolCallId: testId("tc"),
+          messageId: `${messageId}_result`,
+          content: JSON.stringify({}),
+        })
+      );
+      agent.emit(runFinishedEvent());
+      agent.complete();
+
+      expect(agent.lastRunParameters?.tools).toBeDefined();
     });
   });
 
@@ -934,7 +996,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
           delta: '{"value":"test"}',
         })
       );
-      agent.emit(runFinishedEvent());
       
       // Wait for tool to render with InProgress status
       await waitFor(() => {
@@ -943,6 +1004,8 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
         expect(screen.getByTestId("tool-value").textContent).toBe("test");
         expect(screen.getByTestId("tool-status").textContent).toBe(ToolCallStatus.InProgress);
       });
+      
+      agent.emit(runFinishedEvent());
       
       // Complete the agent to trigger handler execution
       agent.complete();

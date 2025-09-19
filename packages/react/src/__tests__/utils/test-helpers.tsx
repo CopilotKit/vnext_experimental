@@ -2,6 +2,8 @@ import React from "react";
 import { render, act } from "@testing-library/react";
 import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
 import { CopilotChat } from "@/components/chat/CopilotChat";
+import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import {
   AbstractAgent,
   EventType,
@@ -22,6 +24,14 @@ export class MockStepwiseAgent extends AbstractAgent {
    * Emit a single agent event
    */
   emit(event: BaseEvent) {
+    if (event.type === EventType.RUN_STARTED) {
+      this.isRunning = true;
+    } else if (
+      event.type === EventType.RUN_FINISHED ||
+      event.type === EventType.RUN_ERROR
+    ) {
+      this.isRunning = false;
+    }
     act(() => {
       this.subject.next(event);
     });
@@ -31,6 +41,7 @@ export class MockStepwiseAgent extends AbstractAgent {
    * Complete the agent stream
    */
   complete() {
+    this.isRunning = false;
     act(() => {
       this.subject.complete();
     });
@@ -54,15 +65,21 @@ export function renderWithCopilotKit({
   renderToolCalls,
   frontendTools,
   humanInTheLoop,
+  agentId,
+  threadId,
   children,
 }: {
   agent?: AbstractAgent;
   renderToolCalls?: ReactToolCallRender<unknown>[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
+  agentId?: string;
+  threadId?: string;
   children?: React.ReactNode;
 }): ReturnType<typeof render> {
   const agents = agent ? { default: agent } : undefined;
+  const resolvedAgentId = agentId ?? DEFAULT_AGENT_ID;
+  const resolvedThreadId = threadId ?? "test-thread";
 
   return render(
     <CopilotKitProvider
@@ -71,12 +88,16 @@ export function renderWithCopilotKit({
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
     >
-      ´
-      {children || (
-        <div style={{ height: 400 }}>
-          <CopilotChat />
-        </div>
-      )}
+      <CopilotChatConfigurationProvider
+        agentId={resolvedAgentId}
+        threadId={resolvedThreadId}
+      >
+        {children || (
+          <div style={{ height: 400 }}>
+            <CopilotChat />
+          </div>
+        )}
+      </CopilotChatConfigurationProvider>
     </CopilotKitProvider>
   );
 }

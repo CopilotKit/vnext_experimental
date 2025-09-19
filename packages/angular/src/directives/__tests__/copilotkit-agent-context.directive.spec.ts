@@ -7,15 +7,26 @@ import { provideCopilotKit } from "../../core/copilotkit.providers";
 
 // Mock CopilotKitCore
 vi.mock("@copilotkitnext/core", () => ({
-  CopilotKitCore: vi.fn().mockImplementation(() => ({
-    addContext: vi.fn().mockImplementation(() => "context-id-" + Math.random()),
-    removeContext: vi.fn(),
-    setRuntimeUrl: vi.fn(),
-    setHeaders: vi.fn(),
-    setProperties: vi.fn(),
-    setAgents: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
-  })),
+  CopilotKitCore: vi.fn().mockImplementation(() => {
+    const runtimeUrlSetter = vi.fn();
+    return {
+      addContext: vi
+        .fn()
+        .mockImplementation(() => "context-id-" + Math.random()),
+      removeContext: vi.fn(),
+      setHeaders: vi.fn(),
+      setProperties: vi.fn(),
+      setAgents: vi.fn(),
+      subscribe: vi.fn(() => () => {}),
+      setRuntimeUrl: vi.fn((url: string | undefined) => {
+        runtimeUrlSetter(url);
+      }),
+      get runtimeUrl() {
+        return undefined;
+      },
+      __runtimeUrlSetter: runtimeUrlSetter,
+    };
+  }),
 }));
 
 // Test components

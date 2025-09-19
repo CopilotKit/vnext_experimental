@@ -21,11 +21,19 @@ let mockSubscribers: Array<any> = [];
 
 vi.mock("@copilotkitnext/core", () => {
   // Don't import the real module at all
+  const RuntimeConnectionStatus = {
+    Disconnected: "disconnected",
+    Connected: "connected",
+    Connecting: "connecting",
+    Error: "error",
+  } as const;
+
   return {
+    RuntimeConnectionStatus,
     CopilotKitCore: vi.fn().mockImplementation((config) => {
       // Reset subscribers for each instance
       mockSubscribers = [];
-      
+
       // Properly initialize tools from config
       const tools = Array.isArray(config?.tools) ? config?.tools : [];
       const toolRegistry = new Map<string, any>();
@@ -40,8 +48,10 @@ vi.mock("@copilotkitnext/core", () => {
 
       upsertTools(tools);
 
+      let runtimeUrlValue: string | undefined;
+      const runtimeUrlSetter = vi.fn();
+
       const instance = {
-        setRuntimeUrl: vi.fn(),
         setHeaders: vi.fn(),
         setProperties: vi.fn(),
         setAgents: vi.fn(),
@@ -67,10 +77,20 @@ vi.mock("@copilotkitnext/core", () => {
         }),
         // Helper to trigger events in tests
         _triggerRuntimeLoaded: () => {
-          mockSubscribers.forEach((sub) => sub.onRuntimeLoaded?.());
+          mockSubscribers.forEach((sub) =>
+            sub.onRuntimeConnectionStatusChanged?.({
+              copilotkit: instance,
+              status: RuntimeConnectionStatus.Connected,
+            })
+          );
         },
         _triggerRuntimeError: () => {
-          mockSubscribers.forEach((sub) => sub.onRuntimeLoadError?.());
+          mockSubscribers.forEach((sub) =>
+            sub.onRuntimeConnectionStatusChanged?.({
+              copilotkit: instance,
+              status: RuntimeConnectionStatus.Error,
+            })
+          );
         },
         _getSubscriberCount: () => mockSubscribers.length,
         isRuntimeReady: false,
@@ -78,6 +98,14 @@ vi.mock("@copilotkitnext/core", () => {
         messages: [],
         // Add any other properties that might be accessed
         state: "idle",
+        setRuntimeUrl: vi.fn((url: string | undefined) => {
+          runtimeUrlValue = url;
+          runtimeUrlSetter(url);
+        }),
+        get runtimeUrl() {
+          return runtimeUrlValue;
+        },
+        __runtimeUrlSetter: runtimeUrlSetter,
       };
 
       return instance;
@@ -129,10 +157,10 @@ describe("CopilotKitService", () => {
     it("should not make any network calls on initialization", () => {
       // The mocked CopilotKitCore should not make any actual network calls
       // If it did, the test would fail as we've completely mocked the module
-      expect(mockCopilotKitCore.setRuntimeUrl).toBeDefined();
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toBeDefined();
 
       // Verify initial state has no runtime URL to prevent auto-fetching
-      expect(mockCopilotKitCore.setRuntimeUrl).not.toHaveBeenCalledWith(
+      expect(mockCopilotKitCore.__runtimeUrlSetter).not.toHaveBeenCalledWith(
         expect.stringContaining("http")
       );
     });
@@ -143,7 +171,7 @@ describe("CopilotKitService", () => {
       // Give effects time to run
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenCalledWith(
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toHaveBeenCalledWith(
         "https://test.com"
       );
     });
@@ -274,7 +302,7 @@ describe("CopilotKitService", () => {
       // Give effects time to run
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenCalledWith(
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toHaveBeenCalledWith(
         "https://api.test.com"
       );
     });
@@ -288,7 +316,9 @@ describe("CopilotKitService", () => {
       // Give effects time to run
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenCalledWith("url");
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toHaveBeenCalledWith(
+        "url"
+      );
       expect(mockCopilotKitCore.setHeaders).toHaveBeenCalledWith({
         key: "value",
       });
@@ -384,7 +414,9 @@ describe("CopilotKitService", () => {
       // Give effects time to run
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenCalledWith(undefined);
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toHaveBeenCalledWith(
+        undefined
+      );
       expect(service.runtimeUrl()).toBeUndefined();
     });
 
@@ -444,7 +476,9 @@ describe("CopilotKitService", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that effect synced to core
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenCalledWith(testUrl);
+      expect(mockCopilotKitCore.__runtimeUrlSetter).toHaveBeenCalledWith(
+        testUrl
+      );
     });
 
     it("should not lose state during rapid updates", async () => {
@@ -461,7 +495,9 @@ describe("CopilotKitService", () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Core should have been called with the last URL
-      expect(mockCopilotKitCore.setRuntimeUrl).toHaveBeenLastCalledWith("url5");
+      expect(
+        mockCopilotKitCore.__runtimeUrlSetter
+      ).toHaveBeenLastCalledWith("url5");
     });
   });
 

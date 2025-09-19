@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { WithSlots, renderSlot } from "@/lib/slots";
 import CopilotChatMessageView from "./CopilotChatMessageView";
-import CopilotChatInput from "./CopilotChatInput";
+import CopilotChatInput, { CopilotChatInputProps } from "./CopilotChatInput";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
 import { StickToBottom, useStickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
@@ -27,6 +27,8 @@ export type CopilotChatViewProps = WithSlots<
   {
     messages?: Message[];
     autoScroll?: boolean;
+    inputProps?: Partial<Omit<CopilotChatInputProps, "children">>;
+    isRunning?: boolean;
   } & React.HTMLAttributes<HTMLDivElement>
 >;
 
@@ -40,6 +42,8 @@ export function CopilotChatView({
   disclaimer,
   messages = [],
   autoScroll = true,
+  inputProps,
+  isRunning = false,
   children,
   className,
   ...props
@@ -95,9 +99,14 @@ export function CopilotChatView({
 
   const BoundMessageView = renderSlot(messageView, CopilotChatMessageView, {
     messages,
+    isRunning,
   });
 
-  const BoundInput = renderSlot(input, CopilotChatInput, {});
+  const BoundInput = renderSlot(
+    input,
+    CopilotChatInput,
+    (inputProps ?? {}) as CopilotChatInputProps
+  );
   const BoundFeather = renderSlot(feather, CopilotChatView.Feather, {});
   const BoundScrollView = renderSlot(scrollView, CopilotChatView.ScrollView, {
     autoScroll,

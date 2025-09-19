@@ -12,6 +12,7 @@ import {
 import { Observable, Subject } from "rxjs";
 import { defineToolCallRender, ReactToolCallRender, ReactFrontendTool } from "@/types";
 import CopilotChatToolCallsView from "../CopilotChatToolCallsView";
+import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useFrontendTool } from "@/hooks/use-frontend-tool";
@@ -121,9 +122,9 @@ describe("CopilotChat tool rendering with mock agent", () => {
 
 describe("Tool render status narrowing", () => {
   function renderStatusWithProvider({
-    isLoading,
+    isRunning,
     withResult,
-  }: { isLoading: boolean; withResult: boolean }) {
+  }: { isRunning: boolean; withResult: boolean }) {
     const renderToolCalls = [
       defineToolCallRender({
         name: "getWeather",
@@ -172,32 +173,37 @@ describe("Tool render status narrowing", () => {
 
     return render(
       <CopilotKitProvider renderToolCalls={renderToolCalls}>
-        <CopilotChatToolCallsView
-          message={assistantMessage}
-          messages={messages}
-          isLoading={isLoading}
-        />
+        <CopilotChatConfigurationProvider
+          agentId="default"
+          threadId="test-thread"
+        >
+          <CopilotChatToolCallsView
+            message={assistantMessage}
+            messages={messages}
+            isRunning={isRunning}
+          />
+        </CopilotChatConfigurationProvider>
       </CopilotKitProvider>
     );
   }
 
-  it("renders InProgress when loading and no result", async () => {
-    renderStatusWithProvider({ isLoading: true, withResult: false });
+  it("renders InProgress when running and no result", async () => {
+    renderStatusWithProvider({ isRunning: true, withResult: false });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/INPROGRESS/);
     expect(el.textContent).toMatch(/Berlin/);
   });
 
   it("renders Complete with result when tool message exists", async () => {
-    renderStatusWithProvider({ isLoading: false, withResult: true });
+    renderStatusWithProvider({ isRunning: false, withResult: true });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/COMPLETE/);
     expect(el.textContent).toMatch(/Berlin/);
     expect(el.textContent).toMatch(/Sunny/);
   });
 
-  it("renders Complete with empty result when not loading and no tool result", async () => {
-    renderStatusWithProvider({ isLoading: false, withResult: false });
+  it("renders Complete with empty result when not running and no tool result", async () => {
+    renderStatusWithProvider({ isRunning: false, withResult: false });
     const el = await screen.findByTestId("status");
     expect(el.textContent).toMatch(/COMPLETE/);
     expect(el.textContent).toMatch(/Berlin/);
@@ -209,10 +215,19 @@ class MockStepwiseAgent extends AbstractAgent {
   private subject = new Subject<BaseEvent>();
 
   emit(event: BaseEvent) {
+    if (event.type === EventType.RUN_STARTED) {
+      this.isRunning = true;
+    } else if (
+      event.type === EventType.RUN_FINISHED ||
+      event.type === EventType.RUN_ERROR
+    ) {
+      this.isRunning = false;
+    }
     this.subject.next(event);
   }
 
   complete() {
+    this.isRunning = false;
     this.subject.complete();
   }
 

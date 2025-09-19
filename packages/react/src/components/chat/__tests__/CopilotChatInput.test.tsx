@@ -7,10 +7,12 @@ import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChat
 // Mock onSubmitMessage function to track calls
 const mockOnSubmitMessage = vi.fn();
 
+const TEST_THREAD_ID = "test-thread";
+
 // Helper to render components with context provider
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotChatConfigurationProvider>
+    <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
       {component}
     </CopilotChatConfigurationProvider>
   );
@@ -72,6 +74,21 @@ describe("CopilotChatInput", () => {
     expect(mockOnSubmitMessage).toHaveBeenCalledWith("test message");
   });
 
+  it("manages text state internally when uncontrolled", () => {
+    renderWithProvider(
+      <CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />
+    );
+
+    const input = screen.getByPlaceholderText("Type a message...");
+    const button = screen.getByRole("button");
+
+    fireEvent.change(input, { target: { value: "hello" } });
+    fireEvent.click(button);
+
+    expect(mockOnSubmitMessage).toHaveBeenCalledWith("hello");
+    expect((input as HTMLTextAreaElement).value).toBe("");
+  });
+
   it("does not send when Enter is pressed with Shift key", () => {
     const mockOnChange = vi.fn();
     renderWithProvider(
@@ -106,7 +123,7 @@ describe("CopilotChatInput", () => {
 
     // Test whitespace only
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value="   "
           onChange={mockOnChange}
@@ -116,6 +133,17 @@ describe("CopilotChatInput", () => {
     );
     fireEvent.click(button);
     expect(mockOnSubmitMessage).not.toHaveBeenCalled();
+  });
+
+  it("keeps input value when no submit handler is provided", () => {
+    renderWithProvider(<CopilotChatInput />);
+
+    const input = screen.getByPlaceholderText("Type a message...");
+
+    fireEvent.change(input, { target: { value: "draft" } });
+    fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
+
+    expect((input as HTMLTextAreaElement).value).toBe("draft");
   });
 
   it("enables button based on value prop", () => {
@@ -135,7 +163,7 @@ describe("CopilotChatInput", () => {
 
     // Test with non-empty value
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value="hello"
           onChange={mockOnChange}
@@ -147,7 +175,7 @@ describe("CopilotChatInput", () => {
 
     // Test with empty value again
     rerender(
-      <CopilotChatConfigurationProvider>
+      <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         <CopilotChatInput
           value=""
           onChange={mockOnChange}
@@ -493,7 +521,7 @@ describe("CopilotChatInput", () => {
 
       // Simulate parent component updating the value
       rerender(
-        <CopilotChatConfigurationProvider>
+        <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
           <CopilotChatInput
             value="updated"
             onChange={mockOnChange}
