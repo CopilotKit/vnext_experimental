@@ -2,3 +2,4 @@
 // Components will be added here
 
 export * from "./chat";
+export * from "./WildcardToolCallRender";
