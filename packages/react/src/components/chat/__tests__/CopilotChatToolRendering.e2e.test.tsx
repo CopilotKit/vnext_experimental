@@ -180,7 +180,6 @@ describe("Tool render status narrowing", () => {
           <CopilotChatToolCallsView
             message={assistantMessage}
             messages={messages}
-            isRunning={isRunning}
           />
         </CopilotChatConfigurationProvider>
       </CopilotKitProvider>

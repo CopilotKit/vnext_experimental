@@ -70,7 +70,7 @@ export function renderWithCopilotKit({
   children,
 }: {
   agent?: AbstractAgent;
-  renderToolCalls?: ReactToolCallRender<unknown>[];
+  renderToolCalls?: ReactToolCallRender<any>[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
   agentId?: string;

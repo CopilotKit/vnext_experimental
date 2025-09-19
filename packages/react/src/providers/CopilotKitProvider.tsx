@@ -24,7 +24,7 @@ import { AbstractAgent } from "@ag-ui/client";
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: ReactToolCallRender<unknown>[];
+  renderToolCalls: ReactToolCallRender<any>[];
   currentRenderToolCalls: ReactToolCallRender<unknown>[];
   setCurrentRenderToolCalls: React.Dispatch<
     React.SetStateAction<ReactToolCallRender<unknown>[]>
@@ -46,7 +46,7 @@ export interface CopilotKitProviderProps {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: ReactToolCallRender<unknown>[];
+  renderToolCalls?: ReactToolCallRender<any>[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
 }
@@ -86,7 +86,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   humanInTheLoop,
 }) => {
   // Normalize array props to stable references with clear dev warnings
-  const renderToolCallsList = useStableArrayProp<ReactToolCallRender<unknown>>(
+  const renderToolCallsList = useStableArrayProp<ReactToolCallRender<any>>(
     renderToolCalls,
     "renderToolCalls must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",
     (initial, next) => {

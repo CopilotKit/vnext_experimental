@@ -1,11 +1,132 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { z } from "zod";
 import { defineToolCallRender } from "../defineToolCallRender";
 import { ToolCallStatus } from "@copilotkitnext/core";
+import type { ReactToolCallRender } from "../react-tool-call-render";
+import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
+import { AbstractAgent } from "@ag-ui/client";
 
 describe("defineToolCallRender", () => {
+  describe("Array compatibility", () => {
+    it("should work with multiple tool renders in an array", () => {
+      // This test verifies that multiple tool renders with different arg types
+      // can be used together in the renderToolCalls array
+      const WildCardRender = defineToolCallRender({
+        name: "*",
+        render: ({ args, result, name, status }) => {
+          return <div>Wildcard: {name}</div>;
+        },
+      });
+
+      const OtherToolRender = defineToolCallRender({
+        name: "get_weather",
+        args: z.object({
+          location: z.string(),
+        }),
+        render: ({ args, result, name, status }) => {
+          return <div>Weather in {args.location}</div>;
+        },
+      });
+
+      // This should compile without errors
+      // Testing that mixed types can be used together
+      const renderToolCalls = [
+        WildCardRender,
+        OtherToolRender,
+      ];
+
+      expect(renderToolCalls).toHaveLength(2);
+      expect(renderToolCalls[0]!.name).toBe("*");
+      expect(renderToolCalls[1]!.name).toBe("get_weather");
+
+      // Verify they have the expected structure
+      expect(renderToolCalls[0]!.render).toBeDefined();
+      expect(renderToolCalls[1]!.render).toBeDefined();
+      expect(renderToolCalls[1]!.args).toBeDefined();
+    });
+
+    it("should work with CopilotKitProvider accepting mixed tool renders", () => {
+      // This is the exact scenario the user reported
+      const WildCardRender = defineToolCallRender({
+        name: "*",
+        render: ({ args, result, name, status }) => {
+          return <div data-testid="wildcard">TODO: {name}</div>;
+        },
+      });
+
+      const OtherToolRender = defineToolCallRender({
+        name: "get_weather",
+        args: z.object({
+          location: z.string(),
+        }),
+        render: ({ args, result, name, status }) => {
+          return <div data-testid="weather">Weather for {args.location}</div>;
+        },
+      });
+
+      // This should compile without type errors
+      const TestComponent = () => {
+        const renderToolCalls = [WildCardRender, OtherToolRender];
+
+        // In real usage, this would be passed to CopilotKitProvider
+        // We're just checking that the type is compatible
+        const providerProps: { renderToolCalls?: ReactToolCallRender<any>[] } = {
+          renderToolCalls: renderToolCalls,
+        };
+
+        return <div data-testid="test">Test</div>;
+      };
+
+      const { getByTestId } = render(<TestComponent />);
+      expect(getByTestId("test")).toBeDefined();
+    });
+
+    it("should work with actual CopilotKitProvider - replicating user's exact scenario", () => {
+      // Exact replication of the user's code that was causing type errors
+      const WildCardRender = defineToolCallRender({
+        name: "*",
+        render: ({ args, result, name, status }) => {
+          return <div>TODO</div>;
+        },
+      });
+
+      const OtherToolRender = defineToolCallRender({
+        name: "get_weather",
+        args: z.object({
+          location: z.string(),
+        }),
+        render: ({ args, result, name, status }) => {
+          return <div>TODO</div>;
+        },
+      });
+
+      // Create a mock agent for testing
+      const mockAgent = {
+        clone: vi.fn(),
+        run: vi.fn(),
+      } as unknown as AbstractAgent;
+
+      // This is the exact code pattern the user wanted to use
+      // Previously this would cause a type error, now it should compile
+      const TestApp = () => (
+        <CopilotKitProvider
+          agents={{
+            default: mockAgent,
+          }}
+          renderToolCalls={[WildCardRender, OtherToolRender]}
+        >
+          <div data-testid="app">App content</div>
+        </CopilotKitProvider>
+      );
+
+      // If this renders without TypeScript errors, the fix is working
+      const { getByTestId } = render(<TestApp />);
+      expect(getByTestId("app")).toBeDefined();
+      expect(getByTestId("app").textContent).toBe("App content");
+    });
+  });
   describe("Type inference and rendering", () => {
     it("should properly infer types for regular tools", () => {
       const weatherRender = defineToolCallRender({
