@@ -152,7 +152,6 @@ export function CopilotChatAssistantMessage({
     {
       message,
       messages,
-      isRunning,
     }
   );
 

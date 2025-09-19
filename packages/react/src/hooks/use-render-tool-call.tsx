@@ -8,7 +8,6 @@ import { partialJSONParse } from "@copilotkitnext/shared";
 export interface UseRenderToolCallProps {
   toolCall: ToolCall;
   toolMessage?: ToolMessage;
-  isRunning: boolean;
 }
 
 /**
@@ -50,7 +49,6 @@ export function useRenderToolCall() {
     ({
       toolCall,
       toolMessage,
-      isRunning,
     }: UseRenderToolCallProps): React.ReactElement | null => {
       // Find the render config for this tool call by name
       // For rendering, we show all tool calls regardless of agentId
@@ -104,8 +102,9 @@ export function useRenderToolCall() {
             result={undefined}
           />
         );
-      } else if (isRunning) {
-        // In progress status when loading
+      } else {
+        // In progress status - tool call exists but hasn't completed yet
+        // This remains true even after agent stops running, until we get a result
         return (
           <RenderComponent
             key={toolCall.id}
@@ -113,17 +112,6 @@ export function useRenderToolCall() {
             args={args}
             status={ToolCallStatus.InProgress}
             result={undefined}
-          />
-        );
-      } else {
-        // Complete status without result (empty result)
-        return (
-          <RenderComponent
-            key={toolCall.id}
-            name={toolName}
-            args={args}
-            status={ToolCallStatus.Complete}
-            result=""
           />
         );
       }

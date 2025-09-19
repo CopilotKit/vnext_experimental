@@ -202,10 +202,10 @@ describe("Tool render status narrowing", () => {
     expect(el.textContent).toMatch(/Sunny/);
   });
 
-  it("renders Complete with empty result when not running and no tool result", async () => {
+  it("renders InProgress when not running and no tool result", async () => {
     renderStatusWithProvider({ isRunning: false, withResult: false });
     const el = await screen.findByTestId("status");
-    expect(el.textContent).toMatch(/COMPLETE/);
+    expect(el.textContent).toMatch(/INPROGRESS/);
     expect(el.textContent).toMatch(/Berlin/);
   });
 });
@@ -648,6 +648,92 @@ describe("Partial Args Accumulation", () => {
       expect(tool.textContent).toContain("City: Paris");
       // All args complete but no result yet - status shows inProgress until result is received
       expect(tool.textContent).toMatch(/Status: (complete|inProgress)/i);
+    });
+
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
+});
+
+describe("Status Persistence After Agent Stops", () => {
+  it("should remain in InProgress status after agent stops if no result", async () => {
+    const agent = new MockStepwiseAgent();
+
+    const renderToolCalls = [
+      defineToolCallRender({
+        name: "testTool",
+        args: z.object({ value: z.string() }),
+        render: ({ args, status }) => (
+          <div data-testid="tool-render">
+            <span data-testid="status">{status}</span>
+            <span data-testid="value">{args.value}</span>
+          </div>
+        ),
+      }),
+    ] as unknown as ReactToolCallRender<unknown>[];
+
+    render(
+      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+        <CopilotChat />
+      </CopilotKitProvider>
+    );
+
+    // Submit message to trigger tool call
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Test message" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    // Wait for user message to appear
+    await waitFor(() => {
+      expect(screen.getByText("Test message")).toBeDefined();
+    });
+
+    const messageId = "msg_status";
+    const toolCallId = "tc_status";
+
+    // Start run and emit tool call
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "testTool",
+      parentMessageId: messageId,
+      delta: '{"value":"test"}',
+    } as BaseEvent);
+
+    // Tool should be in InProgress while agent is running
+    await waitFor(() => {
+      const statusElement = screen.getByTestId("status");
+      expect(statusElement.textContent).toBe("inProgress");
+    });
+
+    // Finish the run without providing a tool result
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+
+    // Important: tool should REMAIN in InProgress status, not Complete
+    // Wait a bit to ensure no async updates change the status
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const statusElement = screen.getByTestId("status");
+    expect(statusElement.textContent).toBe("inProgress");
+    expect(statusElement.textContent).not.toBe("complete");
+
+    // To provide result after run finished, we need to start a new run
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+
+    // Now provide the tool result
+    agent.emit({
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId,
+      messageId: `${messageId}_result`,
+      content: JSON.stringify({ result: "Tool execution completed" }),
+    } as BaseEvent);
+
+    // NOW it should be complete
+    await waitFor(() => {
+      const statusEl = screen.getByTestId("status");
+      expect(statusEl.textContent).toBe("complete");
     });
 
     agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);

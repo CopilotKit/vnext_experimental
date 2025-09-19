@@ -71,7 +71,6 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
             <CopilotChatToolCallsView
               message={assistantMessage}
               messages={messages}
-              isRunning={true}
             />
           </>
         ),
