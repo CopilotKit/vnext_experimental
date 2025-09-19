@@ -22,7 +22,7 @@
     "storybook:all": "echo 'Run storybooks in separate terminals: pnpm storybook:react | pnpm storybook:angular'",
     "build-storybook": "turbo run build --filter=storybook --filter=storybook-angular",
     "bump:prerelease": "pnpm -r --filter='@copilotkitnext/angular' --filter='@copilotkitnext/core' --filter='@copilotkitnext/react' --filter='@copilotkitnext/runtime' --filter='@copilotkitnext/shared' exec pnpm version prerelease --preid=alpha",
-    "publish:prerelease": "pnpm -r clean && pnpm install && turbo build && pnpm publish -r --no-git-checks --dry-run --filter='@copilotkitnext/angular' --filter='@copilotkitnext/core' --filter='@copilotkitnext/react' --filter='@copilotkitnext/runtime' --filter='@copilotkitnext/shared' --tag alpha",
+    "publish:prerelease": "pnpm -r clean && pnpm install && turbo build && pnpm publish -r --no-git-checks --filter='@copilotkitnext/angular' --filter='@copilotkitnext/core' --filter='@copilotkitnext/react' --filter='@copilotkitnext/runtime' --filter='@copilotkitnext/shared' --tag alpha",
     "release:dry": "pnpm -r --filter '@copilotkitnext/*' publish --access public --dry-run",
     "release": "pnpm -r --filter '@copilotkitnext/*' publish --access public"
   },
