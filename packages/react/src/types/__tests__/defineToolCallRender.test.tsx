@@ -32,10 +32,7 @@ describe("defineToolCallRender", () => {
 
       // This should compile without errors
       // Testing that mixed types can be used together
-      const renderToolCalls = [
-        WildCardRender,
-        OtherToolRender,
-      ];
+      const renderToolCalls = [WildCardRender, OtherToolRender];
 
       expect(renderToolCalls).toHaveLength(2);
       expect(renderToolCalls[0]!.name).toBe("*");
@@ -72,9 +69,10 @@ describe("defineToolCallRender", () => {
 
         // In real usage, this would be passed to CopilotKitProvider
         // We're just checking that the type is compatible
-        const providerProps: { renderToolCalls?: ReactToolCallRender<any>[] } = {
-          renderToolCalls: renderToolCalls,
-        };
+        const providerProps: { renderToolCalls?: ReactToolCallRender<any>[] } =
+          {
+            renderToolCalls: renderToolCalls,
+          };
 
         return <div data-testid="test">Test</div>;
       };
@@ -112,7 +110,7 @@ describe("defineToolCallRender", () => {
       // Previously this would cause a type error, now it should compile
       const TestApp = () => (
         <CopilotKitProvider
-          agents={{
+          agents__unsafe_dev_only={{
             default: mockAgent,
           }}
           renderToolCalls={[WildCardRender, OtherToolRender]}
@@ -146,11 +144,17 @@ describe("defineToolCallRender", () => {
           if (status === ToolCallStatus.Executing) {
             // args should be complete
             const loc: string = args.location;
-            return <div data-testid="executing">Fetching weather for {loc}</div>;
+            return (
+              <div data-testid="executing">Fetching weather for {loc}</div>
+            );
           }
 
           // Complete status
-          return <div data-testid="complete">Weather in {args.location}: {result}</div>;
+          return (
+            <div data-testid="complete">
+              Weather in {args.location}: {result}
+            </div>
+          );
         },
       });
 
@@ -164,7 +168,9 @@ describe("defineToolCallRender", () => {
           result={undefined}
         />
       );
-      expect(screen.getByTestId("progress").textContent).toBe("Loading Paris...");
+      expect(screen.getByTestId("progress").textContent).toBe(
+        "Loading Paris..."
+      );
 
       // Test Executing state
       rerender(
@@ -175,7 +181,9 @@ describe("defineToolCallRender", () => {
           result={undefined}
         />
       );
-      expect(screen.getByTestId("executing").textContent).toBe("Fetching weather for London");
+      expect(screen.getByTestId("executing").textContent).toBe(
+        "Fetching weather for London"
+      );
 
       // Test Complete state
       rerender(
@@ -186,7 +194,9 @@ describe("defineToolCallRender", () => {
           result="Sunny, 75°F"
         />
       );
-      expect(screen.getByTestId("complete").textContent).toBe("Weather in Tokyo: Sunny, 75°F");
+      expect(screen.getByTestId("complete").textContent).toBe(
+        "Weather in Tokyo: Sunny, 75°F"
+      );
     });
 
     it("should work with wildcard tool without args definition", () => {
@@ -242,7 +252,9 @@ describe("defineToolCallRender", () => {
                 <div data-testid="user-info">
                   User: {args.user.name} ({args.user.email})
                 </div>
-                <div data-testid="options">Options: {args.options.join(", ")}</div>
+                <div data-testid="options">
+                  Options: {args.options.join(", ")}
+                </div>
                 {args.metadata && (
                   <div data-testid="metadata">
                     Metadata keys: {Object.keys(args.metadata).join(", ")}
@@ -269,9 +281,15 @@ describe("defineToolCallRender", () => {
         />
       );
 
-      expect(screen.getByTestId("user-info").textContent).toBe("User: John Doe (john@example.com)");
-      expect(screen.getByTestId("options").textContent).toBe("Options: option1, option2, option3");
-      expect(screen.getByTestId("metadata").textContent).toBe("Metadata keys: key1, key2");
+      expect(screen.getByTestId("user-info").textContent).toBe(
+        "User: John Doe (john@example.com)"
+      );
+      expect(screen.getByTestId("options").textContent).toBe(
+        "Options: option1, option2, option3"
+      );
+      expect(screen.getByTestId("metadata").textContent).toBe(
+        "Metadata keys: key1, key2"
+      );
     });
 
     it("should properly handle all status states in union", () => {
@@ -290,9 +308,7 @@ describe("defineToolCallRender", () => {
               );
             case ToolCallStatus.Executing:
               return (
-                <div data-testid="executing">
-                  Executing: {props.args.value}
-                </div>
+                <div data-testid="executing">Executing: {props.args.value}</div>
               );
             case ToolCallStatus.Complete:
               return (
@@ -315,7 +331,9 @@ describe("defineToolCallRender", () => {
           result={undefined}
         />
       );
-      expect(screen.getByTestId("in-progress").textContent).toBe("In Progress: partial");
+      expect(screen.getByTestId("in-progress").textContent).toBe(
+        "In Progress: partial"
+      );
 
       rerender(
         <UnionComponent
@@ -325,7 +343,9 @@ describe("defineToolCallRender", () => {
           result={undefined}
         />
       );
-      expect(screen.getByTestId("executing").textContent).toBe("Executing: test");
+      expect(screen.getByTestId("executing").textContent).toBe(
+        "Executing: test"
+      );
 
       rerender(
         <UnionComponent
@@ -335,7 +355,9 @@ describe("defineToolCallRender", () => {
           result="success"
         />
       );
-      expect(screen.getByTestId("complete").textContent).toBe("Complete: test = success");
+      expect(screen.getByTestId("complete").textContent).toBe(
+        "Complete: test = success"
+      );
     });
 
     it("should support agentId parameter", () => {
@@ -354,7 +376,9 @@ describe("defineToolCallRender", () => {
       const agentWildcard = defineToolCallRender({
         name: "*",
         agentId: "fallback-agent",
-        render: ({ name }) => <div data-testid="wildcard-agent">Unknown: {name}</div>,
+        render: ({ name }) => (
+          <div data-testid="wildcard-agent">Unknown: {name}</div>
+        ),
       });
 
       expect(agentWildcard.agentId).toBe("fallback-agent");
@@ -370,7 +394,9 @@ describe("defineToolCallRender", () => {
         />
       );
 
-      expect(screen.getByTestId("wildcard-agent").textContent).toBe("Unknown: unknownTool");
+      expect(screen.getByTestId("wildcard-agent").textContent).toBe(
+        "Unknown: unknownTool"
+      );
     });
   });
 
@@ -398,7 +424,9 @@ describe("defineToolCallRender", () => {
         />
       );
 
-      expect(screen.getByTestId("weather").textContent).toBe("Weather: San Francisco");
+      expect(screen.getByTestId("weather").textContent).toBe(
+        "Weather: San Francisco"
+      );
     });
 
     it("should allow wildcard as fallback for undefined tools", () => {
@@ -406,7 +434,9 @@ describe("defineToolCallRender", () => {
         defineToolCallRender({
           name: "known_tool",
           args: z.object({ id: z.number() }),
-          render: ({ args }) => <div data-testid="known">Known tool: {args.id}</div>,
+          render: ({ args }) => (
+            <div data-testid="known">Known tool: {args.id}</div>
+          ),
         }),
         defineToolCallRender({
           name: "*",
@@ -440,7 +470,9 @@ describe("defineToolCallRender", () => {
           result={undefined}
         />
       );
-      expect(screen.getByTestId("fallback").textContent).toBe('Fallback for unknown_tool: {"data":"test"}');
+      expect(screen.getByTestId("fallback").textContent).toBe(
+        'Fallback for unknown_tool: {"data":"test"}'
+      );
     });
 
     it("should handle optional fields correctly", () => {

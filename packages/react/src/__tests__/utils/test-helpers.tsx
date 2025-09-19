@@ -83,7 +83,7 @@ export function renderWithCopilotKit({
 
   return render(
     <CopilotKitProvider
-      agents={agents}
+      agents__unsafe_dev_only={agents}
       renderToolCalls={renderToolCalls}
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}

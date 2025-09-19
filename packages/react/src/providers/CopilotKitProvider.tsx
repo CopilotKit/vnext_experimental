@@ -45,7 +45,7 @@ export interface CopilotKitProviderProps {
   runtimeUrl?: string;
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
-  agents?: Record<string, AbstractAgent>;
+  agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRender<any>[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
@@ -80,7 +80,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   runtimeUrl,
   headers = {},
   properties = {},
-  agents = {},
+  agents__unsafe_dev_only: agents = {},
   renderToolCalls,
   frontendTools,
   humanInTheLoop,
@@ -182,7 +182,8 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     frontendToolsList.forEach((tool) => {
       if (tool.render) {
         // For wildcard tools without parameters, default to z.any()
-        const args = tool.parameters || (tool.name === "*" ? z.any() : undefined);
+        const args =
+          tool.parameters || (tool.name === "*" ? z.any() : undefined);
         if (args) {
           combined.push({
             name: tool.name,
@@ -219,7 +220,8 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   useEffect(() => {
     setCurrentRenderToolCalls((prev) => {
       // Build a map from computed entries
-      const keyOf = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const keyOf = (rc?: ReactToolCallRender<unknown>) =>
+        `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
       const computedMap = new Map<string, ReactToolCallRender<unknown>>();
       for (const rc of allRenderToolCalls) {
         computedMap.set(keyOf(rc), rc);
@@ -254,7 +256,6 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setProperties(properties);
     copilotkit.setAgents(agents);
   }, [runtimeUrl, headers, properties, agents]);
-
 
   return (
     <CopilotKitContext.Provider

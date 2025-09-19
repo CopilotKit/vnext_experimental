@@ -1,7 +1,10 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
-import { CopilotKitProvider, useCopilotKit } from "@/providers/CopilotKitProvider";
+import {
+  CopilotKitProvider,
+  useCopilotKit,
+} from "@/providers/CopilotKitProvider";
 import { CopilotChat } from "../CopilotChat";
 import {
   AbstractAgent,
@@ -10,7 +13,11 @@ import {
   type RunAgentInput,
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
-import { defineToolCallRender, ReactToolCallRender, ReactFrontendTool } from "@/types";
+import {
+  defineToolCallRender,
+  ReactToolCallRender,
+  ReactFrontendTool,
+} from "@/types";
 import CopilotChatToolCallsView from "../CopilotChatToolCallsView";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { AssistantMessage, Message, ToolMessage } from "@ag-ui/core";
@@ -92,7 +99,10 @@ describe("CopilotChat tool rendering with mock agent", () => {
     ] as unknown as ReactToolCallRender<unknown>[];
 
     return render(
-      <CopilotKitProvider agents={agents} renderToolCalls={renderToolCalls}>
+      <CopilotKitProvider
+        agents__unsafe_dev_only={agents}
+        renderToolCalls={renderToolCalls}
+      >
         <div style={{ height: 400 }}>
           <CopilotChat />
         </div>
@@ -124,14 +134,21 @@ describe("Tool render status narrowing", () => {
   function renderStatusWithProvider({
     isRunning,
     withResult,
-  }: { isRunning: boolean; withResult: boolean }) {
+  }: {
+    isRunning: boolean;
+    withResult: boolean;
+  }) {
     const renderToolCalls = [
       defineToolCallRender({
         name: "getWeather",
         args: z.object({ city: z.string().optional() }),
         render: ({ status, args, result }) => {
           if (status === ToolCallStatus.InProgress) {
-            return <div data-testid="status">INPROGRESS {String(args.city ?? "")}</div>;
+            return (
+              <div data-testid="status">
+                INPROGRESS {String(args.city ?? "")}
+              </div>
+            );
           }
           if (status === ToolCallStatus.Executing) {
             return <div data-testid="status">EXECUTING {args.city}</div>;
@@ -253,9 +270,9 @@ describe("Streaming in-progress without timers", () => {
         }),
         render: ({ name, status, args, result }) => (
           <div data-testid="tool-status">
-            {name} {status === ToolCallStatus.InProgress ? "INPROGRESS" : "COMPLETE"}
-            {" "}
-            {String(args.location ?? "")} - {String(args.unit ?? "")} {" "}
+            {name}{" "}
+            {status === ToolCallStatus.InProgress ? "INPROGRESS" : "COMPLETE"}{" "}
+            {String(args.location ?? "")} - {String(args.unit ?? "")}{" "}
             {String(result ?? "")}
           </div>
         ),
@@ -263,7 +280,10 @@ describe("Streaming in-progress without timers", () => {
     ] as unknown as ReactToolCallRender<unknown>[];
 
     render(
-      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
         <div style={{ height: 400 }}>
           <CopilotChat />
         </div>
@@ -290,7 +310,7 @@ describe("Streaming in-progress without timers", () => {
       messageId,
       delta: "Checking weather",
     } as BaseEvent);
-    
+
     // First emit just the tool call start with partial args
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
@@ -299,14 +319,14 @@ describe("Streaming in-progress without timers", () => {
       parentMessageId: messageId,
       delta: '{"location":"Paris"',
     } as BaseEvent);
-    
+
     // Wait for the tool status element to show partial args
     await waitFor(async () => {
       const el = await screen.findByTestId("tool-status");
       expect(el.textContent).toContain("getWeather INPROGRESS");
       expect(el.textContent).toContain("Paris");
     });
-    
+
     // Continue streaming more partial data
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
@@ -316,14 +336,17 @@ describe("Streaming in-progress without timers", () => {
     } as BaseEvent);
 
     // Wait for the tool status element and check it shows complete args but no result yet
-    await waitFor(async () => {
-      const el = await screen.findByTestId("tool-status");
-      expect(el.textContent).toContain("getWeather");
-      expect(el.textContent).toContain("Paris");
-      expect(el.textContent).toContain("celsius");
-      // Since we haven't sent a result yet, it should be INPROGRESS
-      expect(el.textContent).toMatch(/INPROGRESS/);
-    }, { timeout: 3000 });
+    await waitFor(
+      async () => {
+        const el = await screen.findByTestId("tool-status");
+        expect(el.textContent).toContain("getWeather");
+        expect(el.textContent).toContain("Paris");
+        expect(el.textContent).toContain("celsius");
+        // Since we haven't sent a result yet, it should be INPROGRESS
+        expect(el.textContent).toMatch(/INPROGRESS/);
+      },
+      { timeout: 3000 }
+    );
 
     // Now send the tool result
     agent.emit({
@@ -372,7 +395,7 @@ describe("Executing State Transitions", () => {
     };
 
     render(
-      <CopilotKitProvider agents={{ default: agent }}>
+      <CopilotKitProvider agents__unsafe_dev_only={{ default: agent }}>
         <ToolWithDeferredHandler />
         <div style={{ height: 400 }}>
           <CopilotChat />
@@ -430,14 +453,15 @@ describe("Executing State Transitions", () => {
 describe("Multiple Tool Calls in Same Message", () => {
   it("should render multiple tools independently with their own status", async () => {
     const agent = new MockStepwiseAgent();
-    
+
     const renderToolCalls = [
       defineToolCallRender({
         name: "tool1",
         args: z.object({ id: z.string() }),
         render: ({ status, args, result }) => (
           <div data-testid={`tool1-${args.id}`}>
-            Tool1[{args.id}]: {status} - {result ? JSON.stringify(result) : "waiting"}
+            Tool1[{args.id}]: {status} -{" "}
+            {result ? JSON.stringify(result) : "waiting"}
           </div>
         ),
       }),
@@ -446,14 +470,18 @@ describe("Multiple Tool Calls in Same Message", () => {
         args: z.object({ id: z.string() }),
         render: ({ status, args, result }) => (
           <div data-testid={`tool2-${args.id}`}>
-            Tool2[{args.id}]: {status} - {result ? JSON.stringify(result) : "waiting"}
+            Tool2[{args.id}]: {status} -{" "}
+            {result ? JSON.stringify(result) : "waiting"}
           </div>
         ),
       }),
     ] as unknown as ReactToolCallRender<unknown>[];
 
     render(
-      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
         <div style={{ height: 400 }}>
           <CopilotChat />
         </div>
@@ -476,7 +504,7 @@ describe("Multiple Tool Calls in Same Message", () => {
     const toolCallId3 = "tc_3";
 
     agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
-    
+
     // Stream three tool calls (2 of tool1, 1 of tool2)
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
@@ -485,7 +513,7 @@ describe("Multiple Tool Calls in Same Message", () => {
       parentMessageId: messageId,
       delta: '{"id":"first"}',
     } as BaseEvent);
-    
+
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
       toolCallId: toolCallId2,
@@ -493,7 +521,7 @@ describe("Multiple Tool Calls in Same Message", () => {
       parentMessageId: messageId,
       delta: '{"id":"second"}',
     } as BaseEvent);
-    
+
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
       toolCallId: toolCallId3,
@@ -551,7 +579,7 @@ describe("Multiple Tool Calls in Same Message", () => {
 describe("Partial Args Accumulation", () => {
   it("should properly show InProgress status with accumulating partial args", async () => {
     const agent = new MockStepwiseAgent();
-    
+
     const renderToolCalls = [
       defineToolCallRender({
         name: "complexTool",
@@ -572,7 +600,10 @@ describe("Partial Args Accumulation", () => {
     ] as unknown as ReactToolCallRender<unknown>[];
 
     render(
-      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
         <div style={{ height: 400 }}>
           <CopilotChat />
         </div>
@@ -593,7 +624,7 @@ describe("Partial Args Accumulation", () => {
     const toolCallId = "tc_partial";
 
     agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
-    
+
     // Stream args piece by piece
     agent.emit({
       type: EventType.TOOL_CALL_CHUNK,
@@ -672,7 +703,10 @@ describe("Status Persistence After Agent Stops", () => {
     ] as unknown as ReactToolCallRender<unknown>[];
 
     render(
-      <CopilotKitProvider agents={{ default: agent }} renderToolCalls={renderToolCalls}>
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
         <CopilotChat />
       </CopilotKitProvider>
     );
@@ -712,7 +746,7 @@ describe("Status Persistence After Agent Stops", () => {
 
     // Important: tool should REMAIN in InProgress status, not Complete
     // Wait a bit to ensure no async updates change the status
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const statusElement = screen.getByTestId("status");
     expect(statusElement.textContent).toBe("inProgress");
