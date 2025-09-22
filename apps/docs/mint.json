@@ -50,7 +50,7 @@
     },
     {
       "group": "API Reference",
-      "pages": ["api/copilotkit-core"]
+      "pages": ["reference/copilotkit-core"]
     }
   ],
   "footerSocials": {

@@ -8,5 +8,13 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/.turbo": true
-  }
+  },
+  "[mdx]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 120
+  },
+  "prettier.proseWrap": "always",
+  "prettier.printWidth": 120
 }

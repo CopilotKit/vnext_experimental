@@ -1,20 +1,24 @@
 ---
 title: CopilotKitCore
-description: "CopilotKitCore"
+description: "CopilotKitCore API Reference"
 ---
 
-# CopilotKitCore
+`CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your
+application's UI, the remote Copilot runtime and using locally defined agents for development.
 
-`CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your application's UI, local agents, and the remote Copilot runtime.
-
-## What Makes CopilotKitCore Essential
+## What does CopilotKitCore do?
 
 CopilotKitCore solves several complex challenges in building AI-powered applications:
 
-1. **Unified Agent Management**: It seamlessly merges local browser-based agents with remote server-side agents, presenting them through a single interface
-2. **Tool Execution Orchestration**: When agents need to call frontend tools (like updating UI or accessing browser APIs), CopilotKitCore handles the entire lifecycle - parsing arguments, executing handlers, and automatically re-running agents with tool results
-3. **State Synchronization**: It maintains consistent state across your application, ensuring all components have access to the latest agents, tools, and context
-4. **Framework Independence**: Works with any frontend framework, providing a consistent API whether you're using React, Angular, Vue, or vanilla JavaScript
+1. **Tool Execution Orchestration**: When agents need to call frontend tools (like updating UI or accessing browser
+   APIs), CopilotKitCore handles the entire lifecycle - parsing arguments, executing handlers, and automatically
+   re-running agents with tool results
+2. **Unified Agent Management**: It manages remote server-side agents in production, while allowing you to define local
+   agents for development.
+3. **State Synchronization**: It maintains consistent state across your application, ensuring all components have access
+   to the latest agents, tools, and context
+4. **Framework Independence**: Works with any frontend framework, providing a consistent API whether you're using React,
+   Angular, Vue, or vanilla JavaScript
 
 At its heart, CopilotKitCore maintains the authoritative state for three critical elements:
 
@@ -24,22 +28,23 @@ At its heart, CopilotKitCore maintains the authoritative state for three critica
 
 ## Creating a CopilotKitCore Instance
 
-When you instantiate CopilotKitCore, you're setting up the foundation for all AI interactions in your application. Here are the configuration options you can provide:
+When you instantiate CopilotKitCore, you're setting up the foundation for all AI interactions in your application. Here
+are the configuration options you can provide:
 
-- `runtimeUrl?`: `string`
-  The endpoint where your CopilotRuntime server is hosted. When provided, CopilotKitCore will automatically connect and discover available remote agents.
+- `runtimeUrl?`: `string` The endpoint where your CopilotRuntime server is hosted. When provided, CopilotKitCore will
+  automatically connect and discover available remote agents.
 
-- `headers?`: `Record<string, string>`
-  Custom HTTP headers to include with every request. Useful for authentication tokens or tracking headers.
+- `headers?`: `Record<string, string>` Custom HTTP headers to include with every request. Useful for authentication
+  tokens or tracking headers.
 
-- `properties?`: `Record<string, unknown>`
-  Application-specific data that gets forwarded to agents as context. This might include user preferences, application state, or feature flags.
+- `properties?`: `Record<string, unknown>` Application-specific data that gets forwarded to agents as context. This
+  might include user preferences, application state, or feature flags.
 
-- `agents?`: `Record<string, AbstractAgent>`
-  Local agents that run directly in the browser. The key becomes the agent's identifier.
+- `agents?`: `Record<string, AbstractAgent>` Local agents that run directly in the browser. The key becomes the agent's
+  identifier.
 
-- `tools?`: `FrontendTool<any>[]`
-  Frontend functions that agents can invoke, such as updating UI elements or fetching client-side data.
+- `tools?`: `FrontendTool<any>[]` Frontend functions that agents can invoke, such as updating UI elements or fetching
+  client-side data.
 
 ## Core Properties
 
@@ -47,31 +52,30 @@ Once initialized, CopilotKitCore exposes several properties that provide insight
 
 ### Runtime Configuration
 
-- `runtimeUrl`: `string | undefined`
-  The current runtime endpoint. Changing this property triggers a connection attempt to the new runtime. Setting it to `undefined` gracefully disconnects from the current runtime.
+- `runtimeUrl`: `string | undefined` The current runtime endpoint. Changing this property triggers a connection attempt
+  to the new runtime. Setting it to `undefined` gracefully disconnects from the current runtime.
 
-- `runtimeVersion`: `string | undefined`
-  The version of the connected runtime, helpful for compatibility checks and debugging.
+- `runtimeVersion`: `string | undefined` The version of the connected runtime, helpful for compatibility checks and
+  debugging.
 
-- `runtimeConnectionStatus`: `CopilotKitCoreRuntimeConnectionStatus`
-  Tracks the current connection state, allowing you to respond to connection changes in your UI.
+- `runtimeConnectionStatus`: `CopilotKitCoreRuntimeConnectionStatus` Tracks the current connection state, allowing you
+  to respond to connection changes in your UI.
 
 ### State Management
 
-- `headers`: `Record<string, string>`
-  The current request headers. You can modify these directly to update authentication or add new headers on the fly.
+- `headers`: `Record<string, string>` The current request headers. You can modify these directly to update
+  authentication or add new headers on the fly.
 
-- `properties`: `Record<string, unknown>`
-  The application properties being forwarded to agents. Update these when your application state changes.
+- `properties`: `Record<string, unknown>` The application properties being forwarded to agents. Update these when your
+  application state changes.
 
-- `agents`: `Readonly<Record<string, AbstractAgent>>`
-  A combined view of all available agents, merging local agents with those discovered from the runtime. This is read-only to prevent accidental modifications.
+- `agents`: `Readonly<Record<string, AbstractAgent>>` A combined view of all available agents, merging local agents with
+  those discovered from the runtime. This is read-only to prevent accidental modifications.
 
-- `tools`: `Readonly<FrontendTool<any>[]>`
-  The complete list of registered frontend tools available to agents.
+- `tools`: `Readonly<FrontendTool<any>[]>` The complete list of registered frontend tools available to agents.
 
-- `context`: `Readonly<Record<string, Context>>`
-  Contextual information that agents can use to make more informed decisions.
+- `context`: `Readonly<Record<string, Context>>` Contextual information that agents can use to make more informed
+  decisions.
 
 ## Working with Configuration
 
@@ -79,7 +83,8 @@ These methods allow you to dynamically update CopilotKitCore's configuration aft
 
 ### `setRuntimeUrl(runtimeUrl: string | undefined): void`
 
-Changes the runtime endpoint and manages the connection lifecycle. This is useful when switching between different environments or disconnecting from the runtime entirely.
+Changes the runtime endpoint and manages the connection lifecycle. This is useful when switching between different
+environments or disconnecting from the runtime entirely.
 
 ### `setHeaders(headers: Record<string, string>): void`
 
@@ -87,15 +92,18 @@ Replaces all HTTP headers. Subscribers are notified so they can react to authent
 
 ### `setProperties(properties: Record<string, unknown>): void`
 
-Updates the properties forwarded to agents. Use this when your application state changes in ways that might affect agent behavior.
+Updates the properties forwarded to agents. Use this when your application state changes in ways that might affect agent
+behavior.
 
 ## Managing Agents
 
-Agents are the AI-powered components that process requests and generate responses. CopilotKitCore provides several methods to manage them:
+Agents are the AI-powered components that process requests and generate responses. CopilotKitCore provides several
+methods to manage them:
 
 ### `setAgents(agents: Record<string, AbstractAgent>): void`
 
-Replaces all local agents while preserving remote agents from the runtime. This is useful for completely reconfiguring your local agent setup.
+Replaces all local agents while preserving remote agents from the runtime. This is useful for completely reconfiguring
+your local agent setup.
 
 ### `addAgent(params: CopilotKitCoreAddAgentParams): void`
 
@@ -110,17 +118,20 @@ Removes a local agent by its identifier. Remote agents from the runtime cannot b
 
 ### `getAgent(id: string): AbstractAgent | undefined`
 
-Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't exist or if the runtime is still connecting.
+Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't exist or if the runtime is still
+connecting.
 
 ### `connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>`
 
-Establishes a live connection with an agent, restoring any existing conversation history and subscribing to real-time events. This method is particularly useful when:
+Establishes a live connection with an agent, restoring any existing conversation history and subscribing to real-time
+events. This method is particularly useful when:
 
 - Reconnecting to an agent that's already running (displays new events as they occur)
 - Restoring conversation history after a page refresh
 - Setting up an agent that will receive updates from background processes
 
 The connection process:
+
 1. Provides the agent with current properties and available tools
 2. Sets up error event subscribers for proper error handling
 3. Restores any existing message history
@@ -131,9 +142,11 @@ The connection process:
 
 ### `runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>`
 
-Executes an agent and intelligently handles the complete request-response cycle, including automatic tool execution and follow-up runs.
+Executes an agent and intelligently handles the complete request-response cycle, including automatic tool execution and
+follow-up runs.
 
 The execution flow:
+
 1. Sends initial messages (if provided) to the agent
 2. Agent processes the request and may request tool calls
 3. CopilotKitCore automatically executes any requested frontend tools
@@ -142,10 +155,14 @@ The execution flow:
 6. This cycle continues until the agent completes without requesting more tools
 
 Key behaviors:
-- **Automatic Tool Execution**: When an agent requests a tool call, CopilotKitCore finds the matching tool, executes it, and adds the result to the conversation
-- **Smart Follow-ups**: After executing tools, it automatically re-runs the agent so it can process the tool results and continue its work
-- **Error Recovery**: Tool execution errors are captured and returned to the agent, allowing it to handle failures gracefully
-- **Wildcard Tools**: Supports a special "*" tool that can handle any undefined tool request
+
+- **Automatic Tool Execution**: When an agent requests a tool call, CopilotKitCore finds the matching tool, executes it,
+  and adds the result to the conversation
+- **Smart Follow-ups**: After executing tools, it automatically re-runs the agent so it can process the tool results and
+  continue its work
+- **Error Recovery**: Tool execution errors are captured and returned to the agent, allowing it to handle failures
+  gracefully
+- **Wildcard Tools**: Supports a special "\*" tool that can handle any undefined tool request
 
 - `params.agent`: The agent to execute
 - `params.withMessages?`: Initial messages to send to the agent
@@ -172,7 +189,8 @@ Tools are functions that agents can call to interact with your application:
 
 ### `addTool<T>(tool: FrontendTool<T>): void`
 
-Registers a new frontend tool. If a tool with the same name and agent scope already exists, the registration is skipped to prevent duplicates.
+Registers a new frontend tool. If a tool with the same name and agent scope already exists, the registration is skipped
+to prevent duplicates.
 
 ### `removeTool(id: string, agentId?: string): void`
 
@@ -199,7 +217,8 @@ CopilotKitCore implements a robust event system that allows you to react to stat
 
 ### `subscribe(subscriber: CopilotKitCoreSubscriber): () => void`
 
-Registers a subscriber to receive events. The returned function can be called to unsubscribe, making cleanup straightforward.
+Registers a subscriber to receive events. The returned function can be called to unsubscribe, making cleanup
+straightforward.
 
 ### `unsubscribe(subscriber: CopilotKitCoreSubscriber): void`
 
@@ -207,28 +226,37 @@ Manually removes a subscriber if you prefer explicit cleanup over using the retu
 
 ## Tool Execution Lifecycle
 
-Understanding how CopilotKitCore handles tool execution is crucial for building responsive AI applications. Here's the complete lifecycle:
+Understanding how CopilotKitCore handles tool execution is crucial for building responsive AI applications. Here's the
+complete lifecycle:
 
 ### 1. Tool Request
+
 When an agent needs to interact with your application, it returns a tool call request with:
+
 - Tool name
 - Structured arguments (JSON)
 - Unique call ID for tracking
 
 ### 2. Tool Resolution
+
 CopilotKitCore uses a two-tier resolution strategy:
+
 - First checks for agent-specific tools (scoped to that particular agent)
 - Falls back to global tools available to all agents
 - Special wildcard tool (`*`) can handle any unmatched tool requests
 
 ### 3. Execution & Error Handling
+
 The tool handler is invoked with parsed arguments:
+
 - Successful results are stringified and added to the conversation
 - Errors are caught and returned to the agent for graceful handling
 - Subscribers are notified of start and completion events
 
 ### 4. Automatic Follow-up
+
 By default, after tool execution completes:
+
 - The tool result is inserted into the message history
 - The agent is automatically re-run to process the results
 - This continues until no more tools are requested
@@ -236,7 +264,8 @@ By default, after tool execution completes:
 
 ## Understanding Runtime Connections
 
-When you provide a `runtimeUrl`, CopilotKitCore initiates a connection to your CopilotRuntime server. Here's what happens behind the scenes:
+When you provide a `runtimeUrl`, CopilotKitCore initiates a connection to your CopilotRuntime server. Here's what
+happens behind the scenes:
 
 1. CopilotKitCore sends a GET request to `{runtimeUrl}/info`
 2. The runtime responds with available agents and metadata
@@ -255,7 +284,8 @@ The connection to your runtime can be in one of four states:
 
 ## Subscribing to Events
 
-The event subscription system allows you to build reactive UIs that respond to CopilotKitCore's state changes. Each event provides both the CopilotKitCore instance and relevant data:
+The event subscription system allows you to build reactive UIs that respond to CopilotKitCore's state changes. Each
+event provides both the CopilotKitCore instance and relevant data:
 
 ### `onRuntimeConnectionStatusChanged`
 
@@ -284,7 +314,8 @@ onToolExecutionStart?: (event: {
 
 ### `onToolExecutionEnd`
 
-Fired when tool execution completes, whether successfully or with an error. Use this to update your UI based on the results.
+Fired when tool execution completes, whether successfully or with an error. Use this to update your UI based on the
+results.
 
 ```typescript
 onToolExecutionEnd?: (event: {
@@ -343,7 +374,8 @@ onHeadersChanged?: (event: {
 
 ### `onError`
 
-The central error handler for all CopilotKitCore operations. Every error includes a code and contextual information to help with debugging.
+The central error handler for all CopilotKitCore operations. Every error includes a code and contextual information to
+help with debugging.
 
 ```typescript
 onError?: (event: {
@@ -356,13 +388,15 @@ onError?: (event: {
 
 ## Error Handling
 
-CopilotKitCore provides detailed error information through typed error codes, making it easier to handle different failure scenarios appropriately:
+CopilotKitCore provides detailed error information through typed error codes, making it easier to handle different
+failure scenarios appropriately:
 
 ### Understanding Error Codes
 
 Each error is categorized with a specific code that indicates what went wrong:
 
-- `RUNTIME_INFO_FETCH_FAILED`: The attempt to fetch runtime information failed. This might indicate network issues or an incorrect runtime URL.
+- `RUNTIME_INFO_FETCH_FAILED`: The attempt to fetch runtime information failed. This might indicate network issues or an
+  incorrect runtime URL.
 
 - `AGENT_CONNECT_FAILED`: Failed to establish a connection with an agent. Check that the agent is properly configured.
 
@@ -372,7 +406,8 @@ Each error is categorized with a specific code that indicates what went wrong:
 
 - `AGENT_RUN_ERROR_EVENT`: The agent emitted an error event during execution.
 
-- `TOOL_ARGUMENT_PARSE_FAILED`: The arguments provided to a tool couldn't be parsed. This usually indicates a mismatch between expected and actual parameters.
+- `TOOL_ARGUMENT_PARSE_FAILED`: The arguments provided to a tool couldn't be parsed. This usually indicates a mismatch
+  between expected and actual parameters.
 
 - `TOOL_HANDLER_FAILED`: A tool's handler function threw an error during execution.
 
