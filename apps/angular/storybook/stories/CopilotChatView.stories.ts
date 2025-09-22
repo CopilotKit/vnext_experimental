@@ -2,33 +2,31 @@ import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  provideCopilotChatConfiguration,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  provideCopilotChatLabels,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Basic Examples",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-            chatDisclaimerText:
-              "AI can make mistakes. Please verify important information.",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
+          chatDisclaimerText:
+            "AI can make mistakes. Please verify important information.",
         }),
       ],
     }),
@@ -39,22 +37,22 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 // Default story
 export const Default: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
-  provideCopilotChatConfiguration
+  provideCopilotChatLabels
 } from '@copilotkitnext/angular';
 import { Message } from '@ag-ui/client';
 
@@ -63,18 +61,16 @@ import { Message } from '@ag-ui/client';
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput
   ],
   providers: [
     provideCopilotKit({}),
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
-      }
-    })
+      provideCopilotChatLabels({
+      chatInputPlaceholder: 'Type a message...',
+      chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
+    }),
   ],
   template: \`
     <div style="height: 100vh; margin: 0; padding: 0; overflow: hidden;">
@@ -136,9 +132,9 @@ import { provideCopilotKit } from '@copilotkitnext/angular';
     console.log('Thumbs down event:', event);
   }
 }`,
-        language: 'typescript'
-      }
-    }
+        language: "typescript",
+      },
+    },
   },
   render: () => {
     const messages: Message[] = [
@@ -215,27 +211,25 @@ export const ManualScroll: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
+  CopilotChatView,
   provideCopilotKit,
-  provideCopilotChatConfiguration
+  provideCopilotChatLabels
 } from '@copilotkitnext/angular';
 import { Message } from '@ag-ui/client';
 
 @Component({
   selector: 'app-chat-scroll',
   standalone: true,
-  imports: [CommonModule, CopilotChatViewComponent],
+  imports: [CommonModule, CopilotChatView],
   providers: [
     provideCopilotKit({}),
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
-      }
+    provideCopilotChatLabels({
+      chatInputPlaceholder: 'Type a message...',
+      chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
     })
   ],
   template: \`
@@ -269,9 +263,9 @@ export class ChatScrollComponent {
     }
   }
 }`,
-        language: 'typescript'
-      }
-    }
+        language: "typescript",
+      },
+    },
   },
   render: () => {
     // Generate many messages to show scroll behavior
@@ -313,25 +307,23 @@ export const EmptyState: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
 import {
-  CopilotChatViewComponent,
+  CopilotChatView,
   provideCopilotKit,
-  provideCopilotChatConfiguration
+  provideCopilotChatLabels
 } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat-empty',
   standalone: true,
-  imports: [CopilotChatViewComponent],
+  imports: [CopilotChatView],
   providers: [
     provideCopilotKit({}),
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
-      }
+    provideCopilotChatLabels({
+      chatInputPlaceholder: 'Type a message...',
+      chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
     })
   ],
   template: \`
@@ -342,9 +334,9 @@ import {
   \`
 })
 export class EmptyChatComponent {}`,
-        language: 'typescript'
-      }
-    }
+        language: "typescript",
+      },
+    },
   },
   render: () => {
     return {

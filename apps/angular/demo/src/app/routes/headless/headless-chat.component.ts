@@ -1,13 +1,13 @@
-import { Component, ChangeDetectionStrategy, inject } from "@angular/core";
+import { Component, ChangeDetectionStrategy, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { CopilotKitService, watchAgent } from "@copilotkitnext/angular";
-import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
+import { injectAgentStore } from "@copilotkitnext/angular";
+import { RenderToolCalls } from "@copilotkitnext/angular";
 
 @Component({
   selector: "headless-chat",
   standalone: true,
-  imports: [CommonModule, FormsModule, CopilotChatToolCallsViewComponent],
+  imports: [CommonModule, FormsModule, RenderToolCalls],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -24,11 +24,11 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
           </div>
           <div style="white-space:pre-wrap">{{ m.content }}</div>
           <ng-container *ngIf="m.role === 'assistant'">
-            <copilot-chat-tool-calls-view
+            <copilot-render-tool-calls
               [message]="m"
-              [messages]="messages()"
+              [messages]="messages() ?? []"
               [isLoading]="isRunning()"
-            ></copilot-chat-tool-calls-view>
+            ></copilot-render-tool-calls>
           </ng-container>
         </div>
         <div *ngIf="isRunning()" style="opacity:0.9;color:#6b7280;">
@@ -59,36 +59,25 @@ import { CopilotChatToolCallsViewComponent } from "@copilotkitnext/angular";
   `,
 })
 export class HeadlessChatComponent {
-  // Signals populated from a single watcher in the constructor
-  protected agent!: ReturnType<typeof watchAgent>["agent"];
-  protected messages!: ReturnType<typeof watchAgent>["messages"];
-  protected isRunning!: ReturnType<typeof watchAgent>["isRunning"];
-  protected copilotkitService!: CopilotKitService;
+  readonly agentStore = injectAgentStore("default");
+  readonly agent = computed(() => this.agentStore()?.agent);
+  readonly isRunning = computed(() => !!this.agentStore()?.isRunning());
+  readonly messages = computed(() => this.agentStore()?.messages());
 
   inputValue = "";
-
-  constructor() {
-    ({
-      agent: this.agent,
-      messages: this.messages,
-      isRunning: this.isRunning,
-    } = watchAgent());
-    this.copilotkitService = inject(CopilotKitService);
-  }
 
   async send() {
     const content = this.inputValue.trim();
     const agent = this.agent();
-    if (!agent || !content) return;
+    const isRunning = this.isRunning();
 
-    agent.addMessage({ id: crypto.randomUUID(), role: "user", content } as any);
+    if (!agent || !content || isRunning) return;
+
+    agent.addMessage({ id: crypto.randomUUID(), role: "user", content });
     this.inputValue = "";
 
     try {
-      await this.copilotkitService.copilotkit.runAgent({
-        agent,
-        agentId: agent.agentId,
-      });
+      await agent.runAgent();
     } catch (e) {
       console.error("Agent run error", e);
     }

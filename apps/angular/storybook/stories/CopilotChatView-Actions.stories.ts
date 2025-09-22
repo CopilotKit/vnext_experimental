@@ -3,33 +3,31 @@ import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  provideCopilotChatConfiguration,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  provideCopilotChatLabels,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Custom Actions",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-            chatDisclaimerText:
-              "AI can make mistakes. Please verify important information.",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
+          chatDisclaimerText:
+            "AI can make mistakes. Please verify important information.",
         }),
       ],
     }),
@@ -40,21 +38,21 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const ThumbsUpDown: Story = {
   parameters: {
     docs: {
       source: {
-        type: 'code',
+        type: "code",
         code: `import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
   provideCopilotKit,
-  provideCopilotChatConfiguration
+  provideCopilotChatLabels
 } from '@copilotkitnext/angular';
 import { Message } from '@ag-ui/client';
 
@@ -89,18 +87,17 @@ class CustomDisclaimerComponent {
   standalone: true,
   imports: [
     CommonModule,
-    CopilotChatViewComponent,
-    CopilotChatMessageViewComponent,
-    CopilotChatInputComponent,
+    CopilotChatView,
+    CopilotChatMessageView,
+    CopilotChatInput,
     CustomDisclaimerComponent
   ],
   providers: [
     provideCopilotKit({}),
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-        chatDisclaimerText: 'AI can make mistakes. Please verify important information.'
-      }
+    provideCopilotChatLabels({
+      chatInputPlaceholder: "Type a message...",
+      chatDisclaimerText:
+        "AI can make mistakes. Please verify important information.",
     })
   ],
   template: \`
@@ -140,9 +137,9 @@ export class ChatActionsComponent {
     alert('You disliked this message!');
   }
 }`,
-        language: 'typescript'
-      }
-    }
+        language: "typescript",
+      },
+    },
   },
   render: () => {
     // Custom disclaimer component

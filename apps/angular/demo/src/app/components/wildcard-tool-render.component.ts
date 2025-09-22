@@ -1,5 +1,6 @@
-import { Component, Input } from "@angular/core";
+import { Component, input, Input } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { AngularToolCall, ToolRenderer } from "@copilotkitnext/angular";
 
 @Component({
   selector: "wildcard-tool-render",
@@ -15,17 +16,16 @@ import { CommonModule } from "@angular/common";
       <div style="font-size: 14px; color: #666;">
         <pre>{{ argsJson }}</pre>
       </div>
-      <div style="margin-top: 8px; color: #333;">Output: {{ result }}</div>
+      <div style="margin-top: 8px; color: #333;">
+        Output: {{ toolCall().result }}
+      </div>
     </div>
   `,
 })
-export class WildcardToolRenderComponent {
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: any;
-  @Input({ required: true }) status!: any;
-  @Input() result?: string;
+export class WildcardToolRenderComponent implements ToolRenderer {
+  readonly toolCall = input.required<AngularToolCall<any>>();
 
   get argsJson() {
-    return JSON.stringify(this.args, null, 2);
+    return JSON.stringify(this.toolCall().args, null, 2);
   }
 }

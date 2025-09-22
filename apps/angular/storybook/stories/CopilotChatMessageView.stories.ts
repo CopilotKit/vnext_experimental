@@ -1,23 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
-import { Component, Input, signal, Injectable } from "@angular/core";
+import { Component, Injectable, input, signal } from "@angular/core";
 import {
-  CopilotChatMessageViewComponent,
-  CopilotChatMessageViewCursorComponent,
-  CopilotKitService,
+  CopilotChatMessageView,
+  CopilotChatMessageViewCursor,
+  CopilotKit,
   provideCopilotKit,
-  provideCopilotChatConfiguration,
+  provideCopilotChatLabels,
   Message,
-  ToolCall,
-  ToolMessage,
+  RenderToolCallConfig,
+  ToolRenderer,
+  AngularToolCall,
 } from "@copilotkitnext/angular";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { z } from "zod"; // Schema validation
 
-const meta: Meta<CopilotChatMessageViewComponent> = {
+const meta: Meta<CopilotChatMessageView> = {
   title: "UI/CopilotChatMessageView",
-  component: CopilotChatMessageViewComponent,
+  component: CopilotChatMessageView,
   parameters: {
     docs: {
       description: {
@@ -30,22 +31,20 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
-        CopilotChatMessageViewCursorComponent,
+        CopilotChatMessageView,
+        CopilotChatMessageViewCursor,
       ],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            assistantMessageToolbarCopyMessageLabel: "Copy",
-            assistantMessageToolbarCopyCodeLabel: "Copy",
-            assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
-            assistantMessageToolbarThumbsUpLabel: "Good response",
-            assistantMessageToolbarThumbsDownLabel: "Bad response",
-            assistantMessageToolbarReadAloudLabel: "Read aloud",
-            assistantMessageToolbarRegenerateLabel: "Regenerate",
-            userMessageToolbarCopyMessageLabel: "Copy",
-            userMessageToolbarEditMessageLabel: "Edit",
-          },
+        provideCopilotChatLabels({
+          assistantMessageToolbarCopyMessageLabel: "Copy",
+          assistantMessageToolbarCopyCodeLabel: "Copy",
+          assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
+          assistantMessageToolbarThumbsUpLabel: "Good response",
+          assistantMessageToolbarThumbsDownLabel: "Bad response",
+          assistantMessageToolbarReadAloudLabel: "Read aloud",
+          assistantMessageToolbarRegenerateLabel: "Regenerate",
+          userMessageToolbarCopyMessageLabel: "Copy",
+          userMessageToolbarEditMessageLabel: "Edit",
         }),
       ],
     }),
@@ -53,7 +52,7 @@ const meta: Meta<CopilotChatMessageViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatMessageViewComponent>;
+type Story = StoryObj<CopilotChatMessageView>;
 
 // Default story with full conversation - matches React exactly
 export const Default: Story = {
@@ -63,12 +62,12 @@ export const Default: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -217,12 +216,12 @@ export const ShowCursor: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatMessageViewComponent, Message } from '@copilotkitnext/angular';
+import { CopilotChatMessageView, Message } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatMessageViewComponent],
+  imports: [CopilotChatMessageView],
   template: \`
     <copilot-chat-message-view
       [messages]="messages"
@@ -307,19 +306,32 @@ type SearchArgs = z.infer<typeof searchArgsSchema>;
     </div>
   `,
 })
-class SearchToolRenderComponent {
+class SearchToolRenderComponent implements ToolRenderer<SearchArgs> {
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: SearchArgs | Partial<SearchArgs>;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall = input.required<AngularToolCall<SearchArgs>>();
+
+  get call(): AngularToolCall<SearchArgs> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<SearchArgs> | SearchArgs {
+    return this.call.args;
+  }
+
+  get status() {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === "complete" ? call.result : undefined;
+  }
 
   get containerStyle() {
     return {
       padding: "12px",
       margin: "8px 0",
-      "background-color":
-        this.status === ToolCallStatus.InProgress ? "#f0f4f8" : "#e6f3ff",
+      "background-color": this.status === "in-progress" ? "#f0f4f8" : "#e6f3ff",
       "border-radius": "8px",
       border: "1px solid #cce0ff",
     };
@@ -402,12 +414,9 @@ export class CalculatorCounterService {
     </div>
   `,
 })
-class CalculatorToolRenderComponent {
+class CalculatorToolRenderComponent implements ToolRenderer<CalculatorArgs> {
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: CalculatorArgs | Partial<CalculatorArgs>;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall = input.required<AngularToolCall<CalculatorArgs>>();
 
   counter = signal(0);
 
@@ -415,12 +424,28 @@ class CalculatorToolRenderComponent {
   constructor(private readonly calcCounter: CalculatorCounterService) {}
   globalCounter = this.calcCounter.counter;
 
+  get call(): AngularToolCall<CalculatorArgs> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<CalculatorArgs> | CalculatorArgs {
+    return this.call.args;
+  }
+
+  get status() {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === ToolCallStatus.Complete ? call.result : undefined;
+  }
+
   get containerStyle() {
     return {
       padding: "12px",
       margin: "8px 0",
-      "background-color":
-        this.status === ToolCallStatus.InProgress ? "#fff9e6" : "#fff4cc",
+      "background-color": this.status === "in-progress" ? "#fff9e6" : "#fff4cc",
       "border-radius": "8px",
       border: "1px solid #ffcc66",
     };
@@ -466,17 +491,52 @@ class CalculatorToolRenderComponent {
     </div>
   `,
 })
-class WildcardToolRenderComponent {
+class WildcardToolRenderComponent
+  implements ToolRenderer<Record<string, unknown>>
+{
   readonly ToolCallStatus = ToolCallStatus;
-  @Input({ required: true }) name!: string;
-  @Input({ required: true }) args!: any;
-  @Input({ required: true }) status!: ToolCallStatus;
-  @Input() result?: string;
+  readonly toolCall =
+    input.required<AngularToolCall<Record<string, unknown>>>();
+
+  get call(): AngularToolCall<Record<string, unknown>> {
+    return this.toolCall();
+  }
+
+  get args(): Partial<Record<string, unknown>> {
+    return this.call.args;
+  }
+
+  get status() {
+    return this.call.status;
+  }
+
+  get result(): string | undefined {
+    const call = this.call;
+    return call.status === ToolCallStatus.Complete ? call.result : undefined;
+  }
 
   get argsJson() {
     return JSON.stringify(this.args, null, 2);
   }
 }
+
+const renderToolCallConfigs: RenderToolCallConfig[] = [
+  {
+    name: "search",
+    args: searchArgsSchema,
+    component: SearchToolRenderComponent,
+  },
+  {
+    name: "calculator",
+    args: calculatorArgsSchema,
+    component: CalculatorToolRenderComponent,
+  },
+  {
+    name: "*",
+    args: z.record(z.string(), z.any()),
+    component: WildcardToolRenderComponent,
+  },
+];
 
 // WithToolCalls story - matches React exactly
 export const WithToolCalls: Story = {
@@ -488,8 +548,8 @@ export const WithToolCalls: Story = {
         code: `import { Component, Input, signal, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
-  CopilotChatMessageViewComponent, 
-  CopilotKitService,
+  CopilotChatMessageView, 
+  CopilotKit,
   Message, 
   ToolCall, 
   ToolMessage,
@@ -696,13 +756,13 @@ class WildcardToolRenderComponent {
   selector: 'app-chat',
   standalone: true,
   imports: [
-    CopilotChatMessageViewComponent,
+    CopilotChatMessageView,
     SearchToolRenderComponent,
     CalculatorToolRenderComponent,
     WildcardToolRenderComponent
   ],
   providers: [
-    CopilotKitService,
+    CopilotKit,
     provideCopilotKit({
       renderToolCalls: [
         {
@@ -813,42 +873,27 @@ export class ChatComponent {
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatMessageViewComponent,
+        CopilotChatMessageView,
         SearchToolRenderComponent,
         CalculatorToolRenderComponent,
         WildcardToolRenderComponent,
       ],
       providers: [
-        CopilotKitService,
+        CopilotKit,
         provideCopilotKit({
           runtimeUrl: undefined, // Explicitly provide undefined to avoid null injector error
-          renderToolCalls: [
-            {
-              name: "search",
-              render: SearchToolRenderComponent,
-            },
-            {
-              name: "calculator",
-              render: CalculatorToolRenderComponent,
-            },
-            {
-              name: "*",
-              render: WildcardToolRenderComponent,
-            },
-          ],
+          renderToolCalls: renderToolCallConfigs,
         }),
-        provideCopilotChatConfiguration({
-          labels: {
-            assistantMessageToolbarCopyMessageLabel: "Copy",
-            assistantMessageToolbarCopyCodeLabel: "Copy",
-            assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
-            assistantMessageToolbarThumbsUpLabel: "Good response",
-            assistantMessageToolbarThumbsDownLabel: "Bad response",
-            assistantMessageToolbarReadAloudLabel: "Read aloud",
-            assistantMessageToolbarRegenerateLabel: "Regenerate",
-            userMessageToolbarCopyMessageLabel: "Copy",
-            userMessageToolbarEditMessageLabel: "Edit",
-          },
+        provideCopilotChatLabels({
+          assistantMessageToolbarCopyMessageLabel: "Copy",
+          assistantMessageToolbarCopyCodeLabel: "Copy",
+          assistantMessageToolbarCopyCodeCopiedLabel: "Copied",
+          assistantMessageToolbarThumbsUpLabel: "Good response",
+          assistantMessageToolbarThumbsDownLabel: "Bad response",
+          assistantMessageToolbarReadAloudLabel: "Read aloud",
+          assistantMessageToolbarRegenerateLabel: "Regenerate",
+          userMessageToolbarCopyMessageLabel: "Copy",
+          userMessageToolbarEditMessageLabel: "Edit",
         }),
       ],
     }),
@@ -913,26 +958,26 @@ export class ChatComponent {
         toolCallId: "search-1",
         content:
           "Found 5 relevant documentation pages about React hooks including useState, useEffect, and custom hooks.",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-calc-1",
         role: "tool" as const,
         toolCallId: "calc-1",
         content: "714",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-calc-2",
         role: "tool" as const,
         toolCallId: "calc-2",
         content: "100",
-      } as ToolMessage,
+      } as Message,
       {
         id: "tool-weather-1",
         role: "tool" as const,
         toolCallId: "weather-1",
         content:
           "Current weather in San Francisco: 68°F, partly cloudy with a gentle breeze.",
-      } as ToolMessage,
+      } as Message,
     ];
 
     return {

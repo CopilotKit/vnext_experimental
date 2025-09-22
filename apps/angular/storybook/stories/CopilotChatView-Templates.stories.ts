@@ -1,40 +1,55 @@
 import type { Meta, StoryObj } from "@storybook/angular";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
-import { Component, Input } from "@angular/core";
+import { Component, Injectable, Input, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-  CopilotChatViewComponent,
-  CopilotChatMessageViewComponent,
-  CopilotChatInputComponent,
-  CopilotChatConfigurationService,
-  provideCopilotChatConfiguration,
+  CopilotChatView,
+  CopilotChatMessageView,
+  CopilotChatInput,
+  ChatState,
+  provideCopilotChatLabels,
   provideCopilotKit,
 } from "@copilotkitnext/angular";
 import { Message } from "@ag-ui/client";
 
+@Injectable()
+class StoryChatState extends ChatState {
+  readonly inputValue = signal<string>("");
+
+  submitInput(value: string): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    console.log("[Storybook] submitInput", trimmed);
+    this.inputValue.set("");
+  }
+
+  changeInput(value: string): void {
+    this.inputValue.set(value);
+  }
+}
+
 // Custom input components defined after imports
-const meta: Meta<CopilotChatViewComponent> = {
+const meta: Meta<CopilotChatView> = {
   title: "UI/CopilotChatView/Customized with Templates",
-  component: CopilotChatViewComponent,
+  component: CopilotChatView,
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
         FormsModule,
-        CopilotChatViewComponent,
-        CopilotChatMessageViewComponent,
-        CopilotChatInputComponent,
+        CopilotChatView,
+        CopilotChatMessageView,
+        CopilotChatInput,
       ],
       providers: [
         provideCopilotKit({}),
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-            chatDisclaimerText:
-              "AI can make mistakes. Please verify important information.",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
+          chatDisclaimerText:
+            "AI can make mistakes. Please verify important information.",
         }),
+        { provide: ChatState, useClass: StoryChatState },
       ],
     }),
   ],
@@ -44,7 +59,7 @@ const meta: Meta<CopilotChatViewComponent> = {
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatViewComponent>;
+type Story = StoryObj<CopilotChatView>;
 
 export const CustomDisclaimerTemplate: Story = {
   render: () => {
@@ -111,23 +126,27 @@ export const CustomDisclaimerTemplate: Story = {
 
 // Custom input component for template story
 @Component({
-  selector: 'template-custom-input',
+  selector: "template-custom-input",
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="
+    <div
+      style="
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 24px;
       margin: 0;
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    ">
-      <div style="
+    "
+    >
+      <div
+        style="
         display: flex;
         gap: 12px;
         max-width: 1200px;
         margin: 0 auto;
-      ">
-        <input 
+      "
+      >
+        <input
           type="text"
           [(ngModel)]="inputValue"
           placeholder="✨ Type your message here..."
@@ -144,7 +163,7 @@ export const CustomDisclaimerTemplate: Story = {
           "
           (keyup.enter)="sendMessage()"
         />
-        <button 
+        <button
           style="
             padding: 16px 32px;
             background: white;
@@ -157,31 +176,34 @@ export const CustomDisclaimerTemplate: Story = {
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           "
-          (click)="sendMessage()">
+          (click)="sendMessage()"
+        >
           Send
         </button>
       </div>
-      <div style="
+      <div
+        style="
         text-align: center;
         margin-top: 8px;
         font-size: 12px;
         color: rgba(255, 255, 255, 0.8);
-      ">
+      "
+      >
         Press Enter to send • Powered by Templates
       </div>
     </div>
-  `
+  `,
 })
 class TemplateCustomInputComponent {
-  inputValue = '';
-  
-  constructor(private chat: CopilotChatConfigurationService) {}
-  
+  inputValue = "";
+
+  constructor(private chat: ChatState) {}
+
   sendMessage() {
     const value = this.inputValue.trim();
     if (value) {
       this.chat.submitInput(value);
-      this.inputValue = '';
+      this.inputValue = "";
     }
   }
 }
@@ -296,15 +318,17 @@ export const CustomScrollButtonTemplate: Story = {
 
 // Custom input component for combined story
 @Component({
-  selector: 'combined-custom-input',
+  selector: "combined-custom-input",
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div style="
+    <div
+      style="
       background: linear-gradient(90deg, #00d2ff 0%, #3a47d5 100%);
       padding: 20px;
-    ">
-      <input 
+    "
+    >
+      <input
         type="text"
         [(ngModel)]="inputValue"
         placeholder="Template-powered input..."
@@ -318,7 +342,7 @@ export const CustomScrollButtonTemplate: Story = {
         "
         (keyup.enter)="sendMessage()"
       />
-      <button 
+      <button
         style="
           width: 80px;
           padding: 12px;
@@ -330,22 +354,23 @@ export const CustomScrollButtonTemplate: Story = {
           font-weight: bold;
           cursor: pointer;
         "
-        (click)="sendMessage()">
+        (click)="sendMessage()"
+      >
         Go
       </button>
     </div>
-  `
+  `,
 })
 class CombinedCustomInputComponent {
-  inputValue = '';
-  
-  constructor(private chat: CopilotChatConfigurationService) {}
-  
+  inputValue = "";
+
+  constructor(private chat: ChatState) {}
+
   sendMessage() {
     const value = this.inputValue.trim();
     if (value) {
       this.chat.submitInput(value);
-      this.inputValue = '';
+      this.inputValue = "";
     }
   }
 }

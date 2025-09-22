@@ -4,8 +4,8 @@ import { CommonModule } from "@angular/common";
 import { Component, EventEmitter, Input, Output } from "@angular/core";
 import { fn } from "@storybook/test";
 import {
-  CopilotChatInputComponent,
-  provideCopilotChatConfiguration,
+  CopilotChatInput,
+  provideCopilotChatLabels,
   type ToolsMenuItem,
 } from "@copilotkitnext/angular";
 import { CustomSendButtonComponent } from "../components/custom-send-button.component";
@@ -61,25 +61,23 @@ class RocketSendButtonComponent {
   }
 }
 
-const meta: Meta<CopilotChatInputComponent> = {
+const meta: Meta<CopilotChatInput> = {
   title: "UI/CopilotChatInput",
-  component: CopilotChatInputComponent,
+  component: CopilotChatInput,
   tags: ["autodocs"],
   decorators: [
     moduleMetadata({
       imports: [
         CommonModule,
-        CopilotChatInputComponent,
+        CopilotChatInput,
         CustomSendButtonComponent,
         AirplaneSendButtonComponent,
         RocketSendButtonComponent,
       ],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-            chatInputToolbarToolsButtonLabel: "Tools",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
+          chatInputToolbarToolsButtonLabel: "Tools",
         }),
       ],
     }),
@@ -135,18 +133,16 @@ The CopilotChatInput component provides a feature-rich chat input interface for 
 ## Basic Usage
 
 \`\`\`typescript
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
-import { provideCopilotChatConfiguration } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
+import { provideCopilotChatLabels } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   providers: [
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-      }
+    provideCopilotChatLabels({
+      chatInputPlaceholder: 'Type a message...',
     })
   ],
   template: \`
@@ -244,7 +240,7 @@ See individual stories below for detailed examples of each customization approac
 };
 
 export default meta;
-type Story = StoryObj<CopilotChatInputComponent>;
+type Story = StoryObj<CopilotChatInput>;
 
 // 1. Default story
 export const Default: Story = {
@@ -256,17 +252,15 @@ export const Default: Story = {
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent, provideCopilotChatConfiguration } from '@copilotkitnext/angular';
+import { CopilotChatInput, provideCopilotChatLabels } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   providers: [
-    provideCopilotChatConfiguration({
-      labels: {
-        chatInputPlaceholder: 'Type a message...',
-      }
+    provideCopilotChatLabels({
+      chatInputPlaceholder: 'Type a message...',
     })
   ],
   template: \`
@@ -376,12 +370,12 @@ toolsMenu: [
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent, ToolsMenuItem } from '@copilotkitnext/angular';
+import { CopilotChatInput, ToolsMenuItem } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       [toolsMenu]="toolsMenu"
@@ -464,12 +458,12 @@ Emits:
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       mode="transcribe"
@@ -504,17 +498,11 @@ export const CustomSendButton: Story = {
   name: "Custom Send Button (Template Slot)",
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        CopilotChatInputComponent,
-        CustomSendButtonComponent,
-      ],
+      imports: [CommonModule, CopilotChatInput, CustomSendButtonComponent],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-            chatInputToolbarToolsButtonLabel: "Tools",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
+          chatInputToolbarToolsButtonLabel: "Tools",
         }),
       ],
     }),
@@ -566,7 +554,7 @@ The template receives:
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 // Custom send button component
 @Component({
@@ -599,7 +587,7 @@ export class CustomSendButtonComponent {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent, CustomSendButtonComponent],
+  imports: [CopilotChatInput, CustomSendButtonComponent],
   template: \`
     <copilot-chat-input
       (submitMessage)="onSubmitMessage($event)">
@@ -698,12 +686,12 @@ Note: The template is passed as an input property, not as content projection.
       source: {
         type: "code",
         code: `import { Component, ViewChild, TemplateRef } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <ng-template #additionalItems>
       <button
@@ -782,12 +770,12 @@ Useful for:
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       [value]="initialMessage"
@@ -836,12 +824,12 @@ Features:
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       [value]="multilineMessage"
@@ -962,12 +950,12 @@ This example shows:
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       inputClass="custom-chat-input"
@@ -1065,12 +1053,12 @@ The most flexible approach - use ng-template to completely control the send butt
       source: {
         type: "code",
         code: `import { Component } from '@angular/core';
-import { CopilotChatInputComponent } from '@copilotkitnext/angular';
+import { CopilotChatInput } from '@copilotkitnext/angular';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CopilotChatInputComponent],
+  imports: [CopilotChatInput],
   template: \`
     <copilot-chat-input
       (submitMessage)="onSubmitMessage($event)">
@@ -1100,16 +1088,10 @@ export const SlotInlineButton: Story = {
   name: "Slot: Inline Custom Button",
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        CopilotChatInputComponent,
-        AirplaneSendButtonComponent,
-      ],
+      imports: [CommonModule, CopilotChatInput, AirplaneSendButtonComponent],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
         }),
       ],
     }),
@@ -1170,16 +1152,10 @@ export const SlotWithComponent: Story = {
   name: "Slot: Using Custom Component",
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        CopilotChatInputComponent,
-        RocketSendButtonComponent,
-      ],
+      imports: [CommonModule, CopilotChatInput, RocketSendButtonComponent],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
         }),
       ],
     }),
@@ -1243,16 +1219,10 @@ export const SlotDirectComponent: Story = {
   name: "Slot: Direct Component",
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        CopilotChatInputComponent,
-        RocketSendButtonComponent,
-      ],
+      imports: [CommonModule, CopilotChatInput, RocketSendButtonComponent],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
         }),
       ],
     }),
@@ -1306,16 +1276,10 @@ export const SlotMultipleCustomizations: Story = {
   name: "Slot: Multiple Customizations",
   decorators: [
     moduleMetadata({
-      imports: [
-        CommonModule,
-        CopilotChatInputComponent,
-        AirplaneSendButtonComponent,
-      ],
+      imports: [CommonModule, CopilotChatInput, AirplaneSendButtonComponent],
       providers: [
-        provideCopilotChatConfiguration({
-          labels: {
-            chatInputPlaceholder: "Type a message...",
-          },
+        provideCopilotChatLabels({
+          chatInputPlaceholder: "Type a message...",
         }),
       ],
     }),
