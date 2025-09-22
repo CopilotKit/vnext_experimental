@@ -1,6 +1,6 @@
 {
   "name": "@copilotkitnext/shared",
-  "version": "0.0.9-alpha.3",
+  "version": "0.0.10",
   "description": "Shared utilities and types for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
