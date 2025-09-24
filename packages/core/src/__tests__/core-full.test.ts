@@ -51,7 +51,13 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       await copilotKitCore.runAgent({ agent: agent as any });
 
-      expect(tool.handler).toHaveBeenCalledWith({ input: "test" });
+      expect(tool.handler).toHaveBeenCalledTimes(1);
+      const [firstCallArgs] = tool.handler.mock.calls;
+      expect(firstCallArgs?.[0]).toEqual({ input: "test" });
+      expect(firstCallArgs?.[1]).toMatchObject({
+        function: { name: toolName },
+        type: "function",
+      });
       expect(agent.messages.some(m => m.role === "tool")).toBe(true);
     });
 
