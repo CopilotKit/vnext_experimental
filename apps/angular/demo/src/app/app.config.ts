@@ -10,6 +10,9 @@ export const appConfig: ApplicationConfig = {
   providers: [
     importProvidersFrom(BrowserModule),
     ...provideCopilotKit({
+      headers: {
+        "X-Custom-Header": "custom-value",
+      },
       renderToolCalls: [
         {
           name: "*",

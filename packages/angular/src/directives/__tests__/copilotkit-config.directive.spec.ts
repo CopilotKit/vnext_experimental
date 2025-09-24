@@ -48,6 +48,9 @@ describe("CopilotKitConfigDirective", () => {
 
     expect(setRuntimeUrlSpy).toHaveBeenCalledWith("https://api.test.com");
     expect(setHeadersSpy).toHaveBeenCalledWith({ "X-Test": "value" });
+    expect(setRuntimeUrlSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
+      setHeadersSpy.mock.invocationCallOrder[0]
+    );
   });
 
   it("should handle config updates", () => {
@@ -55,6 +58,7 @@ describe("CopilotKitConfigDirective", () => {
     fixture.detectChanges();
 
     const setRuntimeUrlSpy = vi.spyOn(service, "setRuntimeUrl");
+    const setHeadersSpy = vi.spyOn(service, "setHeaders");
 
     // Update config
     fixture.componentInstance.config = {
@@ -64,5 +68,9 @@ describe("CopilotKitConfigDirective", () => {
     fixture.detectChanges();
 
     expect(setRuntimeUrlSpy).toHaveBeenCalledWith("https://api.updated.com");
+    expect(setHeadersSpy).toHaveBeenCalledWith({ "X-Test": "updated" });
+    expect(setRuntimeUrlSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
+      setHeadersSpy.mock.invocationCallOrder[0]
+    );
   });
 });

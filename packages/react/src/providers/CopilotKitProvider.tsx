@@ -244,10 +244,10 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   }, [allRenderToolCalls]);
 
   useEffect(() => {
-    copilotkit.setRuntimeUrl(runtimeUrl);
     copilotkit.setHeaders(headers);
     copilotkit.setProperties(properties);
     copilotkit.setAgents(agents);
+    copilotkit.setRuntimeUrl(runtimeUrl);
   }, [runtimeUrl, headers, properties, agents]);
 
 

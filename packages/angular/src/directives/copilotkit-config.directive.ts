@@ -49,9 +49,6 @@ export class CopilotKitConfigDirective implements OnChanges {
     if (changes['copilotkitConfig']) {
       const config = this.copilotkitConfig;
       if (config) {
-        if (config.runtimeUrl !== undefined) {
-          this.copilotkit.setRuntimeUrl(config.runtimeUrl);
-        }
         if (config.headers) {
           this.copilotkit.setHeaders(config.headers);
         }
@@ -61,13 +58,13 @@ export class CopilotKitConfigDirective implements OnChanges {
         if (config.agents) {
           this.copilotkit.setAgents(config.agents);
         }
+        if (config.runtimeUrl !== undefined) {
+          this.copilotkit.setRuntimeUrl(config.runtimeUrl);
+        }
       }
     }
 
     // Handle individual inputs
-    if (changes['runtimeUrl'] && !this.copilotkitConfig) {
-      this.copilotkit.setRuntimeUrl(this.runtimeUrl);
-    }
     if (changes['headers'] && !this.copilotkitConfig) {
       this.copilotkit.setHeaders(this.headers || {});
     }
@@ -76,6 +73,9 @@ export class CopilotKitConfigDirective implements OnChanges {
     }
     if (changes['agents'] && !this.copilotkitConfig) {
       this.copilotkit.setAgents(this.agents || {});
+    }
+    if (changes['runtimeUrl'] && !this.copilotkitConfig) {
+      this.copilotkit.setRuntimeUrl(this.runtimeUrl);
     }
   }
 }

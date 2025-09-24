@@ -75,12 +75,13 @@ export class CopilotKitCore {
     agents = {},
     tools = [],
   }: CopilotKitCoreConfig) {
-    this.headers = headers;
+    this.headers = { ...headers };
     this.properties = properties;
     this.localAgents = agents;
     this.agents = this.localAgents;
     this.tools = tools;
 
+    this.applyHeadersToAgents();
     this.setRuntimeUrl(runtimeUrl);
   }
 
@@ -102,12 +103,34 @@ export class CopilotKitCore {
           runtimeUrl: this.runtimeUrl,
           agentId: id,
           description: description,
+          headers: { ...this.headers },
         });
         return [id, agent];
       })
     );
 
     return { agents, version };
+  }
+
+  private applyHeadersToAgent(agent: AbstractAgent) {
+    const candidate = agent as unknown as {
+      headers?: Record<string, string>;
+      isCopilotKitAgent?: boolean;
+    };
+    const isHttpAgent =
+      agent instanceof HttpAgent || agent instanceof CopilotKitHttpAgent;
+    if (isHttpAgent || candidate?.isCopilotKitAgent === true) {
+      candidate.headers = { ...this.headers };
+    }
+  }
+
+  private applyHeadersToAgents() {
+    Object.values(this.localAgents).forEach((agent) =>
+      this.applyHeadersToAgent(agent)
+    );
+    Object.values(this.remoteAgents).forEach((agent) =>
+      this.applyHeadersToAgent(agent)
+    );
   }
 
   private async fetchRemoteAgents() {
@@ -118,6 +141,8 @@ export class CopilotKitCore {
           this.agents = { ...this.localAgents, ...this.remoteAgents };
           this.didLoadRuntime = true;
           this.version = version;
+
+          this.applyHeadersToAgents();
 
           this.subscribers.forEach(async (subscriber) => {
             try {
@@ -149,11 +174,13 @@ export class CopilotKitCore {
   setAgents(agents: Record<string, AbstractAgent>) {
     this.localAgents = agents;
     this.agents = { ...this.localAgents, ...this.remoteAgents };
+    this.applyHeadersToAgents();
   }
 
   addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
     this.localAgents[id] = agent;
     this.agents = { ...this.localAgents, ...this.remoteAgents };
+    this.applyHeadersToAgents();
   }
 
   removeAgent(id: string) {
@@ -255,7 +282,8 @@ export class CopilotKitCore {
   }
 
   setHeaders(headers: Record<string, string>) {
-    this.headers = headers;
+    this.headers = { ...headers };
+    this.applyHeadersToAgents();
   }
 
   setProperties(properties: Record<string, unknown>) {

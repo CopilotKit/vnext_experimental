@@ -14,7 +14,7 @@ import {
 const runtime = new CopilotRuntime({
   agents: {
     // @ts-ignore
-    default: new SlowToolCallStreamingAgent(),
+    default: new OpenAIAgent(),
   },
   runner: new InMemoryAgentRunner(),
 });
@@ -28,7 +28,7 @@ app.use(
   cors({
     origin: "http://localhost:4200",
     allowMethods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    // allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     exposeHeaders: ["Content-Type"],
     credentials: true,
     maxAge: 86400,
