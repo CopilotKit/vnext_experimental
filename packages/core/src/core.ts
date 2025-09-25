@@ -114,8 +114,8 @@ export enum CopilotKitCoreRuntimeConnectionStatus {
 }
 
 export class CopilotKitCore {
-  headers: Record<string, string>;
-  properties: Record<string, unknown>;
+  private _headers: Record<string, string>;
+  private _properties: Record<string, unknown>;
 
   private _context: Record<string, Context> = {};
   private _agents: Record<string, AbstractAgent> = {};
@@ -138,8 +138,8 @@ export class CopilotKitCore {
     agents__unsafe_dev_only = {},
     tools = [],
   }: CopilotKitCoreConfig) {
-    this.headers = headers;
-    this.properties = properties;
+    this._headers = headers;
+    this._properties = properties;
     this.localAgents = this.assignAgentIds(agents__unsafe_dev_only);
     this._agents = this.localAgents;
     this._tools = tools;
@@ -246,6 +246,14 @@ export class CopilotKitCore {
 
   get runtimeVersion(): string | undefined {
     return this._runtimeVersion;
+  }
+
+  get headers(): Readonly<Record<string, string>> {
+    return this._headers;
+  }
+
+  get properties(): Readonly<Record<string, unknown>> {
+    return this._properties;
   }
 
   get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
@@ -386,7 +394,7 @@ export class CopilotKitCore {
    * Configuration updates
    */
   setHeaders(headers: Record<string, string>) {
-    this.headers = headers;
+    this._headers = headers;
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onHeadersChanged?.({
@@ -398,7 +406,7 @@ export class CopilotKitCore {
   }
 
   setProperties(properties: Record<string, unknown>) {
-    this.properties = properties;
+    this._properties = properties;
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onPropertiesChanged?.({
