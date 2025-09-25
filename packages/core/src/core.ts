@@ -141,9 +141,22 @@ export class CopilotKitCore {
     this.headers = headers;
     this.properties = properties;
     this.localAgents = this.assignAgentIds(agents);
+    this.applyHeadersToAgents(this.localAgents);
     this._agents = this.localAgents;
     this._tools = tools;
     this.setRuntimeUrl(runtimeUrl);
+  }
+
+  private applyHeadersToAgent(agent: AbstractAgent) {
+    if (agent instanceof HttpAgent) {
+      agent.headers = { ...this.headers };
+    }
+  }
+
+  private applyHeadersToAgents(agents: Record<string, AbstractAgent>) {
+    Object.values(agents).forEach((agent) => {
+      this.applyHeadersToAgent(agent);
+    });
   }
 
   private assignAgentIds(agents: Record<string, AbstractAgent>) {
@@ -314,6 +327,7 @@ export class CopilotKitCore {
             agentId: id,
             description: description,
           });
+          this.applyHeadersToAgent(agent);
           return [id, agent];
         })
       );
@@ -387,6 +401,7 @@ export class CopilotKitCore {
    */
   setHeaders(headers: Record<string, string>) {
     this.headers = headers;
+    this.applyHeadersToAgents(this._agents);
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onHeadersChanged?.({
@@ -412,6 +427,7 @@ export class CopilotKitCore {
   setAgents(agents: Record<string, AbstractAgent>) {
     this.localAgents = this.assignAgentIds(agents);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
+    this.applyHeadersToAgents(this._agents);
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onAgentsChanged?.({
@@ -427,6 +443,7 @@ export class CopilotKitCore {
     if (!agent.agentId) {
       agent.agentId = id;
     }
+    this.applyHeadersToAgent(agent);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     void this.notifySubscribers(
       (subscriber) =>
