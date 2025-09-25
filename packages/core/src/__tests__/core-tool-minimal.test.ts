@@ -26,7 +26,16 @@ describe("CopilotKitCore Tool Minimal", () => {
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
-    expect(tool.handler).toHaveBeenCalledWith({ input: "test" });
+    expect(tool.handler).toHaveBeenCalledWith(
+      { input: "test" },
+      expect.objectContaining({
+        id: expect.any(String),
+        function: expect.objectContaining({
+          name: toolName,
+          arguments: '{"input":"test"}'
+        })
+      })
+    );
     expect(agent.messages.some(m => m.role === "tool")).toBe(true);
   });
 

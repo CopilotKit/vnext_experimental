@@ -34,7 +34,16 @@ describe("CopilotKitCore Tool Simple", () => {
     await copilotKitCore.runAgent({ agent: agent as any });
     console.log("Agent run complete");
 
-    expect(tool.handler).toHaveBeenCalledWith({ input: "test" });
+    expect(tool.handler).toHaveBeenCalledWith(
+      { input: "test" },
+      expect.objectContaining({
+        id: expect.any(String),
+        function: expect.objectContaining({
+          name: toolName,
+          arguments: '{"input":"test"}'
+        })
+      })
+    );
     expect(agent.messages.length).toBeGreaterThan(0);
   });
 });
