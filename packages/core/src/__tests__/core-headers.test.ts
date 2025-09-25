@@ -110,4 +110,148 @@ describe("CopilotKitCore headers", () => {
       });
     }
   });
+
+  it("applies updated headers to existing HttpAgent instances", () => {
+    const agent = new HttpAgent({ url: "https://runtime.example" });
+
+    const core = new CopilotKitCore({
+      runtimeUrl: undefined,
+      headers: { Authorization: "Bearer cfg" },
+      agents: { default: agent },
+    });
+
+    expect(agent.headers).toMatchObject({
+      Authorization: "Bearer cfg",
+    });
+
+    core.setHeaders({
+      Authorization: "Bearer updated",
+      "X-Trace": "123",
+    });
+
+    expect(agent.headers).toMatchObject({
+      Authorization: "Bearer updated",
+      "X-Trace": "123",
+    });
+  });
+
+  it("applies headers to agents provided via setAgents", () => {
+    const originalAgent = new HttpAgent({ url: "https://runtime.example/original" });
+    const replacementAgent = new HttpAgent({
+      url: "https://runtime.example/replacement",
+    });
+
+    const core = new CopilotKitCore({
+      runtimeUrl: undefined,
+      headers: { Authorization: "Bearer cfg" },
+      agents: { original: originalAgent },
+    });
+
+    expect(originalAgent.headers).toMatchObject({
+      Authorization: "Bearer cfg",
+    });
+
+    core.setAgents({ replacement: replacementAgent });
+
+    expect(replacementAgent.headers).toMatchObject({
+      Authorization: "Bearer cfg",
+    });
+  });
+
+  it("applies headers when agents are added dynamically", () => {
+    const core = new CopilotKitCore({
+      runtimeUrl: undefined,
+      headers: { Authorization: "Bearer cfg" },
+    });
+
+    const addedAgent = new HttpAgent({ url: "https://runtime.example/new" });
+
+    core.addAgent({ id: "added", agent: addedAgent });
+
+    expect(addedAgent.headers).toMatchObject({
+      Authorization: "Bearer cfg",
+    });
+  });
+
+  it("uses the latest headers when running HttpAgent instances", async () => {
+    const recorded: Array<Record<string, string>> = [];
+
+    class RecordingHttpAgent extends HttpAgent {
+      constructor() {
+        super({ url: "https://runtime.example" });
+      }
+
+      async runAgent(...args: Parameters<HttpAgent["runAgent"]>) {
+        recorded.push({ ...this.headers });
+        return Promise.resolve({ newMessages: [] }) as ReturnType<HttpAgent["runAgent"]>;
+      }
+    }
+
+    const agent = new RecordingHttpAgent();
+
+    const core = new CopilotKitCore({
+      runtimeUrl: undefined,
+      headers: { Authorization: "Bearer initial" },
+      agents: { default: agent },
+    });
+
+    await core.runAgent({ agent, agentId: "default" });
+
+    core.setHeaders({ Authorization: "Bearer updated", "X-Trace": "123" });
+
+    await core.runAgent({ agent, agentId: "default" });
+
+    expect(recorded).toHaveLength(2);
+    expect(recorded[0]).toMatchObject({ Authorization: "Bearer initial" });
+    expect(recorded[1]).toMatchObject({
+      Authorization: "Bearer updated",
+      "X-Trace": "123",
+    });
+  });
+
+  it("applies headers to remote agents fetched from runtime info", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        version: "1.0.0",
+        agents: {
+          remote: {
+            name: "Remote Agent",
+            className: "RemoteClass",
+            description: "Remote description",
+          },
+        },
+      }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const core = new CopilotKitCore({
+      runtimeUrl: "https://runtime.example",
+      headers: { Authorization: "Bearer cfg", "X-Team": "angular" },
+    });
+
+    await waitForCondition(() => core.getAgent("remote") !== undefined);
+
+    const remoteAgent = core.getAgent("remote") as HttpAgent | undefined;
+    expect(remoteAgent).toBeDefined();
+    expect(remoteAgent?.headers).toMatchObject({
+      Authorization: "Bearer cfg",
+      "X-Team": "angular",
+    });
+
+    core.setHeaders({ Authorization: "Bearer updated" });
+
+    expect(remoteAgent?.headers).toMatchObject({
+      Authorization: "Bearer updated",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://runtime.example/info",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer cfg",
+          "X-Team": "angular",
+        }),
+      })
+    );
+  });
 });
