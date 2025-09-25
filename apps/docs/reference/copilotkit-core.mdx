@@ -6,6 +6,47 @@ description: "CopilotKitCore API Reference"
 `CopilotKitCore` is the client-side cross-framework orchestration layer that coordinates communication between your
 application's UI, agents abd the remote Copilot runtime.
 
+## Architecture Overview
+
+<div className="mermaid">
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '12px'}}}%%
+graph TB
+    subgraph "Framework Layer"
+        React["<b>CopilotKit React</b><br/><span style='font-size:10px'>Components & Hooks</span>"]
+        Angular["<b>CopilotKit Angular</b><br/><span style='font-size:10px'>Directives & Services</span>"]
+        Vue["<b>CopilotKit ...</b><br/><span style='font-size:10px'>Future frameworks</span>"]
+    end
+
+    subgraph "Core Layer"
+        Core["<b>CopilotKitCore</b><br/><span style='font-size:10px'>Cross-framework Orchestration<br/>State Management & Agent Coordination</span>"]
+    end
+
+    subgraph "Runtime Layer"
+        Runtime["<b>CopilotRuntime</b><br/><span style='font-size:10px'>AI Agent Execution<br/>Backend Services</span>"]
+    end
+
+    React --> Core
+    Angular --> Core
+    Vue -.-> Core
+    Core <--> Runtime
+
+    style Core stroke:#333,stroke-width:4px
+    style React stroke:#333,stroke-width:2px
+    style Angular stroke:#333,stroke-width:2px
+    style Vue stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style Runtime stroke:#333,stroke-width:2px
+
+    classDef framework width:150px,height:80px
+    classDef core width:250px,height:80px
+    classDef runtime width:150px,height:80px
+    class React,Angular,Vue framework
+    class Core core
+    class Runtime runtime
+
+````
+</div>
+
 ## What does CopilotKitCore do?
 
 CopilotKitCore solves several complex challenges in building AI-powered applications:
@@ -37,7 +78,7 @@ Instantiate `CopilotKitCore` to initialize the client that manages runtime conne
 
 ```typescript
 new CopilotKitCore(config?: CopilotKitCoreConfig)
-```
+````
 
 #### Parameters
 
