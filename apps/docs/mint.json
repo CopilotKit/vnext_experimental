@@ -45,7 +45,27 @@
     },
     {
       "group": "API Reference",
-      "pages": ["reference/copilotkit-core", "reference/proxied-copilot-runtime-agent"]
+      "pages": [
+        {
+          "group": "Core",
+          "pages": [
+            "reference/copilotkit-core",
+            "reference/proxied-copilot-runtime-agent",
+            "reference/frontend-tool"
+          ]
+        },
+        {
+          "group": "React",
+          "pages": [
+            {
+              "group": "Providers",
+              "pages": [
+                "reference/copilotkit-provider"
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "footerSocials": {
