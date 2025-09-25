@@ -3,181 +3,54 @@ title: ProxiedCopilotRuntimeAgent
 description: "ProxiedCopilotRuntimeAgent API Reference"
 ---
 
-`ProxiedCopilotRuntimeAgent` is a specialized HTTP agent that acts as a proxy between your client application and remote agents hosted on the `CopilotRuntime` server. It extends the base `HttpAgent` class to provide seamless communication with runtime-hosted agents.
+`ProxiedCopilotRuntimeAgent` is a specialized HTTP agent that acts as a proxy between your client application and remote
+agents hosted on the `CopilotRuntime` server. It extends the base `HttpAgent` class to provide seamless communication
+with runtime-hosted agents.
 
 ## Architecture Overview
 
-<div className="mermaid">
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px'}}}%%
 graph LR
-    subgraph "Client Application"
-        Core["<b>CopilotKitCore</b>"]
-        PRA1["<b>ProxiedCopilotRuntimeAgent</b><br/><span style='font-size:14px'>agentId: 'customer-support'</span>"]
-        PRA2["<b>ProxiedCopilotRuntimeAgent</b><br/><span style='font-size:14px'>agentId: 'code-assistant'</span>"]
-        PRA3["<b>ProxiedCopilotRuntimeAgent</b><br/><span style='font-size:14px'>agentId: 'data-analyst'</span>"]
+    subgraph Client["Client Application"]
+        Core[CopilotKitCore]
+        PRA1[ProxiedCopilotRuntimeAgent<br/>customer-support]
+        PRA2[ProxiedCopilotRuntimeAgent<br/>code-assistant]
+        PRA3[ProxiedCopilotRuntimeAgent<br/>data-analyst]
 
         Core --> PRA1
         Core --> PRA2
         Core --> PRA3
     end
 
-    subgraph "CopilotRuntime Server"
-        Runtime["<b>Runtime API</b>"]
-        Agent1["<b>Agent</b><br/><span style='font-size:14px'>customer-support</span>"]
-        Agent2["<b>Agent</b><br/><span style='font-size:14px'>code-assistant</span>"]
-        Agent3["<b>Agent</b><br/><span style='font-size:14px'>data-analyst</span>"]
+    subgraph Server["CopilotRuntime Server"]
+        Runtime[Runtime API]
+        Agent1[Agent: customer-support]
+        Agent2[Agent: code-assistant]
+        Agent3[Agent: data-analyst]
 
         Runtime --> Agent1
         Runtime --> Agent2
         Runtime --> Agent3
     end
 
-    PRA1 -.->|"/agent/customer-support/*"| Runtime
-    PRA2 -.->|"/agent/code-assistant/*"| Runtime
-    PRA3 -.->|"/agent/data-analyst/*"| Runtime
-
-    style Core fill:#e1f5fe
-    style PRA1 fill:#fff3e0
-    style PRA2 fill:#fff3e0
-    style PRA3 fill:#fff3e0
-    style Runtime fill:#f3e5f5
-    style Agent1 fill:#e8f5e9
-    style Agent2 fill:#e8f5e9
-    style Agent3 fill:#e8f5e9
+    PRA1 -.-> Runtime
+    PRA2 -.-> Runtime
+    PRA3 -.-> Runtime
 ```
-</div>
 
 ## What is ProxiedCopilotRuntimeAgent?
 
-When `CopilotKitCore` connects to a `CopilotRuntime` server, it discovers available remote agents. For each remote agent, it creates a `ProxiedCopilotRuntimeAgent` instance that handles all communication with that specific agent through the runtime's API endpoints.
+When `CopilotKitCore` connects to a `CopilotRuntime` server, it discovers available remote agents. For each remote
+agent, it creates a `ProxiedCopilotRuntimeAgent` instance that handles all communication with that specific agent
+through the runtime's API endpoints.
 
 Key characteristics:
 
-- **Automatic URL Construction**: Builds the correct runtime API URLs for agent operations
-- **Connection Management**: Provides both `run` and `connect` methods for different interaction patterns
-- **Event Streaming**: Transforms HTTP event streams into Observable events for real-time updates
-- **Header Forwarding**: Inherits and forwards authentication headers from `CopilotKitCore`
+- **Remote Agent Communication**: Handles communication with the remote agent through the runtime's API endpoints
+- **Header and Property Forwarding**: Inherits and forwards authentication headers and properties from `CopilotKitCore`
+- **Connection and History Management**: Handles loading history and reconnecting to existing live agent sessions
 
-## How It Works
-
-The proxy pattern enables several important capabilities:
-
-1. **Runtime Integration**: Remote agents are accessed through standardized runtime endpoints rather than direct connections
-2. **Security**: Authentication and authorization are handled at the runtime level
-3. **Scalability**: The runtime can manage agent lifecycle, load balancing, and resource allocation
-4. **Abstraction**: Client code doesn't need to know the actual location or implementation of remote agents
-
-## Creating a ProxiedCopilotRuntimeAgent
-
-<Note>
-  In typical usage, you don't create `ProxiedCopilotRuntimeAgent` instances directly. `CopilotKitCore` automatically creates them when discovering agents from the runtime.
-</Note>
-
-```typescript
-import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
-
-const agent = new ProxiedCopilotRuntimeAgent({
-  runtimeUrl: "https://your-runtime.example.com",
-  agentId: "my-agent",
-  headers: {
-    "Authorization": "Bearer your-token"
-  }
-});
-```
-
-## Configuration
-
-### ProxiedCopilotRuntimeAgentConfig
-
-The configuration extends `HttpAgentConfig` but omits the `url` field since URLs are constructed automatically:
-
-```typescript
-interface ProxiedCopilotRuntimeAgentConfig extends Omit<HttpAgentConfig, "url"> {
-  runtimeUrl?: string;       // Base URL of your `CopilotRuntime` server
-  agentId: string;           // Unique identifier of the remote agent
-  headers?: Record<string, string>;  // HTTP headers for authentication
-}
-```
-
-Configuration properties:
-
-- `runtimeUrl`: The base URL where your `CopilotRuntime` is hosted (e.g., "https://api.example.com/copilot")
-- `agentId`: The identifier of the specific agent on the runtime
-- `headers`: Optional HTTP headers, typically used for authentication tokens
-
-## Methods
-
-### run()
-
-Executes the agent with the provided input and returns an Observable stream of events. This method is inherited from the `HttpAgent` base class.
-
-```typescript
-run(input: RunAgentInput): Observable<BaseEvent>
-```
-
-The `run` method:
-- Makes a POST request to `/agent/{agentId}/run` on the runtime
-- Streams events as the agent processes the request
-- Supports messages, tools, and properties as input
-
-#### Parameters
-
-```typescript
-interface RunAgentInput {
-  messages?: Message[];              // Conversation history
-  tools?: Tool[];                   // Available tools for the agent
-  forwardedProps?: Record<string, unknown>;  // Additional context
-}
-```
-
-### connect()
-
-Establishes a connection to an existing agent session, useful for resuming conversations or monitoring ongoing operations.
-
-```typescript
-connect(input: RunAgentInput): Observable<BaseEvent>
-```
-
-The `connect` method:
-- Makes a POST request to `/agent/{agentId}/connect` on the runtime
-- Returns existing conversation state and subscribes to new events
-- Does not trigger a new agent run
-
-## URL Construction
-
-ProxiedCopilotRuntimeAgent automatically constructs the appropriate URLs for agent operations:
-
-- **Run endpoint**: `{runtimeUrl}/agent/{agentId}/run`
-- **Connect endpoint**: `{runtimeUrl}/agent/{agentId}/connect`
-
-This ensures consistency and eliminates the need for manual URL management in your application code.
-
-## Event Handling
-
-Both `run()` and `connect()` return RxJS Observables that emit various event types:
-
-```typescript
-agent.run({ messages: [...] }).subscribe({
-  next: (event) => {
-    switch (event.type) {
-      case "text":
-        console.log("Agent says:", event.text);
-        break;
-      case "tool-call":
-        console.log("Agent requests tool:", event.toolName);
-        break;
-      case "error":
-        console.error("Agent error:", event.error);
-        break;
-    }
-  },
-  error: (err) => console.error("Stream error:", err),
-  complete: () => console.log("Agent finished")
-});
-```
-
-## Integration with CopilotKitCore
+## How does it work?
 
 `CopilotKitCore` automatically creates `ProxiedCopilotRuntimeAgent` instances during runtime discovery:
 
@@ -187,92 +60,21 @@ agent.run({ messages: [...] }).subscribe({
 4. These agents are merged with any local agents
 5. The agents become available through `copilotKit.getAgent()`
 
-## Security Considerations
+## Creating a ProxiedCopilotRuntimeAgent
 
-ProxiedCopilotRuntimeAgent inherits security features from the runtime:
-
-- **Authentication**: Headers (including auth tokens) are forwarded with each request
-- **Isolation**: Each agent runs in the runtime's controlled environment
-- **Validation**: The runtime validates requests before forwarding to agents
-- **Rate Limiting**: The runtime can enforce rate limits and quotas
-
-## Error Handling
-
-The agent handles various error scenarios:
-
-- **Network Errors**: Connection failures, timeouts
-- **Runtime Errors**: Authentication failures, agent not found
-- **Agent Errors**: Processing failures, validation errors
+<Note>
+  In typical usage, you don't create `ProxiedCopilotRuntimeAgent` instances directly. `CopilotKitCore` automatically
+  creates them when discovering agents from the runtime.
+</Note>
 
 ```typescript
-agent.run({ messages: [...] }).subscribe({
-  next: (event) => {
-    if (event.type === "error") {
-      console.error("Agent error:", event.error);
-      // Handle gracefully
-    }
-  },
-  error: (err) => {
-    console.error("Connection error:", err);
-    // Retry or fallback
-  }
-});
-```
+import { ProxiedCopilotRuntimeAgent } from "@copilotkitnext/core";
 
-## Best Practices
-
-1. **Let CopilotKitCore manage agents**: Don't create `ProxiedCopilotRuntimeAgent` instances manually unless necessary
-2. **Handle connection errors**: Implement retry logic for transient network issues
-3. **Monitor event streams**: Subscribe to events to track agent progress and handle errors
-4. **Use appropriate endpoints**: Use `run()` for new operations, `connect()` for existing sessions
-5. **Secure your runtime**: Ensure proper authentication and HTTPS for production deployments
-
-## Example: Using with `CopilotKitCore`
-
-```typescript
-// `CopilotKitCore` automatically creates proxied agents
-const copilotKit = new CopilotKitCore({
-  runtimeUrl: "https://api.example.com/copilot",
+const agent = new ProxiedCopilotRuntimeAgent({
+  runtimeUrl: "https://your-runtime.example.com",
+  agentId: "my-agent",
   headers: {
-    "Authorization": "Bearer your-token"
-  }
+    Authorization: "Bearer your-token",
+  },
 });
-
-// Wait for runtime connection
-await new Promise(resolve => {
-  copilotKit.subscribe({
-    onRuntimeConnectionStatusChanged: ({ status }) => {
-      if (status === "Connected") resolve(undefined);
-    }
-  });
-});
-
-// Get a proxied agent
-const agent = copilotKit.getAgent("customer-support");
-if (agent instanceof ProxiedCopilotRuntimeAgent) {
-  // This agent is hosted on the runtime
-  const result = await copilotKit.runAgent({
-    agent,
-    withMessages: [{ role: "user", content: "Hello" }]
-  });
-}
-```
-
-## TypeScript Types
-
-```typescript
-import { HttpAgent, HttpAgentConfig, RunAgentInput, BaseEvent } from "@ag-ui/client";
-import { Observable } from "rxjs";
-
-export interface ProxiedCopilotRuntimeAgentConfig
-  extends Omit<HttpAgentConfig, "url"> {
-  runtimeUrl?: string;
-}
-
-export class ProxiedCopilotRuntimeAgent extends HttpAgent {
-  runtimeUrl?: string;
-
-  constructor(config: ProxiedCopilotRuntimeAgentConfig);
-  connect(input: RunAgentInput): Observable<BaseEvent>;
-}
 ```
