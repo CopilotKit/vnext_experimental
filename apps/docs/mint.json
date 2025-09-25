@@ -63,6 +63,12 @@
                 "reference/copilotkit-provider",
                 "reference/copilot-chat-configuration-provider"
               ]
+            },
+            {
+              "group": "Hooks",
+              "pages": [
+                "reference/use-agent"
+              ]
             }
           ]
         }
