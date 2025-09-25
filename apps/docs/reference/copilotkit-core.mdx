@@ -56,7 +56,9 @@ Configuration details:
 - `runtimeUrl`: When provided, CopilotKitCore will automatically connect and discover available remote agents.
 - `headers`: Useful for authentication tokens or tracking headers.
 - `properties`: This might include user preferences, application state, or feature flags.
-- `agents__unsafe_dev_only`: **Development only** - This property is intended solely for rapid prototyping during development. Production deployments require the security, reliability, and performance guarantees that only the CopilotRuntime can provide. The key becomes the agent's identifier.
+- `agents__unsafe_dev_only`: **Development only** - This property is intended solely for rapid prototyping during
+  development. Production deployments require the security, reliability, and performance guarantees that only the
+  CopilotRuntime can provide. The key becomes the agent's identifier.
 - `tools`: Such as updating UI elements or fetching client-side data.
 
 ## Core Properties
@@ -82,8 +84,8 @@ Once initialized, CopilotKitCore exposes several properties that provide insight
 - `properties`: `Record<string, unknown>` The application properties being forwarded to agents. Update these when your
   application state changes.
 
-- `agents`: `Readonly<Record<string, AbstractAgent>>` A combined view of all available agents, merging local development agents with
-  those discovered from the runtime. This is read-only to prevent accidental modifications.
+- `agents`: `Readonly<Record<string, AbstractAgent>>` A combined view of all available agents, merging local development
+  agents with those discovered from the runtime. This is read-only to prevent accidental modifications.
 
 - `tools`: `Readonly<FrontendTool<any>[]>` The complete list of registered frontend tools available to agents.
 
@@ -122,29 +124,36 @@ setProperties(properties: Record<string, unknown>): void
 
 ## Managing Agents
 
-<Info>
-  In production applications, agents should be managed through the CopilotRuntime, which provides proper isolation,
+<Warning>
+  In production applications, agents must be managed through the CopilotRuntime, which provides proper isolation,
   monitoring, and scalability. The local agent methods below are marked `__unsafe_dev_only` as they're intended solely
   for rapid prototyping during development. Production deployments require the security and performance guarantees that
   only the CopilotRuntime can provide.
-</Info>
+</Warning>
 
 Agents are the AI-powered components that process requests and generate responses. CopilotKitCore provides several
 methods to manage them:
 
-### setAgents__unsafe_dev_only()
+### getAgent()
 
-Replaces all local development agents while preserving remote agents from the runtime. This method is for development
-only—production agents must be deployed through the CopilotRuntime for proper security and performance.
+Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't exist or if the runtime is still
+connecting.
+
+```typescript
+getAgent(id: string): AbstractAgent | undefined
+```
+
+### setAgents\_\_unsafe_dev_only()
+
+Replaces all local development agents while preserving remote agents from the runtime.
 
 ```typescript
 setAgents__unsafe_dev_only(agents: Record<string, AbstractAgent>): void
 ```
 
-### addAgent__unsafe_dev_only()
+### addAgent\_\_unsafe_dev_only()
 
-Adds a single agent for development testing. This method is intended solely for rapid prototyping—production
-deployments require agents to be hosted in the CopilotRuntime for reliability and security.
+Adds a single agent for development testing.
 
 ```typescript
 addAgent__unsafe_dev_only(params: CopilotKitCoreAddAgentParams): void
@@ -159,52 +168,18 @@ interface CopilotKitCoreAddAgentParams {
 }
 ```
 
-### removeAgent__unsafe_dev_only()
+### removeAgent\_\_unsafe_dev_only()
 
 Removes a local development agent by its identifier. Remote agents from the runtime cannot be removed this way.
-This is a development-only method—in production, agent lifecycle is managed by the CopilotRuntime.
 
 ```typescript
 removeAgent__unsafe_dev_only(id: string): void
 ```
 
-### getAgent()
+## Running Agents
 
-Retrieves an agent by its identifier. Returns `undefined` if the agent doesn't exist or if the runtime is still
-connecting.
-
-```typescript
-getAgent(id: string): AbstractAgent | undefined
-```
-
-### connectAgent()
-
-Establishes a live connection with an agent, restoring any existing conversation history and subscribing to real-time
-events. This method is particularly useful when:
-
-- Reconnecting to an agent that's already running (displays new events as they occur)
-- Restoring conversation history after a page refresh
-- Setting up an agent that will receive updates from background processes
-
-The connection process:
-
-1. Provides the agent with current properties and available tools
-2. Sets up error event subscribers for proper error handling
-3. Restores any existing message history
-4. Returns immediately without triggering a new agent run
-
-```typescript
-connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>
-```
-
-#### Parameters
-
-```typescript
-interface CopilotKitCoreConnectAgentParams {
-  agent: AbstractAgent; // The agent to connect
-  agentId?: string; // Override the agent's default identifier
-}
-```
+CopilotKitCore provides two primary methods for executing agents: `runAgent` for immediate execution with message handling,
+and `connectAgent` for establishing live connections to existing agent sessions.
 
 ### runAgent()
 
@@ -240,6 +215,35 @@ runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>
 interface CopilotKitCoreRunAgentParams {
   agent: AbstractAgent; // The agent to execute
   withMessages?: Message[]; // Initial messages to send to the agent
+  agentId?: string; // Override the agent's default identifier
+}
+```
+
+### connectAgent()
+
+Establishes a live connection with an agent, restoring any existing conversation history and subscribing to real-time
+events. This method is particularly useful when:
+
+- Reconnecting to an agent that's already running (displays new events as they occur)
+- Restoring conversation history after a page refresh
+- Setting up an agent that will receive updates from background processes
+
+The connection process:
+
+1. Provides the agent with current properties and available tools
+2. Sets up error event subscribers for proper error handling
+3. Restores any existing message history
+4. Returns immediately without triggering a new agent run
+
+```typescript
+connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult>
+```
+
+#### Parameters
+
+```typescript
+interface CopilotKitCoreConnectAgentParams {
+  agent: AbstractAgent; // The agent to connect
   agentId?: string; // Override the agent's default identifier
 }
 ```
