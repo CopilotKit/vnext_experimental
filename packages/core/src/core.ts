@@ -21,8 +21,8 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 export interface CopilotKitCoreConfig {
   /** The endpoint of the CopilotRuntime. */
   runtimeUrl?: string;
-  /** Mapping from agent name to its `AbstractAgent` instance. */
-  agents?: Record<string, AbstractAgent>;
+  /** Mapping from agent name to its `AbstractAgent` instance. For development only - production requires CopilotRuntime. */
+  agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   /** Headers appended to every HTTP request made by `CopilotKitCore`. */
   headers?: Record<string, string>;
   /** Properties sent as `forwardedProps` to the AG-UI agent. */
@@ -135,12 +135,12 @@ export class CopilotKitCore {
     runtimeUrl,
     headers = {},
     properties = {},
-    agents = {},
+    agents__unsafe_dev_only = {},
     tools = [],
   }: CopilotKitCoreConfig) {
     this.headers = headers;
     this.properties = properties;
-    this.localAgents = this.assignAgentIds(agents);
+    this.localAgents = this.assignAgentIds(agents__unsafe_dev_only);
     this._agents = this.localAgents;
     this._tools = tools;
     this.setRuntimeUrl(runtimeUrl);
@@ -409,7 +409,7 @@ export class CopilotKitCore {
     );
   }
 
-  setAgents(agents: Record<string, AbstractAgent>) {
+  setAgents__unsafe_dev_only(agents: Record<string, AbstractAgent>) {
     this.localAgents = this.assignAgentIds(agents);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     void this.notifySubscribers(
@@ -422,7 +422,7 @@ export class CopilotKitCore {
     );
   }
 
-  addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
+  addAgent__unsafe_dev_only({ id, agent }: CopilotKitCoreAddAgentParams) {
     this.localAgents[id] = agent;
     if (!agent.agentId) {
       agent.agentId = id;
@@ -438,7 +438,7 @@ export class CopilotKitCore {
     );
   }
 
-  removeAgent(id: string) {
+  removeAgent__unsafe_dev_only(id: string) {
     delete this.localAgents[id];
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     void this.notifySubscribers(

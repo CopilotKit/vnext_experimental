@@ -206,7 +206,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       runtimeUrl: undefined,
       headers,
       properties,
-      agents,
+      agents__unsafe_dev_only: agents,
       tools: allTools,
     };
     const copilotkit = new CopilotKitCore(config);
@@ -254,7 +254,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setRuntimeUrl(runtimeUrl);
     copilotkit.setHeaders(headers);
     copilotkit.setProperties(properties);
-    copilotkit.setAgents(agents);
+    copilotkit.setAgents__unsafe_dev_only(agents);
   }, [runtimeUrl, headers, properties, agents]);
 
   return (

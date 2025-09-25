@@ -1,4 +1,4 @@
-import { Component, Injector } from "@angular/core";
+import { Component, Injector, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -26,7 +26,7 @@ vi.mock("@copilotkitnext/core", () => {
     readonly setRuntimeUrl = mockSetRuntimeUrl;
     readonly setHeaders = mockSetHeaders;
     readonly setProperties = mockSetProperties;
-    readonly setAgents = mockSetAgents;
+    readonly setAgents__unsafe_dev_only = mockSetAgents;
     readonly getAgent = mockGetAgent;
     agents: Record<string, any> = {};
     listener?: Parameters<typeof mockSubscribe>[0];
@@ -56,7 +56,9 @@ describe("CopilotKit", () => {
       selector: "dummy-tool",
       template: "",
     })
-    class DummyToolComponent {}
+    class DummyToolComponent {
+      toolCall = signal({} as any);
+    }
 
     TestBed.configureTestingModule({
       providers: [
@@ -130,7 +132,7 @@ describe("CopilotKit", () => {
       name: "client",
       description: "Client tool",
       args: z.object({ value: z.string() }),
-      component: class {},
+      component: class { toolCall = signal({} as any); },
       handler: handlerSpy,
       injector,
     });
@@ -159,7 +161,7 @@ describe("CopilotKit", () => {
     const toolConfig = {
       name: "approval",
       args: z.object({ summary: z.string() }),
-      component: class {},
+      component: class { toolCall = signal({} as any); },
       toolCall: vi.fn(),
       agentId: "agent-1",
     } as const;
@@ -190,7 +192,7 @@ describe("CopilotKit", () => {
     copilotKit.addRenderToolCall({
       name: "temp",
       args: z.object({}),
-      component: class {},
+      component: class { toolCall = signal({} as any); },
       agentId: undefined,
     });
 
