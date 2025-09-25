@@ -46,7 +46,7 @@ interface CopilotKitCoreConfig {
   runtimeUrl?: string; // The endpoint where your CopilotRuntime server is hosted
   headers?: Record<string, string>; // Custom HTTP headers to include with every request
   properties?: Record<string, unknown>; // Application-specific data forwarded to agents as context
-  agents?: Record<string, AbstractAgent>; // Local agents that run directly in the browser
+  agents__unsafe_dev_only?: Record<string, AbstractAgent>; // Local agents for development only - production requires CopilotRuntime
   tools?: FrontendTool<any>[]; // Frontend functions that agents can invoke
 }
 ```
@@ -56,7 +56,7 @@ Configuration details:
 - `runtimeUrl`: When provided, CopilotKitCore will automatically connect and discover available remote agents.
 - `headers`: Useful for authentication tokens or tracking headers.
 - `properties`: This might include user preferences, application state, or feature flags.
-- `agents`: The key becomes the agent's identifier.
+- `agents__unsafe_dev_only`: **Development only** - This property is intended solely for rapid prototyping during development. Production deployments require the security, reliability, and performance guarantees that only the CopilotRuntime can provide. The key becomes the agent's identifier.
 - `tools`: Such as updating UI elements or fetching client-side data.
 
 ## Core Properties
@@ -82,7 +82,7 @@ Once initialized, CopilotKitCore exposes several properties that provide insight
 - `properties`: `Record<string, unknown>` The application properties being forwarded to agents. Update these when your
   application state changes.
 
-- `agents`: `Readonly<Record<string, AbstractAgent>>` A combined view of all available agents, merging local agents with
+- `agents`: `Readonly<Record<string, AbstractAgent>>` A combined view of all available agents, merging local development agents with
   those discovered from the runtime. This is read-only to prevent accidental modifications.
 
 - `tools`: `Readonly<FrontendTool<any>[]>` The complete list of registered frontend tools available to agents.
@@ -122,24 +122,32 @@ setProperties(properties: Record<string, unknown>): void
 
 ## Managing Agents
 
+<Info>
+  In production applications, agents should be managed through the CopilotRuntime, which provides proper isolation,
+  monitoring, and scalability. The local agent methods below are marked `__unsafe_dev_only` as they're intended solely
+  for rapid prototyping during development. Production deployments require the security and performance guarantees that
+  only the CopilotRuntime can provide.
+</Info>
+
 Agents are the AI-powered components that process requests and generate responses. CopilotKitCore provides several
 methods to manage them:
 
-### setAgents()
+### setAgents__unsafe_dev_only()
 
-Replaces all local agents while preserving remote agents from the runtime. This is useful for completely reconfiguring
-your local agent setup.
+Replaces all local development agents while preserving remote agents from the runtime. This method is for development
+only—production agents must be deployed through the CopilotRuntime for proper security and performance.
 
 ```typescript
-setAgents(agents: Record<string, AbstractAgent>): void
+setAgents__unsafe_dev_only(agents: Record<string, AbstractAgent>): void
 ```
 
-### addAgent()
+### addAgent__unsafe_dev_only()
 
-Adds a single agent to your application. The agent is immediately available for use.
+Adds a single agent for development testing. This method is intended solely for rapid prototyping—production
+deployments require agents to be hosted in the CopilotRuntime for reliability and security.
 
 ```typescript
-addAgent(params: CopilotKitCoreAddAgentParams): void
+addAgent__unsafe_dev_only(params: CopilotKitCoreAddAgentParams): void
 ```
 
 #### Parameters
@@ -151,12 +159,13 @@ interface CopilotKitCoreAddAgentParams {
 }
 ```
 
-### removeAgent()
+### removeAgent__unsafe_dev_only()
 
-Removes a local agent by its identifier. Remote agents from the runtime cannot be removed this way.
+Removes a local development agent by its identifier. Remote agents from the runtime cannot be removed this way.
+This is a development-only method—in production, agent lifecycle is managed by the CopilotRuntime.
 
 ```typescript
-removeAgent(id: string): void
+removeAgent__unsafe_dev_only(id: string): void
 ```
 
 ### getAgent()
