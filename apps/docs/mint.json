@@ -67,6 +67,7 @@
             {
               "group": "Hooks",
               "pages": [
+                "reference/use-copilot-kit",
                 "reference/use-agent"
               ]
             }
