@@ -13,6 +13,7 @@ import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 import {
   CopilotChatLabels,
   useCopilotChatConfiguration,
+  CopilotChatDefaultLabels,
 } from "@/providers/CopilotChatConfigurationProvider";
 import { Button } from "@/components/ui/button";
 import {
@@ -343,7 +344,8 @@ export namespace CopilotChatInput {
       defaultClassName?: string;
     }
   > = ({ icon, labelKey, defaultClassName, className, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -413,7 +415,8 @@ export namespace CopilotChatInput {
       toolsMenu?: (ToolsMenuItem | "-")[];
     }
   > = ({ className, toolsMenu, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
 
     const renderMenuItems = (
       items: (ToolsMenuItem | "-")[]
@@ -495,7 +498,8 @@ export namespace CopilotChatInput {
       const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
       const [maxHeight, setMaxHeight] = useState<number>(0);
 
-      const { labels } = useCopilotChatConfiguration();
+      const config = useCopilotChatConfiguration();
+      const labels = config?.labels ?? CopilotChatDefaultLabels;
 
       useImperativeHandle(
         ref,
