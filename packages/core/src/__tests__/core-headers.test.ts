@@ -95,7 +95,7 @@ describe("CopilotKitCore headers", () => {
     const core = new CopilotKitCore({
       runtimeUrl: undefined,
       headers: { Authorization: "Bearer cfg", "X-Team": "angular" },
-      agents: { default: agent },
+      agents__unsafe_dev_only: { default: agent },
     });
 
     await agent.runAgent();
@@ -117,7 +117,7 @@ describe("CopilotKitCore headers", () => {
     const core = new CopilotKitCore({
       runtimeUrl: undefined,
       headers: { Authorization: "Bearer cfg" },
-      agents: { default: agent },
+      agents__unsafe_dev_only: { default: agent },
     });
 
     expect(agent.headers).toMatchObject({
@@ -144,14 +144,14 @@ describe("CopilotKitCore headers", () => {
     const core = new CopilotKitCore({
       runtimeUrl: undefined,
       headers: { Authorization: "Bearer cfg" },
-      agents: { original: originalAgent },
+      agents__unsafe_dev_only: { original: originalAgent },
     });
 
     expect(originalAgent.headers).toMatchObject({
       Authorization: "Bearer cfg",
     });
 
-    core.setAgents({ replacement: replacementAgent });
+    core.setAgents__unsafe_dev_only({ replacement: replacementAgent });
 
     expect(replacementAgent.headers).toMatchObject({
       Authorization: "Bearer cfg",
@@ -166,7 +166,7 @@ describe("CopilotKitCore headers", () => {
 
     const addedAgent = new HttpAgent({ url: "https://runtime.example/new" });
 
-    core.addAgent({ id: "added", agent: addedAgent });
+    core.setAgents__unsafe_dev_only({ added: addedAgent });
 
     expect(addedAgent.headers).toMatchObject({
       Authorization: "Bearer cfg",
@@ -192,7 +192,7 @@ describe("CopilotKitCore headers", () => {
     const core = new CopilotKitCore({
       runtimeUrl: undefined,
       headers: { Authorization: "Bearer initial" },
-      agents: { default: agent },
+      agents__unsafe_dev_only: { default: agent },
     });
 
     await core.runAgent({ agent, agentId: "default" });
