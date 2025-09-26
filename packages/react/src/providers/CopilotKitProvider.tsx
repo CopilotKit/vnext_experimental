@@ -1,24 +1,11 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useMemo,
-  useEffect,
-  useState,
-  useReducer,
-  useRef,
-} from "react";
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useReducer, useRef } from "react";
 import { ReactToolCallRender } from "../types/react-tool-call-render";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
 import { z } from "zod";
-import {
-  CopilotKitCore,
-  CopilotKitCoreConfig,
-  FrontendTool,
-} from "@copilotkitnext/core";
+import { CopilotKitCore, CopilotKitCoreConfig, FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 
 // Define the context value interface - idiomatic React naming
@@ -26,9 +13,7 @@ export interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
   renderToolCalls: ReactToolCallRender<any>[];
   currentRenderToolCalls: ReactToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: React.Dispatch<
-    React.SetStateAction<ReactToolCallRender<unknown>[]>
-  >;
+  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRender<unknown>[]>>;
 }
 
 // Create the CopilotKit context
@@ -55,7 +40,7 @@ export interface CopilotKitProviderProps {
 function useStableArrayProp<T>(
   prop: T[] | undefined,
   warningMessage?: string,
-  isMeaningfulChange?: (initial: T[], next: T[]) => boolean
+  isMeaningfulChange?: (initial: T[], next: T[]) => boolean,
 ): T[] {
   const empty = useMemo<T[]>(() => [], []);
   const value = prop ?? empty;
@@ -92,30 +77,26 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     (initial, next) => {
       // Only warn if the shape (names+agentId) changed. Allow identity changes
       // to support updated closures from parents (e.g., Storybook state).
-      const key = (rc?: ReactToolCallRender<unknown>) =>
-        `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
-      const setFrom = (arr: ReactToolCallRender<unknown>[]) =>
-        new Set(arr.map(key));
+      const key = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const setFrom = (arr: ReactToolCallRender<unknown>[]) => new Set(arr.map(key));
       const a = setFrom(initial);
       const b = setFrom(next);
       if (a.size !== b.size) return true;
       for (const k of a) if (!b.has(k)) return true;
       return false;
-    }
+    },
   );
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
     frontendTools,
-    "frontendTools must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead."
+    "frontendTools must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",
   );
   const humanInTheLoopList = useStableArrayProp<ReactHumanInTheLoop>(
     humanInTheLoop,
-    "humanInTheLoop must be a stable array. If you want to dynamically add or remove human-in-the-loop tools, use `useHumanInTheLoop` instead."
+    "humanInTheLoop must be a stable array. If you want to dynamically add or remove human-in-the-loop tools, use `useHumanInTheLoop` instead.",
   );
 
   const initialRenderToolCalls = useMemo(() => renderToolCallsList, []);
-  const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<
-    ReactToolCallRender<unknown>[]
-  >([]);
+  const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<ReactToolCallRender<unknown>[]>([]);
 
   // Note: warnings for array identity changes are handled by useStableArrayProp
 
@@ -138,9 +119,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
           return new Promise((resolve) => {
             // The actual implementation will be handled by the render component
             // This is a placeholder that the hook will override
-            console.warn(
-              `Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`
-            );
+            console.warn(`Human-in-the-loop tool '${tool.name}' called but no interactive handler is set up.`);
             resolve(undefined);
           });
         },
@@ -182,8 +161,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     frontendToolsList.forEach((tool) => {
       if (tool.render) {
         // For wildcard tools without parameters, default to z.any()
-        const args =
-          tool.parameters || (tool.name === "*" ? z.any() : undefined);
+        const args = tool.parameters || (tool.name === "*" ? z.any() : undefined);
         if (args) {
           combined.push({
             name: tool.name,
@@ -206,7 +184,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       runtimeUrl: undefined,
       headers,
       properties,
-      agents,
+      agents__unsafe_dev_only: agents,
       tools: allTools,
     };
     const copilotkit = new CopilotKitCore(config);
@@ -220,8 +198,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   useEffect(() => {
     setCurrentRenderToolCalls((prev) => {
       // Build a map from computed entries
-      const keyOf = (rc?: ReactToolCallRender<unknown>) =>
-        `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const keyOf = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
       const computedMap = new Map<string, ReactToolCallRender<unknown>>();
       for (const rc of allRenderToolCalls) {
         computedMap.set(keyOf(rc), rc);
@@ -254,7 +231,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setRuntimeUrl(runtimeUrl);
     copilotkit.setHeaders(headers);
     copilotkit.setProperties(properties);
-    copilotkit.setAgents(agents);
+    copilotkit.setAgents__unsafe_dev_only(agents);
   }, [runtimeUrl, headers, properties, agents]);
 
   return (

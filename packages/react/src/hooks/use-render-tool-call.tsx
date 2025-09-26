@@ -3,6 +3,7 @@ import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
+import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import { partialJSONParse } from "@copilotkitnext/shared";
 
 export interface UseRenderToolCallProps {
@@ -18,7 +19,8 @@ export interface UseRenderToolCallProps {
  */
 export function useRenderToolCall() {
   const { currentRenderToolCalls, copilotkit } = useCopilotKit();
-  const { agentId } = useCopilotChatConfiguration();
+  const config = useCopilotChatConfiguration();
+  const agentId = config?.agentId ?? DEFAULT_AGENT_ID;
   const [executingToolCallIds, setExecutingToolCallIds] = useState<
     ReadonlySet<string>
   >(() => new Set());

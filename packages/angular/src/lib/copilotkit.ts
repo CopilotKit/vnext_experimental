@@ -31,7 +31,7 @@ export class CopilotKit {
     runtimeUrl: this.#config.runtimeUrl,
     headers: this.#config.headers,
     properties: this.#config.properties,
-    agents: this.#config.agents,
+    agents__unsafe_dev_only: this.#config.agents,
     tools: this.#config.tools,
   });
 
@@ -191,7 +191,7 @@ export class CopilotKit {
       this.core.setProperties(options.properties);
     }
     if (options.agents !== undefined) {
-      this.core.setAgents(options.agents);
+      this.core.setAgents__unsafe_dev_only(options.agents);
     }
   }
 }

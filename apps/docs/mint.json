@@ -28,11 +28,6 @@
 
   "anchors": [
     {
-      "name": "Documentation",
-      "icon": "book-open-cover",
-      "url": "https://docs.copilotkit.ai"
-    },
-    {
       "name": "Community",
       "icon": "slack",
       "url": "https://discord.gg/6dffbvGU3D"
@@ -50,7 +45,35 @@
     },
     {
       "group": "API Reference",
-      "pages": ["reference/copilotkit-core"]
+      "pages": [
+        {
+          "group": "Core",
+          "pages": [
+            "reference/copilotkit-core",
+            "reference/proxied-copilot-runtime-agent",
+            "reference/frontend-tool"
+          ]
+        },
+        {
+          "group": "React",
+          "pages": [
+            {
+              "group": "Providers",
+              "pages": [
+                "reference/copilotkit-provider",
+                "reference/copilot-chat-configuration-provider"
+              ]
+            },
+            {
+              "group": "Hooks",
+              "pages": [
+                "reference/use-copilot-kit",
+                "reference/use-agent"
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "footerSocials": {

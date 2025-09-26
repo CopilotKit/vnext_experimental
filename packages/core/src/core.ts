@@ -1,18 +1,5 @@
-import {
-  AgentDescription,
-  DEFAULT_AGENT_ID,
-  randomUUID,
-  RuntimeInfo,
-  logger,
-} from "@copilotkitnext/shared";
-import {
-  AbstractAgent,
-  AgentSubscriber,
-  Context,
-  HttpAgent,
-  Message,
-  RunAgentResult,
-} from "@ag-ui/client";
+import { AgentDescription, DEFAULT_AGENT_ID, randomUUID, RuntimeInfo, logger } from "@copilotkitnext/shared";
+import { AbstractAgent, AgentSubscriber, Context, HttpAgent, Message, RunAgentResult } from "@ag-ui/client";
 import { FrontendTool } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -21,8 +8,8 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 export interface CopilotKitCoreConfig {
   /** The endpoint of the CopilotRuntime. */
   runtimeUrl?: string;
-  /** Mapping from agent name to its `AbstractAgent` instance. */
-  agents?: Record<string, AbstractAgent>;
+  /** Mapping from agent name to its `AbstractAgent` instance. For development only - production requires CopilotRuntime. */
+  agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   /** Headers appended to every HTTP request made by `CopilotKitCore`. */
   headers?: Record<string, string>;
   /** Properties sent as `forwardedProps` to the AG-UI agent. */
@@ -114,8 +101,8 @@ export enum CopilotKitCoreRuntimeConnectionStatus {
 }
 
 export class CopilotKitCore {
-  headers: Record<string, string>;
-  properties: Record<string, unknown>;
+  private _headers: Record<string, string>;
+  private _properties: Record<string, unknown>;
 
   private _context: Record<string, Context> = {};
   private _agents: Record<string, AbstractAgent> = {};
@@ -135,12 +122,12 @@ export class CopilotKitCore {
     runtimeUrl,
     headers = {},
     properties = {},
-    agents = {},
+    agents__unsafe_dev_only = {},
     tools = [],
   }: CopilotKitCoreConfig) {
-    this.headers = headers;
-    this.properties = properties;
-    this.localAgents = this.assignAgentIds(agents);
+    this._headers = headers;
+    this._properties = properties;
+    this.localAgents = this.assignAgentIds(agents__unsafe_dev_only);
     this.applyHeadersToAgents(this.localAgents);
     this._agents = this.localAgents;
     this._tools = tools;
@@ -170,7 +157,7 @@ export class CopilotKitCore {
 
   private async notifySubscribers(
     handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
-    errorMessage: string
+    errorMessage: string,
   ) {
     await Promise.all(
       Array.from(this.subscribers).map(async (subscriber) => {
@@ -179,7 +166,7 @@ export class CopilotKitCore {
         } catch (error) {
           logger.error(errorMessage, error);
         }
-      })
+      }),
     );
   }
 
@@ -200,14 +187,11 @@ export class CopilotKitCore {
           code,
           context,
         }),
-      "Subscriber onError error:"
+      "Subscriber onError error:",
     );
   }
 
-  private resolveAgentId(
-    agent: AbstractAgent,
-    providedAgentId?: string
-  ): string {
+  private resolveAgentId(agent: AbstractAgent, providedAgentId?: string): string {
     if (providedAgentId) {
       return providedAgentId;
     }
@@ -245,9 +229,7 @@ export class CopilotKitCore {
   }
 
   setRuntimeUrl(runtimeUrl: string | undefined) {
-    const normalizedRuntimeUrl = runtimeUrl
-      ? runtimeUrl.replace(/\/$/, "")
-      : undefined;
+    const normalizedRuntimeUrl = runtimeUrl ? runtimeUrl.replace(/\/$/, "") : undefined;
 
     if (this._runtimeUrl === normalizedRuntimeUrl) {
       return;
@@ -261,6 +243,14 @@ export class CopilotKitCore {
     return this._runtimeVersion;
   }
 
+  get headers(): Readonly<Record<string, string>> {
+    return this._headers;
+  }
+
+  get properties(): Readonly<Record<string, unknown>> {
+    return this._properties;
+  }
+
   get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
     return this._runtimeConnectionStatus;
   }
@@ -270,8 +260,7 @@ export class CopilotKitCore {
    */
   private async updateRuntimeConnection() {
     if (!this.runtimeUrl) {
-      this._runtimeConnectionStatus =
-        CopilotKitCoreRuntimeConnectionStatus.Disconnected;
+      this._runtimeConnectionStatus = CopilotKitCoreRuntimeConnectionStatus.Disconnected;
       this._runtimeVersion = undefined;
       this.remoteAgents = {};
       this._agents = this.localAgents;
@@ -282,7 +271,7 @@ export class CopilotKitCore {
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Disconnected,
           }),
-        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
       );
 
       await this.notifySubscribers(
@@ -291,13 +280,12 @@ export class CopilotKitCore {
             copilotkit: this,
             agents: this._agents,
           }),
-        "Subscriber onAgentsChanged error:"
+        "Subscriber onAgentsChanged error:",
       );
       return;
     }
 
-    this._runtimeConnectionStatus =
-      CopilotKitCoreRuntimeConnectionStatus.Connecting;
+    this._runtimeConnectionStatus = CopilotKitCoreRuntimeConnectionStatus.Connecting;
 
     await this.notifySubscribers(
       (subscriber) =>
@@ -305,7 +293,7 @@ export class CopilotKitCore {
           copilotkit: this,
           status: CopilotKitCoreRuntimeConnectionStatus.Connecting,
         }),
-      "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+      "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
     );
 
     try {
@@ -329,13 +317,12 @@ export class CopilotKitCore {
           });
           this.applyHeadersToAgent(agent);
           return [id, agent];
-        })
+        }),
       );
 
       this.remoteAgents = agents;
       this._agents = { ...this.localAgents, ...this.remoteAgents };
-      this._runtimeConnectionStatus =
-        CopilotKitCoreRuntimeConnectionStatus.Connected;
+      this._runtimeConnectionStatus = CopilotKitCoreRuntimeConnectionStatus.Connected;
       this._runtimeVersion = version;
 
       await this.notifySubscribers(
@@ -344,7 +331,7 @@ export class CopilotKitCore {
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Connected,
           }),
-        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
       );
 
       await this.notifySubscribers(
@@ -353,11 +340,10 @@ export class CopilotKitCore {
             copilotkit: this,
             agents: this._agents,
           }),
-        "Subscriber onAgentsChanged error:"
+        "Subscriber onAgentsChanged error:",
       );
     } catch (error) {
-      this._runtimeConnectionStatus =
-        CopilotKitCoreRuntimeConnectionStatus.Error;
+      this._runtimeConnectionStatus = CopilotKitCoreRuntimeConnectionStatus.Error;
       this._runtimeVersion = undefined;
       this.remoteAgents = {};
       this._agents = this.localAgents;
@@ -368,7 +354,7 @@ export class CopilotKitCore {
             copilotkit: this,
             status: CopilotKitCoreRuntimeConnectionStatus.Error,
           }),
-        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):"
+        "Error in CopilotKitCore subscriber (onRuntimeConnectionStatusChanged):",
       );
 
       await this.notifySubscribers(
@@ -377,15 +363,11 @@ export class CopilotKitCore {
             copilotkit: this,
             agents: this._agents,
           }),
-        "Subscriber onAgentsChanged error:"
+        "Subscriber onAgentsChanged error:",
       );
-      const message =
-        error instanceof Error ? error.message : JSON.stringify(error);
-      logger.warn(
-        `Failed to load runtime info (${this.runtimeUrl}/info): ${message}`
-      );
-      const runtimeError =
-        error instanceof Error ? error : new Error(String(error));
+      const message = error instanceof Error ? error.message : JSON.stringify(error);
+      logger.warn(`Failed to load runtime info (${this.runtimeUrl}/info): ${message}`);
+      const runtimeError = error instanceof Error ? error : new Error(String(error));
       await this.emitError({
         error: runtimeError,
         code: CopilotKitCoreErrorCode.RUNTIME_INFO_FETCH_FAILED,
@@ -400,7 +382,7 @@ export class CopilotKitCore {
    * Configuration updates
    */
   setHeaders(headers: Record<string, string>) {
-    this.headers = headers;
+    this._headers = headers;
     this.applyHeadersToAgents(this._agents);
     void this.notifySubscribers(
       (subscriber) =>
@@ -408,23 +390,23 @@ export class CopilotKitCore {
           copilotkit: this,
           headers: this.headers,
         }),
-      "Subscriber onHeadersChanged error:"
+      "Subscriber onHeadersChanged error:",
     );
   }
 
   setProperties(properties: Record<string, unknown>) {
-    this.properties = properties;
+    this._properties = properties;
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onPropertiesChanged?.({
           copilotkit: this,
           properties: this.properties,
         }),
-      "Subscriber onPropertiesChanged error:"
+      "Subscriber onPropertiesChanged error:",
     );
   }
 
-  setAgents(agents: Record<string, AbstractAgent>) {
+  setAgents__unsafe_dev_only(agents: Record<string, AbstractAgent>) {
     this.localAgents = this.assignAgentIds(agents);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     this.applyHeadersToAgents(this._agents);
@@ -434,11 +416,11 @@ export class CopilotKitCore {
           copilotkit: this,
           agents: this._agents,
         }),
-      "Subscriber onAgentsChanged error:"
+      "Subscriber onAgentsChanged error:",
     );
   }
 
-  addAgent({ id, agent }: CopilotKitCoreAddAgentParams) {
+  addAgent__unsafe_dev_only({ id, agent }: CopilotKitCoreAddAgentParams) {
     this.localAgents[id] = agent;
     if (!agent.agentId) {
       agent.agentId = id;
@@ -451,11 +433,11 @@ export class CopilotKitCore {
           copilotkit: this,
           agents: this._agents,
         }),
-      "Subscriber onAgentsChanged error:"
+      "Subscriber onAgentsChanged error:",
     );
   }
 
-  removeAgent(id: string) {
+  removeAgent__unsafe_dev_only(id: string) {
     delete this.localAgents[id];
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     void this.notifySubscribers(
@@ -464,7 +446,7 @@ export class CopilotKitCore {
           copilotkit: this,
           agents: this._agents,
         }),
-      "Subscriber onAgentsChanged error:"
+      "Subscriber onAgentsChanged error:",
     );
   }
 
@@ -475,10 +457,8 @@ export class CopilotKitCore {
 
     if (
       this.runtimeUrl !== undefined &&
-      (this.runtimeConnectionStatus ===
-        CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
-        this.runtimeConnectionStatus ===
-          CopilotKitCoreRuntimeConnectionStatus.Connecting)
+      (this.runtimeConnectionStatus === CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
+        this.runtimeConnectionStatus === CopilotKitCoreRuntimeConnectionStatus.Connecting)
     ) {
       return undefined;
     } else {
@@ -499,7 +479,7 @@ export class CopilotKitCore {
           copilotkit: this,
           context: this._context,
         }),
-      "Subscriber onContextChanged error:"
+      "Subscriber onContextChanged error:",
     );
     return id;
   }
@@ -512,25 +492,19 @@ export class CopilotKitCore {
           copilotkit: this,
           context: this._context,
         }),
-      "Subscriber onContextChanged error:"
+      "Subscriber onContextChanged error:",
     );
   }
 
   /**
    * Tool management
    */
-  addTool<T extends Record<string, unknown> = Record<string, unknown>>(
-    tool: FrontendTool<T>
-  ) {
+  addTool<T extends Record<string, unknown> = Record<string, unknown>>(tool: FrontendTool<T>) {
     // Check if a tool with the same name and agentId already exists
-    const existingToolIndex = this._tools.findIndex(
-      (t) => t.name === tool.name && t.agentId === tool.agentId
-    );
+    const existingToolIndex = this._tools.findIndex((t) => t.name === tool.name && t.agentId === tool.agentId);
 
     if (existingToolIndex !== -1) {
-      logger.warn(
-        `Tool already exists: '${tool.name}' for agent '${tool.agentId || "global"}', skipping.`
-      );
+      logger.warn(`Tool already exists: '${tool.name}' for agent '${tool.agentId || "global"}', skipping.`);
       return;
     }
 
@@ -558,9 +532,7 @@ export class CopilotKitCore {
 
     // If agentId is provided, first look for agent-specific tool
     if (agentId) {
-      const agentTool = this._tools.find(
-        (tool) => tool.name === toolName && tool.agentId === agentId
-      );
+      const agentTool = this._tools.find((tool) => tool.name === toolName && tool.agentId === agentId);
       if (agentTool) {
         return agentTool;
       }
@@ -596,10 +568,7 @@ export class CopilotKitCore {
   /**
    * Agent connectivity
    */
-  async connectAgent({
-    agent,
-    agentId,
-  }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
+  async connectAgent({ agent, agentId }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
       if (agent instanceof HttpAgent) {
         agent.headers = { ...this.headers };
@@ -610,13 +579,12 @@ export class CopilotKitCore {
           forwardedProps: this.properties,
           tools: this.buildFrontendTools(agentId),
         },
-        this.createAgentErrorSubscriber(agent, agentId)
+        this.createAgentErrorSubscriber(agent, agentId),
       );
 
       return this.processAgentResult({ runAgentResult, agent, agentId });
     } catch (error) {
-      const connectError =
-        error instanceof Error ? error : new Error(String(error));
+      const connectError = error instanceof Error ? error : new Error(String(error));
       const context: Record<string, any> = {};
       if (agentId ?? agent.agentId) {
         context.agentId = agentId ?? agent.agentId;
@@ -630,11 +598,7 @@ export class CopilotKitCore {
     }
   }
 
-  async runAgent({
-    agent,
-    withMessages,
-    agentId,
-  }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
+  async runAgent({ agent, withMessages, agentId }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
     if (agent instanceof HttpAgent) {
       agent.headers = { ...this.headers };
     }
@@ -648,12 +612,11 @@ export class CopilotKitCore {
           forwardedProps: this.properties,
           tools: this.buildFrontendTools(agentId),
         },
-        this.createAgentErrorSubscriber(agent, agentId)
+        this.createAgentErrorSubscriber(agent, agentId),
       );
       return this.processAgentResult({ runAgentResult, agent, agentId });
     } catch (error) {
-      const runError =
-        error instanceof Error ? error : new Error(String(error));
+      const runError = error instanceof Error ? error : new Error(String(error));
       const context: Record<string, any> = {};
       if (agentId ?? agent.agentId) {
         context.agentId = agentId ?? agent.agentId;
@@ -687,11 +650,7 @@ export class CopilotKitCore {
     for (const message of newMessages) {
       if (message.role === "assistant") {
         for (const toolCall of message.toolCalls || []) {
-          if (
-            newMessages.findIndex(
-              (m) => m.role === "tool" && m.toolCallId === toolCall.id
-            ) === -1
-          ) {
+          if (newMessages.findIndex((m) => m.role === "tool" && m.toolCallId === toolCall.id) === -1) {
             const tool = this.getTool({
               toolName: toolCall.function.name,
               agentId,
@@ -711,8 +670,7 @@ export class CopilotKitCore {
                 try {
                   parsedArgs = JSON.parse(toolCall.function.arguments);
                 } catch (error) {
-                  const parseError =
-                    error instanceof Error ? error : new Error(String(error));
+                  const parseError = error instanceof Error ? error : new Error(String(error));
                   errorMessage = parseError.message;
                   isArgumentError = true;
                   await this.emitError({
@@ -738,15 +696,12 @@ export class CopilotKitCore {
                       toolName: toolCall.function.name,
                       args: parsedArgs,
                     }),
-                  "Subscriber onToolExecutionStart error:"
+                  "Subscriber onToolExecutionStart error:",
                 );
 
                 if (!errorMessage) {
                   try {
-                    const result = await tool.handler(
-                      parsedArgs as any,
-                      toolCall
-                    );
+                    const result = await tool.handler(parsedArgs as any, toolCall);
                     if (result === undefined || result === null) {
                       toolCallResult = "";
                     } else if (typeof result === "string") {
@@ -755,8 +710,7 @@ export class CopilotKitCore {
                       toolCallResult = JSON.stringify(result);
                     }
                   } catch (error) {
-                    const handlerError =
-                      error instanceof Error ? error : new Error(String(error));
+                    const handlerError = error instanceof Error ? error : new Error(String(error));
                     errorMessage = handlerError.message;
                     await this.emitError({
                       error: handlerError,
@@ -787,7 +741,7 @@ export class CopilotKitCore {
                       result: errorMessage ? "" : toolCallResult,
                       error: errorMessage,
                     }),
-                  "Subscriber onToolExecutionEnd error:"
+                  "Subscriber onToolExecutionEnd error:",
                 );
 
                 if (isArgumentError) {
@@ -796,9 +750,7 @@ export class CopilotKitCore {
               }
 
               if (!errorMessage || !isArgumentError) {
-                const messageIndex = agent.messages.findIndex(
-                  (m) => m.id === message.id
-                );
+                const messageIndex = agent.messages.findIndex((m) => m.id === message.id);
                 const toolMessage = {
                   id: randomUUID(),
                   role: "tool" as const,
@@ -829,8 +781,7 @@ export class CopilotKitCore {
                   try {
                     parsedArgs = JSON.parse(toolCall.function.arguments);
                   } catch (error) {
-                    const parseError =
-                      error instanceof Error ? error : new Error(String(error));
+                    const parseError = error instanceof Error ? error : new Error(String(error));
                     errorMessage = parseError.message;
                     isArgumentError = true;
                     await this.emitError({
@@ -861,15 +812,12 @@ export class CopilotKitCore {
                         toolName: toolCall.function.name,
                         args: wildcardArgs,
                       }),
-                    "Subscriber onToolExecutionStart error:"
+                    "Subscriber onToolExecutionStart error:",
                   );
 
                   if (!errorMessage) {
                     try {
-                      const result = await wildcardTool.handler(
-                        wildcardArgs as any,
-                        toolCall
-                      );
+                      const result = await wildcardTool.handler(wildcardArgs as any, toolCall);
                       if (result === undefined || result === null) {
                         toolCallResult = "";
                       } else if (typeof result === "string") {
@@ -878,10 +826,7 @@ export class CopilotKitCore {
                         toolCallResult = JSON.stringify(result);
                       }
                     } catch (error) {
-                      const handlerError =
-                        error instanceof Error
-                          ? error
-                          : new Error(String(error));
+                      const handlerError = error instanceof Error ? error : new Error(String(error));
                       errorMessage = handlerError.message;
                       await this.emitError({
                         error: handlerError,
@@ -912,7 +857,7 @@ export class CopilotKitCore {
                         result: errorMessage ? "" : toolCallResult,
                         error: errorMessage,
                       }),
-                    "Subscriber onToolExecutionEnd error:"
+                    "Subscriber onToolExecutionEnd error:",
                   );
 
                   if (isArgumentError) {
@@ -921,9 +866,7 @@ export class CopilotKitCore {
                 }
 
                 if (!errorMessage || !isArgumentError) {
-                  const messageIndex = agent.messages.findIndex(
-                    (m) => m.id === message.id
-                  );
+                  const messageIndex = agent.messages.findIndex((m) => m.id === message.id);
                   const toolMessage = {
                     id: randomUUID(),
                     role: "tool" as const,
@@ -960,14 +903,11 @@ export class CopilotKitCore {
       }));
   }
 
-  private createAgentErrorSubscriber(
-    agent: AbstractAgent,
-    agentId?: string
-  ): AgentSubscriber {
+  private createAgentErrorSubscriber(agent: AbstractAgent, agentId?: string): AgentSubscriber {
     const emitAgentError = async (
       error: Error,
       code: CopilotKitCoreErrorCode,
-      extraContext: Record<string, any> = {}
+      extraContext: Record<string, any> = {},
     ) => {
       const context: Record<string, any> = { ...extraContext };
       if (agentId ?? agent.agentId) {
@@ -982,13 +922,9 @@ export class CopilotKitCore {
 
     return {
       onRunFailed: async ({ error }: { error: Error }) => {
-        await emitAgentError(
-          error,
-          CopilotKitCoreErrorCode.AGENT_RUN_FAILED_EVENT,
-          {
-            source: "onRunFailed",
-          }
-        );
+        await emitAgentError(error, CopilotKitCoreErrorCode.AGENT_RUN_FAILED_EVENT, {
+          source: "onRunFailed",
+        });
       },
       onRunErrorEvent: async ({ event }) => {
         const eventError =
@@ -999,9 +935,7 @@ export class CopilotKitCore {
               : undefined;
 
         const errorMessage =
-          typeof event?.rawEvent?.error === "string"
-            ? event.rawEvent.error
-            : (event?.message ?? "Agent run error");
+          typeof event?.rawEvent?.error === "string" ? event.rawEvent.error : (event?.message ?? "Agent run error");
 
         const rawError = eventError ?? new Error(errorMessage);
 
@@ -1009,15 +943,11 @@ export class CopilotKitCore {
           (rawError as any).code = event.code;
         }
 
-        await emitAgentError(
-          rawError,
-          CopilotKitCoreErrorCode.AGENT_RUN_ERROR_EVENT,
-          {
-            source: "onRunErrorEvent",
-            event,
-            runtimeErrorCode: event?.code,
-          }
-        );
+        await emitAgentError(rawError, CopilotKitCoreErrorCode.AGENT_RUN_ERROR_EVENT, {
+          source: "onRunErrorEvent",
+          event,
+          runtimeErrorCode: event?.code,
+        });
       },
     };
   }

@@ -1,30 +1,49 @@
 import { useAgent } from "@/hooks/use-agent";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
-import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
+import {
+  CopilotChatConfigurationProvider,
+  CopilotChatLabels,
+  CopilotChatDefaultLabels,
+  useCopilotChatConfiguration,
+} from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { useCallback, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { AbstractAgent, AGUIConnectNotImplementedError } from "@ag-ui/client";
 
-export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
+export type CopilotChatProps = Omit<CopilotChatViewProps, "messages" | "isRunning"> & {
   agentId?: string;
   threadId?: string;
+  labels?: Partial<CopilotChatLabels>;
 };
 
-export function CopilotChat({
-  agentId = DEFAULT_AGENT_ID,
-  threadId,
-  ...props
-}: CopilotChatProps) {
-  const { agent } = useAgent({ agentId });
+export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChatProps) {
+  // Check for existing configuration provider
+  const existingConfig = useCopilotChatConfiguration();
+
+  // Apply priority: props > existing config > defaults
+  const resolvedAgentId = agentId ?? existingConfig?.agentId ?? DEFAULT_AGENT_ID;
+  const resolvedThreadId = useMemo(
+    () => threadId ?? existingConfig?.threadId ?? randomUUID(),
+    [threadId, existingConfig?.threadId],
+  );
+  const resolvedLabels: CopilotChatLabels = useMemo(
+    () => ({
+      ...CopilotChatDefaultLabels,
+      ...(existingConfig?.labels || {}),
+      ...(labels || {}),
+    }),
+    [existingConfig?.labels, labels],
+  );
+
+  const { agent } = useAgent({ agentId: resolvedAgentId });
   const { copilotkit } = useCopilotKit();
-  const resolvedThreadId = useMemo(() => threadId ?? randomUUID(), [threadId]);
 
   useEffect(() => {
     const connect = async (agent: AbstractAgent) => {
       try {
-        await copilotkit.connectAgent({ agent, agentId });
+        await copilotkit.connectAgent({ agent, agentId: resolvedAgentId });
       } catch (error) {
         if (error instanceof AGUIConnectNotImplementedError) {
           // connect not implemented, ignore
@@ -38,7 +57,7 @@ export function CopilotChat({
       connect(agent);
     }
     return () => {};
-  }, [resolvedThreadId, agent, copilotkit, agentId]);
+  }, [resolvedThreadId, agent, copilotkit, resolvedAgentId]);
 
   const onSubmitInput = useCallback(
     async (value: string) => {
@@ -49,20 +68,16 @@ export function CopilotChat({
       });
       if (agent) {
         try {
-          await copilotkit.runAgent({ agent, agentId });
+          await copilotkit.runAgent({ agent, agentId: resolvedAgentId });
         } catch (error) {
           console.error("CopilotChat: runAgent failed", error);
         }
       }
     },
-    [agent, copilotkit, agentId]
+    [agent, copilotkit, resolvedAgentId],
   );
 
-  const {
-    inputProps: providedInputProps,
-    messageView: providedMessageView,
-    ...restProps
-  } = props;
+  const { inputProps: providedInputProps, messageView: providedMessageView, ...restProps } = props;
 
   const mergedProps = merge(
     {
@@ -75,14 +90,13 @@ export function CopilotChat({
         : providedMessageView !== undefined
           ? { messageView: providedMessageView }
           : {}),
-    }
+    },
   );
 
+  // Always create a provider with merged values
+  // This ensures priority: props > existing config > defaults
   return (
-    <CopilotChatConfigurationProvider
-      agentId={agentId}
-      threadId={resolvedThreadId}
-    >
+    <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={resolvedLabels}>
       <CopilotChatView
         {...{
           messages: agent?.messages ?? [],

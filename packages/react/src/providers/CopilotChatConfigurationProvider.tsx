@@ -73,12 +73,7 @@ export const CopilotChatConfigurationProvider: React.FC<
 
 // Hook to use the full configuration
 export const useCopilotChatConfiguration =
-  (): CopilotChatConfigurationValue => {
+  (): CopilotChatConfigurationValue | null => {
     const configuration = useContext(CopilotChatConfiguration);
-    if (!configuration) {
-      throw new Error(
-        "useCopilotChatConfiguration must be used within CopilotChatConfigurationProvider"
-      );
-    }
     return configuration;
   };

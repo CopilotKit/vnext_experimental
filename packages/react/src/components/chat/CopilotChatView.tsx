@@ -8,7 +8,10 @@ import { StickToBottom, useStickToBottom, useStickToBottomContext } from "use-st
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
+import {
+  useCopilotChatConfiguration,
+  CopilotChatDefaultLabels,
+} from "@/providers/CopilotChatConfigurationProvider";
 
 export type CopilotChatViewProps = WithSlots<
   {
@@ -375,7 +378,8 @@ export namespace CopilotChatView {
     className,
     ...props
   }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
 
     return (
       <div

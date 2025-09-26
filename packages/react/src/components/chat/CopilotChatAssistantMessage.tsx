@@ -14,7 +14,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
+import {
+  useCopilotChatConfiguration,
+  CopilotChatDefaultLabels,
+} from "@/providers/CopilotChatConfigurationProvider";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,7 +222,8 @@ export namespace CopilotChatAssistantMessage {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CodeBlock = ({ children, className, onClick, ...props }: any) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     const [copied, setCopied] = useState(false);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -378,7 +382,8 @@ export namespace CopilotChatAssistantMessage {
   export const CopyButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ className, title, onClick, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     const [copied, setCopied] = useState(false);
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -409,7 +414,8 @@ export namespace CopilotChatAssistantMessage {
   export const ThumbsUpButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ title, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     return (
       <ToolbarButton
         title={title || labels.assistantMessageToolbarThumbsUpLabel}
@@ -423,7 +429,8 @@ export namespace CopilotChatAssistantMessage {
   export const ThumbsDownButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ title, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     return (
       <ToolbarButton
         title={title || labels.assistantMessageToolbarThumbsDownLabel}
@@ -437,7 +444,8 @@ export namespace CopilotChatAssistantMessage {
   export const ReadAloudButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ title, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     return (
       <ToolbarButton
         title={title || labels.assistantMessageToolbarReadAloudLabel}
@@ -451,7 +459,8 @@ export namespace CopilotChatAssistantMessage {
   export const RegenerateButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
   > = ({ title, ...props }) => {
-    const { labels } = useCopilotChatConfiguration();
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
     return (
       <ToolbarButton
         title={title || labels.assistantMessageToolbarRegenerateLabel}
