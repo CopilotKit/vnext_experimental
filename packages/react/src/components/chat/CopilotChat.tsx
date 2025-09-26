@@ -12,18 +12,13 @@ import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { AbstractAgent, AGUIConnectNotImplementedError } from "@ag-ui/client";
 
-export type CopilotChatProps = Omit<CopilotChatViewProps, "messages"> & {
+export type CopilotChatProps = Omit<CopilotChatViewProps, "messages" | "isRunning"> & {
   agentId?: string;
   threadId?: string;
   labels?: Partial<CopilotChatLabels>;
 };
 
-export function CopilotChat({
-  agentId,
-  threadId,
-  labels,
-  ...props
-}: CopilotChatProps) {
+export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChatProps) {
   // Check for existing configuration provider
   const existingConfig = useCopilotChatConfiguration();
 
@@ -31,7 +26,7 @@ export function CopilotChat({
   const resolvedAgentId = agentId ?? existingConfig?.agentId ?? DEFAULT_AGENT_ID;
   const resolvedThreadId = useMemo(
     () => threadId ?? existingConfig?.threadId ?? randomUUID(),
-    [threadId, existingConfig?.threadId]
+    [threadId, existingConfig?.threadId],
   );
   const resolvedLabels: CopilotChatLabels = useMemo(
     () => ({
@@ -39,7 +34,7 @@ export function CopilotChat({
       ...(existingConfig?.labels || {}),
       ...(labels || {}),
     }),
-    [existingConfig?.labels, labels]
+    [existingConfig?.labels, labels],
   );
 
   const { agent } = useAgent({ agentId: resolvedAgentId });
@@ -79,14 +74,10 @@ export function CopilotChat({
         }
       }
     },
-    [agent, copilotkit, resolvedAgentId]
+    [agent, copilotkit, resolvedAgentId],
   );
 
-  const {
-    inputProps: providedInputProps,
-    messageView: providedMessageView,
-    ...restProps
-  } = props;
+  const { inputProps: providedInputProps, messageView: providedMessageView, ...restProps } = props;
 
   const mergedProps = merge(
     {
@@ -99,17 +90,13 @@ export function CopilotChat({
         : providedMessageView !== undefined
           ? { messageView: providedMessageView }
           : {}),
-    }
+    },
   );
 
   // Always create a provider with merged values
   // This ensures priority: props > existing config > defaults
   return (
-    <CopilotChatConfigurationProvider
-      agentId={resolvedAgentId}
-      threadId={resolvedThreadId}
-      labels={resolvedLabels}
-    >
+    <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={resolvedLabels}>
       <CopilotChatView
         {...{
           messages: agent?.messages ?? [],
