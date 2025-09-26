@@ -1,5 +1,6 @@
 import {
   AbstractAgent,
+  HttpAgent,
   RunAgentInput,
   RunAgentInputSchema,
 } from "@ag-ui/client";
@@ -34,7 +35,27 @@ export async function handleRunAgent({
       );
     }
 
-    const agent = agents[agentId].clone() as AbstractAgent;
+    const registeredAgent = agents[agentId] as AbstractAgent;
+    const agent = registeredAgent.clone() as AbstractAgent;
+
+    if (agent && "headers" in agent) {
+      const shouldForward = (headerName: string) => {
+        const lower = headerName.toLowerCase();
+        return lower === "authorization" || lower.startsWith("x-");
+      };
+
+      const forwardableHeaders: Record<string, string> = {};
+      request.headers.forEach((value, key) => {
+        if (shouldForward(key)) {
+          forwardableHeaders[key] = value;
+        }
+      });
+
+      agent.headers = { 
+        ...agent.headers as Record<string, string>, 
+        ...forwardableHeaders 
+      };
+    }
 
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
