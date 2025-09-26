@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CopilotKitCore } from "../core";
-import {
-  MockAgent,
-  createToolCallMessage,
-  createTool,
-} from "./test-utils";
+import { MockAgent, createToolCallMessage, createTool } from "./test-utils";
 
 describe("CopilotKitCore Tool Minimal", () => {
   let copilotKitCore: CopilotKitCore;
@@ -32,11 +28,11 @@ describe("CopilotKitCore Tool Minimal", () => {
         id: expect.any(String),
         function: expect.objectContaining({
           name: toolName,
-          arguments: '{"input":"test"}'
-        })
-      })
+          arguments: '{"input":"test"}',
+        }),
+      }),
     );
-    expect(agent.messages.some(m => m.role === "tool")).toBe(true);
+    expect(agent.messages.some((m) => m.role === "tool")).toBe(true);
   });
 
   it("should skip tool call when tool not found", async () => {
@@ -45,6 +41,6 @@ describe("CopilotKitCore Tool Minimal", () => {
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
-    expect(agent.messages.filter(m => m.role === "tool")).toHaveLength(0);
+    expect(agent.messages.filter((m) => m.role === "tool")).toHaveLength(0);
   });
 });

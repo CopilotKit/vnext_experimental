@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CopilotKitCore } from "../core";
-import {
-  MockAgent,
-  createToolCallMessage,
-  createTool,
-} from "./test-utils";
+import { MockAgent, createToolCallMessage, createTool } from "./test-utils";
 
 describe("CopilotKitCore Tool Simple", () => {
   let copilotKitCore: CopilotKitCore;
@@ -15,7 +11,7 @@ describe("CopilotKitCore Tool Simple", () => {
 
   it("should execute a simple tool", async () => {
     console.log("Starting simple tool test");
-    
+
     const toolName = "simpleTool";
     const tool = createTool({
       name: toolName,
@@ -40,9 +36,9 @@ describe("CopilotKitCore Tool Simple", () => {
         id: expect.any(String),
         function: expect.objectContaining({
           name: toolName,
-          arguments: '{"input":"test"}'
-        })
-      })
+          arguments: '{"input":"test"}',
+        }),
+      }),
     );
     expect(agent.messages.length).toBeGreaterThan(0);
   });

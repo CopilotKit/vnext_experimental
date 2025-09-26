@@ -25,10 +25,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
   describe("Tests that should pass", () => {
     it("TEST 1: should run agent without tools", async () => {
-      const messages = [
-        createMessage({ content: "Hello" }),
-        createAssistantMessage({ content: "Hi there!" }),
-      ];
+      const messages = [createMessage({ content: "Hello" }), createAssistantMessage({ content: "Hi there!" })];
       const agent = new MockAgent({ newMessages: messages });
 
       const result = await copilotKitCore.runAgent({ agent: agent as any });
@@ -57,11 +54,11 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
           id: expect.any(String),
           function: expect.objectContaining({
             name: toolName,
-            arguments: '{"input":"test"}'
-          })
-        })
+            arguments: '{"input":"test"}',
+          }),
+        }),
       );
-      expect(agent.messages.some(m => m.role === "tool")).toBe(true);
+      expect(agent.messages.some((m) => m.role === "tool")).toBe(true);
     });
 
     it("TEST 3: should skip tool when not found", async () => {
@@ -70,7 +67,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       await copilotKitCore.runAgent({ agent: agent as any });
 
-      expect(agent.messages.filter(m => m.role === "tool")).toHaveLength(0);
+      expect(agent.messages.filter((m) => m.role === "tool")).toHaveLength(0);
     });
   });
 
@@ -86,7 +83,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createToolCallMessage("followUpTool");
       const followUpMessage = createAssistantMessage({ content: "Follow-up response" });
-      
+
       const agent = new MockAgent({ newMessages: [message] });
       let callCount = 0;
       agent.runAgentCallback = () => {
@@ -123,11 +120,8 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       copilotKitCore.addTool(tool1);
       copilotKitCore.addTool(tool2);
 
-      const message = createMultipleToolCallsMessage([
-        { name: "tool1" },
-        { name: "tool2" },
-      ]);
-      
+      const message = createMultipleToolCallsMessage([{ name: "tool1" }, { name: "tool2" }]);
+
       const agent = new MockAgent({ newMessages: [message] });
       let callCount = 0;
       agent.runAgentCallback = () => {
@@ -159,7 +153,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createToolCallMessage("defaultFollowUpTool");
       const followUpMessage = createAssistantMessage({ content: "Follow-up" });
-      
+
       const agent = new MockAgent({ newMessages: [message] });
       let callCount = 0;
       agent.runAgentCallback = () => {
@@ -191,14 +185,16 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createAssistantMessage({
         content: "",
-        toolCalls: [{
-          id: "tool-call-1",
-          type: "function",
-          function: {
-            name: toolName,
-            arguments: "{ invalid json",
+        toolCalls: [
+          {
+            id: "tool-call-1",
+            type: "function",
+            function: {
+              name: toolName,
+              arguments: "{ invalid json",
+            },
           },
-        }],
+        ],
       });
       const agent = new MockAgent({ newMessages: [message] });
 
@@ -222,14 +218,16 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createAssistantMessage({
         content: "",
-        toolCalls: [{
-          id: "empty-args-call",
-          type: "function",
-          function: {
-            name: "emptyArgsTool",
-            arguments: "",
+        toolCalls: [
+          {
+            id: "empty-args-call",
+            type: "function",
+            function: {
+              name: "emptyArgsTool",
+              arguments: "",
+            },
           },
-        }],
+        ],
       });
 
       const agent = new MockAgent({ newMessages: [message] });
@@ -262,7 +260,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       const msg1 = createToolCallMessage("chainTool1");
       const msg2 = createToolCallMessage("chainTool2");
       const finalMsg = createAssistantMessage({ content: "Done" });
-      
+
       const agent = new MockAgent({ newMessages: [msg1] });
       let callCount = 0;
       agent.runAgentCallback = () => {
@@ -289,22 +287,20 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
     it("TEST 10: should handle concurrent tool calls", async () => {
       console.log("TEST 10: Starting concurrent tools test");
       const delays = [50, 30, 70];
-      const tools = delays.map((delay, i) => 
+      const tools = delays.map((delay, i) =>
         createTool({
           name: `concurrentTool${i}`,
           handler: vi.fn(async () => {
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise((resolve) => setTimeout(resolve, delay));
             return `Result ${i} after ${delay}ms`;
           }),
           followUp: false,
-        })
+        }),
       );
-      
-      tools.forEach(tool => copilotKitCore.addTool(tool));
 
-      const message = createMultipleToolCallsMessage(
-        delays.map((_, i) => ({ name: `concurrentTool${i}` }))
-      );
+      tools.forEach((tool) => copilotKitCore.addTool(tool));
+
+      const message = createMultipleToolCallsMessage(delays.map((_, i) => ({ name: `concurrentTool${i}` })));
       const agent = new MockAgent({ newMessages: [message] });
 
       const startTime = Date.now();
@@ -312,12 +308,12 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
         await copilotKitCore.runAgent({ agent: agent as any });
         const duration = Date.now() - startTime;
         console.log(`TEST 10: Success - duration: ${duration}ms`);
-        
+
         // Should execute sequentially
         const expectedMinDuration = delays.reduce((a, b) => a + b, 0);
         expect(duration).toBeGreaterThanOrEqual(expectedMinDuration - 10);
-        
-        tools.forEach(tool => {
+
+        tools.forEach((tool) => {
           expect(tool.handler).toHaveBeenCalled();
         });
       } catch (error) {
