@@ -8,7 +8,7 @@
     "check-types": "echo 'No TypeScript compilation needed for Mintlify docs'"
   },
   "devDependencies": {
-    "mintlify": "^4.2.3"
+    "mintlify": "^4.2.127"
   },
   "dependencies": {
     "sharp": "^0.34.2"
