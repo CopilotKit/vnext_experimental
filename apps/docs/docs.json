@@ -55,8 +55,19 @@
                 "pages": ["reference/copilotkit-provider", "reference/copilot-chat-configuration-provider"]
               },
               {
+                "group": "Components",
+                "pages": ["reference/copilot-chat"]
+              },
+              {
                 "group": "Hooks",
-                "pages": ["reference/use-copilot-kit", "reference/use-agent"]
+                "pages": [
+                  "reference/use-copilotkit",
+                  "reference/use-agent",
+                  "reference/use-agent-context",
+                  "reference/use-frontend-tool",
+                  "reference/use-human-in-the-loop",
+                  "reference/use-render-tool-call"
+                ]
               }
             ]
           }
