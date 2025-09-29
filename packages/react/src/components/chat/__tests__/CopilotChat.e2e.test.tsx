@@ -10,7 +10,6 @@ import {
   toolCallChunkEvent,
   toolCallResultEvent,
   testId,
-  waitForReactUpdate,
 } from "@/__tests__/utils/test-helpers";
 
 describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
@@ -29,9 +28,6 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         const userMessage = screen.getByText("Hello AI!");
         expect(userMessage).toBeDefined();
       });
-
-      // Wait for agent to start processing
-      await waitForReactUpdate(100);
 
       // Agent starts running
       const messageId = testId("msg");
@@ -57,7 +53,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Tell me a story" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Tell me a story")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       agent.emit(runStartedEvent());
@@ -112,7 +111,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "What's the weather?" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("What's the weather?")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -194,7 +196,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Weather and time please" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Weather and time please")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId1 = testId("tc1");
@@ -277,7 +282,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Do something unknown" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Do something unknown")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -328,7 +336,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Do something" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Do something")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -383,7 +394,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Use test tool" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Use test tool")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -468,7 +482,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Test specific" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Test specific")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId1 = testId("tc1");

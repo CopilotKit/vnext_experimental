@@ -12,7 +12,6 @@ import {
   runFinishedEvent,
   toolCallChunkEvent,
   testId,
-  waitForReactUpdate,
 } from "@/__tests__/utils/test-helpers";
 
 describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
@@ -433,11 +432,12 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
         })
       );
 
-      await waitForReactUpdate(150);
-
-      const dynamicRenders = screen.queryAllByTestId("dynamic-hitl");
-      expect(dynamicRenders.length).toBe(0);
-      expect(screen.queryByText(/should not render/)).toBeNull();
+      // Wait and verify that dynamic HITL does not render
+      await waitFor(() => {
+        const dynamicRenders = screen.queryAllByTestId("dynamic-hitl");
+        expect(dynamicRenders.length).toBe(0);
+        expect(screen.queryByText(/should not render/)).toBeNull();
+      }, { timeout: 200 });
 
       agent.emit(runFinishedEvent());
       agent.complete();

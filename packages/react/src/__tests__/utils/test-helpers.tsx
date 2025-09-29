@@ -177,9 +177,3 @@ export function testId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-/**
- * Small delay helper for React updates (use sparingly)
- */
-export function waitForReactUpdate(ms: number = 50): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
