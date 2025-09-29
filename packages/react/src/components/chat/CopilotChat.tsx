@@ -43,7 +43,7 @@ export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChat
   useEffect(() => {
     const connect = async (agent: AbstractAgent) => {
       try {
-        await copilotkit.connectAgent({ agent, agentId: resolvedAgentId });
+        await copilotkit.connectAgent({ agent });
       } catch (error) {
         if (error instanceof AGUIConnectNotImplementedError) {
           // connect not implemented, ignore
@@ -68,13 +68,13 @@ export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChat
       });
       if (agent) {
         try {
-          await copilotkit.runAgent({ agent, agentId: resolvedAgentId });
+          await copilotkit.runAgent({ agent });
         } catch (error) {
           console.error("CopilotChat: runAgent failed", error);
         }
       }
     },
-    [agent, copilotkit, resolvedAgentId],
+    [agent, copilotkit],
   );
 
   const { inputProps: providedInputProps, messageView: providedMessageView, ...restProps } = props;

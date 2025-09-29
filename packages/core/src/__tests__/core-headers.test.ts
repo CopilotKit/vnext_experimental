@@ -99,8 +99,8 @@ describe("CopilotKitCore headers", () => {
     });
 
     await agent.runAgent();
-    await core.connectAgent({ agent, agentId: "default" });
-    await core.runAgent({ agent, agentId: "default" });
+    await core.connectAgent({ agent });
+    await core.runAgent({ agent });
 
     expect(recorded).toHaveLength(3);
     for (const headers of recorded) {
@@ -195,11 +195,11 @@ describe("CopilotKitCore headers", () => {
       agents__unsafe_dev_only: { default: agent },
     });
 
-    await core.runAgent({ agent, agentId: "default" });
+    await core.runAgent({ agent });
 
     core.setHeaders({ Authorization: "Bearer updated", "X-Trace": "123" });
 
-    await core.runAgent({ agent, agentId: "default" });
+    await core.runAgent({ agent });
 
     expect(recorded).toHaveLength(2);
     expect(recorded[0]).toMatchObject({ Authorization: "Bearer initial" });

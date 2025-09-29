@@ -28,12 +28,10 @@ export interface CopilotKitCoreAddAgentParams {
 export interface CopilotKitCoreRunAgentParams {
   agent: AbstractAgent;
   withMessages?: Message[];
-  agentId?: string;
 }
 
 export interface CopilotKitCoreConnectAgentParams {
   agent: AbstractAgent;
-  agentId?: string;
 }
 
 export interface CopilotKitCoreGetToolParams {
@@ -204,10 +202,7 @@ export class CopilotKitCore {
     );
   }
 
-  private resolveAgentId(agent: AbstractAgent, providedAgentId?: string): string {
-    if (providedAgentId) {
-      return providedAgentId;
-    }
+  private resolveAgentId(agent: AbstractAgent): string {
     if (agent.agentId) {
       return agent.agentId;
     }
@@ -608,7 +603,7 @@ export class CopilotKitCore {
   /**
    * Agent connectivity
    */
-  async connectAgent({ agent, agentId }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
+  async connectAgent({ agent }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
       if (agent instanceof HttpAgent) {
         agent.headers = { ...this.headers };
@@ -617,17 +612,17 @@ export class CopilotKitCore {
       const runAgentResult = await agent.connectAgent(
         {
           forwardedProps: this.properties,
-          tools: this.buildFrontendTools(agentId),
+          tools: this.buildFrontendTools(agent.agentId),
         },
-        this.createAgentErrorSubscriber(agent, agentId),
+        this.createAgentErrorSubscriber(agent),
       );
 
-      return this.processAgentResult({ runAgentResult, agent, agentId });
+      return this.processAgentResult({ runAgentResult, agent });
     } catch (error) {
       const connectError = error instanceof Error ? error : new Error(String(error));
       const context: Record<string, any> = {};
-      if (agentId ?? agent.agentId) {
-        context.agentId = agentId ?? agent.agentId;
+      if (agent.agentId) {
+        context.agentId = agent.agentId;
       }
       await this.emitError({
         error: connectError,
@@ -638,7 +633,7 @@ export class CopilotKitCore {
     }
   }
 
-  async runAgent({ agent, withMessages, agentId }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
+  async runAgent({ agent, withMessages }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
     if (agent instanceof HttpAgent) {
       agent.headers = { ...this.headers };
     }
@@ -650,16 +645,16 @@ export class CopilotKitCore {
       const runAgentResult = await agent.runAgent(
         {
           forwardedProps: this.properties,
-          tools: this.buildFrontendTools(agentId),
+          tools: this.buildFrontendTools(agent.agentId),
         },
-        this.createAgentErrorSubscriber(agent, agentId),
+        this.createAgentErrorSubscriber(agent),
       );
-      return this.processAgentResult({ runAgentResult, agent, agentId });
+      return this.processAgentResult({ runAgentResult, agent });
     } catch (error) {
       const runError = error instanceof Error ? error : new Error(String(error));
       const context: Record<string, any> = {};
-      if (agentId ?? agent.agentId) {
-        context.agentId = agentId ?? agent.agentId;
+      if (agent.agentId) {
+        context.agentId = agent.agentId;
       }
       if (withMessages) {
         context.messageCount = withMessages.length;
@@ -676,14 +671,12 @@ export class CopilotKitCore {
   private async processAgentResult({
     runAgentResult,
     agent,
-    agentId,
   }: {
     runAgentResult: RunAgentResult;
     agent: AbstractAgent;
-    agentId: string | undefined;
   }): Promise<RunAgentResult> {
     const { newMessages } = runAgentResult;
-    const effectiveAgentId = this.resolveAgentId(agent, agentId);
+    const effectiveAgentId = this.resolveAgentId(agent);
 
     let needsFollowUp = false;
 
@@ -693,11 +686,11 @@ export class CopilotKitCore {
           if (newMessages.findIndex((m) => m.role === "tool" && m.toolCallId === toolCall.id) === -1) {
             const tool = this.getTool({
               toolName: toolCall.function.name,
-              agentId,
+              agentId: agent.agentId,
             });
             if (tool) {
               // Check if tool is constrained to a specific agent
-              if (tool?.agentId && tool.agentId !== agentId) {
+              if (tool?.agentId && tool.agentId !== agent.agentId) {
                 // Tool is not available for this agent, skip it
                 continue;
               }
@@ -805,10 +798,10 @@ export class CopilotKitCore {
               }
             } else {
               // Wildcard fallback for undefined tools
-              const wildcardTool = this.getTool({ toolName: "*", agentId });
+              const wildcardTool = this.getTool({ toolName: "*", agentId: agent.agentId });
               if (wildcardTool) {
                 // Check if wildcard tool is constrained to a specific agent
-                if (wildcardTool?.agentId && wildcardTool.agentId !== agentId) {
+                if (wildcardTool?.agentId && wildcardTool.agentId !== agent.agentId) {
                   // Wildcard tool is not available for this agent, skip it
                   continue;
                 }
@@ -927,7 +920,7 @@ export class CopilotKitCore {
     }
 
     if (needsFollowUp) {
-      return await this.runAgent({ agent, agentId });
+      return await this.runAgent({ agent });
     }
 
     return runAgentResult;
@@ -943,15 +936,15 @@ export class CopilotKitCore {
       }));
   }
 
-  private createAgentErrorSubscriber(agent: AbstractAgent, agentId?: string): AgentSubscriber {
+  private createAgentErrorSubscriber(agent: AbstractAgent): AgentSubscriber {
     const emitAgentError = async (
       error: Error,
       code: CopilotKitCoreErrorCode,
       extraContext: Record<string, any> = {},
     ) => {
       const context: Record<string, any> = { ...extraContext };
-      if (agentId ?? agent.agentId) {
-        context.agentId = agentId ?? agent.agentId;
+      if (agent.agentId) {
+        context.agentId = agent.agentId;
       }
       await this.emitError({
         error,
