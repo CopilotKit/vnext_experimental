@@ -1,6 +1,6 @@
 import { AgentDescription, DEFAULT_AGENT_ID, randomUUID, RuntimeInfo, logger } from "@copilotkitnext/shared";
 import { AbstractAgent, AgentSubscriber, Context, HttpAgent, Message, RunAgentResult } from "@ag-ui/client";
-import { FrontendTool } from "./types";
+import { FrontendTool, Suggestion, SuggestionsConfig } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -16,6 +16,8 @@ export interface CopilotKitCoreConfig {
   properties?: Record<string, unknown>;
   /** Ordered collection of frontend tools available to the core. */
   tools?: FrontendTool<any>[];
+  /** Suggestions config for the core. */
+  suggestionsConfig?: SuggestionsConfig[];
 }
 
 export interface CopilotKitCoreAddAgentParams {
@@ -77,6 +79,10 @@ export interface CopilotKitCoreSubscriber {
     copilotkit: CopilotKitCore;
     context: Readonly<Record<string, Context>>;
   }) => void | Promise<void>;
+  onSuggestionsConfigChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    suggestionsConfig: Readonly<Record<string, SuggestionsConfig>>;
+  }) => void | Promise<void>;
   onPropertiesChanged?: (event: {
     copilotkit: CopilotKitCore;
     properties: Readonly<Record<string, unknown>>;
@@ -105,6 +111,7 @@ export class CopilotKitCore {
   private _properties: Record<string, unknown>;
 
   private _context: Record<string, Context> = {};
+  private _suggestionsConfig: Record<string, SuggestionsConfig> = {};
   private _agents: Record<string, AbstractAgent> = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _tools: FrontendTool<any>[] = [];
@@ -118,12 +125,15 @@ export class CopilotKitCore {
   private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
     CopilotKitCoreRuntimeConnectionStatus.Disconnected;
 
+  private _suggestions: Record<string, Suggestion> = {};
+
   constructor({
     runtimeUrl,
     headers = {},
     properties = {},
     agents__unsafe_dev_only = {},
     tools = [],
+    suggestionsConfig = [],
   }: CopilotKitCoreConfig) {
     this._headers = headers;
     this._properties = properties;
@@ -131,6 +141,9 @@ export class CopilotKitCore {
     this.applyHeadersToAgents(this.localAgents);
     this._agents = this.localAgents;
     this._tools = tools;
+    for (const config of suggestionsConfig) {
+      this._suggestionsConfig[randomUUID()] = config;
+    }
     this.setRuntimeUrl(runtimeUrl);
   }
 
@@ -493,6 +506,33 @@ export class CopilotKitCore {
           context: this._context,
         }),
       "Subscriber onContextChanged error:",
+    );
+  }
+
+  /**
+   * Suggestions management
+   */
+  addSuggestionsConfig(config: SuggestionsConfig) {
+    this._suggestionsConfig[randomUUID()] = config;
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsConfigChanged?.({
+          copilotkit: this,
+          suggestionsConfig: this._suggestionsConfig,
+        }),
+      "Subscriber onSuggestionsConfigChanged error:",
+    );
+  }
+
+  removeSuggestionsConfig(id: string) {
+    delete this._suggestionsConfig[id];
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsConfigChanged?.({
+          copilotkit: this,
+          suggestionsConfig: this._suggestionsConfig,
+        }),
+      "Subscriber onSuggestionsConfigChanged error:",
     );
   }
 
