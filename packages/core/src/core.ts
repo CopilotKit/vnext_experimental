@@ -1,4 +1,4 @@
-import { AgentDescription, DEFAULT_AGENT_ID, randomUUID, RuntimeInfo, logger } from "@copilotkitnext/shared";
+import { AgentDescription, randomUUID, RuntimeInfo, logger } from "@copilotkitnext/shared";
 import { AbstractAgent, AgentSubscriber, Context, HttpAgent, Message, RunAgentResult } from "@ag-ui/client";
 import { FrontendTool, Suggestion, SuggestionsConfig } from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
@@ -159,11 +159,23 @@ export class CopilotKitCore {
 
   private assignAgentIds(agents: Record<string, AbstractAgent>) {
     Object.entries(agents).forEach(([id, agent]) => {
-      if (agent && !agent.agentId) {
-        agent.agentId = id;
+      if (agent) {
+        this.validateAndAssignAgentId(id, agent);
       }
     });
     return agents;
+  }
+
+  private validateAndAssignAgentId(registrationId: string, agent: AbstractAgent) {
+    if (agent.agentId && agent.agentId !== registrationId) {
+      throw new Error(
+        `Agent registration mismatch: Agent with ID "${agent.agentId}" cannot be registered under key "${registrationId}". ` +
+        `The agent ID must match the registration key or be undefined.`
+      );
+    }
+    if (!agent.agentId) {
+      agent.agentId = registrationId;
+    }
   }
 
   private async notifySubscribers(
@@ -202,20 +214,6 @@ export class CopilotKitCore {
     );
   }
 
-  private resolveAgentId(agent: AbstractAgent): string {
-    if (agent.agentId) {
-      return agent.agentId;
-    }
-    const found = Object.entries(this._agents).find(([, storedAgent]) => {
-      return storedAgent === agent;
-    });
-    if (found) {
-      agent.agentId = found[0];
-      return found[0];
-    }
-    agent.agentId = DEFAULT_AGENT_ID;
-    return DEFAULT_AGENT_ID;
-  }
 
   /**
    * Snapshot accessors
@@ -320,7 +318,7 @@ export class CopilotKitCore {
         Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
           const agent = new ProxiedCopilotRuntimeAgent({
             runtimeUrl: this.runtimeUrl,
-            agentId: id,
+            agentId: id,  // Runtime agents always have their ID set correctly
             description: description,
           });
           this.applyHeadersToAgent(agent);
@@ -415,7 +413,13 @@ export class CopilotKitCore {
   }
 
   setAgents__unsafe_dev_only(agents: Record<string, AbstractAgent>) {
-    this.localAgents = this.assignAgentIds(agents);
+    // Validate all agents before making any changes
+    Object.entries(agents).forEach(([id, agent]) => {
+      if (agent) {
+        this.validateAndAssignAgentId(id, agent);
+      }
+    });
+    this.localAgents = agents;
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     this.applyHeadersToAgents(this._agents);
     void this.notifySubscribers(
@@ -429,10 +433,8 @@ export class CopilotKitCore {
   }
 
   addAgent__unsafe_dev_only({ id, agent }: CopilotKitCoreAddAgentParams) {
+    this.validateAndAssignAgentId(id, agent);
     this.localAgents[id] = agent;
-    if (!agent.agentId) {
-      agent.agentId = id;
-    }
     this.applyHeadersToAgent(agent);
     this._agents = { ...this.localAgents, ...this.remoteAgents };
     void this.notifySubscribers(
@@ -676,7 +678,8 @@ export class CopilotKitCore {
     agent: AbstractAgent;
   }): Promise<RunAgentResult> {
     const { newMessages } = runAgentResult;
-    const effectiveAgentId = this.resolveAgentId(agent);
+    // Agent ID is guaranteed to be set by validateAndAssignAgentId
+    const agentId = agent.agentId!;
 
     let needsFollowUp = false;
 
@@ -710,7 +713,7 @@ export class CopilotKitCore {
                     error: parseError,
                     code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
                     context: {
-                      agentId: effectiveAgentId,
+                      agentId: agentId,
                       toolCallId: toolCall.id,
                       toolName: toolCall.function.name,
                       rawArguments: toolCall.function.arguments,
@@ -725,7 +728,7 @@ export class CopilotKitCore {
                     subscriber.onToolExecutionStart?.({
                       copilotkit: this,
                       toolCallId: toolCall.id,
-                      agentId: effectiveAgentId,
+                      agentId: agentId,
                       toolName: toolCall.function.name,
                       args: parsedArgs,
                     }),
@@ -749,7 +752,7 @@ export class CopilotKitCore {
                       error: handlerError,
                       code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
                       context: {
-                        agentId: effectiveAgentId,
+                        agentId: agentId,
                         toolCallId: toolCall.id,
                         toolName: toolCall.function.name,
                         parsedArgs,
@@ -769,7 +772,7 @@ export class CopilotKitCore {
                     subscriber.onToolExecutionEnd?.({
                       copilotkit: this,
                       toolCallId: toolCall.id,
-                      agentId: effectiveAgentId,
+                      agentId: agentId,
                       toolName: toolCall.function.name,
                       result: errorMessage ? "" : toolCallResult,
                       error: errorMessage,
@@ -821,7 +824,7 @@ export class CopilotKitCore {
                       error: parseError,
                       code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
                       context: {
-                        agentId: effectiveAgentId,
+                        agentId: agentId,
                         toolCallId: toolCall.id,
                         toolName: toolCall.function.name,
                         rawArguments: toolCall.function.arguments,
@@ -841,7 +844,7 @@ export class CopilotKitCore {
                       subscriber.onToolExecutionStart?.({
                         copilotkit: this,
                         toolCallId: toolCall.id,
-                        agentId: effectiveAgentId,
+                        agentId: agentId,
                         toolName: toolCall.function.name,
                         args: wildcardArgs,
                       }),
@@ -865,7 +868,7 @@ export class CopilotKitCore {
                         error: handlerError,
                         code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
                         context: {
-                          agentId: effectiveAgentId,
+                          agentId: agentId,
                           toolCallId: toolCall.id,
                           toolName: toolCall.function.name,
                           parsedArgs: wildcardArgs,
@@ -885,7 +888,7 @@ export class CopilotKitCore {
                       subscriber.onToolExecutionEnd?.({
                         copilotkit: this,
                         toolCallId: toolCall.id,
-                        agentId: effectiveAgentId,
+                        agentId: agentId,
                         toolName: toolCall.function.name,
                         result: errorMessage ? "" : toolCallResult,
                         error: errorMessage,
