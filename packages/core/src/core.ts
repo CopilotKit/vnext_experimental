@@ -1,6 +1,12 @@
-import { AgentDescription, randomUUID, RuntimeInfo, logger } from "@copilotkitnext/shared";
-import { AbstractAgent, AgentSubscriber, Context, HttpAgent, Message, RunAgentResult } from "@ag-ui/client";
-import { FrontendTool, Suggestion, SuggestionsConfig } from "./types";
+import { AgentDescription, randomUUID, RuntimeInfo, logger, partialJSONParse } from "@copilotkitnext/shared";
+import { AbstractAgent, AgentSubscriber, Context, HttpAgent, Message, RunAgentResult, Tool } from "@ag-ui/client";
+import {
+  DynamicSuggestionsConfig,
+  FrontendTool,
+  StaticSuggestionsConfig,
+  Suggestion,
+  SuggestionsConfig,
+} from "./types";
 import { ProxiedCopilotRuntimeAgent } from "./agent";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
@@ -81,6 +87,11 @@ export interface CopilotKitCoreSubscriber {
     copilotkit: CopilotKitCore;
     suggestionsConfig: Readonly<Record<string, SuggestionsConfig>>;
   }) => void | Promise<void>;
+  onSuggestionsChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    agentId: string;
+    suggestions: Suggestion[];
+  }) => void | Promise<void>;
   onPropertiesChanged?: (event: {
     copilotkit: CopilotKitCore;
     properties: Readonly<Record<string, unknown>>;
@@ -123,7 +134,8 @@ export class CopilotKitCore {
   private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
     CopilotKitCoreRuntimeConnectionStatus.Disconnected;
 
-  private _suggestions: Record<string, Suggestion> = {};
+  private _suggestions: Record<string, Record<string, Suggestion[]>> = {};
+  private _runningSuggestions: Record<string, AbstractAgent[]> = {};
 
   constructor({
     runtimeUrl,
@@ -170,7 +182,7 @@ export class CopilotKitCore {
     if (agent.agentId && agent.agentId !== registrationId) {
       throw new Error(
         `Agent registration mismatch: Agent with ID "${agent.agentId}" cannot be registered under key "${registrationId}". ` +
-        `The agent ID must match the registration key or be undefined.`
+          `The agent ID must match the registration key or be undefined.`,
       );
     }
     if (!agent.agentId) {
@@ -213,7 +225,6 @@ export class CopilotKitCore {
       "Subscriber onError error:",
     );
   }
-
 
   /**
    * Snapshot accessors
@@ -318,7 +329,7 @@ export class CopilotKitCore {
         Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
           const agent = new ProxiedCopilotRuntimeAgent({
             runtimeUrl: this.runtimeUrl,
-            agentId: id,  // Runtime agents always have their ID set correctly
+            agentId: id, // Runtime agents always have their ID set correctly
             description: description,
           });
           this.applyHeadersToAgent(agent);
@@ -510,7 +521,8 @@ export class CopilotKitCore {
    * Suggestions management
    */
   addSuggestionsConfig(config: SuggestionsConfig) {
-    this._suggestionsConfig[randomUUID()] = config;
+    const id = randomUUID();
+    this._suggestionsConfig[id] = config;
     void this.notifySubscribers(
       (subscriber) =>
         subscriber.onSuggestionsConfigChanged?.({
@@ -519,6 +531,7 @@ export class CopilotKitCore {
         }),
       "Subscriber onSuggestionsConfigChanged error:",
     );
+    return id;
   }
 
   removeSuggestionsConfig(id: string) {
@@ -531,6 +544,51 @@ export class CopilotKitCore {
         }),
       "Subscriber onSuggestionsConfigChanged error:",
     );
+  }
+
+  public reloadSuggestions(agentId: string) {
+    this.clearSuggestions(agentId);
+
+    for (const config of Object.values(this._suggestionsConfig)) {
+      if (isDynamicSuggestionsConfig(config)) {
+        if (
+          config.suggestionsConsumerAgentId === undefined ||
+          config.suggestionsConsumerAgentId === "*" ||
+          config.suggestionsConsumerAgentId === agentId
+        ) {
+          const suggestionId = randomUUID();
+          const agent = this.generateSuggestions(suggestionId, config, agentId);
+          this._suggestions[agentId] = { ...(this._suggestions[agentId] ?? {}), [suggestionId]: [] };
+          this._runningSuggestions[agentId] = [...(this._runningSuggestions[agentId] ?? []), agent];
+        }
+      } else if (isStaticSuggestionsConfig(config)) {
+        // TODO implement static suggestions
+      }
+    }
+  }
+
+  public clearSuggestions(agentId: string) {
+    if (this._runningSuggestions[agentId]) {
+      for (const agent of this._runningSuggestions[agentId]) {
+        agent.abortRun();
+      }
+      delete this._runningSuggestions[agentId];
+    }
+    this._suggestions[agentId] = {};
+
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsChanged?.({
+          copilotkit: this,
+          agentId,
+          suggestions: [],
+        }),
+      "Subscriber onSuggestionsChanged error:",
+    );
+  }
+
+  public getSuggestions(agentId: string): Suggestion[] {
+    return Object.values(this._suggestions[agentId] ?? {}).flat();
   }
 
   /**
@@ -926,6 +984,8 @@ export class CopilotKitCore {
       return await this.runAgent({ agent });
     }
 
+    // TODO find matching suggestions and run them
+
     return runAgentResult;
   }
 
@@ -987,7 +1047,139 @@ export class CopilotKitCore {
       },
     };
   }
+
+  private generateSuggestions(
+    suggestionId: string,
+    config: DynamicSuggestionsConfig,
+    suggestionsConsumerAgentId: string,
+  ): AbstractAgent {
+    const suggestionsProviderAgent = this.getAgent(config.suggestionsProviderAgentId ?? "default");
+    if (!suggestionsProviderAgent) {
+      throw new Error(`Suggestions provider agent not found: ${config.suggestionsProviderAgentId}`);
+    }
+    const suggestionsConsumerAgent = this.getAgent(suggestionsConsumerAgentId);
+    if (!suggestionsConsumerAgent) {
+      throw new Error(`Suggestions consumer agent not found: ${suggestionsConsumerAgentId}`);
+    }
+
+    const agent: AbstractAgent = suggestionsProviderAgent.clone();
+    agent.agentId = suggestionId;
+    agent.threadId = suggestionId;
+    agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
+    agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));
+
+    agent.addMessage({
+      id: suggestionId,
+      role: "user",
+      content: [
+        `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkit_suggest\` tool.`,
+        `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
+        `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(suggestionsConsumerAgentId))}.`,
+        ` ${config.instructions}`,
+      ].join("\n"),
+    });
+    void agent
+      .runAgent(
+        {
+          context: Object.values(this._context),
+          forwardedProps: {
+            ...this.properties,
+            toolChoice: { type: "function", function: { name: "copilotkit_suggest" } },
+          },
+          tools: [suggestTool],
+        },
+        {
+          onMessagesChanged: ({ messages }) => {
+            const idx = messages.findIndex((message) => message.id === suggestionId);
+            if (idx == -1) {
+              return;
+            }
+
+            const newMessages = messages.slice(idx + 1);
+            const suggestions: Suggestion[] = [];
+            for (const message of newMessages) {
+              if (message.role === "assistant" && message.toolCalls) {
+                for (const toolCall of message.toolCalls) {
+                  if (toolCall.function.name === "copilotkit_suggest") {
+                    for (const item of toolCall.function.arguments) {
+                      const suggestion = partialJSONParse(item);
+                      if ("label" in suggestion) {
+                        suggestions.push({
+                          label: suggestion.label ?? "",
+                          value: suggestion.value ?? "",
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            if (
+              this._suggestions[suggestionsConsumerAgentId] &&
+              this._suggestions[suggestionsConsumerAgentId][suggestionId]
+            ) {
+              this._suggestions[suggestionsConsumerAgentId][suggestionId] = suggestions;
+              void this.notifySubscribers(
+                (subscriber) =>
+                  subscriber.onSuggestionsChanged?.({
+                    copilotkit: this,
+                    agentId: suggestionsConsumerAgentId,
+                    suggestions,
+                  }),
+                "Subscriber onSuggestionsChanged error: suggestions changed",
+              );
+            }
+          },
+        },
+      )
+      .catch((error) => {
+        console.warn("Error generating suggestions:", error);
+      });
+    return agent;
+  }
 }
+
+function isDynamicSuggestionsConfig(config: SuggestionsConfig): config is DynamicSuggestionsConfig {
+  return "instructions" in config;
+}
+
+function isStaticSuggestionsConfig(config: SuggestionsConfig): config is StaticSuggestionsConfig {
+  return "suggestions" in config;
+}
+
+const suggestTool: Tool = {
+  name: "copilotkit_suggest",
+  description: "Suggest what the user could say next",
+  parameters: {
+    type: "object",
+    properties: {
+      suggestions: {
+        type: "array",
+        description: "List of suggestions shown to the user as buttons.",
+        items: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "The title of the suggestion. This is shown as a button and should be short.",
+            },
+            message: {
+              type: "string",
+              description:
+                "The message to send when the suggestion is clicked. This should be a clear, complete sentence " +
+                "and will be sent as an instruction to the AI.",
+            },
+          },
+          required: ["title", "message"],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["suggestions"],
+    additionalProperties: false,
+  },
+};
 
 const EMPTY_TOOL_SCHEMA = {
   type: "object",
