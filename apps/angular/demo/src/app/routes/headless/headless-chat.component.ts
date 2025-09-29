@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, computed } from "@angular/core";
+import { Component, ChangeDetectionStrategy, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { injectAgentStore } from "@copilotkitnext/angular";
+import { CopilotKit, injectAgentStore } from "@copilotkitnext/angular";
 import { RenderToolCalls } from "@copilotkitnext/angular";
 
 @Component({
@@ -10,14 +10,8 @@ import { RenderToolCalls } from "@copilotkitnext/angular";
   imports: [CommonModule, FormsModule, RenderToolCalls],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="headless-container"
-      style="display:flex;flex-direction:column;height:100vh;width:100vw;"
-    >
-      <div
-        class="messages"
-        style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;"
-      >
+    <div class="headless-container" style="display:flex;flex-direction:column;height:100vh;width:100vw;">
+      <div class="messages" style="flex:1;overflow:auto;padding:16px;background:#f9fafb;color:#111827;">
         <div *ngFor="let m of messages()" style="margin-bottom:16px;">
           <div style="font-weight:600;color:#374151;">
             {{ m.role | titlecase }}
@@ -31,9 +25,7 @@ import { RenderToolCalls } from "@copilotkitnext/angular";
             ></copilot-render-tool-calls>
           </ng-container>
         </div>
-        <div *ngIf="isRunning()" style="opacity:0.9;color:#6b7280;">
-          Thinking…
-        </div>
+        <div *ngIf="isRunning()" style="opacity:0.9;color:#6b7280;">Thinking…</div>
       </div>
 
       <form
@@ -63,6 +55,7 @@ export class HeadlessChatComponent {
   readonly agent = computed(() => this.agentStore()?.agent);
   readonly isRunning = computed(() => !!this.agentStore()?.isRunning());
   readonly messages = computed(() => this.agentStore()?.messages());
+  readonly copilotkit = inject(CopilotKit);
 
   inputValue = "";
 
@@ -77,7 +70,7 @@ export class HeadlessChatComponent {
     this.inputValue = "";
 
     try {
-      await agent.runAgent();
+      await this.copilotkit.core.runAgent({ agent });
     } catch (e) {
       console.error("Agent run error", e);
     }
