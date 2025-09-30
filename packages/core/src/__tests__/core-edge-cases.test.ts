@@ -37,6 +37,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
     const agent = new MockAgent({
       newMessages: [assistantMsg, existingResult],
     });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -57,6 +58,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
     });
 
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -83,6 +85,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
     });
 
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await expect(copilotKitCore.runAgent({ agent: agent as any })).rejects.toThrow();
   });
@@ -98,6 +101,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
 
     const message = createToolCallMessage("largeTool");
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -119,6 +123,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
 
     const message = createToolCallMessage("stateTool");
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -130,9 +135,10 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
 
   it("should propagate errors from agent.runAgent", async () => {
     const errorMessage = "Agent execution failed";
-    const agent = new MockAgent({ 
+    const agent = new MockAgent({
       error: new Error(errorMessage)
     });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await expect(copilotKitCore.runAgent({ agent: agent as any }))
       .rejects
@@ -159,6 +165,7 @@ describe("CopilotKitCore.runAgent - Edge Cases", () => {
       }],
     });
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await expect(copilotKitCore.runAgent({ agent: agent as any })).rejects.toThrow();
     expect(tool.handler).not.toHaveBeenCalled();
