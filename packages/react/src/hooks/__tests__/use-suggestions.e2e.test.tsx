@@ -128,42 +128,337 @@ const TestHarness: React.FC = () => {
 };
 
 describe("useSuggestions E2E", () => {
-  it("tracks suggestions stream and loading state", async () => {
-    const agent = new SuggestionsProviderAgent([
-      { title: "Option A", message: "Take path A" },
-      { title: "Option B", message: "Take path B" },
-    ]);
+  describe("Basic functionality", () => {
+    it("tracks suggestions stream and loading state", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option A", message: "Take path A" },
+        { title: "Option B", message: "Take path B" },
+      ]);
 
-    const ui = renderWithCopilotKit({
-      agent,
-      children: <TestHarness />,
+      const ui = renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Option A");
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Option B");
+
+      fireEvent.click(screen.getByTestId("clear-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      });
+
+      expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+
+      ui.unmount();
     });
 
-    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
-    expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+    it("starts with no suggestions and idle state", () => {
+      const agent = new SuggestionsProviderAgent([]);
 
-    fireEvent.click(screen.getByTestId("reload-suggestions"));
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
 
-    await waitFor(() => {
-      expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      expect(screen.getByTestId("suggestions-json").textContent).toBe("[]");
     });
 
-    await waitFor(() => {
-      expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+    it("handles single suggestion", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Only Option", message: "The only way" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
+      });
+
+      const json = screen.getByTestId("suggestions-json").textContent;
+      expect(json).toContain("Only Option");
+      expect(json).toContain("The only way");
+    });
+
+    it("handles many suggestions", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option 1", message: "First choice" },
+        { title: "Option 2", message: "Second choice" },
+        { title: "Option 3", message: "Third choice" },
+        { title: "Option 4", message: "Fourth choice" },
+        { title: "Option 5", message: "Fifth choice" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("5");
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+  });
+
+  describe("Loading state transitions", () => {
+    it("transitions from idle -> loading -> idle correctly", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Test", message: "Message" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      // Initial state
+      expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+
+      // Trigger reload
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      // Should transition to loading
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      });
+
+      // Should transition back to idle
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+
+    it("stays in loading state during multiple reloads", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Test", message: "Message" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      // Trigger multiple reloads quickly
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      });
+
+      // Eventually should complete and go to idle
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+  });
+
+  describe("Clear functionality", () => {
+    it("clears suggestions immediately without loading state", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option A", message: "Message A" },
+        { title: "Option B", message: "Message B" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      // Load suggestions first
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+      });
+
+      // Clear suggestions
+      fireEvent.click(screen.getByTestId("clear-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      });
+
+      // Should not show loading state during clear
       expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
     });
 
-    expect(screen.getByTestId("suggestions-json").textContent).toContain("Option A");
-    expect(screen.getByTestId("suggestions-json").textContent).toContain("Option B");
+    it("can clear suggestions while loading", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option A", message: "Message A" },
+      ]);
 
-    fireEvent.click(screen.getByTestId("clear-suggestions"));
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
 
-    await waitFor(() => {
+      // Start loading
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      });
+
+      // Clear while loading
+      fireEvent.click(screen.getByTestId("clear-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+
+    it("clearing empty suggestions does not cause errors", async () => {
+      const agent = new SuggestionsProviderAgent([]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+
+      // Clear when already empty
+      fireEvent.click(screen.getByTestId("clear-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      });
+
+      expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+    });
+  });
+
+  describe("Reload functionality", () => {
+    it("can reload to get fresh suggestions", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option A", message: "Message A" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      // First load
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
+      });
+
+      // Clear
+      fireEvent.click(screen.getByTestId("clear-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+      });
+
+      // Reload again
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+
+    it("reload when already has suggestions replaces them", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option A", message: "Message A" },
+        { title: "Option B", message: "Message B" },
+      ]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      // First load
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+      });
+
+      // Reload without clearing
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("handles empty suggestions from agent", async () => {
+      const agent = new SuggestionsProviderAgent([]);
+
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+      });
+
       expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
     });
 
-    expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
+    it("handles suggestions with special characters", async () => {
+      const agent = new SuggestionsProviderAgent([
+        { title: "Option with \"quotes\"", message: "Message with 'quotes'" },
+        { title: "Option with\nnewlines", message: "Message\nwith\nnewlines" },
+      ]);
 
-    ui.unmount();
+      renderWithCopilotKit({
+        agent,
+        children: <TestHarness />,
+      });
+
+      fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("suggestions-count").textContent).toBe("2");
+      });
+
+      const json = screen.getByTestId("suggestions-json").textContent;
+      expect(json).toContain("quotes");
+      expect(json).toContain("newlines");
+    });
   });
 });
