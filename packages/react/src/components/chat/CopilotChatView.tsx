@@ -129,8 +129,11 @@ export function CopilotChatView({
     inputContainerHeight,
     isResizing,
     children: (
-      <div style={{ paddingBottom: `${inputContainerHeight + 32}px` }}>
-        <div className="max-w-3xl mx-auto">{BoundMessageView}</div>
+      <div style={{ paddingBottom: `${inputContainerHeight + (hasSuggestions ? 4 : 32)}px` }}>
+        <div className="max-w-3xl mx-auto">
+          {BoundMessageView}
+          {hasSuggestions ? <div className="px-4 sm:px-0 mt-4">{BoundSuggestionView}</div> : null}
+        </div>
       </div>
     ),
   });
@@ -143,7 +146,6 @@ export function CopilotChatView({
     ref: inputContainerRef,
     children: (
       <>
-        {hasSuggestions ? <div className="max-w-3xl mx-auto px-4 sm:px-0">{BoundSuggestionView}</div> : null}
         <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0 pointer-events-auto">{BoundInput}</div>
         {BoundDisclaimer}
       </>

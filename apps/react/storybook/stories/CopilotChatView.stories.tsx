@@ -41,7 +41,6 @@ export const Default: Story = {
           <div style={{ height: "100%" }}>
           <CopilotChatView
             messages={storyMessages}
-            suggestions={suggestionSamples}
             messageView={{
               assistantMessage: {
                   onThumbsUp: () => {
