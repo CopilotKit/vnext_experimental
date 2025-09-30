@@ -144,7 +144,7 @@ export function CopilotChatView({
     children: (
       <>
         {hasSuggestions ? <div className="max-w-3xl mx-auto px-4 sm:px-0">{BoundSuggestionView}</div> : null}
-        <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0">{BoundInput}</div>
+        <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0 pointer-events-auto">{BoundInput}</div>
         {BoundDisclaimer}
       </>
     ),
@@ -352,7 +352,7 @@ export namespace CopilotChatView {
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
   >(({ children, className, ...props }, ref) => (
-    <div ref={ref} className={cn("absolute bottom-0 left-0 right-0 z-20", className)} {...props}>
+    <div ref={ref} className={cn("absolute bottom-0 left-0 right-0 z-20 pointer-events-none", className)} {...props}>
       {children}
     </div>
   ));
