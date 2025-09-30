@@ -585,8 +585,9 @@ export class CopilotKitCore {
   }
 
   public clearSuggestions(agentId: string) {
-    if (this._runningSuggestions[agentId]) {
-      for (const agent of this._runningSuggestions[agentId]) {
+    const runningAgents = this._runningSuggestions[agentId];
+    if (runningAgents) {
+      for (const agent of runningAgents) {
         agent.abortRun();
       }
       delete this._runningSuggestions[agentId];
@@ -1157,11 +1158,9 @@ export class CopilotKitCore {
               }
             }
 
-            if (
-              this._suggestions[suggestionsConsumerAgentId] &&
-              this._suggestions[suggestionsConsumerAgentId][suggestionId]
-            ) {
-              this._suggestions[suggestionsConsumerAgentId][suggestionId] = suggestions;
+            const agentSuggestions = this._suggestions[suggestionsConsumerAgentId];
+            if (agentSuggestions && agentSuggestions[suggestionId]) {
+              agentSuggestions[suggestionId] = suggestions;
               void this.notifySubscribers(
                 (subscriber) =>
                   subscriber.onSuggestionsChanged?.({
@@ -1179,13 +1178,13 @@ export class CopilotKitCore {
       console.warn("Error generating suggestions:", error);
     } finally {
       // Remove this agent from running suggestions
-      if (agent && this._runningSuggestions[suggestionsConsumerAgentId]) {
-        this._runningSuggestions[suggestionsConsumerAgentId] = this._runningSuggestions[
-          suggestionsConsumerAgentId
-        ].filter((a) => a !== agent);
+      const runningAgents = this._runningSuggestions[suggestionsConsumerAgentId];
+      if (agent && runningAgents) {
+        const filteredAgents = runningAgents.filter((a) => a !== agent);
+        this._runningSuggestions[suggestionsConsumerAgentId] = filteredAgents;
 
         // If no more suggestions are running, emit loading end event
-        if (this._runningSuggestions[suggestionsConsumerAgentId].length === 0) {
+        if (filteredAgents.length === 0) {
           delete this._runningSuggestions[suggestionsConsumerAgentId];
           await this.notifySubscribers(
             (subscriber) =>
