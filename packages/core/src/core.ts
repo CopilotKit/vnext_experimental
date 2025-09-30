@@ -1072,7 +1072,7 @@ export class CopilotKitCore {
       id: suggestionId,
       role: "user",
       content: [
-        `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkit_suggest\` tool.`,
+        `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
         `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
         `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(suggestionsConsumerAgentId))}.`,
         ` ${config.instructions}`,
@@ -1084,7 +1084,7 @@ export class CopilotKitCore {
           context: Object.values(this._context),
           forwardedProps: {
             ...this.properties,
-            toolChoice: { type: "function", function: { name: "copilotkit_suggest" } },
+            toolChoice: { type: "function", function: { name: "copilotkitSuggest" } },
           },
           tools: [suggestTool],
         },
@@ -1100,7 +1100,7 @@ export class CopilotKitCore {
             for (const message of newMessages) {
               if (message.role === "assistant" && message.toolCalls) {
                 for (const toolCall of message.toolCalls) {
-                  if (toolCall.function.name === "copilotkit_suggest") {
+                  if (toolCall.function.name === "copilotkitSuggest") {
                     for (const item of toolCall.function.arguments) {
                       const suggestion = partialJSONParse(item);
                       if ("label" in suggestion) {
@@ -1149,7 +1149,7 @@ function isStaticSuggestionsConfig(config: SuggestionsConfig): config is StaticS
 }
 
 const suggestTool: Tool = {
-  name: "copilotkit_suggest",
+  name: "copilotkitSuggest",
   description: "Suggest what the user could say next",
   parameters: {
     type: "object",
