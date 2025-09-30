@@ -193,7 +193,7 @@ export namespace CopilotChatView {
         {/* Scroll to bottom button - hidden during resize */}
         {!isAtBottom && !isResizing && (
           <div
-            className="absolute inset-x-0 flex justify-center z-10"
+            className="absolute inset-x-0 flex justify-center z-10 pointer-events-none"
             style={{
               bottom: `${inputContainerHeight + 16}px`,
             }}
@@ -282,7 +282,7 @@ export namespace CopilotChatView {
           {/* Scroll to bottom button for manual mode */}
           {showScrollButton && !isResizing && (
             <div
-              className="absolute inset-x-0 flex justify-center z-10"
+              className="absolute inset-x-0 flex justify-center z-10 pointer-events-none"
               style={{
                 bottom: `${inputContainerHeight + 16}px`,
               }}
@@ -322,7 +322,7 @@ export namespace CopilotChatView {
       variant="outline"
       size="sm"
       className={twMerge(
-        "rounded-full w-10 h-10 p-0",
+        "rounded-full w-10 h-10 p-0 pointer-events-auto",
         "bg-white dark:bg-gray-900",
         "shadow-lg border border-gray-200 dark:border-gray-700",
         "hover:bg-gray-50 dark:hover:bg-gray-800",
