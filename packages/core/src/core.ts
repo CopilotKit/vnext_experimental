@@ -45,6 +45,11 @@ export interface CopilotKitCoreGetToolParams {
   agentId?: string;
 }
 
+export type CopilotKitCoreGetSuggestionsResult = {
+  suggestions: Suggestion[];
+  isLoading: boolean;
+};
+
 export enum CopilotKitCoreErrorCode {
   RUNTIME_INFO_FETCH_FAILED = "runtime_info_fetch_failed",
   AGENT_CONNECT_FAILED = "agent_connect_failed",
@@ -92,6 +97,8 @@ export interface CopilotKitCoreSubscriber {
     agentId: string;
     suggestions: Suggestion[];
   }) => void | Promise<void>;
+  onSuggestionsLoadingStart?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
+  onSuggestionsLoadingEnd?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
   onPropertiesChanged?: (event: {
     copilotkit: CopilotKitCore;
     properties: Readonly<Record<string, unknown>>;
@@ -549,6 +556,7 @@ export class CopilotKitCore {
   public reloadSuggestions(agentId: string) {
     this.clearSuggestions(agentId);
 
+    let hasAnySuggestions = false;
     for (const config of Object.values(this._suggestionsConfig)) {
       if (isDynamicSuggestionsConfig(config)) {
         if (
@@ -557,6 +565,17 @@ export class CopilotKitCore {
           config.suggestionsConsumerAgentId === agentId
         ) {
           const suggestionId = randomUUID();
+          if (!hasAnySuggestions) {
+            hasAnySuggestions = true;
+            void this.notifySubscribers(
+              (subscriber) =>
+                subscriber.onSuggestionsLoadingStart?.({
+                  copilotkit: this,
+                  agentId,
+                }),
+              "Subscriber onSuggestionsLoadingStart error:",
+            );
+          }
           void this.generateSuggestions(suggestionId, config, agentId);
         }
       } else if (isStaticSuggestionsConfig(config)) {
@@ -585,8 +604,10 @@ export class CopilotKitCore {
     );
   }
 
-  public getSuggestions(agentId: string): Suggestion[] {
-    return Object.values(this._suggestions[agentId] ?? {}).flat();
+  public getSuggestions(agentId: string): CopilotKitCoreGetSuggestionsResult {
+    const suggestions = Object.values(this._suggestions[agentId] ?? {}).flat();
+    const isLoading = (this._runningSuggestions[agentId]?.length ?? 0) > 0;
+    return { suggestions, isLoading };
   }
 
   /**
@@ -1051,6 +1072,7 @@ export class CopilotKitCore {
     config: DynamicSuggestionsConfig,
     suggestionsConsumerAgentId: string,
   ): Promise<void> {
+    let agent: AbstractAgent | undefined = undefined;
     try {
       const suggestionsProviderAgent = this.getAgent(config.suggestionsProviderAgentId ?? "default");
       if (!suggestionsProviderAgent) {
@@ -1061,7 +1083,8 @@ export class CopilotKitCore {
         throw new Error(`Suggestions consumer agent not found: ${suggestionsConsumerAgentId}`);
       }
 
-      const agent: AbstractAgent = suggestionsProviderAgent.clone();
+      const clonedAgent: AbstractAgent = suggestionsProviderAgent.clone();
+      agent = clonedAgent;
       agent.agentId = suggestionId;
       agent.threadId = suggestionId;
       agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
@@ -1154,6 +1177,26 @@ export class CopilotKitCore {
       );
     } catch (error) {
       console.warn("Error generating suggestions:", error);
+    } finally {
+      // Remove this agent from running suggestions
+      if (agent && this._runningSuggestions[suggestionsConsumerAgentId]) {
+        this._runningSuggestions[suggestionsConsumerAgentId] = this._runningSuggestions[
+          suggestionsConsumerAgentId
+        ].filter((a) => a !== agent);
+
+        // If no more suggestions are running, emit loading end event
+        if (this._runningSuggestions[suggestionsConsumerAgentId].length === 0) {
+          delete this._runningSuggestions[suggestionsConsumerAgentId];
+          await this.notifySubscribers(
+            (subscriber) =>
+              subscriber.onSuggestionsLoadingEnd?.({
+                copilotkit: this,
+                agentId: suggestionsConsumerAgentId,
+              }),
+            "Subscriber onSuggestionsLoadingEnd error:",
+          );
+        }
+      }
     }
   }
 }

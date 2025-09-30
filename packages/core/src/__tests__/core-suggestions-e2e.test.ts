@@ -69,15 +69,15 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       // Wait for suggestions to be generated
       await vi.waitFor(() => {
-        const suggestions = copilotKitCore.getSuggestions("consumer");
-        expect(suggestions.length).toBeGreaterThan(0);
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
       });
 
       // Verify suggestions were generated
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions).toHaveLength(2);
-      expect(suggestions[0]).toEqual({ title: "Action 1", message: "Do action 1" });
-      expect(suggestions[1]).toEqual({ title: "Action 2", message: "Do action 2" });
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions).toHaveLength(2);
+      expect(result.suggestions[0]).toEqual({ title: "Action 1", message: "Do action 1" });
+      expect(result.suggestions[1]).toEqual({ title: "Action 2", message: "Do action 2" });
 
       // Verify subscriber was notified
       await vi.waitFor(() => {
@@ -333,13 +333,13 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("consumer");
 
       await vi.waitFor(() => {
-        const suggestions = copilotKitCore.getSuggestions("consumer");
-        expect(suggestions.length).toBeGreaterThan(0);
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
       });
 
       // Should have parsed the first complete suggestion
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions[0]).toMatchObject({
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions[0]).toMatchObject({
         title: "First",
         message: "First action",
       });
@@ -386,14 +386,14 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("consumer");
 
       await vi.waitFor(() => {
-        const suggestions = copilotKitCore.getSuggestions("consumer");
-        expect(suggestions.length).toBe(2);
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBe(2);
       });
 
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions).toHaveLength(2);
-      expect(suggestions[0].title).toBe("First");
-      expect(suggestions[1].title).toBe("Second");
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions).toHaveLength(2);
+      expect(result.suggestions[0].title).toBe("First");
+      expect(result.suggestions[1].title).toBe("Second");
     });
   });
 
@@ -477,10 +477,10 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       // Both should have suggestions
       await vi.waitFor(() => {
-        const suggestions1 = copilotKitCore.getSuggestions("agent1");
-        const suggestions2 = copilotKitCore.getSuggestions("agent2");
-        expect(suggestions1.length).toBeGreaterThan(0);
-        expect(suggestions2.length).toBeGreaterThan(0);
+        const result1 = copilotKitCore.getSuggestions("agent1");
+        const result2 = copilotKitCore.getSuggestions("agent2");
+        expect(result1.suggestions.length).toBeGreaterThan(0);
+        expect(result2.suggestions.length).toBeGreaterThan(0);
       });
     });
 
@@ -523,8 +523,8 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Both config invocations should have generated suggestions
       // Since they share the same response, we should have at least 1 suggestion
       // (Could be 2 if both succeeded, but timing might cause only one)
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions.length).toBeGreaterThanOrEqual(1);
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -791,8 +791,9 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.clearSuggestions("consumer");
 
       // Verify suggestions are cleared
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions).toEqual([]);
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions).toEqual([]);
+      expect(result.isLoading).toBe(false);
     });
 
     it("should create fresh agents on subsequent reloadSuggestions", async () => {
@@ -901,8 +902,9 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Suggestions should be empty due to error
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(suggestions).toEqual([]);
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions).toEqual([]);
+      expect(result.isLoading).toBe(false);
     });
 
     it("should handle malformed suggestion tool call", async () => {
@@ -938,8 +940,160 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Suggestions should be empty or handle gracefully
-      const suggestions = copilotKitCore.getSuggestions("consumer");
-      expect(Array.isArray(suggestions)).toBe(true);
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(Array.isArray(result.suggestions)).toBe(true);
+      expect(typeof result.isLoading).toBe("boolean");
+    });
+  });
+
+  describe("Loading state E2E", () => {
+    it("should track isLoading state during suggestion generation lifecycle", async () => {
+      const providerAgent = new MockAgent({ agentId: "default", runAgentDelay: 50 });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      // Before triggering, isLoading should be false
+      let result = copilotKitCore.getSuggestions("consumer");
+      expect(result.isLoading).toBe(false);
+
+      // Trigger suggestions
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // During generation, isLoading should be true
+      await vi.waitFor(() => {
+        result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(true);
+      });
+
+      // After generation completes, isLoading should be false
+      await vi.waitFor(() => {
+        result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(false);
+      });
+    });
+
+    it("should emit loading start and end events in correct order", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const events: string[] = [];
+      copilotKitCore.subscribe({
+        onSuggestionsLoadingStart: () => events.push("start"),
+        onSuggestionsLoadingEnd: () => events.push("end"),
+        onSuggestionsChanged: () => events.push("changed"),
+      });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(events).toContain("start");
+        expect(events).toContain("end");
+      });
+
+      // Start should come before end
+      const startIndex = events.indexOf("start");
+      const endIndex = events.lastIndexOf("end");
+      expect(startIndex).toBeLessThan(endIndex);
+    });
+
+    it("should handle isLoading with multiple concurrent configs", async () => {
+      const providerAgent = new MockAgent({ agentId: "default", runAgentDelay: 50 });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config1 = createSuggestionsConfig({ instructions: "First" });
+      const config2 = createSuggestionsConfig({ instructions: "Second" });
+      copilotKitCore.addSuggestionsConfig(config1);
+      copilotKitCore.addSuggestionsConfig(config2);
+
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // During generation, isLoading should be true
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(true);
+      });
+
+      // After all complete, isLoading should be false
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(false);
+      });
+    });
+
+    it("should set isLoading to false after errors", async () => {
+      const providerAgent = new MockAgent({
+        agentId: "default",
+        error: new Error("Generation failed"),
+      });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // After error, isLoading should be false
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(false);
+      });
     });
   });
 });
