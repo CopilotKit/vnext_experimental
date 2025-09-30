@@ -557,9 +557,7 @@ export class CopilotKitCore {
           config.suggestionsConsumerAgentId === agentId
         ) {
           const suggestionId = randomUUID();
-          const agent = this.generateSuggestions(suggestionId, config, agentId);
-          this._suggestions[agentId] = { ...(this._suggestions[agentId] ?? {}), [suggestionId]: [] };
-          this._runningSuggestions[agentId] = [...(this._runningSuggestions[agentId] ?? []), agent];
+          void this.generateSuggestions(suggestionId, config, agentId);
         }
       } else if (isStaticSuggestionsConfig(config)) {
         // TODO implement static suggestions
@@ -984,7 +982,7 @@ export class CopilotKitCore {
       return await this.runAgent({ agent });
     }
 
-    // TODO find matching suggestions and run them
+    void this.reloadSuggestions(agentId);
 
     return runAgentResult;
   }
@@ -1048,38 +1046,49 @@ export class CopilotKitCore {
     };
   }
 
-  private generateSuggestions(
+  private async generateSuggestions(
     suggestionId: string,
     config: DynamicSuggestionsConfig,
     suggestionsConsumerAgentId: string,
-  ): AbstractAgent {
-    const suggestionsProviderAgent = this.getAgent(config.suggestionsProviderAgentId ?? "default");
-    if (!suggestionsProviderAgent) {
-      throw new Error(`Suggestions provider agent not found: ${config.suggestionsProviderAgentId}`);
-    }
-    const suggestionsConsumerAgent = this.getAgent(suggestionsConsumerAgentId);
-    if (!suggestionsConsumerAgent) {
-      throw new Error(`Suggestions consumer agent not found: ${suggestionsConsumerAgentId}`);
-    }
+  ): Promise<void> {
+    try {
+      const suggestionsProviderAgent = this.getAgent(config.suggestionsProviderAgentId ?? "default");
+      if (!suggestionsProviderAgent) {
+        throw new Error(`Suggestions provider agent not found: ${config.suggestionsProviderAgentId}`);
+      }
+      const suggestionsConsumerAgent = this.getAgent(suggestionsConsumerAgentId);
+      if (!suggestionsConsumerAgent) {
+        throw new Error(`Suggestions consumer agent not found: ${suggestionsConsumerAgentId}`);
+      }
 
-    const agent: AbstractAgent = suggestionsProviderAgent.clone();
-    agent.agentId = suggestionId;
-    agent.threadId = suggestionId;
-    agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
-    agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));
+      const agent: AbstractAgent = suggestionsProviderAgent.clone();
+      agent.agentId = suggestionId;
+      agent.threadId = suggestionId;
+      agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
+      agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));
 
-    agent.addMessage({
-      id: suggestionId,
-      role: "user",
-      content: [
-        `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
-        `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
-        `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(suggestionsConsumerAgentId))}.`,
-        ` ${config.instructions}`,
-      ].join("\n"),
-    });
-    void agent
-      .runAgent(
+      // Initialize suggestion storage for this agent/suggestion combo
+      this._suggestions[suggestionsConsumerAgentId] = {
+        ...(this._suggestions[suggestionsConsumerAgentId] ?? {}),
+        [suggestionId]: [],
+      };
+      this._runningSuggestions[suggestionsConsumerAgentId] = [
+        ...(this._runningSuggestions[suggestionsConsumerAgentId] ?? []),
+        agent,
+      ];
+
+      agent.addMessage({
+        id: suggestionId,
+        role: "user",
+        content: [
+          `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
+          `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
+          `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(suggestionsConsumerAgentId))}.`,
+          ` ${config.instructions}`,
+        ].join("\n"),
+      });
+
+      await agent.runAgent(
         {
           context: Object.values(this._context),
           forwardedProps: {
@@ -1101,13 +1110,23 @@ export class CopilotKitCore {
               if (message.role === "assistant" && message.toolCalls) {
                 for (const toolCall of message.toolCalls) {
                   if (toolCall.function.name === "copilotkitSuggest") {
-                    for (const item of toolCall.function.arguments) {
-                      const suggestion = partialJSONParse(item);
-                      if ("label" in suggestion) {
-                        suggestions.push({
-                          label: suggestion.label ?? "",
-                          value: suggestion.value ?? "",
-                        });
+                    // Join all argument chunks into a single string for parsing
+                    // arguments can be either a string or an array of strings
+                    const fullArgs = Array.isArray(toolCall.function.arguments)
+                      ? toolCall.function.arguments.join("")
+                      : toolCall.function.arguments;
+                    const parsed = partialJSONParse(fullArgs);
+                    if (parsed && typeof parsed === "object" && "suggestions" in parsed) {
+                      const parsedSuggestions = (parsed as any).suggestions;
+                      if (Array.isArray(parsedSuggestions)) {
+                        for (const item of parsedSuggestions) {
+                          if (item && typeof item === "object" && "title" in item) {
+                            suggestions.push({
+                              title: item.title ?? "",
+                              message: item.message ?? "",
+                            });
+                          }
+                        }
                       }
                     }
                   }
@@ -1132,11 +1151,10 @@ export class CopilotKitCore {
             }
           },
         },
-      )
-      .catch((error) => {
-        console.warn("Error generating suggestions:", error);
-      });
-    return agent;
+      );
+    } catch (error) {
+      console.warn("Error generating suggestions:", error);
+    }
   }
 }
 

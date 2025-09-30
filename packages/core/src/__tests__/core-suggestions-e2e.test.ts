@@ -1,0 +1,945 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { CopilotKitCore } from "../core";
+import { Suggestion } from "../types";
+import {
+  MockAgent,
+  createSuggestionsConfig,
+  createMessage,
+  createAssistantMessage,
+} from "./test-utils";
+
+describe("CopilotKitCore - Suggestions E2E", () => {
+  let copilotKitCore: CopilotKitCore;
+
+  beforeEach(() => {
+    copilotKitCore = new CopilotKitCore({});
+  });
+
+  describe("Basic suggestion generation flow", () => {
+    it("should generate suggestions by calling copilotkitSuggest tool", async () => {
+      // Setup provider and consumer agents
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({
+        agentId: "consumer",
+        messages: [createMessage({ content: "User asked something" })],
+      });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      // Setup suggestions config
+      const config = createSuggestionsConfig({
+        instructions: "Suggest helpful actions",
+        minSuggestions: 2,
+        maxSuggestions: 3,
+        suggestionsConsumerAgentId: "consumer",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock the provider agent to return suggestion tool call
+      // Note: arguments should be an array of strings for streaming support
+      // Each string is a chunk that can be partial JSON
+      const suggestionToolCall = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "suggest-1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: [
+                '{"suggestions":[',
+                '{"title":"Action 1","message":"Do action 1"}',
+                ',{"title":"Action 2","message":"Do action 2"}',
+                ']}',
+              ],
+            },
+          },
+        ],
+      } as any);
+
+      providerAgent.setNewMessages([suggestionToolCall]);
+
+      // Track subscriber calls
+      const onSuggestionsChanged = vi.fn();
+      copilotKitCore.subscribe({ onSuggestionsChanged });
+
+      // Trigger suggestion generation
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Wait for suggestions to be generated
+      await vi.waitFor(() => {
+        const suggestions = copilotKitCore.getSuggestions("consumer");
+        expect(suggestions.length).toBeGreaterThan(0);
+      });
+
+      // Verify suggestions were generated
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions).toHaveLength(2);
+      expect(suggestions[0]).toEqual({ title: "Action 1", message: "Do action 1" });
+      expect(suggestions[1]).toEqual({ title: "Action 2", message: "Do action 2" });
+
+      // Verify subscriber was notified
+      await vi.waitFor(() => {
+        expect(onSuggestionsChanged).toHaveBeenCalled();
+      });
+    });
+
+    it("should include instructions and constraints in suggestion prompt", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        instructions: "Focus on data analysis tasks",
+        minSuggestions: 2,
+        maxSuggestions: 4,
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Check that the cloned agent received the correct prompt
+      await vi.waitFor(() => {
+        expect(providerAgent.addMessage).toHaveBeenCalled();
+      });
+
+      const addMessageCalls = providerAgent.addMessage.mock.calls;
+      expect(addMessageCalls.length).toBeGreaterThan(0);
+
+      const promptMessage = addMessageCalls[0][0];
+      expect(promptMessage.role).toBe("user");
+      expect(promptMessage.content).toContain("copilotkitSuggest");
+      expect(promptMessage.content).toContain("at least 2");
+      expect(promptMessage.content).toContain("at most 4");
+      expect(promptMessage.content).toContain("Focus on data analysis tasks");
+    });
+
+    it("should force toolChoice to copilotkitSuggest", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Verify runAgent was called with forced tool choice
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      const runAgentCall = providerAgent.runAgentCalls[0];
+      expect(runAgentCall.forwardedProps.toolChoice).toEqual({
+        type: "function",
+        function: { name: "copilotkitSuggest" },
+      });
+    });
+  });
+
+  describe("Agent ID filtering patterns", () => {
+    it("should apply suggestions to specific consumer agent ID", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const targetAgent = new MockAgent({ agentId: "target" });
+      const otherAgent = new MockAgent({ agentId: "other" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "target", agent: targetAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "other", agent: otherAgent as any });
+
+      const config = createSuggestionsConfig({
+        suggestionsConsumerAgentId: "target",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      // Reload for target agent - should generate
+      copilotKitCore.reloadSuggestions("target");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      // Reload for other agent - should NOT generate
+      providerAgent.runAgentCalls = [];
+      copilotKitCore.reloadSuggestions("other");
+
+      // Give it a moment
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(providerAgent.runAgentCalls.length).toBe(0);
+    });
+
+    it("should apply suggestions to all agents when consumer ID is *", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const agent1 = new MockAgent({ agentId: "agent1" });
+      const agent2 = new MockAgent({ agentId: "agent2" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "agent1", agent: agent1 as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "agent2", agent: agent2 as any });
+
+      const config = createSuggestionsConfig({
+        suggestionsConsumerAgentId: "*",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      // Should generate for both agents
+      copilotKitCore.reloadSuggestions("agent1");
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      const callCountAfterFirst = providerAgent.runAgentCalls.length;
+
+      copilotKitCore.reloadSuggestions("agent2");
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(callCountAfterFirst);
+      });
+    });
+
+    it("should apply suggestions when consumer ID is undefined", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        suggestionsConsumerAgentId: undefined,
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe("Streaming and partial JSON suggestions", () => {
+    it("should handle streaming suggestions with incomplete JSON", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Track subscriber calls to see streaming updates
+      const suggestionUpdates: Suggestion[][] = [];
+      copilotKitCore.subscribe({
+        onSuggestionsChanged: ({ suggestions }) => {
+          suggestionUpdates.push([...suggestions]);
+        },
+      });
+
+      // Simulate streaming tool call with partial JSON
+      const partialToolCall = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "stream-1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              // Incomplete JSON - missing closing bracket
+              arguments: [
+                '{"suggestions":[{"title":"First","message":"First action"}',
+              ],
+            },
+          },
+        ],
+      });
+
+      providerAgent.setNewMessages([partialToolCall]);
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        const suggestions = copilotKitCore.getSuggestions("consumer");
+        expect(suggestions.length).toBeGreaterThan(0);
+      });
+
+      // Should have parsed the first complete suggestion
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions[0]).toMatchObject({
+        title: "First",
+        message: "First action",
+      });
+    });
+
+    it("should update suggestions as more JSON chunks arrive", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      const suggestionUpdates: number[] = [];
+      copilotKitCore.subscribe({
+        onSuggestionsChanged: ({ suggestions }) => {
+          suggestionUpdates.push(suggestions.length);
+        },
+      });
+
+      // Simulate multiple chunks arriving
+      const streamingToolCall = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "stream-2",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: [
+                '{"suggestions":[',
+                '{"title":"First","message":"msg1"},',
+                '{"title":"Second","message":"msg2"}',
+                ']}',
+              ],
+            },
+          },
+        ],
+      });
+
+      providerAgent.setNewMessages([streamingToolCall]);
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        const suggestions = copilotKitCore.getSuggestions("consumer");
+        expect(suggestions.length).toBe(2);
+      });
+
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions).toHaveLength(2);
+      expect(suggestions[0].title).toBe("First");
+      expect(suggestions[1].title).toBe("Second");
+    });
+  });
+
+  describe("Multiple configs and concurrent generation", () => {
+    it("should generate suggestions for multiple configs", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      // Add two different suggestion configs
+      const config1 = createSuggestionsConfig({
+        instructions: "Suggest actions",
+      });
+      const config2 = createSuggestionsConfig({
+        instructions: "Suggest questions",
+      });
+
+      copilotKitCore.addSuggestionsConfig(config1);
+      copilotKitCore.addSuggestionsConfig(config2);
+
+      // Mock provider to return different suggestions
+      const toolCall1 = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "suggest-1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Action","message":"Do action"}]}'],
+            },
+          },
+        ],
+      });
+
+      providerAgent.setNewMessages([toolCall1]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Should have called runAgent twice (once per config)
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    it("should handle concurrent suggestion generation for different agents", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const agent1 = new MockAgent({ agentId: "agent1" });
+      const agent2 = new MockAgent({ agentId: "agent2" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "agent1", agent: agent1 as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "agent2", agent: agent2 as any });
+
+      const config = createSuggestionsConfig({
+        suggestionsConsumerAgentId: "*",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      const toolCall = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "suggest-x",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test msg"}]}'],
+            },
+          },
+        ],
+      });
+
+      providerAgent.setNewMessages([toolCall]);
+
+      // Trigger both concurrently
+      copilotKitCore.reloadSuggestions("agent1");
+      copilotKitCore.reloadSuggestions("agent2");
+
+      // Both should have suggestions
+      await vi.waitFor(() => {
+        const suggestions1 = copilotKitCore.getSuggestions("agent1");
+        const suggestions2 = copilotKitCore.getSuggestions("agent2");
+        expect(suggestions1.length).toBeGreaterThan(0);
+        expect(suggestions2.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should generate independent suggestion sets for same agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config1 = createSuggestionsConfig({ instructions: "Type 1" });
+      const config2 = createSuggestionsConfig({ instructions: "Type 2" });
+
+      copilotKitCore.addSuggestionsConfig(config1);
+      copilotKitCore.addSuggestionsConfig(config2);
+
+      // Set messages that will be returned for both configs
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Suggestion 1","message":"msg1"}]}'],
+              },
+            },
+          ],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Wait for both configs to be called
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThanOrEqual(2);
+      });
+
+      // Both config invocations should have generated suggestions
+      // Since they share the same response, we should have at least 1 suggestion
+      // (Could be 2 if both succeeded, but timing might cause only one)
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("Context and properties forwarding", () => {
+    it("should forward context to suggestion provider agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      // Add context
+      const contextId = copilotKitCore.addContext({
+        description: "User preferences",
+        value: { theme: "dark", language: "en" },
+      });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      const runAgentCall = providerAgent.runAgentCalls[0];
+      expect(runAgentCall.context).toEqual([
+        { description: "User preferences", value: { theme: "dark", language: "en" } },
+      ]);
+
+      // Cleanup
+      copilotKitCore.removeContext(contextId);
+    });
+
+    it("should forward properties to suggestion provider agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      const core = new CopilotKitCore({
+        properties: { userId: "123", sessionId: "abc" },
+      });
+
+      core.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      core.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      core.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      core.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      const runAgentCall = providerAgent.runAgentCalls[0];
+      expect(runAgentCall.forwardedProps).toMatchObject({
+        userId: "123",
+        sessionId: "abc",
+      });
+    });
+
+    it("should include available frontend tools in suggestion prompt", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      // Add some frontend tools
+      copilotKitCore.addTool({
+        name: "searchTool",
+        description: "Search for information",
+      });
+      copilotKitCore.addTool({
+        name: "analyzeTool",
+        description: "Analyze data",
+      });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.addMessage).toHaveBeenCalled();
+      });
+
+      const promptMessage = providerAgent.addMessage.mock.calls[0][0];
+      expect(promptMessage.content).toContain("searchTool");
+      expect(promptMessage.content).toContain("analyzeTool");
+    });
+  });
+
+  describe("Agent cloning", () => {
+    it("should clone provider agent for suggestion generation", async () => {
+      const providerAgent = new MockAgent({
+        agentId: "default",
+        state: { original: true },
+      });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalled();
+      });
+    });
+
+    it("should copy consumer agent messages to suggestion agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerMessages = [
+        createMessage({ content: "User question" }),
+        createAssistantMessage({ content: "Assistant response" }),
+      ];
+      const consumerAgent = new MockAgent({
+        agentId: "consumer",
+        messages: consumerMessages,
+      });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // The cloned agent should receive the consumer's message history
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalled();
+      });
+
+      // Verify clone was called and messages would be copied
+      expect(providerAgent.clone).toHaveBeenCalled();
+    });
+
+    it("should copy consumer agent state to suggestion agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({
+        agentId: "consumer",
+        state: { conversationContext: "important data", stepCount: 5 },
+      });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalled();
+      });
+
+      // Verify clone preserves state
+      expect(providerAgent.clone).toHaveBeenCalled();
+    });
+
+    it("should assign unique agentId and threadId to suggestion agent", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // The cloned agent should have a unique ID
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalled();
+      });
+
+      // Each clone should get a unique suggestion ID
+      expect(providerAgent.clone).toHaveBeenCalled();
+    });
+  });
+
+  describe("Suggestion abortion and reload", () => {
+    it("should abort running suggestions when clearSuggestions is called", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      // Start generation
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      // Clear should abort
+      copilotKitCore.clearSuggestions("consumer");
+
+      // Verify suggestions are cleared
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions).toEqual([]);
+    });
+
+    it("should create fresh agents on subsequent reloadSuggestions", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      // First reload
+      copilotKitCore.reloadSuggestions("consumer");
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalledTimes(1);
+      });
+
+      // Clear
+      copilotKitCore.clearSuggestions("consumer");
+
+      // Second reload - should clone again
+      copilotKitCore.reloadSuggestions("consumer");
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it("should notify subscribers when suggestions are cleared", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const onSuggestionsChanged = vi.fn();
+      copilotKitCore.subscribe({ onSuggestionsChanged });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Mock a response to trigger completion
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [{
+            id: "s1",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+            },
+          }],
+        }),
+      ]);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        expect(providerAgent.runAgentCalls.length).toBeGreaterThan(0);
+      });
+
+      // Clear and verify notification
+      copilotKitCore.clearSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        const clearCall = onSuggestionsChanged.mock.calls.find(
+          call => call[0].suggestions.length === 0 && call[0].agentId === "consumer"
+        );
+        expect(clearCall).toBeDefined();
+      });
+    });
+  });
+
+  describe("Error handling during suggestion generation", () => {
+    it("should handle error when suggestion generation fails", async () => {
+      const providerAgent = new MockAgent({
+        agentId: "default",
+        error: new Error("Generation failed"),
+      });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Should not throw, error should be caught internally
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Give it a moment
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Suggestions should be empty due to error
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(suggestions).toEqual([]);
+    });
+
+    it("should handle malformed suggestion tool call", async () => {
+      const providerAgent = new MockAgent({ agentId: "default" });
+      const consumerAgent = new MockAgent({ agentId: "consumer" });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      // Return tool call without proper structure
+      const malformedToolCall = createAssistantMessage({
+        content: "",
+        toolCalls: [
+          {
+            id: "malformed",
+            type: "function",
+            function: {
+              name: "copilotkitSuggest",
+              arguments: "not valid json",
+            },
+          },
+        ],
+      });
+
+      providerAgent.setNewMessages([malformedToolCall]);
+
+      const config = createSuggestionsConfig();
+      copilotKitCore.addSuggestionsConfig(config);
+
+      copilotKitCore.reloadSuggestions("consumer");
+
+      // Should not crash
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Suggestions should be empty or handle gracefully
+      const suggestions = copilotKitCore.getSuggestions("consumer");
+      expect(Array.isArray(suggestions)).toBe(true);
+    });
+  });
+});

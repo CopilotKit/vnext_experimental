@@ -24,8 +24,8 @@ export type FrontendTool<T extends Record<string, unknown> = Record<string, unkn
 };
 
 export type Suggestion = {
-  label: string;
-  value: string;
+  title: string;
+  message: string;
 };
 
 export type DynamicSuggestionsConfig = {

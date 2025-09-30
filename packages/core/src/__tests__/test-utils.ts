@@ -1,6 +1,6 @@
 import { Message } from "@ag-ui/client";
 import { vi } from "vitest";
-import { FrontendTool } from "../types";
+import { DynamicSuggestionsConfig, FrontendTool } from "../types";
 
 export interface MockAgentOptions {
   messages?: Message[];
@@ -8,19 +8,35 @@ export interface MockAgentOptions {
   error?: Error | string;
   runAgentDelay?: number;
   runAgentCallback?: (input: any) => void;
+  agentId?: string;
+  threadId?: string;
+  state?: Record<string, any>;
 }
 
 export class MockAgent {
   public messages: Message[] = [];
+  public state: Record<string, any> = {};
+  public agentId?: string;
+  public threadId?: string;
   public addMessages = vi.fn((messages: Message[]) => {
     this.messages.push(...messages);
   });
-  
+  public addMessage = vi.fn((message: Message) => {
+    this.messages.push(message);
+    // Also track on parent if this is a clone
+    if (this._parentAgent) {
+      this._parentAgent.addMessage(message);
+    }
+  });
+  public abortRun = vi.fn();
+  public clone = vi.fn(() => this._cloneImpl());
+
   private newMessages: Message[];
   private error?: Error | string;
   private runAgentDelay: number;
   public runAgentCallback?: (input: any) => void;
   public runAgentCalls: any[] = [];
+  private _parentAgent?: MockAgent;
 
   constructor(options: MockAgentOptions = {}) {
     this.messages = options.messages || [];
@@ -28,11 +44,18 @@ export class MockAgent {
     this.error = options.error;
     this.runAgentDelay = options.runAgentDelay || 0;
     this.runAgentCallback = options.runAgentCallback;
+    this.agentId = options.agentId;
+    this.threadId = options.threadId;
+    this.state = options.state || {};
   }
 
-  async runAgent(input: any): Promise<{ newMessages: Message[] }> {
+  async runAgent(input: any, subscriber?: any): Promise<{ newMessages: Message[] }> {
     this.runAgentCalls.push(input);
-    
+    // Also track on parent if this is a clone
+    if (this._parentAgent) {
+      this._parentAgent.runAgentCalls.push(input);
+    }
+
     if (this.runAgentCallback) {
       this.runAgentCallback(input);
     }
@@ -45,17 +68,29 @@ export class MockAgent {
       throw this.error;
     }
 
+    // If there's a subscriber with onMessagesChanged, call it with the messages
+    if (subscriber?.onMessagesChanged && this.newMessages.length > 0) {
+      // Trigger the subscriber callback with messages
+      subscriber.onMessagesChanged({ messages: [...this.messages, ...this.newMessages] });
+    }
+
     return { newMessages: this.newMessages };
   }
 
-  clone(): MockAgent {
-    return new MockAgent({
+  private _cloneImpl(): MockAgent {
+    const cloned = new MockAgent({
       messages: [...this.messages],
       newMessages: [...this.newMessages],
       error: this.error,
       runAgentDelay: this.runAgentDelay,
       runAgentCallback: this.runAgentCallback,
+      agentId: this.agentId,
+      threadId: this.threadId,
+      state: JSON.parse(JSON.stringify(this.state)),
     });
+    // Link the clone back to the parent so calls are visible
+    cloned._parentAgent = this;
+    return cloned;
   }
 
   setNewMessages(messages: Message[]): void {
@@ -159,4 +194,60 @@ export async function waitForCondition(
     }
     await new Promise(resolve => setTimeout(resolve, interval));
   }
+}
+
+/**
+ * Helper to create a dynamic suggestions config
+ */
+export function createSuggestionsConfig(
+  overrides: Partial<DynamicSuggestionsConfig> = {}
+): DynamicSuggestionsConfig {
+  return {
+    instructions: "Suggest helpful next actions",
+    minSuggestions: 1,
+    maxSuggestions: 3,
+    available: "enabled",
+    suggestionsProviderAgentId: "default",
+    suggestionsConsumerAgentId: "*",
+    ...overrides,
+  };
+}
+
+/**
+ * Helper to create a tool call message for copilotkitSuggest
+ */
+export function createSuggestionToolCall(
+  suggestions: Array<{ title: string; message: string }>,
+  overrides: Partial<Message> = {}
+): Message {
+  const toolCallId = `suggest-call-${Math.random().toString(36).substr(2, 9)}`;
+  return createAssistantMessage({
+    content: "",
+    toolCalls: [
+      {
+        id: toolCallId,
+        type: "function",
+        function: {
+          name: "copilotkitSuggest",
+          arguments: JSON.stringify({ suggestions }),
+        },
+      },
+    ],
+    ...overrides,
+  });
+}
+
+/**
+ * Helper to create streaming suggestion messages with partial JSON
+ * Returns an array of JSON chunks that can be assembled into complete suggestions
+ */
+export function createStreamingSuggestionChunks(): string[] {
+  return [
+    '{"suggestions":[',
+    '{"title":"First","message":"Do first thing"}',
+    ',{"title":"Second",',
+    '"message":"Do second thing"}',
+    ',{"title":"Third","message":"Do third thing"}',
+    ']}',
+  ];
 }
