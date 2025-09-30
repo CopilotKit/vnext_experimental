@@ -97,8 +97,8 @@ export interface CopilotKitCoreSubscriber {
     agentId: string;
     suggestions: Suggestion[];
   }) => void | Promise<void>;
-  onSuggestionsLoadingStart?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
-  onSuggestionsLoadingEnd?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
+  onSuggestionsStartedLoading?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
+  onSuggestionsFinishedLoading?: (event: { copilotkit: CopilotKitCore; agentId: string }) => void | Promise<void>;
   onPropertiesChanged?: (event: {
     copilotkit: CopilotKitCore;
     properties: Readonly<Record<string, unknown>>;
@@ -569,11 +569,11 @@ export class CopilotKitCore {
             hasAnySuggestions = true;
             void this.notifySubscribers(
               (subscriber) =>
-                subscriber.onSuggestionsLoadingStart?.({
+                subscriber.onSuggestionsStartedLoading?.({
                   copilotkit: this,
                   agentId,
                 }),
-              "Subscriber onSuggestionsLoadingStart error:",
+              "Subscriber onSuggestionsStartedLoading error:",
             );
           }
           void this.generateSuggestions(suggestionId, config, agentId);
@@ -1189,11 +1189,11 @@ export class CopilotKitCore {
           delete this._runningSuggestions[suggestionsConsumerAgentId];
           await this.notifySubscribers(
             (subscriber) =>
-              subscriber.onSuggestionsLoadingEnd?.({
+              subscriber.onSuggestionsFinishedLoading?.({
                 copilotkit: this,
                 agentId: suggestionsConsumerAgentId,
               }),
-            "Subscriber onSuggestionsLoadingEnd error:",
+            "Subscriber onSuggestionsFinishedLoading error:",
           );
         }
       }

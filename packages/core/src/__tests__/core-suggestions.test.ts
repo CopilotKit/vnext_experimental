@@ -206,7 +206,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       }).not.toThrow();
 
       // Give async operation time to complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Verify no suggestions were generated
       const result = copilotKitCore.getSuggestions("consumer");
@@ -231,7 +231,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       }).not.toThrow();
 
       // Give async operation time to complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Verify no suggestions were generated
       const result = copilotKitCore.getSuggestions("nonexistent");
@@ -267,7 +267,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const onLoadingStart = vi.fn();
-      copilotKitCore.subscribe({ onSuggestionsLoadingStart: onLoadingStart });
+      copilotKitCore.subscribe({ onSuggestionsStartedLoading: onLoadingStart });
 
       const config = createSuggestionsConfig();
       copilotKitCore.addSuggestionsConfig(config);
@@ -275,14 +275,16 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       // Mock a response
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -304,7 +306,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const onLoadingEnd = vi.fn();
-      copilotKitCore.subscribe({ onSuggestionsLoadingEnd: onLoadingEnd });
+      copilotKitCore.subscribe({ onSuggestionsFinishedLoading: onLoadingEnd });
 
       const config = createSuggestionsConfig();
       copilotKitCore.addSuggestionsConfig(config);
@@ -312,14 +314,16 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       // Mock a response
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -341,7 +345,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const onLoadingStart = vi.fn();
-      copilotKitCore.subscribe({ onSuggestionsLoadingStart: onLoadingStart });
+      copilotKitCore.subscribe({ onSuggestionsStartedLoading: onLoadingStart });
 
       const config1 = createSuggestionsConfig({ instructions: "First" });
       const config2 = createSuggestionsConfig({ instructions: "Second" });
@@ -351,14 +355,16 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       // Mock a response
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -380,7 +386,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const onLoadingEnd = vi.fn();
-      copilotKitCore.subscribe({ onSuggestionsLoadingEnd: onLoadingEnd });
+      copilotKitCore.subscribe({ onSuggestionsFinishedLoading: onLoadingEnd });
 
       const config1 = createSuggestionsConfig({ instructions: "First" });
       const config2 = createSuggestionsConfig({ instructions: "Second" });
@@ -390,14 +396,16 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       // Mock a response
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -422,7 +430,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const onLoadingEnd = vi.fn();
-      copilotKitCore.subscribe({ onSuggestionsLoadingEnd: onLoadingEnd });
+      copilotKitCore.subscribe({ onSuggestionsFinishedLoading: onLoadingEnd });
 
       const config = createSuggestionsConfig();
       copilotKitCore.addSuggestionsConfig(config);

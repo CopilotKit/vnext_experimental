@@ -18,19 +18,21 @@ export interface UseSuggestionsResult {
 export function useSuggestions({ agentId }: UseSuggestionsOptions = {}): UseSuggestionsResult {
   const { copilotkit } = useCopilotKit();
   const config = useCopilotChatConfiguration();
-  const resolvedAgentId = useMemo(
-    () => agentId ?? config?.agentId ?? DEFAULT_AGENT_ID,
-    [agentId, config?.agentId],
-  );
+  const resolvedAgentId = useMemo(() => agentId ?? config?.agentId ?? DEFAULT_AGENT_ID, [agentId, config?.agentId]);
 
-  const [suggestions, setSuggestions] = useState<Suggestion[]>(() =>
-    copilotkit.getSuggestions(resolvedAgentId),
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(() => {
+    const result = copilotkit.getSuggestions(resolvedAgentId);
+    return result.suggestions;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const result = copilotkit.getSuggestions(resolvedAgentId);
+    return result.isLoading;
+  });
 
   useEffect(() => {
-    setSuggestions(copilotkit.getSuggestions(resolvedAgentId));
-    setIsLoading(false);
+    const result = copilotkit.getSuggestions(resolvedAgentId);
+    setSuggestions(result.suggestions);
+    setIsLoading(result.isLoading);
   }, [copilotkit, resolvedAgentId]);
 
   useEffect(() => {
@@ -40,10 +42,23 @@ export function useSuggestions({ agentId }: UseSuggestionsOptions = {}): UseSugg
           return;
         }
         setSuggestions(suggestions);
+      },
+      onSuggestionsStartedLoading: ({ agentId: changedAgentId }) => {
+        if (changedAgentId !== resolvedAgentId) {
+          return;
+        }
+        setIsLoading(true);
+      },
+      onSuggestionsFinishedLoading: ({ agentId: changedAgentId }) => {
+        if (changedAgentId !== resolvedAgentId) {
+          return;
+        }
         setIsLoading(false);
       },
       onSuggestionsConfigChanged: () => {
-        setSuggestions(copilotkit.getSuggestions(resolvedAgentId));
+        const result = copilotkit.getSuggestions(resolvedAgentId);
+        setSuggestions(result.suggestions);
+        setIsLoading(result.isLoading);
       },
     });
 
@@ -54,13 +69,12 @@ export function useSuggestions({ agentId }: UseSuggestionsOptions = {}): UseSugg
 
   const reloadSuggestions = useCallback(() => {
     copilotkit.reloadSuggestions(resolvedAgentId);
-    setIsLoading(true);
+    // Loading state is handled by onSuggestionsStartedLoading event
   }, [copilotkit, resolvedAgentId]);
 
   const clearSuggestions = useCallback(() => {
     copilotkit.clearSuggestions(resolvedAgentId);
-    setSuggestions([]);
-    setIsLoading(false);
+    // State updates are handled by onSuggestionsChanged event
   }, [copilotkit, resolvedAgentId]);
 
   return {

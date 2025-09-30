@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CopilotKitCore } from "../core";
 import { Suggestion } from "../types";
-import {
-  MockAgent,
-  createSuggestionsConfig,
-  createMessage,
-  createAssistantMessage,
-} from "./test-utils";
+import { MockAgent, createSuggestionsConfig, createMessage, createAssistantMessage } from "./test-utils";
 
 describe("CopilotKitCore - Suggestions E2E", () => {
   let copilotKitCore: CopilotKitCore;
@@ -51,7 +46,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
                 '{"suggestions":[',
                 '{"title":"Action 1","message":"Do action 1"}',
                 ',{"title":"Action 2","message":"Do action 2"}',
-                ']}',
+                "]}",
               ] as any,
             },
           },
@@ -102,14 +97,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -144,14 +141,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -188,14 +187,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -211,7 +212,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("other");
 
       // Give it a moment
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(providerAgent.runAgentCalls.length).toBe(0);
     });
@@ -233,14 +234,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -273,14 +276,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -321,9 +326,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
             function: {
               name: "copilotkitSuggest",
               // Incomplete JSON - missing closing bracket
-              arguments: [
-                '{"suggestions":[{"title":"First","message":"First action"}',
-              ] as any,
+              arguments: ['{"suggestions":[{"title":"First","message":"First action"}'] as any,
             },
           },
         ],
@@ -375,7 +378,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
                 '{"suggestions":[',
                 '{"title":"First","message":"msg1"},',
                 '{"title":"Second","message":"msg2"}',
-                ']}',
+                "]}",
               ] as any,
             },
           },
@@ -548,14 +551,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -591,14 +596,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -638,14 +645,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -769,14 +778,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -809,14 +820,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -852,14 +865,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response to trigger completion
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -874,7 +889,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       await vi.waitFor(() => {
         const clearCall = onSuggestionsChanged.mock.calls.find(
-          call => call[0].suggestions.length === 0 && call[0].agentId === "consumer"
+          (call) => call[0].suggestions.length === 0 && call[0].agentId === "consumer",
         );
         expect(clearCall).toBeDefined();
       });
@@ -899,7 +914,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("consumer");
 
       // Give it a moment
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Suggestions should be empty due to error
       const result = copilotKitCore.getSuggestions("consumer");
@@ -937,7 +952,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("consumer");
 
       // Should not crash
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Suggestions should be empty or handle gracefully
       const result = copilotKitCore.getSuggestions("consumer");
@@ -960,14 +975,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Mock a response
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -1000,9 +1017,15 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       const events: string[] = [];
       copilotKitCore.subscribe({
-        onSuggestionsLoadingStart: () => { events.push("start"); },
-        onSuggestionsLoadingEnd: () => { events.push("end"); },
-        onSuggestionsChanged: () => { events.push("changed"); },
+        onSuggestionsStartedLoading: () => {
+          events.push("start");
+        },
+        onSuggestionsFinishedLoading: () => {
+          events.push("end");
+        },
+        onSuggestionsChanged: () => {
+          events.push("changed");
+        },
       });
 
       const config = createSuggestionsConfig();
@@ -1010,14 +1033,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
@@ -1048,14 +1073,16 @@ describe("CopilotKitCore - Suggestions E2E", () => {
 
       providerAgent.setNewMessages([
         createAssistantMessage({
-          toolCalls: [{
-            id: "s1",
-            type: "function",
-            function: {
-              name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+          toolCalls: [
+            {
+              id: "s1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
+              },
             },
-          }],
+          ],
         }),
       ]);
 
