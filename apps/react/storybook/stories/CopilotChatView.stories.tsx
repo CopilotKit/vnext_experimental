@@ -4,6 +4,7 @@ import {
   CopilotChatView,
   CopilotKitProvider,
 } from "@copilotkitnext/react";
+import { Suggestion } from "@copilotkitnext/core";
 
 const meta = {
   title: "UI/CopilotChatView",
@@ -34,16 +35,86 @@ export const Default: Story = {
     ),
   ],
   render: () => {
-    const messages = [
-      {
-        id: "user-1",
-        content: "Hello! Can you help me understand how React hooks work?",
-        timestamp: new Date(),
-        role: "user" as const,
-      },
-      {
-        id: "assistant-1",
-        content: `React hooks are functions that let you use state and other React features in functional components. Here are the most common ones:
+    return (
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider threadId="storybook-thread">
+          <div style={{ height: "100%" }}>
+            <CopilotChatView
+              messages={storyMessages}
+              suggestions={suggestionSamples}
+              suggestionLoadingIndexes={[suggestionSamples.length - 1]}
+              messageView={{
+                assistantMessage: {
+                  onThumbsUp: () => {
+                    alert("thumbsUp");
+                  },
+                  onThumbsDown: () => {
+                    alert("thumbsDown");
+                  },
+                },
+              }}
+            />
+          </div>
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+  },
+};
+
+export const WithSuggestions: Story = {
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: Default.decorators,
+  render: () => (
+    <CopilotKitProvider>
+      <CopilotChatConfigurationProvider threadId="storybook-thread">
+        <div style={{ height: "100%" }}>
+          <CopilotChatView
+            messages={storyMessages}
+            suggestions={suggestionSamples}
+            suggestionLoadingIndexes={[suggestionSamples.length - 1]}
+            onSelectSuggestion={(suggestion) =>
+              alert(`Selected suggestion: ${suggestion.title}`)
+            }
+            messageView={{
+              assistantMessage: {
+                onThumbsUp: () => alert("thumbsUp"),
+                onThumbsDown: () => alert("thumbsDown"),
+              },
+            }}
+          />
+        </div>
+      </CopilotChatConfigurationProvider>
+    </CopilotKitProvider>
+  ),
+};
+
+const suggestionSamples: Suggestion[] = [
+  {
+    title: "Summarize conversation",
+    message: "Summarize our latest messages",
+  },
+  {
+    title: "Draft reply",
+    message: "Draft a detailed response",
+  },
+  {
+    title: "List next steps",
+    message: "List action items from this chat",
+  },
+];
+
+const storyMessages = [
+  {
+    id: "user-1",
+    content: "Hello! Can you help me understand how React hooks work?",
+    timestamp: new Date(),
+    role: "user" as const,
+  },
+  {
+    id: "assistant-1",
+    content: `React hooks are functions that let you use state and other React features in functional components. Here are the most common ones:
 
 - **useState** - Manages local state
 - **useEffect** - Handles side effects
@@ -52,18 +123,18 @@ export const Default: Story = {
 - **useMemo** - Memoizes values
 
 Would you like me to explain any of these in detail?`,
-        timestamp: new Date(),
-        role: "assistant" as const,
-      },
-      {
-        id: "user-2",
-        content: "Yes, could you explain useState with a simple example?",
-        timestamp: new Date(),
-        role: "user" as const,
-      },
-      {
-        id: "assistant-2",
-        content: `Absolutely! Here's a simple useState example:
+    timestamp: new Date(),
+    role: "assistant" as const,
+  },
+  {
+    id: "user-2",
+    content: "Yes, could you explain useState with a simple example?",
+    timestamp: new Date(),
+    role: "user" as const,
+  },
+  {
+    id: "assistant-2",
+    content: `Absolutely! Here's a simple useState example:
 
 \`\`\`jsx
 import React, { useState } from 'react';
@@ -87,31 +158,7 @@ In this example:
 - It returns an array: \`[currentValue, setterFunction]\`
 - \`count\` is the current state value
 - \`setCount\` is the function to update the state`,
-        timestamp: new Date(),
-        role: "assistant" as const,
-      },
-    ];
-
-    return (
-      <CopilotKitProvider>
-        <CopilotChatConfigurationProvider threadId="storybook-thread">
-          <div style={{ height: "100%" }}>
-            <CopilotChatView
-              messages={messages}
-              messageView={{
-                assistantMessage: {
-                  onThumbsUp: () => {
-                    alert("thumbsUp");
-                  },
-                  onThumbsDown: () => {
-                    alert("thumbsDown");
-                  },
-                },
-              }}
-            />
-          </div>
-        </CopilotChatConfigurationProvider>
-      </CopilotKitProvider>
-    );
+    timestamp: new Date(),
+    role: "assistant" as const,
   },
-};
+];
