@@ -64,12 +64,13 @@ export const CopilotChatSuggestionView = React.forwardRef<
   });
 
   const suggestionElements = suggestions.map((suggestion, index) => {
+    const isLoading = loadingSet.has(index) || suggestion.isLoading === true;
     const pill = renderSlot<
       typeof CopilotChatSuggestionPill,
       CopilotChatSuggestionPillProps
     >(suggestionSlot, CopilotChatSuggestionPill, {
       children: suggestion.title,
-      isLoading: loadingSet.has(index),
+      isLoading,
       type: "button",
       onClick: () => onSelectSuggestion?.(suggestion, index),
     });
@@ -91,7 +92,8 @@ export const CopilotChatSuggestionView = React.forwardRef<
       CopilotChatSuggestionPillProps
     >(suggestionSlot, CopilotChatSuggestionPill, {
       children: suggestions[0]?.title ?? "",
-      isLoading: suggestions.length > 0 ? loadingSet.has(0) : false,
+      isLoading:
+        suggestions.length > 0 ? loadingSet.has(0) || suggestions[0]?.isLoading === true : false,
       type: "button",
     });
 

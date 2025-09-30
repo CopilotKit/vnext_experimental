@@ -112,8 +112,8 @@ const TestHarness: React.FC = () => {
 describe("useConfigureSuggestions", () => {
   it("registers suggestions config and surfaces generated suggestions", async () => {
     const agent = new SuggestionsProviderAgent([
-      { title: "Option A", message: "Take path A" },
-      { title: "Option B", message: "Take path B" },
+      { title: "Option A", message: "Take path A", isLoading: false },
+      { title: "Option B", message: "Take path B", isLoading: false },
     ]);
 
     renderWithCopilotKit({

@@ -7,9 +7,9 @@ import { Suggestion } from "@copilotkitnext/core";
 import { Sparkles } from "lucide-react";
 
 const suggestions: Suggestion[] = [
-  { title: "Summarize this thread", message: "Summarize the latest chat" },
-  { title: "Draft a reply", message: "Draft a polite follow-up" },
-  { title: "Create action items", message: "List next steps" },
+  { title: "Summarize this thread", message: "Summarize the latest chat", isLoading: false },
+  { title: "Draft a reply", message: "Draft a polite follow-up", isLoading: false },
+  { title: "Create action items", message: "List next steps", isLoading: false },
 ];
 
 const meta = {
@@ -31,7 +31,9 @@ export const Default: Story = {};
 
 export const LoadingSecond: Story = {
   args: {
-    loadingIndexes: [1],
+    suggestions: suggestions.map((suggestion, index) =>
+      index === 1 ? { ...suggestion, isLoading: true } : suggestion,
+    ),
   },
 };
 

@@ -1102,10 +1102,7 @@ export class CopilotKitCore {
         ...(this._suggestions[consumerAgentId] ?? {}),
         [suggestionId]: [],
       };
-      this._runningSuggestions[consumerAgentId] = [
-        ...(this._runningSuggestions[consumerAgentId] ?? []),
-        agent,
-      ];
+      this._runningSuggestions[consumerAgentId] = [...(this._runningSuggestions[consumerAgentId] ?? []), agent];
 
       agent.addMessage({
         id: suggestionId,
@@ -1129,60 +1126,14 @@ export class CopilotKitCore {
         },
         {
           onMessagesChanged: ({ messages }) => {
-            const idx = messages.findIndex((message) => message.id === suggestionId);
-            if (idx == -1) {
-              return;
-            }
-
-            const newMessages = messages.slice(idx + 1);
-            const suggestions: Suggestion[] = [];
-            for (const message of newMessages) {
-              if (message.role === "assistant" && message.toolCalls) {
-                for (const toolCall of message.toolCalls) {
-                  if (toolCall.function.name === "copilotkitSuggest") {
-                    // Join all argument chunks into a single string for parsing
-                    // arguments can be either a string or an array of strings
-                    const fullArgs = Array.isArray(toolCall.function.arguments)
-                      ? toolCall.function.arguments.join("")
-                      : toolCall.function.arguments;
-                    const parsed = partialJSONParse(fullArgs);
-                    if (parsed && typeof parsed === "object" && "suggestions" in parsed) {
-                      const parsedSuggestions = (parsed as any).suggestions;
-                      if (Array.isArray(parsedSuggestions)) {
-                        for (const item of parsedSuggestions) {
-                          if (item && typeof item === "object" && "title" in item) {
-                            suggestions.push({
-                              title: item.title ?? "",
-                              message: item.message ?? "",
-                            });
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-
-            const agentSuggestions = this._suggestions[consumerAgentId];
-            if (agentSuggestions && agentSuggestions[suggestionId]) {
-              agentSuggestions[suggestionId] = suggestions;
-              void this.notifySubscribers(
-                (subscriber) =>
-                  subscriber.onSuggestionsChanged?.({
-                    copilotkit: this,
-                    agentId: consumerAgentId,
-                    suggestions,
-                  }),
-                "Subscriber onSuggestionsChanged error: suggestions changed",
-              );
-            }
+            this.extractSuggestions(messages, suggestionId, consumerAgentId, true);
           },
         },
       );
     } catch (error) {
       console.warn("Error generating suggestions:", error);
     } finally {
+      this.extractSuggestions(agent?.messages ?? [], suggestionId, consumerAgentId, false);
       // Remove this agent from running suggestions
       const runningAgents = this._runningSuggestions[consumerAgentId];
       if (agent && runningAgents) {
@@ -1202,6 +1153,61 @@ export class CopilotKitCore {
           );
         }
       }
+    }
+  }
+
+  extractSuggestions(messages: Message[], suggestionId: string, consumerAgentId: string, isRunning: boolean) {
+    const idx = messages.findIndex((message) => message.id === suggestionId);
+    if (idx == -1) {
+      return [];
+    }
+
+    const suggestions: Suggestion[] = [];
+    const newMessages = messages.slice(idx + 1);
+
+    for (const message of newMessages) {
+      if (message.role === "assistant" && message.toolCalls) {
+        for (const toolCall of message.toolCalls) {
+          if (toolCall.function.name === "copilotkitSuggest") {
+            // Join all argument chunks into a single string for parsing
+            // arguments can be either a string or an array of strings
+            const fullArgs = Array.isArray(toolCall.function.arguments)
+              ? toolCall.function.arguments.join("")
+              : toolCall.function.arguments;
+            const parsed = partialJSONParse(fullArgs);
+            if (parsed && typeof parsed === "object" && "suggestions" in parsed) {
+              const parsedSuggestions = (parsed as any).suggestions;
+              if (Array.isArray(parsedSuggestions)) {
+                for (const item of parsedSuggestions) {
+                  if (item && typeof item === "object" && "title" in item) {
+                    suggestions.push({
+                      title: item.title ?? "",
+                      message: item.message ?? "",
+                      isLoading:
+                        isRunning === true
+                          ? false
+                          : message.toolCalls.indexOf(toolCall) === message.toolCalls.length - 1,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    const agentSuggestions = this._suggestions[consumerAgentId];
+    if (agentSuggestions && agentSuggestions[suggestionId]) {
+      agentSuggestions[suggestionId] = suggestions;
+      void this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onSuggestionsChanged?.({
+            copilotkit: this,
+            agentId: consumerAgentId,
+            suggestions,
+          }),
+        "Subscriber onSuggestionsChanged error: suggestions changed",
+      );
     }
   }
 }

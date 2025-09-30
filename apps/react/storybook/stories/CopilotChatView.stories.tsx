@@ -39,12 +39,11 @@ export const Default: Story = {
       <CopilotKitProvider>
         <CopilotChatConfigurationProvider threadId="storybook-thread">
           <div style={{ height: "100%" }}>
-            <CopilotChatView
-              messages={storyMessages}
-              suggestions={suggestionSamples}
-              suggestionLoadingIndexes={[suggestionSamples.length - 1]}
-              messageView={{
-                assistantMessage: {
+          <CopilotChatView
+            messages={storyMessages}
+            suggestions={suggestionSamples}
+            messageView={{
+              assistantMessage: {
                   onThumbsUp: () => {
                     alert("thumbsUp");
                   },
@@ -73,7 +72,6 @@ export const WithSuggestions: Story = {
           <CopilotChatView
             messages={storyMessages}
             suggestions={suggestionSamples}
-            suggestionLoadingIndexes={[suggestionSamples.length - 1]}
             onSelectSuggestion={(suggestion) =>
               alert(`Selected suggestion: ${suggestion.title}`)
             }
@@ -94,14 +92,17 @@ const suggestionSamples: Suggestion[] = [
   {
     title: "Summarize conversation",
     message: "Summarize our latest messages",
+    isLoading: false,
   },
   {
     title: "Draft reply",
     message: "Draft a detailed response",
+    isLoading: false,
   },
   {
     title: "List next steps",
     message: "List action items from this chat",
+    isLoading: true,
   },
 ];
 

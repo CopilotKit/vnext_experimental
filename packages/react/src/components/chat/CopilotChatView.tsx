@@ -159,6 +159,7 @@ export function CopilotChatView({
       feather: BoundFeather,
       inputContainer: BoundInputContainer,
       disclaimer: BoundDisclaimer,
+      suggestionView: BoundSuggestionView ?? <></>,
     });
   }
 

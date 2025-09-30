@@ -71,8 +71,8 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       // Verify suggestions were generated
       const result = copilotKitCore.getSuggestions("consumer");
       expect(result.suggestions).toHaveLength(2);
-      expect(result.suggestions[0]).toEqual({ title: "Action 1", message: "Do action 1" });
-      expect(result.suggestions[1]).toEqual({ title: "Action 2", message: "Do action 2" });
+      expect(result.suggestions[0]).toEqual({ title: "Action 1", message: "Do action 1", isLoading: false });
+      expect(result.suggestions[1]).toEqual({ title: "Action 2", message: "Do action 2", isLoading: false });
 
       // Verify subscriber was notified
       await vi.waitFor(() => {
@@ -345,6 +345,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       expect(result.suggestions[0]).toMatchObject({
         title: "First",
         message: "First action",
+        isLoading: true,
       });
     });
 

@@ -26,6 +26,8 @@ export type FrontendTool<T extends Record<string, unknown> = Record<string, unkn
 export type Suggestion = {
   title: string;
   message: string;
+  /** Indicates whether this suggestion is still being generated. */
+  isLoading: boolean;
 };
 
 export type DynamicSuggestionsConfig = {

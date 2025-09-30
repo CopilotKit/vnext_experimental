@@ -131,8 +131,8 @@ describe("useSuggestions E2E", () => {
   describe("Basic functionality", () => {
     it("tracks suggestions stream and loading state", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option A", message: "Take path A" },
-        { title: "Option B", message: "Take path B" },
+        { title: "Option A", message: "Take path A", isLoading: false },
+        { title: "Option B", message: "Take path B", isLoading: false },
       ]);
 
       const ui = renderWithCopilotKit({
@@ -183,7 +183,7 @@ describe("useSuggestions E2E", () => {
 
     it("handles single suggestion", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Only Option", message: "The only way" },
+        { title: "Only Option", message: "The only way", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -204,11 +204,11 @@ describe("useSuggestions E2E", () => {
 
     it("handles many suggestions", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option 1", message: "First choice" },
-        { title: "Option 2", message: "Second choice" },
-        { title: "Option 3", message: "Third choice" },
-        { title: "Option 4", message: "Fourth choice" },
-        { title: "Option 5", message: "Fifth choice" },
+        { title: "Option 1", message: "First choice", isLoading: false },
+        { title: "Option 2", message: "Second choice", isLoading: false },
+        { title: "Option 3", message: "Third choice", isLoading: false },
+        { title: "Option 4", message: "Fourth choice", isLoading: false },
+        { title: "Option 5", message: "Fifth choice", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -228,7 +228,7 @@ describe("useSuggestions E2E", () => {
   describe("Loading state transitions", () => {
     it("transitions from idle -> loading -> idle correctly", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Test", message: "Message" },
+        { title: "Test", message: "Message", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -255,7 +255,7 @@ describe("useSuggestions E2E", () => {
 
     it("stays in loading state during multiple reloads", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Test", message: "Message" },
+        { title: "Test", message: "Message", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -281,8 +281,8 @@ describe("useSuggestions E2E", () => {
   describe("Clear functionality", () => {
     it("clears suggestions immediately without loading state", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option A", message: "Message A" },
-        { title: "Option B", message: "Message B" },
+        { title: "Option A", message: "Message A", isLoading: false },
+        { title: "Option B", message: "Message B", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -310,7 +310,7 @@ describe("useSuggestions E2E", () => {
 
     it("can clear suggestions while loading", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option A", message: "Message A" },
+        { title: "Option A", message: "Message A", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -358,7 +358,7 @@ describe("useSuggestions E2E", () => {
   describe("Reload functionality", () => {
     it("can reload to get fresh suggestions", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option A", message: "Message A" },
+        { title: "Option A", message: "Message A", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -391,8 +391,8 @@ describe("useSuggestions E2E", () => {
 
     it("reload when already has suggestions replaces them", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option A", message: "Message A" },
-        { title: "Option B", message: "Message B" },
+        { title: "Option A", message: "Message A", isLoading: false },
+        { title: "Option B", message: "Message B", isLoading: false },
       ]);
 
       renderWithCopilotKit({
@@ -441,8 +441,8 @@ describe("useSuggestions E2E", () => {
 
     it("handles suggestions with special characters", async () => {
       const agent = new SuggestionsProviderAgent([
-        { title: "Option with \"quotes\"", message: "Message with 'quotes'" },
-        { title: "Option with\nnewlines", message: "Message\nwith\nnewlines" },
+        { title: "Option with \"quotes\"", message: "Message with 'quotes'", isLoading: false },
+        { title: "Option with\nnewlines", message: "Message\nwith\nnewlines", isLoading: false },
       ]);
 
       renderWithCopilotKit({
