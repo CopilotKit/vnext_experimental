@@ -206,7 +206,7 @@ export function createSuggestionsConfig(
     instructions: "Suggest helpful next actions",
     minSuggestions: 1,
     maxSuggestions: 3,
-    available: "enabled",
+    available: "always",
     providerAgentId: "default",
     consumerAgentId: "*",
     ...overrides,
