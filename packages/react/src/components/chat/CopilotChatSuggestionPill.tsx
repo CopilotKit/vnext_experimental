@@ -8,21 +8,18 @@ export interface CopilotChatSuggestionPillProps
   icon?: React.ReactNode;
   /** Whether the pill should display a loading spinner. */
   isLoading?: boolean;
-  /** Optional sublabel rendered below the main label. */
-  description?: string;
 }
 
 const baseClasses =
-  "group inline-flex min-h-9 items-center gap-2 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60";
+  "group inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs leading-none text-foreground transition-colors cursor-pointer hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-background disabled:hover:text-foreground";
 
-const labelClasses = "whitespace-nowrap";
-const descriptionClasses = "text-xs text-muted-foreground";
+const labelClasses = "whitespace-nowrap font-medium leading-none";
 
 export const CopilotChatSuggestionPill = React.forwardRef<
   HTMLButtonElement,
   CopilotChatSuggestionPillProps
 >(function CopilotChatSuggestionPill(
-  { className, children, icon, isLoading, description, type, ...props },
+  { className, children, icon, isLoading, type, ...props },
   ref
 ) {
   const showIcon = !isLoading && icon;
@@ -34,17 +31,19 @@ export const CopilotChatSuggestionPill = React.forwardRef<
       className={cn(baseClasses, className)}
       type={type ?? "button"}
       aria-busy={isLoading || undefined}
+      disabled={isLoading || props.disabled}
       {...props}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden="true" />
+        <span className="flex h-4 w-4 items-center justify-center text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        </span>
       ) : (
-        showIcon && <span className="flex h-4 w-4 items-center justify-center text-muted-foreground">{icon}</span>
+        showIcon && (
+          <span className="flex h-4 w-4 items-center justify-center text-muted-foreground">{icon}</span>
+        )
       )}
-      <span className="flex flex-col items-start">
-        <span className={labelClasses}>{children}</span>
-        {description ? <span className={descriptionClasses}>{description}</span> : null}
-      </span>
+      <span className={labelClasses}>{children}</span>
     </button>
   );
 });

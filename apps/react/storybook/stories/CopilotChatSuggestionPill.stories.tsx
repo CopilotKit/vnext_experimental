@@ -31,9 +31,9 @@ export const Loading: Story = {
   },
 };
 
-export const WithDescription: Story = {
+export const WithArrow: Story = {
   args: {
-    description: "Summarize this week's notes into next steps",
     icon: <ArrowRight className="h-4 w-4" aria-hidden="true" />,
+    children: "Summarize notes into next steps",
   },
 };

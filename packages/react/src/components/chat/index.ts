@@ -26,6 +26,11 @@ export {
 } from "./CopilotChatSuggestionPill";
 
 export {
+  default as CopilotChatSuggestionView,
+  type CopilotChatSuggestionViewProps,
+} from "./CopilotChatSuggestionView";
+
+export {
   default as CopilotChatMessageView,
   type CopilotChatMessageViewProps,
 } from "./CopilotChatMessageView";
