@@ -11,7 +11,7 @@ export interface CopilotChatSuggestionPillProps
 }
 
 const baseClasses =
-  "group inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs leading-none text-foreground transition-colors cursor-pointer hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-background disabled:hover:text-foreground";
+  "group inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs leading-none text-foreground transition-colors cursor-pointer hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-background disabled:hover:text-muted-foreground pointer-events-auto";
 
 const labelClasses = "whitespace-nowrap font-medium leading-none";
 
