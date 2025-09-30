@@ -110,13 +110,13 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
       await waitFor(() => {
         expect(screen.getByTestId("hitl-status").textContent).toBe(ToolCallStatus.Complete);
         expect(screen.getByTestId("hitl-result").textContent).toContain("approved");
+        // Also wait for the useEffect to update statusHistory
+        expect(statusHistory).toEqual([
+          ToolCallStatus.InProgress,
+          ToolCallStatus.Executing,
+          ToolCallStatus.Complete,
+        ]);
       });
-
-      expect(statusHistory).toEqual([
-        ToolCallStatus.InProgress,
-        ToolCallStatus.Executing,
-        ToolCallStatus.Complete,
-      ]);
     });
   });
 
