@@ -62,6 +62,7 @@ export class MockStepwiseAgent extends AbstractAgent {
  */
 export function renderWithCopilotKit({
   agent,
+  agents,
   renderToolCalls,
   frontendTools,
   humanInTheLoop,
@@ -70,6 +71,7 @@ export function renderWithCopilotKit({
   children,
 }: {
   agent?: AbstractAgent;
+  agents?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRender<any>[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
@@ -77,13 +79,13 @@ export function renderWithCopilotKit({
   threadId?: string;
   children?: React.ReactNode;
 }): ReturnType<typeof render> {
-  const agents = agent ? { default: agent } : undefined;
+  const resolvedAgents = agents || (agent ? { default: agent } : undefined);
   const resolvedAgentId = agentId ?? DEFAULT_AGENT_ID;
   const resolvedThreadId = threadId ?? "test-thread";
 
   return render(
     <CopilotKitProvider
-      agents__unsafe_dev_only={agents}
+      agents__unsafe_dev_only={resolvedAgents}
       renderToolCalls={renderToolCalls}
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
@@ -175,5 +177,76 @@ export function toolCallResultEvent({
  */
 export function testId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Helper to emit a complete suggestion tool call with streaming chunks
+ */
+export function emitSuggestionToolCall(
+  agent: MockStepwiseAgent,
+  {
+    toolCallId,
+    parentMessageId,
+    suggestions,
+  }: {
+    toolCallId: string;
+    parentMessageId: string;
+    suggestions: Array<{ title: string; message: string }>;
+  }
+) {
+  // Convert suggestions to JSON string
+  const suggestionsJson = JSON.stringify({ suggestions });
+
+  // Emit the tool call name first
+  agent.emit(toolCallChunkEvent({
+    toolCallId,
+    toolCallName: "copilotkitSuggest",
+    parentMessageId,
+    delta: "",
+  }));
+
+  // Stream the JSON in chunks to simulate streaming
+  const chunkSize = 10; // Characters per chunk
+  for (let i = 0; i < suggestionsJson.length; i += chunkSize) {
+    const chunk = suggestionsJson.substring(i, i + chunkSize);
+    agent.emit(toolCallChunkEvent({
+      toolCallId,
+      parentMessageId,
+      delta: chunk,
+    }));
+  }
+}
+
+/**
+ * A MockStepwiseAgent that emits suggestion events when run() is called
+ */
+export class SuggestionsProviderAgent extends MockStepwiseAgent {
+  private _suggestions: Array<{ title: string; message: string }> = [];
+
+  setSuggestions(suggestions: Array<{ title: string; message: string }>) {
+    this._suggestions = suggestions;
+  }
+
+  protected run(_input: RunAgentInput): Observable<BaseEvent> {
+    // Call the parent's run() to get the Subject that's already set up
+    const parentObservable = super.run(_input);
+
+    // Use setTimeout to emit events asynchronously through the existing subject
+    setTimeout(() => {
+      const messageId = testId("suggest-msg");
+      this.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+
+      emitSuggestionToolCall(this, {
+        toolCallId: testId("tc"),
+        parentMessageId: messageId,
+        suggestions: this._suggestions,
+      });
+
+      this.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+      this.complete();
+    }, 0);
+
+    return parentObservable;
+  }
 }
 
