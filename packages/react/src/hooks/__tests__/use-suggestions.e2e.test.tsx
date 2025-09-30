@@ -52,7 +52,7 @@ class SuggestionsProviderAgent extends AbstractAgent {
           type: "function",
           function: {
             name: "copilotkitSuggest",
-            arguments: [JSON.stringify({ suggestions: this.responses })],
+            arguments: JSON.stringify({ suggestions: this.responses }),
           },
         },
       ],
