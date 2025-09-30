@@ -1133,7 +1133,9 @@ export class CopilotKitCore {
     } catch (error) {
       console.warn("Error generating suggestions:", error);
     } finally {
-      this.extractSuggestions(agent?.messages ?? [], suggestionId, consumerAgentId, false);
+      // Finalize suggestions by marking them as no longer loading
+      this.finalizeSuggestions(suggestionId, consumerAgentId);
+
       // Remove this agent from running suggestions
       const runningAgents = this._runningSuggestions[consumerAgentId];
       if (agent && runningAgents) {
@@ -1153,6 +1155,40 @@ export class CopilotKitCore {
           );
         }
       }
+    }
+  }
+
+  private finalizeSuggestions(suggestionId: string, consumerAgentId: string) {
+    const agentSuggestions = this._suggestions[consumerAgentId];
+    const currentSuggestions = agentSuggestions?.[suggestionId];
+
+    if (agentSuggestions && currentSuggestions && currentSuggestions.length > 0) {
+      // Filter out empty suggestions and mark remaining as no longer loading
+      const finalizedSuggestions = currentSuggestions
+        .filter((suggestion) => suggestion.title !== "" || suggestion.message !== "")
+        .map((suggestion) => ({
+          ...suggestion,
+          isLoading: false,
+        }));
+
+      if (finalizedSuggestions.length > 0) {
+        agentSuggestions[suggestionId] = finalizedSuggestions;
+      } else {
+        delete agentSuggestions[suggestionId];
+      }
+
+      // Get all aggregated suggestions for this agent
+      const allSuggestions = Object.values(this._suggestions[consumerAgentId] ?? {}).flat();
+
+      void this.notifySubscribers(
+        (subscriber) =>
+          subscriber.onSuggestionsChanged?.({
+            copilotkit: this,
+            agentId: consumerAgentId,
+            suggestions: allSuggestions,
+          }),
+        "Subscriber onSuggestionsChanged error: finalized",
+      );
     }
   }
 
@@ -1183,10 +1219,7 @@ export class CopilotKitCore {
                     suggestions.push({
                       title: item.title ?? "",
                       message: item.message ?? "",
-                      isLoading:
-                        isRunning === true
-                          ? false
-                          : message.toolCalls.indexOf(toolCall) === message.toolCalls.length - 1,
+                      isLoading: false, // Will be set correctly below
                     });
                   }
                 }
@@ -1196,15 +1229,25 @@ export class CopilotKitCore {
         }
       }
     }
+
+    // Set isLoading for the last suggestion if still running
+    if (isRunning && suggestions.length > 0) {
+      suggestions[suggestions.length - 1]!.isLoading = true;
+    }
+
     const agentSuggestions = this._suggestions[consumerAgentId];
-    if (agentSuggestions && agentSuggestions[suggestionId]) {
+    if (agentSuggestions) {
       agentSuggestions[suggestionId] = suggestions;
+
+      // Get all aggregated suggestions for this agent
+      const allSuggestions = Object.values(this._suggestions[consumerAgentId] ?? {}).flat();
+
       void this.notifySubscribers(
         (subscriber) =>
           subscriber.onSuggestionsChanged?.({
             copilotkit: this,
             agentId: consumerAgentId,
-            suggestions,
+            suggestions: allSuggestions,
           }),
         "Subscriber onSuggestionsChanged error: suggestions changed",
       );

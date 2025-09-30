@@ -336,16 +336,30 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.reloadSuggestions("consumer");
 
       await vi.waitFor(() => {
-        const result = copilotKitCore.getSuggestions("consumer");
-        expect(result.suggestions.length).toBeGreaterThan(0);
+        expect(suggestionUpdates.length).toBeGreaterThanOrEqual(2);
       });
 
-      // Should have parsed the first complete suggestion
-      const result = copilotKitCore.getSuggestions("consumer");
-      expect(result.suggestions[0]).toMatchObject({
+      // Find the update with suggestions (skip empty initial updates)
+      const streamingUpdate = suggestionUpdates.find(update => update.length > 0 && update[0].isLoading === true);
+      expect(streamingUpdate).toBeDefined();
+      expect(streamingUpdate![0]).toMatchObject({
         title: "First",
         message: "First action",
         isLoading: true,
+      });
+
+      // After finalization, isLoading should be false
+      await vi.waitFor(() => {
+        const lastUpdate = suggestionUpdates[suggestionUpdates.length - 1];
+        expect(lastUpdate.length).toBeGreaterThan(0);
+        expect(lastUpdate[0].isLoading).toBe(false);
+      });
+
+      const finalUpdate = suggestionUpdates[suggestionUpdates.length - 1];
+      expect(finalUpdate[0]).toMatchObject({
+        title: "First",
+        message: "First action",
+        isLoading: false,
       });
     });
 
