@@ -280,7 +280,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
             type: "function",
             function: {
               name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
             },
           }],
         }),
@@ -317,7 +317,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
             type: "function",
             function: {
               name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
             },
           }],
         }),
@@ -356,7 +356,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
             type: "function",
             function: {
               name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
             },
           }],
         }),
@@ -395,7 +395,7 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
             type: "function",
             function: {
               name: "copilotkitSuggest",
-              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'],
+              arguments: ['{"suggestions":[{"title":"Test","message":"Test"}]}'] as any,
             },
           }],
         }),
