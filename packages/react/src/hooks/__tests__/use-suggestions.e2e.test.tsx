@@ -95,8 +95,8 @@ const TestHarness: React.FC = () => {
   useEffect(() => {
     const configId = copilotkit.addSuggestionsConfig({
       instructions: "Return deterministic suggestions",
-      suggestionsProviderAgentId: DEFAULT_AGENT_ID,
-      suggestionsConsumerAgentId: DEFAULT_AGENT_ID,
+      providerAgentId: DEFAULT_AGENT_ID,
+      consumerAgentId: DEFAULT_AGENT_ID,
     });
 
     return () => {

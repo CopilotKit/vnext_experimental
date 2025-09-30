@@ -560,9 +560,9 @@ export class CopilotKitCore {
     for (const config of Object.values(this._suggestionsConfig)) {
       if (isDynamicSuggestionsConfig(config)) {
         if (
-          config.suggestionsConsumerAgentId === undefined ||
-          config.suggestionsConsumerAgentId === "*" ||
-          config.suggestionsConsumerAgentId === agentId
+          config.consumerAgentId === undefined ||
+          config.consumerAgentId === "*" ||
+          config.consumerAgentId === agentId
         ) {
           const suggestionId = randomUUID();
           if (!hasAnySuggestions) {
@@ -579,7 +579,13 @@ export class CopilotKitCore {
           void this.generateSuggestions(suggestionId, config, agentId);
         }
       } else if (isStaticSuggestionsConfig(config)) {
-        // TODO implement static suggestions
+        if (
+          config.consumerAgentId === undefined ||
+          config.consumerAgentId === "*" ||
+          config.consumerAgentId === agentId
+        ) {
+          // TODO implement static suggestions
+        }
       }
     }
   }
@@ -1071,17 +1077,17 @@ export class CopilotKitCore {
   private async generateSuggestions(
     suggestionId: string,
     config: DynamicSuggestionsConfig,
-    suggestionsConsumerAgentId: string,
+    consumerAgentId: string,
   ): Promise<void> {
     let agent: AbstractAgent | undefined = undefined;
     try {
-      const suggestionsProviderAgent = this.getAgent(config.suggestionsProviderAgentId ?? "default");
+      const suggestionsProviderAgent = this.getAgent(config.providerAgentId ?? "default");
       if (!suggestionsProviderAgent) {
-        throw new Error(`Suggestions provider agent not found: ${config.suggestionsProviderAgentId}`);
+        throw new Error(`Suggestions provider agent not found: ${config.providerAgentId}`);
       }
-      const suggestionsConsumerAgent = this.getAgent(suggestionsConsumerAgentId);
+      const suggestionsConsumerAgent = this.getAgent(consumerAgentId);
       if (!suggestionsConsumerAgent) {
-        throw new Error(`Suggestions consumer agent not found: ${suggestionsConsumerAgentId}`);
+        throw new Error(`Suggestions consumer agent not found: ${consumerAgentId}`);
       }
 
       const clonedAgent: AbstractAgent = suggestionsProviderAgent.clone();
@@ -1092,12 +1098,12 @@ export class CopilotKitCore {
       agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));
 
       // Initialize suggestion storage for this agent/suggestion combo
-      this._suggestions[suggestionsConsumerAgentId] = {
-        ...(this._suggestions[suggestionsConsumerAgentId] ?? {}),
+      this._suggestions[consumerAgentId] = {
+        ...(this._suggestions[consumerAgentId] ?? {}),
         [suggestionId]: [],
       };
-      this._runningSuggestions[suggestionsConsumerAgentId] = [
-        ...(this._runningSuggestions[suggestionsConsumerAgentId] ?? []),
+      this._runningSuggestions[consumerAgentId] = [
+        ...(this._runningSuggestions[consumerAgentId] ?? []),
         agent,
       ];
 
@@ -1107,7 +1113,7 @@ export class CopilotKitCore {
         content: [
           `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
           `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
-          `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(suggestionsConsumerAgentId))}.`,
+          `The user has the following tools available: ${JSON.stringify(this.buildFrontendTools(consumerAgentId))}.`,
           ` ${config.instructions}`,
         ].join("\n"),
       });
@@ -1158,14 +1164,14 @@ export class CopilotKitCore {
               }
             }
 
-            const agentSuggestions = this._suggestions[suggestionsConsumerAgentId];
+            const agentSuggestions = this._suggestions[consumerAgentId];
             if (agentSuggestions && agentSuggestions[suggestionId]) {
               agentSuggestions[suggestionId] = suggestions;
               void this.notifySubscribers(
                 (subscriber) =>
                   subscriber.onSuggestionsChanged?.({
                     copilotkit: this,
-                    agentId: suggestionsConsumerAgentId,
+                    agentId: consumerAgentId,
                     suggestions,
                   }),
                 "Subscriber onSuggestionsChanged error: suggestions changed",
@@ -1178,19 +1184,19 @@ export class CopilotKitCore {
       console.warn("Error generating suggestions:", error);
     } finally {
       // Remove this agent from running suggestions
-      const runningAgents = this._runningSuggestions[suggestionsConsumerAgentId];
+      const runningAgents = this._runningSuggestions[consumerAgentId];
       if (agent && runningAgents) {
         const filteredAgents = runningAgents.filter((a) => a !== agent);
-        this._runningSuggestions[suggestionsConsumerAgentId] = filteredAgents;
+        this._runningSuggestions[consumerAgentId] = filteredAgents;
 
         // If no more suggestions are running, emit loading end event
         if (filteredAgents.length === 0) {
-          delete this._runningSuggestions[suggestionsConsumerAgentId];
+          delete this._runningSuggestions[consumerAgentId];
           await this.notifySubscribers(
             (subscriber) =>
               subscriber.onSuggestionsFinishedLoading?.({
                 copilotkit: this,
-                agentId: suggestionsConsumerAgentId,
+                agentId: consumerAgentId,
               }),
             "Subscriber onSuggestionsFinishedLoading error:",
           );

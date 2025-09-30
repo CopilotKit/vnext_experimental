@@ -194,8 +194,8 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const config = createSuggestionsConfig({
-        suggestionsProviderAgentId: "nonexistent",
-        suggestionsConsumerAgentId: "consumer",
+        providerAgentId: "nonexistent",
+        consumerAgentId: "consumer",
       });
       copilotKitCore.addSuggestionsConfig(config);
 
@@ -219,8 +219,8 @@ describe("CopilotKitCore - Suggestions Config Management", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "provider", agent: providerAgent as any });
 
       const config = createSuggestionsConfig({
-        suggestionsProviderAgentId: "provider",
-        suggestionsConsumerAgentId: "nonexistent",
+        providerAgentId: "provider",
+        consumerAgentId: "nonexistent",
       });
       copilotKitCore.addSuggestionsConfig(config);
 

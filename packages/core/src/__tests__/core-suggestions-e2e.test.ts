@@ -27,7 +27,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
         instructions: "Suggest helpful actions",
         minSuggestions: 2,
         maxSuggestions: 3,
-        suggestionsConsumerAgentId: "consumer",
+        consumerAgentId: "consumer",
       });
       copilotKitCore.addSuggestionsConfig(config);
 
@@ -180,7 +180,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "other", agent: otherAgent as any });
 
       const config = createSuggestionsConfig({
-        suggestionsConsumerAgentId: "target",
+        consumerAgentId: "target",
       });
       copilotKitCore.addSuggestionsConfig(config);
 
@@ -227,7 +227,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "agent2", agent: agent2 as any });
 
       const config = createSuggestionsConfig({
-        suggestionsConsumerAgentId: "*",
+        consumerAgentId: "*",
       });
       copilotKitCore.addSuggestionsConfig(config);
 
@@ -269,7 +269,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
 
       const config = createSuggestionsConfig({
-        suggestionsConsumerAgentId: undefined,
+        consumerAgentId: undefined,
       });
       copilotKitCore.addSuggestionsConfig(config);
 
@@ -454,7 +454,7 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       copilotKitCore.addAgent__unsafe_dev_only({ id: "agent2", agent: agent2 as any });
 
       const config = createSuggestionsConfig({
-        suggestionsConsumerAgentId: "*",
+        consumerAgentId: "*",
       });
       copilotKitCore.addSuggestionsConfig(config);
 

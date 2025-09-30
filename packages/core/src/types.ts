@@ -53,12 +53,12 @@ export type DynamicSuggestionsConfig = {
   /**
    * The agent ID of the provider of the suggestions. Defaults to `"default"`.
    */
-  suggestionsProviderAgentId?: string;
+  providerAgentId?: string;
 
   /**
    * The agent ID of the consumer of the suggestions. Defaults to `"*"` (all agents).
    */
-  suggestionsConsumerAgentId?: string;
+  consumerAgentId?: string;
 };
 
 export type StaticSuggestionsConfig = {
@@ -66,6 +66,10 @@ export type StaticSuggestionsConfig = {
    * The suggestions to display.
    */
   suggestions: Suggestion[];
+  /**
+   * The agent ID of the consumer of the suggestions. Defaults to `"*"` (all agents).
+   */
+  consumerAgentId?: string;
 };
 
 export type SuggestionsConfig = DynamicSuggestionsConfig | StaticSuggestionsConfig;

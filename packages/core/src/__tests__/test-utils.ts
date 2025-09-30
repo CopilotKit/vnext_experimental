@@ -207,8 +207,8 @@ export function createSuggestionsConfig(
     minSuggestions: 1,
     maxSuggestions: 3,
     available: "enabled",
-    suggestionsProviderAgentId: "default",
-    suggestionsConsumerAgentId: "*",
+    providerAgentId: "default",
+    consumerAgentId: "*",
     ...overrides,
   };
 }
