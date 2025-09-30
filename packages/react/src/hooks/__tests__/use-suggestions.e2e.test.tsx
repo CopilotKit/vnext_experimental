@@ -97,6 +97,7 @@ const TestHarness: React.FC = () => {
       instructions: "Return deterministic suggestions",
       providerAgentId: DEFAULT_AGENT_ID,
       consumerAgentId: DEFAULT_AGENT_ID,
+      available: "always",
     });
 
     return () => {

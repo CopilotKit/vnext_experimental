@@ -1138,4 +1138,295 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       });
     });
   });
+
+  describe("SuggestionAvailability - Dynamic Suggestions", () => {
+    it("should show dynamic suggestions with 'before-first-message' only when messages are empty", async () => {
+      const providerAgent = new MockAgent({ agentId: "provider" });
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "provider", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        instructions: "Suggest actions",
+        providerAgentId: "provider",
+        consumerAgentId: "consumer",
+        available: "before-first-message",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [
+            {
+              id: "tc-1",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Start","message":"Get started"}]}'] as any,
+              },
+            },
+          ],
+        } as any),
+      ]);
+
+      // Should show suggestions when messages are empty
+      copilotKitCore.reloadSuggestions("consumer");
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
+      });
+
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(1);
+      expect(result1.suggestions[0]?.title).toBe("Start");
+
+      // Add a message and reload - should not show suggestions
+      consumerAgent.messages = [createMessage({ content: "First message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(0);
+    });
+
+    it("should show dynamic suggestions with 'after-first-message' only when messages exist", async () => {
+      const providerAgent = new MockAgent({ agentId: "provider" });
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "provider", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        instructions: "Suggest next actions",
+        providerAgentId: "provider",
+        consumerAgentId: "consumer",
+        available: "after-first-message",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [
+            {
+              id: "tc-2",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Continue","message":"Keep going"}]}'] as any,
+              },
+            },
+          ],
+        } as any),
+      ]);
+
+      // Should not show suggestions when messages are empty
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(0);
+
+      // Add a message and reload - should show suggestions
+      consumerAgent.messages = [createMessage({ content: "First message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
+      });
+
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(1);
+      expect(result2.suggestions[0]?.title).toBe("Continue");
+    });
+
+    it("should show dynamic suggestions with 'always' regardless of message count", async () => {
+      const providerAgent = new MockAgent({ agentId: "provider" });
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "provider", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        instructions: "Always suggest",
+        providerAgentId: "provider",
+        consumerAgentId: "consumer",
+        available: "always",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      providerAgent.setNewMessages([
+        createAssistantMessage({
+          toolCalls: [
+            {
+              id: "tc-3",
+              type: "function",
+              function: {
+                name: "copilotkitSuggest",
+                arguments: ['{"suggestions":[{"title":"Always","message":"Always available"}]}'] as any,
+              },
+            },
+          ],
+        } as any),
+      ]);
+
+      // Should show when empty
+      copilotKitCore.reloadSuggestions("consumer");
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
+      });
+
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions[0]?.title).toBe("Always");
+
+      // Should also show when messages exist
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.suggestions.length).toBeGreaterThan(0);
+      });
+
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions[0]?.title).toBe("Always");
+    });
+
+    it("should not show dynamic suggestions with 'disabled'", async () => {
+      const providerAgent = new MockAgent({ agentId: "provider" });
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "provider", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({
+        instructions: "Should not appear",
+        providerAgentId: "provider",
+        consumerAgentId: "consumer",
+        available: "disabled",
+      });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Should not show regardless of message count
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(0);
+
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(0);
+    });
+
+  });
+
+  describe("SuggestionAvailability - Static Suggestions", () => {
+    it("should show static suggestions with 'before-first-message' only when messages are empty", () => {
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      copilotKitCore.addSuggestionsConfig({
+        suggestions: [
+          { title: "Start Here", message: "Begin your journey", isLoading: false },
+          { title: "Learn More", message: "Get information", isLoading: false },
+        ],
+        consumerAgentId: "consumer",
+        available: "before-first-message",
+      });
+
+      // Should show when empty
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(2);
+      expect(result1.suggestions[0]?.title).toBe("Start Here");
+      expect(result1.isLoading).toBe(false);
+
+      // Should not show when messages exist
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(0);
+    });
+
+    it("should show static suggestions with 'after-first-message' only when messages exist", () => {
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      copilotKitCore.addSuggestionsConfig({
+        suggestions: [{ title: "Next Step", message: "Continue", isLoading: false }],
+        consumerAgentId: "consumer",
+        available: "after-first-message",
+      });
+
+      // Should not show when empty
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(0);
+
+      // Should show when messages exist
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(1);
+      expect(result2.suggestions[0]?.title).toBe("Next Step");
+    });
+
+    it("should show static suggestions with 'always' regardless of message count", () => {
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      copilotKitCore.addSuggestionsConfig({
+        suggestions: [{ title: "Persistent", message: "Always here", isLoading: false }],
+        consumerAgentId: "consumer",
+        available: "always",
+      });
+
+      // Should show when empty
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(1);
+
+      // Should show when messages exist
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(1);
+    });
+
+    it("should not show static suggestions with 'disabled'", () => {
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      copilotKitCore.addSuggestionsConfig({
+        suggestions: [{ title: "Hidden", message: "Should not appear", isLoading: false }],
+        consumerAgentId: "consumer",
+        available: "disabled",
+      });
+
+      copilotKitCore.reloadSuggestions("consumer");
+      const result = copilotKitCore.getSuggestions("consumer");
+      expect(result.suggestions).toHaveLength(0);
+    });
+
+    it("should default to 'before-first-message' for static suggestions when availability not specified", () => {
+      const consumerAgent = new MockAgent({ agentId: "consumer", messages: [] });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      copilotKitCore.addSuggestionsConfig({
+        suggestions: [{ title: "Default Static", message: "Default behavior", isLoading: false }],
+        consumerAgentId: "consumer",
+        // No 'available' specified
+      });
+
+      // Should show when empty (default: before-first-message)
+      copilotKitCore.reloadSuggestions("consumer");
+      const result1 = copilotKitCore.getSuggestions("consumer");
+      expect(result1.suggestions).toHaveLength(1);
+
+      // Should not show when messages exist
+      consumerAgent.messages = [createMessage({ content: "Message" })];
+      copilotKitCore.reloadSuggestions("consumer");
+      const result2 = copilotKitCore.getSuggestions("consumer");
+      expect(result2.suggestions).toHaveLength(0);
+    });
+  });
 });

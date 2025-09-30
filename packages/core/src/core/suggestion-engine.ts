@@ -55,29 +55,40 @@ export class SuggestionEngine {
   public reloadSuggestions(agentId: string): void {
     this.clearSuggestions(agentId);
 
+    // Get agent to check message count for availability filtering
+    const agent = (this.core as any).getAgent(agentId);
+    if (!agent) {
+      return;
+    }
+
+    const messageCount = agent.messages?.length ?? 0;
     let hasAnySuggestions = false;
+
     for (const config of Object.values(this._suggestionsConfig)) {
+      // Check if config applies to this agent
+      if (
+        config.consumerAgentId !== undefined &&
+        config.consumerAgentId !== "*" &&
+        config.consumerAgentId !== agentId
+      ) {
+        continue;
+      }
+
+      // Check availability based on message count
+      if (!this.shouldShowSuggestions(config, messageCount)) {
+        continue;
+      }
+
+      const suggestionId = randomUUID();
+
       if (isDynamicSuggestionsConfig(config)) {
-        if (
-          config.consumerAgentId === undefined ||
-          config.consumerAgentId === "*" ||
-          config.consumerAgentId === agentId
-        ) {
-          const suggestionId = randomUUID();
-          if (!hasAnySuggestions) {
-            hasAnySuggestions = true;
-            void this.notifySuggestionsStartedLoading(agentId);
-          }
-          void this.generateSuggestions(suggestionId, config, agentId);
+        if (!hasAnySuggestions) {
+          hasAnySuggestions = true;
+          void this.notifySuggestionsStartedLoading(agentId);
         }
+        void this.generateSuggestions(suggestionId, config, agentId);
       } else if (isStaticSuggestionsConfig(config)) {
-        if (
-          config.consumerAgentId === undefined ||
-          config.consumerAgentId === "*" ||
-          config.consumerAgentId === agentId
-        ) {
-          // TODO implement static suggestions
-        }
+        this.addStaticSuggestions(suggestionId, config, agentId);
       }
     }
   }
@@ -332,6 +343,61 @@ export class SuggestionEngine {
         }),
       "Subscriber onSuggestionsFinishedLoading error:",
     );
+  }
+
+  /**
+   * Check if suggestions should be shown based on availability and message count
+   */
+  private shouldShowSuggestions(config: SuggestionsConfig, messageCount: number): boolean {
+    const availability = config.available;
+
+    // Default behavior if no availability specified
+    if (!availability) {
+      if (isDynamicSuggestionsConfig(config)) {
+        return messageCount > 0; // Default: after-first-message
+      } else {
+        return messageCount === 0; // Default: before-first-message
+      }
+    }
+
+    switch (availability) {
+      case "disabled":
+        return false;
+      case "before-first-message":
+        return messageCount === 0;
+      case "after-first-message":
+        return messageCount > 0;
+      case "always":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Add static suggestions directly without AI generation
+   */
+  private addStaticSuggestions(
+    suggestionId: string,
+    config: StaticSuggestionsConfig,
+    consumerAgentId: string,
+  ): void {
+    // Mark all as not loading since they're static
+    const suggestions = config.suggestions.map((s) => ({
+      ...s,
+      isLoading: false,
+    }));
+
+    // Store suggestions
+    this._suggestions[consumerAgentId] = {
+      ...(this._suggestions[consumerAgentId] ?? {}),
+      [suggestionId]: suggestions,
+    };
+
+    // Notify subscribers
+    const allSuggestions = Object.values(this._suggestions[consumerAgentId] ?? {}).flat();
+
+    void this.notifySuggestionsChanged(consumerAgentId, allSuggestions, "static suggestions added");
   }
 }
 

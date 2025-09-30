@@ -18,6 +18,11 @@ export function useConfigureSuggestions(config: SuggestionsConfig | null | undef
       return null;
     }
 
+    // Skip disabled configs - don't register them
+    if (config.available === "disabled") {
+      return null;
+    }
+
     if (isDynamicConfig(config)) {
       if (config.consumerAgentId) {
         return config;

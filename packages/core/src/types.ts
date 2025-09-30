@@ -30,6 +30,8 @@ export type Suggestion = {
   isLoading: boolean;
 };
 
+export type SuggestionAvailability = "before-first-message" | "after-first-message" | "always" | "disabled";
+
 export type DynamicSuggestionsConfig = {
   /**
    * A prompt or instructions for the GPT to generate suggestions.
@@ -47,10 +49,9 @@ export type DynamicSuggestionsConfig = {
   maxSuggestions?: number;
 
   /**
-   * Whether the suggestions are available. Defaults to `enabled`.
-   * @default enabled
+   * When the suggestions are available. Defaults to "after-first-message".
    */
-  available?: "enabled" | "disabled";
+  available?: SuggestionAvailability;
 
   /**
    * The agent ID of the provider of the suggestions. Defaults to `"default"`.
@@ -68,6 +69,12 @@ export type StaticSuggestionsConfig = {
    * The suggestions to display.
    */
   suggestions: Suggestion[];
+
+  /**
+   * When the suggestions are available. Defaults to "before-first-message".
+   */
+  available?: SuggestionAvailability;
+
   /**
    * The agent ID of the consumer of the suggestions. Defaults to `"*"` (all agents).
    */

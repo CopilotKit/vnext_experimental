@@ -90,6 +90,7 @@ const TestHarness: React.FC = () => {
   useConfigureSuggestions({
     instructions: "Return deterministic suggestions",
     providerAgentId: DEFAULT_AGENT_ID,
+    available: "always",
   });
 
   const { suggestions, isLoading, reloadSuggestions } = useSuggestions();
