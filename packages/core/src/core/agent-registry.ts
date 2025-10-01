@@ -111,16 +111,17 @@ export class AgentRegistry {
       return this._agents[id] as AbstractAgent;
     }
 
+    // Silently return undefined if we're still loading runtime agents
     if (
       this.runtimeUrl !== undefined &&
       (this.runtimeConnectionStatus === CopilotKitCoreRuntimeConnectionStatus.Disconnected ||
         this.runtimeConnectionStatus === CopilotKitCoreRuntimeConnectionStatus.Connecting)
     ) {
       return undefined;
-    } else {
-      console.warn(`Agent ${id} not found`);
-      return undefined;
     }
+
+    console.warn(`Agent ${id} not found`);
+    return undefined;
   }
 
   /**
@@ -145,6 +146,11 @@ export class AgentRegistry {
    * Update runtime connection and fetch remote agents
    */
   private async updateRuntimeConnection(): Promise<void> {
+    // Skip fetching on the server (SSR)
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (!this.runtimeUrl) {
       this._runtimeConnectionStatus = CopilotKitCoreRuntimeConnectionStatus.Disconnected;
       this._runtimeVersion = undefined;

@@ -5,9 +5,12 @@ import { waitForCondition } from "./test-utils";
 
 describe("CopilotKitCore headers", () => {
   const originalFetch = global.fetch;
+  const originalWindow = (global as any).window;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Mock window to simulate browser environment
+    (global as any).window = {};
   });
 
   afterEach(() => {
@@ -15,6 +18,12 @@ describe("CopilotKitCore headers", () => {
       global.fetch = originalFetch;
     } else {
       delete (global as typeof globalThis & { fetch?: typeof fetch }).fetch;
+    }
+    // Restore window
+    if (originalWindow === undefined) {
+      delete (global as any).window;
+    } else {
+      (global as any).window = originalWindow;
     }
   });
 

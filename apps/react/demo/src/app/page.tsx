@@ -19,13 +19,15 @@ export default function Home() {
     name: "*",
     // No args needed for wildcard - defaults to z.any()
     render: ({ name, args, status }) => (
-      <div style={{
-        padding: "12px",
-        margin: "8px 0",
-        backgroundColor: "#f0f0f0",
-        borderRadius: "8px",
-        border: "1px solid #ccc"
-      }}>
+      <div
+        style={{
+          padding: "12px",
+          margin: "8px 0",
+          backgroundColor: "#f0f0f0",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+        }}
+      >
         <strong>Unknown Tool: {name}</strong>
         <pre style={{ marginTop: "8px", fontSize: "12px" }}>
           Status: {status}
@@ -36,13 +38,8 @@ export default function Home() {
   });
 
   return (
-    <CopilotKitProvider
-      runtimeUrl="/api/copilotkit"
-      renderToolCalls={[wildcardRenderer]}
-    >
-      <div
-        style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
-      >
+    <CopilotKitProvider runtimeUrl="/api/copilotkit" renderToolCalls={[wildcardRenderer]}>
+      <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
         <Chat />
       </div>
     </CopilotKitProvider>
@@ -50,8 +47,6 @@ export default function Home() {
 }
 
 function Chat() {
-  const { copilotkit } = useCopilotKit();
-
   useFrontendTool({
     name: "sayHello",
     parameters: z.object({

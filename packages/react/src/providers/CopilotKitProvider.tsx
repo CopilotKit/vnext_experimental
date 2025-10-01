@@ -180,8 +180,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   const copilotkit = useMemo(() => {
     const config: CopilotKitCoreConfig = {
-      // Don't set runtimeUrl during initialization to prevent server-side fetching
-      runtimeUrl: undefined,
+      runtimeUrl,
       headers,
       properties,
       agents__unsafe_dev_only: agents,
