@@ -102,7 +102,7 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
       >
         <div className="flex h-full w-full flex-col overflow-hidden">
           {headerElement}
-          <div className="flex-1 overflow-hidden px-4">
+          <div className="flex-1 overflow-hidden" data-sidebar-chat>
             <CopilotChatView {...props} />
           </div>
         </div>
