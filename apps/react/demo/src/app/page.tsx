@@ -4,9 +4,9 @@ import { HttpAgent } from "@ag-ui/client";
 import {
   CopilotChat,
   CopilotKitProvider,
-  useCopilotKit,
   useFrontendTool,
   defineToolCallRender,
+  useConfigureSuggestions,
 } from "@copilotkitnext/react";
 import { z } from "zod";
 
@@ -47,6 +47,13 @@ export default function Home() {
 }
 
 function Chat() {
+  useConfigureSuggestions({
+    suggestions: [
+      { title: "Option A", message: "Take path A" },
+      { title: "Option B", message: "Take path B" },
+    ],
+  });
+
   useFrontendTool({
     name: "sayHello",
     parameters: z.object({
@@ -57,5 +64,5 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
-  return <CopilotChat threadId="xyz" />;
+  return <CopilotChat />;
 }

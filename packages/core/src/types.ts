@@ -68,7 +68,7 @@ export type StaticSuggestionsConfig = {
   /**
    * The suggestions to display.
    */
-  suggestions: Suggestion[];
+  suggestions: Omit<Suggestion, "isLoading">[];
 
   /**
    * When the suggestions are available. Defaults to "before-first-message".

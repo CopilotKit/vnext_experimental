@@ -2,16 +2,13 @@ import { useEffect, useMemo, useRef } from "react";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
-import { DynamicSuggestionsConfig, StaticSuggestionsConfig, SuggestionsConfig } from "@copilotkitnext/core";
+import { DynamicSuggestionsConfig, StaticSuggestionsConfig, SuggestionsConfig, Suggestion } from "@copilotkitnext/core";
 
-export function useConfigureSuggestions(config: SuggestionsConfig | null | undefined): void {
+export function useConfigureSuggestions(config: SuggestionsConfig): void {
   const { copilotkit } = useCopilotKit();
   const chatConfig = useCopilotChatConfiguration();
 
-  const resolvedConsumerAgentId = useMemo(
-    () => chatConfig?.agentId ?? DEFAULT_AGENT_ID,
-    [chatConfig?.agentId],
-  );
+  const resolvedConsumerAgentId = useMemo(() => chatConfig?.agentId ?? DEFAULT_AGENT_ID, [chatConfig?.agentId]);
 
   const normalizedConfig = useMemo<SuggestionsConfig | null>(() => {
     if (!config) {
@@ -33,17 +30,27 @@ export function useConfigureSuggestions(config: SuggestionsConfig | null | undef
       } satisfies DynamicSuggestionsConfig;
     }
 
+    const normalizedSuggestions = normalizeStaticSuggestions(config.suggestions);
+
+    const baseConfig: StaticSuggestionsConfig = {
+      ...config,
+      suggestions: normalizedSuggestions,
+    };
+
     if (config.consumerAgentId) {
-      return config;
+      return baseConfig;
     }
 
     return {
-      ...config,
+      ...baseConfig,
       consumerAgentId: resolvedConsumerAgentId,
     } satisfies StaticSuggestionsConfig;
   }, [config, resolvedConsumerAgentId]);
 
-  const serializedConfig = useMemo(() => (normalizedConfig ? JSON.stringify(normalizedConfig) : null), [normalizedConfig]);
+  const serializedConfig = useMemo(
+    () => (normalizedConfig ? JSON.stringify(normalizedConfig) : null),
+    [normalizedConfig],
+  );
   const latestConfigRef = useRef<SuggestionsConfig | null>(null);
   latestConfigRef.current = normalizedConfig;
 
@@ -62,4 +69,11 @@ export function useConfigureSuggestions(config: SuggestionsConfig | null | undef
 
 function isDynamicConfig(config: SuggestionsConfig): config is DynamicSuggestionsConfig {
   return "instructions" in config;
+}
+
+function normalizeStaticSuggestions(suggestions: StaticSuggestionsConfig["suggestions"]): Suggestion[] {
+  return suggestions.map((suggestion) => ({
+    ...suggestion,
+    isLoading: false,
+  }));
 }

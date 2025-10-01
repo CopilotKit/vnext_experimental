@@ -136,6 +136,8 @@ export class RunHandler {
    * Run an agent
    */
   async runAgent({ agent, withMessages }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
+    void (this.core as any).suggestionEngine.clearSuggestions(agent.agentId);
+
     if (agent instanceof HttpAgent) {
       agent.headers = { ...(this.core as any).headers };
     }

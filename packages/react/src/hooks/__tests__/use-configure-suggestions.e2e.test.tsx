@@ -1,11 +1,12 @@
 import React, { useCallback } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderWithCopilotKit } from "@/__tests__/utils/test-helpers";
+import { renderWithCopilotKit, MockStepwiseAgent, runStartedEvent, runFinishedEvent } from "@/__tests__/utils/test-helpers";
 import { useConfigureSuggestions } from "../use-configure-suggestions";
 import { useSuggestions } from "../use-suggestions";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 import { Suggestion } from "@copilotkitnext/core";
 import { AbstractAgent, AgentSubscriber, Message, RunAgentParameters, RunAgentResult } from "@ag-ui/client";
+import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 class SuggestionsProviderAgent extends AbstractAgent {
   constructor(private readonly responses: Suggestion[]) {
@@ -110,6 +111,93 @@ const TestHarness: React.FC = () => {
   );
 };
 
+const StaticSuggestionsHarness: React.FC = () => {
+  useConfigureSuggestions({
+    suggestions: [{ title: "Static A", message: "First static" }],
+  });
+
+  const { suggestions, reloadSuggestions } = useSuggestions();
+  const { copilotkit } = useCopilotKit();
+
+  const handleReload = useCallback(() => {
+    reloadSuggestions();
+  }, [reloadSuggestions]);
+
+  const handleAddMessage = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    agent?.addMessage({
+      id: randomUUID(),
+      role: "user",
+      content: "User message",
+    });
+    reloadSuggestions();
+  }, [copilotkit, reloadSuggestions]);
+
+  return (
+    <div>
+      <div data-testid="suggestions-count">{suggestions.length}</div>
+      <div data-testid="suggestions-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="reload-suggestions" onClick={handleReload}>
+        Reload
+      </button>
+      <button data-testid="add-message" onClick={handleAddMessage}>
+        Add message
+      </button>
+    </div>
+  );
+};
+
+const RunClearsSuggestionsHarness: React.FC = () => {
+  useConfigureSuggestions({
+    suggestions: [{ title: "Static A", message: "First static" }],
+  });
+
+  const { suggestions, reloadSuggestions } = useSuggestions();
+  const { copilotkit } = useCopilotKit();
+
+  const handleReload = useCallback(() => {
+    reloadSuggestions();
+  }, [reloadSuggestions]);
+
+  const handleRun = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    if (!agent) {
+      return;
+    }
+
+    agent.addMessage({
+      id: randomUUID(),
+      role: "user",
+      content: "Initiating run",
+    });
+
+    void copilotkit.runAgent({ agent }).catch(() => {});
+  }, [copilotkit]);
+
+  const handleComplete = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    if (agent instanceof MockStepwiseAgent) {
+      agent.complete();
+    }
+  }, [copilotkit]);
+
+  return (
+    <div>
+      <div data-testid="suggestions-count">{suggestions.length}</div>
+      <div data-testid="suggestions-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="reload-suggestions" onClick={handleReload}>
+        Reload
+      </button>
+      <button data-testid="run-agent" onClick={handleRun}>
+        Run
+      </button>
+      <button data-testid="complete-agent" onClick={handleComplete}>
+        Complete
+      </button>
+    </div>
+  );
+};
+
 describe("useConfigureSuggestions", () => {
   it("registers suggestions config and surfaces generated suggestions", async () => {
     const agent = new SuggestionsProviderAgent([
@@ -139,5 +227,68 @@ describe("useConfigureSuggestions", () => {
     const json = screen.getByTestId("suggestions-json").textContent;
     expect(json).toContain("Option A");
     expect(json).toContain("Option B");
+  });
+});
+
+describe("static suggestions defaults", () => {
+  it("shows static suggestions only before the first message", async () => {
+    const agent = new MockStepwiseAgent();
+
+    renderWithCopilotKit({
+      agent,
+      children: <StaticSuggestionsHarness />,
+    });
+
+    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+
+    fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
+      expect(screen.getByTestId("suggestions-json").textContent).toContain('"isLoading":false');
+    });
+
+    fireEvent.click(screen.getByTestId("add-message"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+    });
+  });
+});
+
+describe("suggestions lifecycle during runs", () => {
+  it("clears suggestions immediately when the agent run starts", async () => {
+    const agent = new MockStepwiseAgent();
+
+    renderWithCopilotKit({
+      agent,
+      children: <RunClearsSuggestionsHarness />,
+    });
+
+    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+
+    fireEvent.click(screen.getByTestId("reload-suggestions"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
+      expect(screen.getByTestId("suggestions-json").textContent).toContain('"isLoading":false');
+    });
+
+    fireEvent.click(screen.getByTestId("run-agent"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+    });
+
+    agent.emit(runStartedEvent());
+    agent.emit(runFinishedEvent());
+
+    fireEvent.click(screen.getByTestId("complete-agent"));
+
+    await waitFor(() => {
+      expect(agent.isRunning).toBe(false);
+    });
+
+    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
   });
 });
