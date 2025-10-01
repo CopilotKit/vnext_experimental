@@ -80,5 +80,5 @@ function SidebarChat() {
     },
   });
 
-  return <CopilotSidebar defaultOpen={true} />;
+  return <CopilotSidebar defaultOpen={true} width="50%" />;
 }
