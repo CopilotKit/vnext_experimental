@@ -1,12 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  KeyboardEvent,
-  ChangeEvent,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useState, useRef, KeyboardEvent, ChangeEvent, useEffect, forwardRef, useImperativeHandle } from "react";
 import { twMerge } from "tailwind-merge";
 import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
 
@@ -16,11 +8,7 @@ import {
   CopilotChatDefaultLabels,
 } from "@/providers/CopilotChatConfigurationProvider";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -111,11 +99,26 @@ export function CopilotChatInput({
     }
   }, [isControlled, value]);
 
-  const resolvedValue = isControlled ? value ?? "" : internalValue;
+  const resolvedValue = isControlled ? (value ?? "") : internalValue;
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const audioRecorderRef =
-    useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
+  const audioRecorderRef = useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
+  const config = useCopilotChatConfiguration();
+
+  const previousModalStateRef = useRef<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    if (!autoFocus) {
+      previousModalStateRef.current = config?.isModalOpen;
+      return;
+    }
+
+    if (config?.isModalOpen && !previousModalStateRef.current) {
+      inputRef.current?.focus();
+    }
+
+    previousModalStateRef.current = config?.isModalOpen;
+  }, [config?.isModalOpen, autoFocus]);
 
   // Handle recording based on mode changes
   useEffect(() => {
@@ -180,67 +183,40 @@ export function CopilotChatInput({
     autoFocus: autoFocus,
   });
 
-  const BoundAudioRecorder = renderSlot(
-    audioRecorder,
-    CopilotChatAudioRecorder,
-    {
-      ref: audioRecorderRef,
-    }
-  );
+  const BoundAudioRecorder = renderSlot(audioRecorder, CopilotChatAudioRecorder, {
+    ref: audioRecorderRef,
+  });
 
   const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
     onClick: send,
     disabled: !resolvedValue.trim() || !onSubmitMessage,
   });
 
-  const BoundStartTranscribeButton = renderSlot(
-    startTranscribeButton,
-    CopilotChatInput.StartTranscribeButton,
-    {
-      onClick: onStartTranscribe,
-    }
-  );
+  const BoundStartTranscribeButton = renderSlot(startTranscribeButton, CopilotChatInput.StartTranscribeButton, {
+    onClick: onStartTranscribe,
+  });
 
-  const BoundCancelTranscribeButton = renderSlot(
-    cancelTranscribeButton,
-    CopilotChatInput.CancelTranscribeButton,
-    {
-      onClick: onCancelTranscribe,
-    }
-  );
+  const BoundCancelTranscribeButton = renderSlot(cancelTranscribeButton, CopilotChatInput.CancelTranscribeButton, {
+    onClick: onCancelTranscribe,
+  });
 
-  const BoundFinishTranscribeButton = renderSlot(
-    finishTranscribeButton,
-    CopilotChatInput.FinishTranscribeButton,
-    {
-      onClick: onFinishTranscribe,
-    }
-  );
+  const BoundFinishTranscribeButton = renderSlot(finishTranscribeButton, CopilotChatInput.FinishTranscribeButton, {
+    onClick: onFinishTranscribe,
+  });
 
-  const BoundAddFileButton = renderSlot(
-    addFileButton,
-    CopilotChatInput.AddFileButton,
-    {
-      onClick: onAddFile,
-      disabled: mode === "transcribe",
-    }
-  );
+  const BoundAddFileButton = renderSlot(addFileButton, CopilotChatInput.AddFileButton, {
+    onClick: onAddFile,
+    disabled: mode === "transcribe",
+  });
 
-  const BoundToolsButton = renderSlot(
-    toolsButton,
-    CopilotChatInput.ToolsButton,
-    {
-      disabled: mode === "transcribe",
-      toolsMenu: toolsMenu,
-    }
-  );
+  const BoundToolsButton = renderSlot(toolsButton, CopilotChatInput.ToolsButton, {
+    disabled: mode === "transcribe",
+    toolsMenu: toolsMenu,
+  });
 
   const BoundToolbar = renderSlot(
     typeof toolbar === "string" || toolbar === undefined
-      ? twMerge(
-          toolbar,
-          "w-full h-[60px] bg-transparent flex items-center justify-between"
-        )
+      ? twMerge(toolbar, "w-full h-[60px] bg-transparent flex items-center justify-between")
       : toolbar,
     CopilotChatInput.Toolbar,
     {
@@ -266,7 +242,7 @@ export function CopilotChatInput({
           </div>
         </>
       ),
-    }
+    },
   );
 
   if (children) {
@@ -299,12 +275,7 @@ export function CopilotChatInput({
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Don't focus if clicking on buttons or other interactive elements
     const target = e.target as HTMLElement;
-    if (
-      target.tagName !== 'BUTTON' &&
-      !target.closest('button') &&
-      inputRef.current &&
-      mode === "input"
-    ) {
+    if (target.tagName !== "BUTTON" && !target.closest("button") && inputRef.current && mode === "input") {
       inputRef.current.focus();
     }
   };
@@ -322,7 +293,7 @@ export function CopilotChatInput({
         "bg-white dark:bg-[#303030]",
         // Visual effects
         "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
-        className
+        className,
       )}
       onClick={handleContainerClick}
       {...props}
@@ -335,9 +306,7 @@ export function CopilotChatInput({
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotChatInput {
-  export const SendButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = ({ className, ...props }) => (
+  export const SendButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, ...props }) => (
     <div className="mr-[10px]">
       <Button
         type="button"
@@ -380,9 +349,7 @@ export namespace CopilotChatInput {
     );
   };
 
-  export const StartTranscribeButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => (
+  export const StartTranscribeButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => (
     <ToolbarButton
       icon={<Mic className="size-[18px]" />}
       labelKey="chatInputToolbarStartTranscribeButtonLabel"
@@ -391,9 +358,7 @@ export namespace CopilotChatInput {
     />
   );
 
-  export const CancelTranscribeButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => (
+  export const CancelTranscribeButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => (
     <ToolbarButton
       icon={<X className="size-[18px]" />}
       labelKey="chatInputToolbarCancelTranscribeButtonLabel"
@@ -402,9 +367,7 @@ export namespace CopilotChatInput {
     />
   );
 
-  export const FinishTranscribeButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => (
+  export const FinishTranscribeButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => (
     <ToolbarButton
       icon={<Check className="size-[18px]" />}
       labelKey="chatInputToolbarFinishTranscribeButtonLabel"
@@ -413,9 +376,7 @@ export namespace CopilotChatInput {
     />
   );
 
-  export const AddFileButton: React.FC<
-    React.ButtonHTMLAttributes<HTMLButtonElement>
-  > = (props) => (
+  export const AddFileButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => (
     <ToolbarButton
       icon={<Plus className="size-[20px]" />}
       labelKey="chatInputToolbarAddButtonLabel"
@@ -432,9 +393,7 @@ export namespace CopilotChatInput {
     const config = useCopilotChatConfiguration();
     const labels = config?.labels ?? CopilotChatDefaultLabels;
 
-    const renderMenuItems = (
-      items: (ToolsMenuItem | "-")[]
-    ): React.ReactNode => {
+    const renderMenuItems = (items: (ToolsMenuItem | "-")[]): React.ReactNode => {
       return items.map((item, index) => {
         if (item === "-") {
           // Separator
@@ -444,9 +403,7 @@ export namespace CopilotChatInput {
           return (
             <DropdownMenuSub key={index}>
               <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {renderMenuItems(item.items)}
-              </DropdownMenuSubContent>
+              <DropdownMenuSubContent>{renderMenuItems(item.items)}</DropdownMenuSubContent>
             </DropdownMenuSub>
           );
         } else {
@@ -477,9 +434,7 @@ export namespace CopilotChatInput {
             {...props}
           >
             <Settings2 className="size-[18px]" />
-            <span className="text-sm font-normal">
-              {labels.chatInputToolbarToolsButtonLabel}
-            </span>
+            <span className="text-sm font-normal">{labels.chatInputToolbarToolsButtonLabel}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="end">
@@ -489,129 +444,116 @@ export namespace CopilotChatInput {
     );
   };
 
-  export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
-    className,
-    ...props
-  }) => (
-    <div
-      className={twMerge(
-        "w-full h-[60px] bg-transparent flex items-center",
-        className
-      )}
-      {...props}
-    />
+  export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, ...props }) => (
+    <div className={twMerge("w-full h-[60px] bg-transparent flex items-center", className)} {...props} />
   );
 
-  export interface TextAreaProps
-    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     maxRows?: number;
   }
 
-  export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
-    function TextArea({ maxRows = 5, style, className, ...props }, ref) {
-      const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
-      const [maxHeight, setMaxHeight] = useState<number>(0);
+  export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+    { maxRows = 5, style, className, ...props },
+    ref,
+  ) {
+    const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const [maxHeight, setMaxHeight] = useState<number>(0);
 
-      const config = useCopilotChatConfiguration();
-      const labels = config?.labels ?? CopilotChatDefaultLabels;
+    const config = useCopilotChatConfiguration();
+    const labels = config?.labels ?? CopilotChatDefaultLabels;
 
-      useImperativeHandle(
-        ref,
-        () => internalTextareaRef.current as HTMLTextAreaElement
-      );
+    useImperativeHandle(ref, () => internalTextareaRef.current as HTMLTextAreaElement);
 
-      const adjustHeight = () => {
+    const adjustHeight = () => {
+      const textarea = internalTextareaRef.current;
+      if (textarea && maxHeight > 0) {
+        textarea.style.height = "auto";
+        textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+      }
+    };
+
+    useEffect(() => {
+      const calculateMaxHeight = () => {
         const textarea = internalTextareaRef.current;
-        if (textarea && maxHeight > 0) {
+        if (textarea) {
+          // Save current value
+          const currentValue = textarea.value;
+          // Clear content to measure single row height
+          textarea.value = "";
           textarea.style.height = "auto";
-          textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
-        }
-      };
 
-      useEffect(() => {
-        const calculateMaxHeight = () => {
-          const textarea = internalTextareaRef.current;
-          if (textarea) {
-            // Save current value
-            const currentValue = textarea.value;
-            // Clear content to measure single row height
-            textarea.value = "";
+          // Get computed styles to account for padding
+          const computedStyle = window.getComputedStyle(textarea);
+          const paddingTop = parseFloat(computedStyle.paddingTop);
+          const paddingBottom = parseFloat(computedStyle.paddingBottom);
+
+          // Calculate actual content height (without padding)
+          const contentHeight = textarea.scrollHeight - paddingTop - paddingBottom;
+
+          // Calculate max height: content height for maxRows + padding
+          setMaxHeight(contentHeight * maxRows + paddingTop + paddingBottom);
+
+          // Restore original value
+          textarea.value = currentValue;
+
+          // Adjust height after calculating maxHeight
+          if (currentValue) {
             textarea.style.height = "auto";
-
-            // Get computed styles to account for padding
-            const computedStyle = window.getComputedStyle(textarea);
-            const paddingTop = parseFloat(computedStyle.paddingTop);
-            const paddingBottom = parseFloat(computedStyle.paddingBottom);
-
-            // Calculate actual content height (without padding)
-            const contentHeight =
-              textarea.scrollHeight - paddingTop - paddingBottom;
-
-            // Calculate max height: content height for maxRows + padding
-            setMaxHeight(contentHeight * maxRows + paddingTop + paddingBottom);
-
-            // Restore original value
-            textarea.value = currentValue;
-
-            // Adjust height after calculating maxHeight
-            if (currentValue) {
-              textarea.style.height = "auto";
-              textarea.style.height = `${Math.min(textarea.scrollHeight, contentHeight * maxRows + paddingTop + paddingBottom)}px`;
-            }
-
-            if (props.autoFocus) {
-              textarea.focus();
-            }
+            textarea.style.height = `${Math.min(textarea.scrollHeight, contentHeight * maxRows + paddingTop + paddingBottom)}px`;
           }
-        };
 
-        calculateMaxHeight();
-      }, [maxRows, props.autoFocus]);
-
-      // Adjust height when controlled value changes
-      useEffect(() => {
-        adjustHeight();
-      }, [props.value, maxHeight]);
-
-      // Handle input events for uncontrolled usage
-      const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-        adjustHeight();
-        // Call the original onChange if provided
-        if (props.onChange) {
-          props.onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+          if (props.autoFocus) {
+            textarea.focus();
+          }
         }
       };
 
-      return (
-        <textarea
-          ref={internalTextareaRef}
-          {...props}
-          onChange={handleInput}
-          style={{
-            overflow: "auto",
-            resize: "none",
-            maxHeight: `${maxHeight}px`,
-            ...style,
-          }}
-          placeholder={labels.chatInputPlaceholder}
-          className={twMerge(
-            // Layout and sizing
-            "w-full p-5 pb-0",
-            // Behavior
-            "outline-none resize-none",
-            // Background
-            "bg-transparent",
-            // Typography
-            "antialiased font-regular leading-relaxed text-[16px]",
-            // Placeholder styles
-            "placeholder:text-[#00000077] dark:placeholder:text-[#fffc]",
-            className
-          )}
-          rows={1}
-        />
-      );
-    }
-  );
+      calculateMaxHeight();
+    }, [maxRows, props.autoFocus]);
+
+    // Adjust height when controlled value changes
+    useEffect(() => {
+      adjustHeight();
+    }, [props.value, maxHeight]);
+
+    // Handle input events for uncontrolled usage
+    const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+      adjustHeight();
+      // Call the original onChange if provided
+      if (props.onChange) {
+        props.onChange(e as React.ChangeEvent<HTMLTextAreaElement>);
+      }
+    };
+
+    return (
+      <textarea
+        ref={internalTextareaRef}
+        {...props}
+        onChange={handleInput}
+        style={{
+          overflow: "auto",
+          resize: "none",
+          maxHeight: `${maxHeight}px`,
+          ...style,
+        }}
+        placeholder={labels.chatInputPlaceholder}
+        className={twMerge(
+          // Layout and sizing
+          "w-full p-5 pb-0",
+          // Behavior
+          "outline-none resize-none",
+          // Background
+          "bg-transparent",
+          // Typography
+          "antialiased font-regular leading-relaxed text-[16px]",
+          // Placeholder styles
+          "placeholder:text-[#00000077] dark:placeholder:text-[#fffc]",
+          className,
+        )}
+        rows={1}
+      />
+    );
+  });
 
   export const AudioRecorder = CopilotChatAudioRecorder;
 }
@@ -619,12 +561,9 @@ export namespace CopilotChatInput {
 CopilotChatInput.TextArea.displayName = "CopilotChatInput.TextArea";
 CopilotChatInput.SendButton.displayName = "CopilotChatInput.SendButton";
 CopilotChatInput.ToolbarButton.displayName = "CopilotChatInput.ToolbarButton";
-CopilotChatInput.StartTranscribeButton.displayName =
-  "CopilotChatInput.StartTranscribeButton";
-CopilotChatInput.CancelTranscribeButton.displayName =
-  "CopilotChatInput.CancelTranscribeButton";
-CopilotChatInput.FinishTranscribeButton.displayName =
-  "CopilotChatInput.FinishTranscribeButton";
+CopilotChatInput.StartTranscribeButton.displayName = "CopilotChatInput.StartTranscribeButton";
+CopilotChatInput.CancelTranscribeButton.displayName = "CopilotChatInput.CancelTranscribeButton";
+CopilotChatInput.FinishTranscribeButton.displayName = "CopilotChatInput.FinishTranscribeButton";
 CopilotChatInput.AddFileButton.displayName = "CopilotChatInput.AddButton";
 CopilotChatInput.ToolsButton.displayName = "CopilotChatInput.ToolsButton";
 CopilotChatInput.Toolbar.displayName = "CopilotChatInput.Toolbar";
