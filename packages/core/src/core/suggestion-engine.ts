@@ -2,12 +2,7 @@ import { AbstractAgent, Message, Tool, Context } from "@ag-ui/client";
 import { randomUUID, partialJSONParse } from "@copilotkitnext/shared";
 import type { CopilotKitCore } from "./core";
 import type { CopilotKitCoreGetSuggestionsResult } from "./core";
-import {
-  DynamicSuggestionsConfig,
-  StaticSuggestionsConfig,
-  Suggestion,
-  SuggestionsConfig,
-} from "../types";
+import { DynamicSuggestionsConfig, StaticSuggestionsConfig, Suggestion, SuggestionsConfig } from "../types";
 
 /**
  * Manages suggestion generation, streaming, and lifecycle for CopilotKitCore.
@@ -377,11 +372,7 @@ export class SuggestionEngine {
   /**
    * Add static suggestions directly without AI generation
    */
-  private addStaticSuggestions(
-    suggestionId: string,
-    config: StaticSuggestionsConfig,
-    consumerAgentId: string,
-  ): void {
+  private addStaticSuggestions(suggestionId: string, config: StaticSuggestionsConfig, consumerAgentId: string): void {
     // Mark all as not loading since they're static
     const suggestions = config.suggestions.map((s) => ({
       ...s,

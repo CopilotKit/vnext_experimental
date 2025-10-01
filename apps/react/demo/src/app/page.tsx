@@ -48,11 +48,21 @@ export default function Home() {
 
 function Chat() {
   useConfigureSuggestions({
-    suggestions: [
-      { title: "Option A", message: "Take path A" },
-      { title: "Option B", message: "Take path B" },
-    ],
+    instructions: "Suggest helpful next actions",
   });
+
+  // useConfigureSuggestions({
+  //   suggestions: [
+  //     {
+  //       title: "Action 1",
+  //       message: "Do action 1",
+  //     },
+  //     {
+  //       title: "Action 2",
+  //       message: "Do action 2",
+  //     },
+  //   ],
+  // });
 
   useFrontendTool({
     name: "sayHello",
