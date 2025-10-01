@@ -4,7 +4,6 @@ import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
 import {
   CopilotChatConfigurationProvider,
   CopilotChatLabels,
-  CopilotChatDefaultLabels,
   useCopilotChatConfiguration,
 } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
@@ -34,15 +33,6 @@ export function CopilotChat({ agentId, threadId, labels, chatView, ...props }: C
     () => threadId ?? existingConfig?.threadId ?? randomUUID(),
     [threadId, existingConfig?.threadId],
   );
-  const resolvedLabels: CopilotChatLabels = useMemo(
-    () => ({
-      ...CopilotChatDefaultLabels,
-      ...(existingConfig?.labels || {}),
-      ...(labels || {}),
-    }),
-    [existingConfig?.labels, labels],
-  );
-
   const { agent } = useAgent({ agentId: resolvedAgentId });
   const { copilotkit } = useCopilotKit();
 
@@ -143,7 +133,7 @@ export function CopilotChat({ agentId, threadId, labels, chatView, ...props }: C
   const RenderedChatView = renderSlot(chatView, CopilotChatView, finalProps);
 
   return (
-    <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={resolvedLabels}>
+    <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={labels}>
       {RenderedChatView}
     </CopilotChatConfigurationProvider>
   );

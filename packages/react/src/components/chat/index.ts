@@ -63,3 +63,8 @@ export {
   CopilotModalHeader,
   type CopilotModalHeaderProps,
 } from "./CopilotModalHeader";
+
+export {
+  CopilotSidebar,
+  type CopilotSidebarProps,
+} from "./CopilotSidebar";

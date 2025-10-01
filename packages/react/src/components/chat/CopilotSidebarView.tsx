@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import { CopilotModalHeader } from "./CopilotModalHeader";
 import { renderSlot, SlotValue } from "@/lib/slots";
 
-const DEFAULT_SIDEBAR_WIDTH = 420;
+const DEFAULT_SIDEBAR_WIDTH = 480;
 const SIDEBAR_TRANSITION_MS = 260;
 
 export type CopilotSidebarViewProps = CopilotChatViewProps & {
   header?: SlotValue<typeof CopilotModalHeader>;
+  defaultOpen?: boolean;
 };
 
 function appendTransition(existing: string, addition: string) {
@@ -87,8 +88,15 @@ function useBodyInlineOffset(isOpen: boolean, sidebarWidth: number) {
   }, [isOpen, sidebarWidth]);
 }
 
-export function CopilotSidebarView({ header, ...props }: CopilotSidebarViewProps) {
+export function CopilotSidebarView({ header, defaultOpen, ...props }: CopilotSidebarViewProps) {
   const configuration = useCopilotChatConfiguration();
+
+  useEffect(() => {
+    if (defaultOpen !== undefined) {
+      configuration?.setModalOpen(defaultOpen);
+    }
+  }, [defaultOpen, configuration]);
+
   const isSidebarOpen = configuration?.isModalOpen ?? false;
 
   const sidebarRef = useRef<HTMLDivElement | null>(null);
@@ -134,7 +142,7 @@ export function CopilotSidebarView({ header, ...props }: CopilotSidebarViewProps
         ref={sidebarRef}
         data-copilot-sidebar
         className={cn(
-          "fixed right-0 top-0 z-[1200] flex h-dvh max-h-screen w-full sm:w-[420px]",
+          "fixed right-0 top-0 z-[1200] flex h-dvh max-h-screen w-full sm:w-[480px]",
           "border-l border-border bg-background text-foreground shadow-xl",
           "transition-transform duration-300 ease-out",
           isSidebarOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
