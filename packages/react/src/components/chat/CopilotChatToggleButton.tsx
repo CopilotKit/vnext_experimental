@@ -39,7 +39,7 @@ const ICON_WRAPPER_BASE =
   "pointer-events-none absolute inset-0 flex items-center justify-center will-change-transform";
 
 const BUTTON_BASE_CLASSES = cn(
-  "relative flex h-14 w-14 items-center justify-center",
+  "fixed bottom-6 right-6 z-[1100] flex h-14 w-14 items-center justify-center",
   "rounded-full border border-primary bg-primary text-primary-foreground",
   "shadow-sm transition-all duration-200 ease-out",
   "hover:scale-[1.04] hover:shadow-md",
