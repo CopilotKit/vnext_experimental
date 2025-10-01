@@ -5,9 +5,12 @@ import { waitForCondition } from "./test-utils";
 
 describe("CopilotKitCore headers", () => {
   const originalFetch = global.fetch;
+  const originalWindow = (global as any).window;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Mock window to simulate browser environment
+    (global as any).window = {};
   });
 
   afterEach(() => {
@@ -15,6 +18,12 @@ describe("CopilotKitCore headers", () => {
       global.fetch = originalFetch;
     } else {
       delete (global as typeof globalThis & { fetch?: typeof fetch }).fetch;
+    }
+    // Restore window
+    if (originalWindow === undefined) {
+      delete (global as any).window;
+    } else {
+      (global as any).window = originalWindow;
     }
   });
 
@@ -99,8 +108,8 @@ describe("CopilotKitCore headers", () => {
     });
 
     await agent.runAgent();
-    await core.connectAgent({ agent, agentId: "default" });
-    await core.runAgent({ agent, agentId: "default" });
+    await core.connectAgent({ agent });
+    await core.runAgent({ agent });
 
     expect(recorded).toHaveLength(3);
     for (const headers of recorded) {
@@ -195,11 +204,11 @@ describe("CopilotKitCore headers", () => {
       agents__unsafe_dev_only: { default: agent },
     });
 
-    await core.runAgent({ agent, agentId: "default" });
+    await core.runAgent({ agent });
 
     core.setHeaders({ Authorization: "Bearer updated", "X-Trace": "123" });
 
-    await core.runAgent({ agent, agentId: "default" });
+    await core.runAgent({ agent });
 
     expect(recorded).toHaveLength(2);
     expect(recorded[0]).toMatchObject({ Authorization: "Bearer initial" });

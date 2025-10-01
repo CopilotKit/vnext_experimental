@@ -1,8 +1,10 @@
+import React, { useEffect } from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
 import { defineToolCallRender, ReactToolCallRender } from "@/types";
 import {
   MockStepwiseAgent,
+  SuggestionsProviderAgent,
   renderWithCopilotKit,
   runStartedEvent,
   runFinishedEvent,
@@ -10,8 +12,10 @@ import {
   toolCallChunkEvent,
   toolCallResultEvent,
   testId,
-  waitForReactUpdate,
+  emitSuggestionToolCall,
 } from "@/__tests__/utils/test-helpers";
+import { useConfigureSuggestions } from "@/hooks/use-configure-suggestions";
+import { CopilotChat } from "../CopilotChat";
 
 describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
   describe("Chat Basics: text input + run", () => {
@@ -29,9 +33,6 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         const userMessage = screen.getByText("Hello AI!");
         expect(userMessage).toBeDefined();
       });
-
-      // Wait for agent to start processing
-      await waitForReactUpdate(100);
 
       // Agent starts running
       const messageId = testId("msg");
@@ -57,7 +58,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Tell me a story" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Tell me a story")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       agent.emit(runStartedEvent());
@@ -112,7 +116,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "What's the weather?" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("What's the weather?")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -194,7 +201,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Weather and time please" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Weather and time please")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId1 = testId("tc1");
@@ -277,7 +287,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Do something unknown" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Do something unknown")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -328,7 +341,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Do something" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Do something")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -383,7 +399,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Use test tool" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Use test tool")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId = testId("tc");
@@ -468,7 +487,10 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       fireEvent.change(input, { target: { value: "Test specific" } });
       fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
 
-      await waitForReactUpdate(100);
+      // Wait for user message to appear
+      await waitFor(() => {
+        expect(screen.getByText("Test specific")).toBeDefined();
+      });
 
       const messageId = testId("msg");
       const toolCallId1 = testId("tc1");
@@ -508,6 +530,229 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
 
       agent.emit(runFinishedEvent());
       agent.complete();
+    });
+  });
+
+  describe("Suggestions Flow", () => {
+    // Helper component to configure suggestions
+    const ChatWithSuggestions: React.FC<{
+      consumerAgentId: string;
+      providerAgentId: string;
+      instructions?: string;
+      minSuggestions?: number;
+      maxSuggestions?: number;
+      onReady?: () => void;
+    }> = ({ consumerAgentId, providerAgentId, instructions, minSuggestions, maxSuggestions, onReady }) => {
+      useConfigureSuggestions({
+        instructions: instructions || "Suggest helpful next actions",
+        providerAgentId,
+        consumerAgentId,
+        minSuggestions: minSuggestions || 2,
+        maxSuggestions: maxSuggestions || 4,
+      });
+
+      useEffect(() => {
+        if (onReady) {
+          onReady();
+        }
+      }, [onReady]);
+
+      return <CopilotChat />;
+    };
+
+    it("should display suggestions when configured", async () => {
+      const consumerAgent = new MockStepwiseAgent();
+      const providerAgent = new SuggestionsProviderAgent();
+
+      // Configure provider agent with suggestions
+      providerAgent.setSuggestions([
+        { title: "Option A", message: "Take action A" },
+        { title: "Option B", message: "Take action B" },
+      ]);
+
+      let suggestionsReady = false;
+
+      renderWithCopilotKit({
+        agents: {
+          default: consumerAgent,
+          "suggestions-provider": providerAgent,
+        },
+        agentId: "default",
+        children: (
+          <div style={{ height: 400 }}>
+            <ChatWithSuggestions
+              consumerAgentId="default"
+              providerAgentId="suggestions-provider"
+              onReady={() => {
+                suggestionsReady = true;
+              }}
+            />
+          </div>
+        ),
+      });
+
+      // Wait for suggestions config to be ready
+      await waitFor(() => {
+        expect(suggestionsReady).toBe(true);
+      });
+
+      // Submit a message to trigger suggestions
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Help me" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      // Wait for user message
+      await waitFor(() => {
+        expect(screen.getByText("Help me")).toBeDefined();
+      });
+
+      // Consumer agent responds
+      const messageId = testId("msg");
+      consumerAgent.emit(runStartedEvent());
+      consumerAgent.emit(textChunkEvent(messageId, "I can help with that."));
+      consumerAgent.emit(runFinishedEvent());
+      consumerAgent.complete();
+
+      // Wait for assistant message
+      await waitFor(() => {
+        expect(screen.getByText(/I can help with that/)).toBeDefined();
+      });
+
+      // Verify suggestions appear (provider agent's run() method will be called automatically)
+      await waitFor(() => {
+        expect(screen.getByText("Option A")).toBeDefined();
+        expect(screen.getByText("Option B")).toBeDefined();
+      }, { timeout: 5000 });
+
+      // Click on a suggestion
+      const suggestionA = screen.getByText("Option A");
+      fireEvent.click(suggestionA);
+
+      // Verify the suggestion message is added
+      await waitFor(() => {
+        const messages = screen.getAllByText(/Take action A/);
+        expect(messages.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should stream suggestion titles token by token", async () => {
+      const consumerAgent = new MockStepwiseAgent();
+      const providerAgent = new SuggestionsProviderAgent();
+
+      // Configure provider agent with suggestions
+      providerAgent.setSuggestions([
+        { title: "First Action", message: "Do first action" },
+        { title: "Second Action", message: "Do second action" },
+      ]);
+
+      let suggestionsReady = false;
+
+      renderWithCopilotKit({
+        agents: {
+          default: consumerAgent,
+          "suggestions-provider": providerAgent,
+        },
+        agentId: "default",
+        children: (
+          <div style={{ height: 400 }}>
+            <ChatWithSuggestions
+              consumerAgentId="default"
+              providerAgentId="suggestions-provider"
+              onReady={() => {
+                suggestionsReady = true;
+              }}
+            />
+          </div>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(suggestionsReady).toBe(true);
+      });
+
+      // Submit a message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "What can I do?" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("What can I do?")).toBeDefined();
+      });
+
+      // Consumer agent responds
+      const messageId = testId("msg");
+      consumerAgent.emit(runStartedEvent());
+      consumerAgent.emit(textChunkEvent(messageId, "Here are some options."));
+      consumerAgent.emit(runFinishedEvent());
+      consumerAgent.complete();
+
+      // Verify both suggestions are visible after streaming completes
+      await waitFor(() => {
+        expect(screen.getByText("First Action")).toBeDefined();
+        expect(screen.getByText("Second Action")).toBeDefined();
+      }, { timeout: 5000 });
+    });
+
+    it("should handle multiple suggestions streaming concurrently", async () => {
+      const consumerAgent = new MockStepwiseAgent();
+      const providerAgent = new SuggestionsProviderAgent();
+
+      // Configure provider agent with suggestions
+      providerAgent.setSuggestions([
+        { title: "Alpha", message: "Do alpha" },
+        { title: "Beta", message: "Do beta" },
+        { title: "Gamma", message: "Do gamma" },
+      ]);
+
+      let suggestionsReady = false;
+
+      renderWithCopilotKit({
+        agents: {
+          default: consumerAgent,
+          "suggestions-provider": providerAgent,
+        },
+        agentId: "default",
+        children: (
+          <div style={{ height: 400 }}>
+            <ChatWithSuggestions
+              consumerAgentId="default"
+              providerAgentId="suggestions-provider"
+              minSuggestions={3}
+              maxSuggestions={5}
+              onReady={() => {
+                suggestionsReady = true;
+              }}
+            />
+          </div>
+        ),
+      });
+
+      await waitFor(() => {
+        expect(suggestionsReady).toBe(true);
+      });
+
+      // Submit message
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Show me options" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("Show me options")).toBeDefined();
+      });
+
+      // Consumer agent responds
+      const messageId = testId("msg");
+      consumerAgent.emit(runStartedEvent());
+      consumerAgent.emit(textChunkEvent(messageId, "Here you go."));
+      consumerAgent.emit(runFinishedEvent());
+      consumerAgent.complete();
+
+      // Verify all suggestions appear
+      await waitFor(() => {
+        expect(screen.getByText("Alpha")).toBeDefined();
+        expect(screen.getByText("Beta")).toBeDefined();
+        expect(screen.getByText("Gamma")).toBeDefined();
+      }, { timeout: 5000 });
     });
   });
 });

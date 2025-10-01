@@ -296,6 +296,19 @@ export function CopilotChatInput({
     );
   }
 
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't focus if clicking on buttons or other interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName !== 'BUTTON' &&
+      !target.closest('button') &&
+      inputRef.current &&
+      mode === "input"
+    ) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div
       className={twMerge(
@@ -311,6 +324,7 @@ export function CopilotChatInput({
         "shadow-[0_4px_4px_0_#0000000a,0_0_1px_0_#0000009e] rounded-[28px]",
         className
       )}
+      onClick={handleContainerClick}
       {...props}
     >
       {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}

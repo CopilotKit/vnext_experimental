@@ -745,8 +745,11 @@ describe("Status Persistence After Agent Stops", () => {
     agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
 
     // Important: tool should REMAIN in InProgress status, not Complete
-    // Wait a bit to ensure no async updates change the status
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Verify status remains inProgress (not changing to complete)
+    await waitFor(() => {
+      const statusElement = screen.getByTestId("status");
+      expect(statusElement.textContent).toBe("inProgress");
+    });
 
     const statusElement = screen.getByTestId("status");
     expect(statusElement.textContent).toBe("inProgress");

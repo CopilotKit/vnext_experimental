@@ -4,9 +4,9 @@ import { HttpAgent } from "@ag-ui/client";
 import {
   CopilotChat,
   CopilotKitProvider,
-  useCopilotKit,
   useFrontendTool,
   defineToolCallRender,
+  useConfigureSuggestions,
 } from "@copilotkitnext/react";
 import { z } from "zod";
 
@@ -19,13 +19,15 @@ export default function Home() {
     name: "*",
     // No args needed for wildcard - defaults to z.any()
     render: ({ name, args, status }) => (
-      <div style={{
-        padding: "12px",
-        margin: "8px 0",
-        backgroundColor: "#f0f0f0",
-        borderRadius: "8px",
-        border: "1px solid #ccc"
-      }}>
+      <div
+        style={{
+          padding: "12px",
+          margin: "8px 0",
+          backgroundColor: "#f0f0f0",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+        }}
+      >
         <strong>Unknown Tool: {name}</strong>
         <pre style={{ marginTop: "8px", fontSize: "12px" }}>
           Status: {status}
@@ -36,13 +38,8 @@ export default function Home() {
   });
 
   return (
-    <CopilotKitProvider
-      runtimeUrl="/api/copilotkit"
-      renderToolCalls={[wildcardRenderer]}
-    >
-      <div
-        style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}
-      >
+    <CopilotKitProvider runtimeUrl="/api/copilotkit" renderToolCalls={[wildcardRenderer]}>
+      <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
         <Chat />
       </div>
     </CopilotKitProvider>
@@ -50,7 +47,22 @@ export default function Home() {
 }
 
 function Chat() {
-  const { copilotkit } = useCopilotKit();
+  useConfigureSuggestions({
+    instructions: "Suggest helpful next actions",
+  });
+
+  // useConfigureSuggestions({
+  //   suggestions: [
+  //     {
+  //       title: "Action 1",
+  //       message: "Do action 1",
+  //     },
+  //     {
+  //       title: "Action 2",
+  //       message: "Do action 2",
+  //     },
+  //   ],
+  // });
 
   useFrontendTool({
     name: "sayHello",
@@ -62,5 +74,5 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
-  return <CopilotChat threadId="xyz" />;
+  return <CopilotChat />;
 }

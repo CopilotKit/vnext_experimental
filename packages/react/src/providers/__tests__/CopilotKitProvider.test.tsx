@@ -209,7 +209,7 @@ describe("CopilotKitProvider", () => {
       expect(handler).toBeDefined();
 
       // Call the handler and check for warning
-      const handlerPromise = handler!({ data: "test" });
+      const handlerPromise = handler!({ data: "test" }, {} as any);
 
       await waitFor(() => {
         expect(consoleWarnSpy).toHaveBeenCalledWith(

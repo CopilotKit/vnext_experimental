@@ -26,6 +26,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
       createAssistantMessage({ content: "Hi there!" }),
     ];
     const agent = new MockAgent({ newMessages: messages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -38,6 +39,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
     const initialMessages = [createMessage({ content: "Initial" })];
     const newMessages = [createAssistantMessage({ content: "Response" })];
     const agent = new MockAgent({ newMessages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any, withMessages: initialMessages });
 
@@ -48,6 +50,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
   it("should work without withMessages parameter", async () => {
     const newMessages = [createAssistantMessage({ content: "Response" })];
     const agent = new MockAgent({ newMessages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -59,6 +62,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
     const properties = { apiKey: "test-key", model: "gpt-4" };
     copilotKitCore = new CopilotKitCore({ properties });
     const agent = new MockAgent({ newMessages: [] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -67,6 +71,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
 
   it("should handle empty newMessages array", async () => {
     const agent = new MockAgent({ newMessages: [] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -81,6 +86,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
       createMessage({ role: "tool", content: "Tool result", toolCallId: "123" }),
     ];
     const agent = new MockAgent({ newMessages: messages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -89,11 +95,12 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
   });
 
   it("should handle messages with undefined toolCalls", async () => {
-    const message = createAssistantMessage({ 
+    const message = createAssistantMessage({
       content: "Response",
-      toolCalls: undefined 
+      toolCalls: undefined
     });
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -111,6 +118,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
 
     const message = createToolCallMessage(toolName);
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -132,6 +140,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
 
     const message = createToolCallMessage(toolName);
     const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -148,6 +157,7 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
       createAssistantMessage({ content: "Test" })
     ];
     const agent = new MockAgent({ newMessages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 

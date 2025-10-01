@@ -15,6 +15,7 @@ describe("CopilotKitCore.runAgent Simple", () => {
       createAssistantMessage({ content: "Hi there!" }),
     ];
     const agent = new MockAgent({ newMessages: messages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
     const result = await copilotKitCore.runAgent({ agent: agent as any });
 

@@ -27,6 +27,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
     it("TEST 1: should run agent without tools", async () => {
       const messages = [createMessage({ content: "Hello" }), createAssistantMessage({ content: "Hi there!" })];
       const agent = new MockAgent({ newMessages: messages });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       const result = await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -45,6 +46,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createToolCallMessage(toolName, { input: "test" });
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -64,6 +66,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
     it("TEST 3: should skip tool when not found", async () => {
       const message = createToolCallMessage("nonExistentTool");
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       await copilotKitCore.runAgent({ agent: agent as any });
 
@@ -85,6 +88,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       const followUpMessage = createAssistantMessage({ content: "Follow-up response" });
 
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
       let callCount = 0;
       agent.runAgentCallback = () => {
         callCount++;
@@ -123,6 +127,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       const message = createMultipleToolCallsMessage([{ name: "tool1" }, { name: "tool2" }]);
 
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
       let callCount = 0;
       agent.runAgentCallback = () => {
         callCount++;
@@ -155,6 +160,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       const followUpMessage = createAssistantMessage({ content: "Follow-up" });
 
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
       let callCount = 0;
       agent.runAgentCallback = () => {
         callCount++;
@@ -197,6 +203,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
         ],
       });
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       try {
         await copilotKitCore.runAgent({ agent: agent as any });
@@ -231,6 +238,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       });
 
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       try {
         await copilotKitCore.runAgent({ agent: agent as any });
@@ -262,6 +270,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
       const finalMsg = createAssistantMessage({ content: "Done" });
 
       const agent = new MockAgent({ newMessages: [msg1] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
       let callCount = 0;
       agent.runAgentCallback = () => {
         callCount++;
@@ -302,6 +311,7 @@ describe("CopilotKitCore.runAgent - Full Test Suite", () => {
 
       const message = createMultipleToolCallsMessage(delays.map((_, i) => ({ name: `concurrentTool${i}` })));
       const agent = new MockAgent({ newMessages: [message] });
+    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
 
       const startTime = Date.now();
       try {

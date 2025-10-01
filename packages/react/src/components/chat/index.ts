@@ -21,6 +21,16 @@ export {
 } from "./CopilotChatAudioRecorder";
 
 export {
+  default as CopilotChatSuggestionPill,
+  type CopilotChatSuggestionPillProps,
+} from "./CopilotChatSuggestionPill";
+
+export {
+  default as CopilotChatSuggestionView,
+  type CopilotChatSuggestionViewProps,
+} from "./CopilotChatSuggestionView";
+
+export {
   default as CopilotChatMessageView,
   type CopilotChatMessageViewProps,
 } from "./CopilotChatMessageView";

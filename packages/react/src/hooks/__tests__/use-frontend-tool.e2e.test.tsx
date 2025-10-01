@@ -1314,10 +1314,12 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
       
       agent.emit(runFinishedEvent());
       agent.complete();
-      
-      // Wait for handlers
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+
+      // Wait for the global handler to be called
+      await waitFor(() => {
+        expect(globalHandlerCalled).toBe(true);
+      });
+
       // Verify that only the global handler was called
       expect(scopedHandlerCalled).toBe(false); // Should NOT be called (wrong agent)
       expect(globalHandlerCalled).toBe(true);  // Should be called (no agent restriction)
