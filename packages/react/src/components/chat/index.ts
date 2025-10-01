@@ -53,3 +53,13 @@ export {
   CopilotChatToggleButtonOpenIcon,
   CopilotChatToggleButtonCloseIcon,
 } from "./CopilotChatToggleButton";
+
+export {
+  CopilotSidebarView,
+  type CopilotSidebarViewProps,
+} from "./CopilotSidebarView";
+
+export {
+  CopilotModalHeader,
+  type CopilotModalHeaderProps,
+} from "./CopilotModalHeader";

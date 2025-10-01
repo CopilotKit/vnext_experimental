@@ -18,10 +18,10 @@ export const CopilotChatDefaultLabels = {
   assistantMessageToolbarRegenerateLabel: "Regenerate",
   userMessageToolbarCopyMessageLabel: "Copy",
   userMessageToolbarEditMessageLabel: "Edit",
-  chatDisclaimerText:
-    "AI can make mistakes. Please verify important information.",
+  chatDisclaimerText: "AI can make mistakes. Please verify important information.",
   chatToggleOpenLabel: "Open chat",
   chatToggleCloseLabel: "Close chat",
+  modalHeaderTitle: "CopilotKit Chat",
 };
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
@@ -36,8 +36,7 @@ export interface CopilotChatConfigurationValue {
 }
 
 // Create the configuration context
-const CopilotChatConfiguration =
-  createContext<CopilotChatConfigurationValue | null>(null);
+const CopilotChatConfiguration = createContext<CopilotChatConfigurationValue | null>(null);
 
 // Provider props interface
 export interface CopilotChatConfigurationProviderProps {
@@ -48,15 +47,13 @@ export interface CopilotChatConfigurationProviderProps {
 }
 
 // Provider component
-export const CopilotChatConfigurationProvider: React.FC<
-  CopilotChatConfigurationProviderProps
-> = ({
+export const CopilotChatConfigurationProvider: React.FC<CopilotChatConfigurationProviderProps> = ({
   children,
   labels = {},
   agentId,
   threadId,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
 
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
@@ -72,16 +69,11 @@ export const CopilotChatConfigurationProvider: React.FC<
     setModalOpen: (open: boolean) => setIsModalOpen(open),
   };
 
-  return (
-    <CopilotChatConfiguration.Provider value={configurationValue}>
-      {children}
-    </CopilotChatConfiguration.Provider>
-  );
+  return <CopilotChatConfiguration.Provider value={configurationValue}>{children}</CopilotChatConfiguration.Provider>;
 };
 
 // Hook to use the full configuration
-export const useCopilotChatConfiguration =
-  (): CopilotChatConfigurationValue | null => {
-    const configuration = useContext(CopilotChatConfiguration);
-    return configuration;
-  };
+export const useCopilotChatConfiguration = (): CopilotChatConfigurationValue | null => {
+  const configuration = useContext(CopilotChatConfiguration);
+  return configuration;
+};
