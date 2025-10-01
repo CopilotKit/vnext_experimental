@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
-import { useAgent, UseAgentUpdate } from "@/hooks/use-agent";
 import {
   DynamicSuggestionsConfig,
   StaticSuggestionsConfig,
@@ -34,6 +33,8 @@ export function useConfigureSuggestions(
 
   const resolvedConsumerAgentId = useMemo(() => chatConfig?.agentId ?? DEFAULT_AGENT_ID, [chatConfig?.agentId]);
 
+  const rawConsumerAgentId = useMemo(() => (config ? (config as SuggestionsConfigInput).consumerAgentId : undefined), [config]);
+
   const normalizationCacheRef = useRef<{ serialized: string | null; config: SuggestionsConfig | null }>({
     serialized: null,
     config: null,
@@ -54,7 +55,6 @@ export function useConfigureSuggestions(
     if (isDynamicConfig(config)) {
       built = {
         ...config,
-        consumerAgentId: config.consumerAgentId ?? resolvedConsumerAgentId,
       } satisfies DynamicSuggestionsConfig;
     } else {
       const normalizedSuggestions = normalizeStaticSuggestions(config.suggestions);
@@ -62,12 +62,7 @@ export function useConfigureSuggestions(
         ...config,
         suggestions: normalizedSuggestions,
       };
-      built = baseConfig.consumerAgentId
-        ? baseConfig
-        : ({
-            ...baseConfig,
-            consumerAgentId: resolvedConsumerAgentId,
-          } satisfies StaticSuggestionsConfig);
+      built = baseConfig;
     }
 
     const serialized = JSON.stringify(built);
@@ -94,25 +89,33 @@ export function useConfigureSuggestions(
     return consumer;
   }, [normalizedConfig, resolvedConsumerAgentId]);
 
-  const { agent } = useAgent({
-    agentId: targetAgentId,
-    updates: [UseAgentUpdate.OnRunStatusChanged],
-  });
-
-  const isRunning = agent?.isRunning ?? false;
-  const pendingReloadRef = useRef(false);
+  const isGlobalConfig = rawConsumerAgentId === undefined || rawConsumerAgentId === "*";
 
   const requestReload = useCallback(() => {
-    if (!normalizedConfig || !targetAgentId) {
+    if (!normalizedConfig) {
       return;
     }
-    if (isRunning) {
-      pendingReloadRef.current = true;
+
+    if (isGlobalConfig) {
+      const agents = Object.values(copilotkit.agents ?? {});
+      for (const entry of agents) {
+        const agentId = entry.agentId;
+        if (!agentId) {
+          continue;
+        }
+        if (!entry.isRunning) {
+          copilotkit.reloadSuggestions(agentId);
+        }
+      }
       return;
     }
-    pendingReloadRef.current = false;
+
+    if (!targetAgentId) {
+      return;
+    }
+
     copilotkit.reloadSuggestions(targetAgentId);
-  }, [copilotkit, isRunning, normalizedConfig, targetAgentId]);
+  }, [copilotkit, isGlobalConfig, normalizedConfig, targetAgentId]);
 
   useEffect(() => {
     if (!serializedConfig || !latestConfigRef.current) {
@@ -130,7 +133,6 @@ export function useConfigureSuggestions(
 
   useEffect(() => {
     if (!normalizedConfig) {
-      pendingReloadRef.current = false;
       previousSerializedConfigRef.current = null;
       return;
     }
@@ -150,19 +152,6 @@ export function useConfigureSuggestions(
     requestReload();
   }, [extraDeps.length, normalizedConfig, requestReload, ...extraDeps]);
 
-  useEffect(() => {
-    if (isRunning) {
-      return;
-    }
-    if (!normalizedConfig || !targetAgentId) {
-      return;
-    }
-    if (!pendingReloadRef.current) {
-      return;
-    }
-    pendingReloadRef.current = false;
-    copilotkit.reloadSuggestions(targetAgentId);
-  }, [copilotkit, isRunning, normalizedConfig, targetAgentId]);
 }
 
 function isDynamicConfig(config: SuggestionsConfigInput): config is DynamicSuggestionsConfig {
