@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithCopilotKit, MockStepwiseAgent, runStartedEvent, runFinishedEvent } from "@/__tests__/utils/test-helpers";
 import { useConfigureSuggestions } from "../use-configure-suggestions";
@@ -148,8 +148,10 @@ const StaticSuggestionsHarness: React.FC = () => {
 };
 
 const RunClearsSuggestionsHarness: React.FC = () => {
+  const [label, setLabel] = useState("First static");
+
   useConfigureSuggestions({
-    suggestions: [{ title: "Static A", message: "First static" }],
+    suggestions: [{ title: label, message: label }],
   });
 
   const { suggestions, reloadSuggestions } = useSuggestions();
@@ -181,6 +183,10 @@ const RunClearsSuggestionsHarness: React.FC = () => {
     }
   }, [copilotkit]);
 
+  const handleUpdateSuggestions = useCallback(() => {
+    setLabel("Updated static");
+  }, []);
+
   return (
     <div>
       <div data-testid="suggestions-count">{suggestions.length}</div>
@@ -193,6 +199,124 @@ const RunClearsSuggestionsHarness: React.FC = () => {
       </button>
       <button data-testid="complete-agent" onClick={handleComplete}>
         Complete
+      </button>
+      <button data-testid="update-suggestions" onClick={handleUpdateSuggestions}>
+        Update Suggestions
+      </button>
+    </div>
+  );
+};
+
+const DynamicSuggestionsHarness: React.FC = () => {
+  const [label, setLabel] = useState("First dynamic");
+  const config = useMemo(
+    () => ({
+      suggestions: [{ title: label, message: label }],
+    }),
+    [label],
+  );
+
+  useConfigureSuggestions(config);
+
+  const { suggestions } = useSuggestions();
+
+  const handleUpdate = useCallback(() => {
+    setLabel("Second dynamic");
+  }, []);
+
+  return (
+    <div>
+      <div data-testid="suggestions-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="update" onClick={handleUpdate}>
+        Update
+      </button>
+    </div>
+  );
+};
+
+const DependencyDrivenHarness: React.FC = () => {
+  const configRef = useRef({
+    suggestions: [{ title: "Version 0", message: "Version 0" }],
+  });
+  const [version, setVersion] = useState(0);
+
+  useConfigureSuggestions(configRef.current, { deps: [version] });
+
+  const { suggestions } = useSuggestions();
+
+  const handleBump = useCallback(() => {
+    setVersion((prev) => {
+      const next = prev + 1;
+      configRef.current.suggestions = [
+        { title: `Version ${next}`, message: `Version ${next}` },
+      ];
+      return next;
+    });
+  }, []);
+
+  return (
+    <div>
+      <div data-testid="suggestions-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="bump" onClick={handleBump}>
+        Bump
+      </button>
+    </div>
+  );
+};
+
+const DeferredReloadHarness: React.FC = () => {
+  const [label, setLabel] = useState("Initial");
+  const config = useMemo(
+    () => ({
+      suggestions: [{ title: label, message: label }],
+    }),
+    [label],
+  );
+  useConfigureSuggestions(config);
+
+  const { copilotkit } = useCopilotKit();
+  const { suggestions } = useSuggestions();
+
+  const handleStartRun = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    if (agent) {
+      void copilotkit.runAgent({ agent });
+    }
+  }, [copilotkit]);
+
+  const handleEmitStart = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    if (agent instanceof MockStepwiseAgent) {
+      agent.emit(runStartedEvent());
+    }
+  }, [copilotkit]);
+
+  const handleEmitFinish = useCallback(() => {
+    const agent = copilotkit.getAgent(DEFAULT_AGENT_ID);
+    if (agent instanceof MockStepwiseAgent) {
+      agent.emit(runFinishedEvent());
+      agent.complete();
+    }
+  }, [copilotkit]);
+
+  const handleUpdate = useCallback(() => {
+    setLabel("Deferred");
+  }, []);
+
+  return (
+    <div>
+      <div data-testid="suggestions-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="start-run" onClick={handleStartRun}>
+        Start Run
+      </button>
+      <button data-testid="emit-start" onClick={handleEmitStart}>
+        Emit Start
+      </button>
+      <button data-testid="emit-finish" onClick={handleEmitFinish}>
+        Emit Finish
+      </button>
+      <button data-testid="update-label" onClick={handleUpdate}>
+        Update Label
       </button>
     </div>
   );
@@ -208,15 +332,6 @@ describe("useConfigureSuggestions", () => {
     renderWithCopilotKit({
       agent,
       children: <TestHarness />,
-    });
-
-    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
-    expect(screen.getByTestId("suggestions-loading").textContent).toBe("idle");
-
-    fireEvent.click(screen.getByTestId("reload-suggestions"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("suggestions-loading").textContent).toBe("loading");
     });
 
     await waitFor(() => {
@@ -238,10 +353,6 @@ describe("static suggestions defaults", () => {
       agent,
       children: <StaticSuggestionsHarness />,
     });
-
-    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
-
-    fireEvent.click(screen.getByTestId("reload-suggestions"));
 
     await waitFor(() => {
       expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
@@ -265,13 +376,15 @@ describe("suggestions lifecycle during runs", () => {
       children: <RunClearsSuggestionsHarness />,
     });
 
-    expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
-
-    fireEvent.click(screen.getByTestId("reload-suggestions"));
-
     await waitFor(() => {
       expect(screen.getByTestId("suggestions-count").textContent).toBe("1");
       expect(screen.getByTestId("suggestions-json").textContent).toContain('"isLoading":false');
+    });
+
+    fireEvent.click(screen.getByTestId("update-suggestions"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Updated static");
     });
 
     fireEvent.click(screen.getByTestId("run-agent"));
@@ -290,5 +403,71 @@ describe("suggestions lifecycle during runs", () => {
     });
 
     expect(screen.getByTestId("suggestions-count").textContent).toBe("0");
+  });
+});
+
+describe("useConfigureSuggestions dependencies", () => {
+  it("reloads suggestions when the provided config changes", async () => {
+    const agent = new MockStepwiseAgent();
+
+    renderWithCopilotKit({
+      agent,
+      children: <DynamicSuggestionsHarness />,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("First dynamic");
+    });
+
+    fireEvent.click(screen.getByTestId("update"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Second dynamic");
+    });
+  });
+
+  it("reloads suggestions when optional dependencies change", async () => {
+    const agent = new MockStepwiseAgent();
+
+    renderWithCopilotKit({
+      agent,
+      children: <DependencyDrivenHarness />,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Version 0");
+    });
+
+    fireEvent.click(screen.getByTestId("bump"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Version 1");
+    });
+  });
+
+  it("defers reloads while a run is in progress and applies them afterward", async () => {
+    const agent = new MockStepwiseAgent();
+
+    renderWithCopilotKit({
+      agent,
+      children: <DeferredReloadHarness />,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Initial");
+    });
+
+    fireEvent.click(screen.getByTestId("start-run"));
+    fireEvent.click(screen.getByTestId("emit-start"));
+
+    fireEvent.click(screen.getByTestId("update-label"));
+
+    expect(screen.getByTestId("suggestions-json").textContent).toContain("[]");
+
+    fireEvent.click(screen.getByTestId("emit-finish"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("suggestions-json").textContent).toContain("Deferred");
+    });
   });
 });
