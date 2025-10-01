@@ -12,17 +12,18 @@ export type CopilotSidebarProps = Omit<CopilotChatProps, "chatView"> & {
 export function CopilotSidebar({ header, defaultOpen, ...chatProps }: CopilotSidebarProps) {
   const SidebarViewOverride = useMemo(() => {
     const Component: React.FC<CopilotChatViewProps> = (viewProps) => {
-      const sidebarViewProps = viewProps as CopilotSidebarViewProps;
+      const { header: viewHeader, ...restProps } = viewProps as CopilotSidebarViewProps;
+
       return (
         <CopilotSidebarView
-          {...sidebarViewProps}
-          header={header ?? sidebarViewProps.header}
+          {...(restProps as CopilotSidebarViewProps)}
+          header={header ?? viewHeader}
         />
       );
     };
 
     return Object.assign(Component, CopilotChatView);
-  }, [header, defaultOpen]);
+  }, [header]);
 
   return (
     <CopilotChat
