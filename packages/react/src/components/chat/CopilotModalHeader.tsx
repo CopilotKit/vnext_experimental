@@ -91,7 +91,7 @@ export namespace CopilotModalHeader {
     <button
       type="button"
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition",
+        "inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition cursor-pointer",
         "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
