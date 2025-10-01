@@ -41,6 +41,11 @@ export const Default: Story = {
           <div style={{ height: "100%" }}>
           <CopilotChatView
             messages={storyMessages}
+            inputProps={{
+              onSubmitMessage: (value) => {
+                alert(`Message submitted: ${value}`);
+              },
+            }}
             messageView={{
               assistantMessage: {
                   onThumbsUp: () => {
@@ -74,6 +79,11 @@ export const WithSuggestions: Story = {
             onSelectSuggestion={(suggestion) =>
               alert(`Selected suggestion: ${suggestion.title}`)
             }
+            inputProps={{
+              onSubmitMessage: (value) => {
+                alert(`Message submitted: ${value}`);
+              },
+            }}
             messageView={{
               assistantMessage: {
                 onThumbsUp: () => alert("thumbsUp"),
