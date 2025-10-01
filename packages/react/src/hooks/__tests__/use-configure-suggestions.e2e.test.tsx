@@ -1,6 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderWithCopilotKit, MockStepwiseAgent, runStartedEvent, runFinishedEvent } from "@/__tests__/utils/test-helpers";
+import {
+  renderWithCopilotKit,
+  MockStepwiseAgent,
+  runStartedEvent,
+  runFinishedEvent,
+} from "@/__tests__/utils/test-helpers";
 import { useConfigureSuggestions } from "../use-configure-suggestions";
 import { useSuggestions } from "../use-suggestions";
 import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
@@ -8,8 +13,8 @@ import { Suggestion } from "@copilotkitnext/core";
 import { AbstractAgent, AgentSubscriber, Message, RunAgentParameters, RunAgentResult } from "@ag-ui/client";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
-class SuggestionsProviderAgent extends AbstractAgent {
-  constructor(private readonly responses: Suggestion[]) {
+class ImmediateSuggestionsProviderAgent extends AbstractAgent {
+  constructor(private responses: Suggestion[]) {
     super({ agentId: DEFAULT_AGENT_ID });
   }
 
@@ -17,8 +22,12 @@ class SuggestionsProviderAgent extends AbstractAgent {
     throw new Error("SuggestionsProviderAgent should not use stream run");
   }
 
-  override clone(): SuggestionsProviderAgent {
-    const cloned = new SuggestionsProviderAgent(this.responses);
+  setResponses(next: Suggestion[]) {
+    this.responses = next;
+  }
+
+  override clone(): ImmediateSuggestionsProviderAgent {
+    const cloned = new ImmediateSuggestionsProviderAgent(this.responses);
     cloned.threadId = this.threadId;
     cloned.description = this.description;
     cloned.messages = JSON.parse(JSON.stringify(this.messages));
@@ -322,9 +331,74 @@ const DeferredReloadHarness: React.FC = () => {
   );
 };
 
+const DualAgentGlobalHarness: React.FC<{ consumer?: "*" }> = ({ consumer }) => {
+  const [label, setLabel] = useState("Global v1");
+  const config = useMemo(() => {
+    const base = {
+      suggestions: [{ title: label, message: label }],
+    };
+    return consumer ? { ...base, consumerAgentId: consumer } : base;
+  }, [label, consumer]);
+
+  useConfigureSuggestions(config as any);
+
+  const { suggestions: alphaSuggestions } = useSuggestions({ agentId: "alpha" });
+  const { suggestions: betaSuggestions } = useSuggestions({ agentId: "beta" });
+
+  const handleUpdate = useCallback(() => {
+    setLabel((prev) => (prev === "Global v1" ? "Global v2" : "Global v3"));
+  }, []);
+
+  return (
+    <div>
+      <div data-testid="alpha-json">{JSON.stringify(alphaSuggestions)}</div>
+      <div data-testid="beta-json">{JSON.stringify(betaSuggestions)}</div>
+      <button data-testid="update-global" onClick={handleUpdate}>
+        Update Global Suggestions
+      </button>
+    </div>
+  );
+};
+
+const DynamicStreamingHarness: React.FC = () => {
+  const [topic, setTopic] = useState("Alpha");
+
+  useConfigureSuggestions(
+    {
+      instructions: `Offer choices about ${topic}`,
+      providerAgentId: "provider",
+      consumerAgentId: "consumer",
+      available: "always",
+    },
+    { deps: [topic] },
+  );
+
+  const { suggestions, reloadSuggestions } = useSuggestions({ agentId: "consumer" });
+
+  const handleReload = useCallback(() => {
+    reloadSuggestions();
+  }, [reloadSuggestions]);
+
+  const handleNextTopic = useCallback(() => {
+    setTopic((prev) => (prev === "Alpha" ? "Beta" : "Gamma"));
+  }, []);
+
+  return (
+    <div>
+      <div data-testid="dynamic-json">{JSON.stringify(suggestions)}</div>
+      <button data-testid="dynamic-reload" onClick={handleReload}>
+        Reload Dynamic
+      </button>
+      <button data-testid="dynamic-topic" onClick={handleNextTopic}>
+        Next Topic
+      </button>
+    </div>
+  );
+};
+
 describe("useConfigureSuggestions", () => {
   it("registers suggestions config and surfaces generated suggestions", async () => {
-    const agent = new SuggestionsProviderAgent([
+    const agent = new ImmediateSuggestionsProviderAgent([
       { title: "Option A", message: "Take path A", isLoading: false },
       { title: "Option B", message: "Take path B", isLoading: false },
     ]);
@@ -342,6 +416,96 @@ describe("useConfigureSuggestions", () => {
     const json = screen.getByTestId("suggestions-json").textContent;
     expect(json).toContain("Option A");
     expect(json).toContain("Option B");
+  });
+});
+
+describe("global suggestions coverage", () => {
+  it("applies updates across all agents when consumerAgentId is undefined", async () => {
+    const agents = {
+      alpha: new MockStepwiseAgent(),
+      beta: new MockStepwiseAgent(),
+    };
+
+    renderWithCopilotKit({
+      agents,
+      children: <DualAgentGlobalHarness />,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alpha-json").textContent).toContain("Global v1");
+      expect(screen.getByTestId("beta-json").textContent).toContain("Global v1");
+    });
+
+    fireEvent.click(screen.getByTestId("update-global"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alpha-json").textContent).toContain("Global v2");
+      expect(screen.getByTestId("beta-json").textContent).toContain("Global v2");
+    });
+  });
+
+  it("applies updates across all agents when consumerAgentId is '*'", async () => {
+    const agents = {
+      alpha: new MockStepwiseAgent(),
+      beta: new MockStepwiseAgent(),
+    };
+
+    renderWithCopilotKit({
+      agents,
+      children: <DualAgentGlobalHarness consumer="*" />,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alpha-json").textContent).toContain("Global v1");
+      expect(screen.getByTestId("beta-json").textContent).toContain("Global v1");
+    });
+
+    fireEvent.click(screen.getByTestId("update-global"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alpha-json").textContent).toContain("Global v2");
+      expect(screen.getByTestId("beta-json").textContent).toContain("Global v2");
+    });
+  });
+});
+
+describe("dynamic suggestions with MockAgent", () => {
+  it("reloads streaming suggestions when instructions change", async () => {
+    const provider = new ImmediateSuggestionsProviderAgent([
+      { title: "Alpha Choice", message: "Pick Alpha", isLoading: false },
+      { title: "Alpha Backup", message: "Alpha again", isLoading: false },
+    ]);
+    provider.agentId = "provider";
+
+    const consumer = new MockStepwiseAgent();
+    consumer.agentId = "consumer";
+
+    renderWithCopilotKit({
+      agents: { provider, consumer },
+      children: <DynamicStreamingHarness />,
+    });
+
+    fireEvent.click(screen.getByTestId("dynamic-reload"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dynamic-json").textContent).toContain("Alpha Choice");
+      expect(screen.getByTestId("dynamic-json").textContent).toContain("Alpha Backup");
+    });
+
+    provider.setResponses([
+      { title: "Beta Pick", message: "Choose Beta", isLoading: false },
+      { title: "Beta Extra", message: "More Beta", isLoading: false },
+    ]);
+
+    fireEvent.click(screen.getByTestId("dynamic-topic"));
+    fireEvent.click(screen.getByTestId("dynamic-reload"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dynamic-json").textContent).toContain("Beta Pick");
+      expect(screen.getByTestId("dynamic-json").textContent).toContain("Beta Extra");
+    });
   });
 });
 
