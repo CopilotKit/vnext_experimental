@@ -20,6 +20,8 @@ export const CopilotChatDefaultLabels = {
   userMessageToolbarEditMessageLabel: "Edit",
   chatDisclaimerText:
     "AI can make mistakes. Please verify important information.",
+  chatToggleOpenLabel: "Open chat",
+  chatToggleCloseLabel: "Close chat",
 };
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
