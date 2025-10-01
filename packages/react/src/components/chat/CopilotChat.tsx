@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { merge } from "ts-deepmerge";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { AbstractAgent, AGUIConnectNotImplementedError } from "@ag-ui/client";
+import { renderSlot, SlotValue } from "@/lib/slots";
 
 export type CopilotChatProps = Omit<
   CopilotChatViewProps,
@@ -21,8 +22,9 @@ export type CopilotChatProps = Omit<
   agentId?: string;
   threadId?: string;
   labels?: Partial<CopilotChatLabels>;
+  chatView?: SlotValue<typeof CopilotChatView>;
 };
-export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChatProps) {
+export function CopilotChat({ agentId, threadId, labels, chatView, ...props }: CopilotChatProps) {
   // Check for existing configuration provider
   const existingConfig = useCopilotChatConfiguration();
 
@@ -138,9 +140,16 @@ export function CopilotChat({ agentId, threadId, labels, ...props }: CopilotChat
 
   // Always create a provider with merged values
   // This ensures priority: props > existing config > defaults
+  const RenderedChatView = renderSlot(chatView, CopilotChatView, finalProps);
+
   return (
     <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={resolvedLabels}>
-      <CopilotChatView {...finalProps} />
+      {RenderedChatView}
     </CopilotChatConfigurationProvider>
   );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace CopilotChat {
+  export const View = CopilotChatView;
 }
