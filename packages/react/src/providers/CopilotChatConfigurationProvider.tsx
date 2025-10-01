@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode, useState } from "react";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 
 // Default labels
@@ -29,6 +29,8 @@ export interface CopilotChatConfigurationValue {
   labels: CopilotChatLabels;
   agentId: string;
   threadId: string;
+  isModalOpen: boolean;
+  setModalOpen: (open: boolean) => void;
 }
 
 // Create the configuration context
@@ -52,6 +54,8 @@ export const CopilotChatConfigurationProvider: React.FC<
   agentId,
   threadId,
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Merge default labels with provided labels
   const mergedLabels: CopilotChatLabels = {
     ...CopilotChatDefaultLabels,
@@ -62,6 +66,8 @@ export const CopilotChatConfigurationProvider: React.FC<
     labels: mergedLabels,
     agentId: agentId ?? DEFAULT_AGENT_ID,
     threadId,
+    isModalOpen,
+    setModalOpen: (open: boolean) => setIsModalOpen(open),
   };
 
   return (
