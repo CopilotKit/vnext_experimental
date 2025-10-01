@@ -12,7 +12,6 @@ const SIDEBAR_TRANSITION_MS = 260;
 
 export type CopilotSidebarViewProps = CopilotChatViewProps & {
   header?: SlotValue<typeof CopilotModalHeader>;
-  defaultOpen?: boolean;
 };
 
 function appendTransition(existing: string, addition: string) {
@@ -88,14 +87,8 @@ function useBodyInlineOffset(isOpen: boolean, sidebarWidth: number) {
   }, [isOpen, sidebarWidth]);
 }
 
-export function CopilotSidebarView({ header, defaultOpen, ...props }: CopilotSidebarViewProps) {
+export function CopilotSidebarView({ header, ...props }: CopilotSidebarViewProps) {
   const configuration = useCopilotChatConfiguration();
-
-  useEffect(() => {
-    if (defaultOpen !== undefined) {
-      configuration?.setModalOpen(defaultOpen);
-    }
-  }, [defaultOpen, configuration]);
 
   const isSidebarOpen = configuration?.isModalOpen ?? false;
 

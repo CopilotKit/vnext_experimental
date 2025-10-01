@@ -22,8 +22,9 @@ export type CopilotChatProps = Omit<
   threadId?: string;
   labels?: Partial<CopilotChatLabels>;
   chatView?: SlotValue<typeof CopilotChatView>;
+  isModalDefaultOpen?: boolean;
 };
-export function CopilotChat({ agentId, threadId, labels, chatView, ...props }: CopilotChatProps) {
+export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaultOpen, ...props }: CopilotChatProps) {
   // Check for existing configuration provider
   const existingConfig = useCopilotChatConfiguration();
 
@@ -133,7 +134,12 @@ export function CopilotChat({ agentId, threadId, labels, chatView, ...props }: C
   const RenderedChatView = renderSlot(chatView, CopilotChatView, finalProps);
 
   return (
-    <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId} labels={labels}>
+    <CopilotChatConfigurationProvider
+      agentId={resolvedAgentId}
+      threadId={resolvedThreadId}
+      labels={labels}
+      isModalDefaultOpen={isModalDefaultOpen}
+    >
       {RenderedChatView}
     </CopilotChatConfigurationProvider>
   );
