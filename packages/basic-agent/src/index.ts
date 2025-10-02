@@ -11,6 +11,7 @@ import { Observable } from "rxjs";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { experimental_MCPClient as MCPClient } from "ai";
 
 /**
  * Properties that can be overridden by forwardedProps
@@ -74,19 +75,6 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
     return spec;
   }
 
-  // Configure providers (pull keys from env)
-  const openai = createOpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-  });
-
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
-
-  const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_API_KEY!,
-  });
-
   // Normalize "provider/model" or "provider:model" format
   const normalized = spec.replace("/", ":").trim();
   const parts = normalized.split(":");
@@ -95,7 +83,7 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
 
   if (!rawProvider) {
     throw new Error(
-      `Invalid model string "${spec}". Use "openai/gpt-5", "anthropic/claude-sonnet-4.5", or "google/gemini-2.5-pro".`
+      `Invalid model string "${spec}". Use "openai/gpt-5", "anthropic/claude-sonnet-4.5", or "google/gemini-2.5-pro".`,
     );
   }
 
@@ -104,29 +92,42 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
 
   if (!model) {
     throw new Error(
-      `Invalid model string "${spec}". Use "openai/gpt-5", "anthropic/claude-sonnet-4.5", or "google/gemini-2.5-pro".`
+      `Invalid model string "${spec}". Use "openai/gpt-5", "anthropic/claude-sonnet-4.5", or "google/gemini-2.5-pro".`,
     );
   }
 
   switch (provider) {
-    case "openai":
+    case "openai": {
+      // Lazily create OpenAI provider
+      const openai = createOpenAI({
+        apiKey: process.env.OPENAI_API_KEY!,
+      });
       // Accepts any OpenAI model id, e.g. "gpt-4o", "gpt-4.1-mini", "o3-mini"
       return openai(model);
+    }
 
-    case "anthropic":
+    case "anthropic": {
+      // Lazily create Anthropic provider
+      const anthropic = createAnthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY!,
+      });
       // Accepts any Claude id, e.g. "claude-3.7-sonnet", "claude-3.5-haiku"
       return anthropic(model);
+    }
 
     case "google":
     case "gemini":
-    case "google-gemini":
+    case "google-gemini": {
+      // Lazily create Google provider
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GOOGLE_API_KEY!,
+      });
       // Accepts any Gemini id, e.g. "gemini-2.5-pro", "gemini-2.5-flash"
       return google(model);
+    }
 
     default:
-      throw new Error(
-        `Unknown provider "${provider}" in "${spec}". Supported: openai, anthropic, google (gemini).`
-      );
+      throw new Error(`Unknown provider "${provider}" in "${spec}". Supported: openai, anthropic, google (gemini).`);
   }
 }
 
@@ -142,6 +143,10 @@ export interface BasicAgentConfiguration {
    * List of properties that can be overridden by forwardedProps.
    */
   overridableProperties?: OverridableProperty[];
+  /**
+   * Optional list of MCP clients to use for tool execution
+   */
+  mcpClients?: MCPClient[];
 }
 
 export class BasicAgent extends AbstractAgent {
