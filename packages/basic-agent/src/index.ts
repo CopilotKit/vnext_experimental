@@ -540,6 +540,35 @@ export class BasicAgent extends AbstractAgent {
 
           // Process fullStream events
           for await (const part of response.fullStream) {
+            // Handle tool call streaming events (may not be in official types yet)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const partType = (part as any).type;
+
+            if (partType === "tool-call-streaming-start") {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const toolCallPart = part as any;
+              const startEvent: ToolCallStartEvent = {
+                type: EventType.TOOL_CALL_START,
+                parentMessageId: messageId,
+                toolCallId: toolCallPart.toolCallId,
+                toolCallName: toolCallPart.toolName,
+              };
+              subscriber.next(startEvent);
+              continue;
+            }
+
+            if (partType === "tool-call-delta") {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const toolCallDelta = part as any;
+              const argsEvent: ToolCallArgsEvent = {
+                type: EventType.TOOL_CALL_ARGS,
+                toolCallId: toolCallDelta.toolCallId,
+                delta: toolCallDelta.argsTextDelta,
+              };
+              subscriber.next(argsEvent);
+              continue;
+            }
+
             switch (part.type) {
               case "text-delta": {
                 // Accumulate text content - in AI SDK 5.0, the property is 'text'
@@ -556,25 +585,7 @@ export class BasicAgent extends AbstractAgent {
               }
 
               case "tool-call": {
-                // Create tool call object - in AI SDK 5.0, the property is 'input'
-                const toolArgs = "input" in part ? part.input : {};
-
-                // Emit tool call events
-                const startEvent: ToolCallStartEvent = {
-                  type: EventType.TOOL_CALL_START,
-                  parentMessageId: messageId,
-                  toolCallId: part.toolCallId,
-                  toolCallName: part.toolName,
-                };
-                subscriber.next(startEvent);
-
-                const argsEvent: ToolCallArgsEvent = {
-                  type: EventType.TOOL_CALL_ARGS,
-                  toolCallId: part.toolCallId,
-                  delta: JSON.stringify(toolArgs),
-                };
-                subscriber.next(argsEvent);
-
+                // Tool call completed
                 const endEvent: ToolCallEndEvent = {
                   type: EventType.TOOL_CALL_END,
                   toolCallId: part.toolCallId,
