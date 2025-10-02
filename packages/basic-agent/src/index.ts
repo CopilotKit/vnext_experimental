@@ -1,10 +1,7 @@
 import {
   AbstractAgent,
-  AgentSubscriber,
   BaseEvent,
   RunAgentInput,
-  RunAgentParameters,
-  RunAgentResult,
   EventType,
   Message,
   AssistantMessage,
@@ -17,6 +14,8 @@ import {
   ToolCallArgsEvent,
   ToolCallEndEvent,
   ToolCallStartEvent,
+  ToolCallResultEvent,
+  RunErrorEvent,
 } from "@ag-ui/client";
 import {
   streamText,
@@ -47,6 +46,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
 /**
  * Properties that can be overridden by forwardedProps
+ * These match the exact parameter names in streamText
  */
 export type OverridableProperty =
   | "model"
@@ -419,8 +419,6 @@ export class BasicAgent extends AbstractAgent {
   }
 
   protected run(input: RunAgentInput): Observable<BaseEvent> {
-    const finalMessages: Message[] = [...input.messages];
-
     return new Observable<BaseEvent>((subscriber) => {
       // Emit RUN_STARTED event
       const startEvent: RunStartedEvent = {
@@ -449,35 +447,6 @@ export class BasicAgent extends AbstractAgent {
         maxRetries: this.config.maxRetries,
       };
 
-      // Set default values from config
-      if (this.maxOutputTokens !== undefined) {
-        streamTextParams.maxTokens = this.maxOutputTokens;
-      }
-      if (this.temperature !== undefined) {
-        streamTextParams.temperature = this.temperature;
-      }
-      if (this.topP !== undefined) {
-        streamTextParams.topP = this.topP;
-      }
-      if (this.topK !== undefined) {
-        streamTextParams.topK = this.topK;
-      }
-      if (this.presencePenalty !== undefined) {
-        streamTextParams.presencePenalty = this.presencePenalty;
-      }
-      if (this.frequencyPenalty !== undefined) {
-        streamTextParams.frequencyPenalty = this.frequencyPenalty;
-      }
-      if (this.stopSequences !== undefined) {
-        streamTextParams.stopSequences = this.stopSequences;
-      }
-      if (this.seed !== undefined) {
-        streamTextParams.seed = this.seed;
-      }
-      if (this.maxRetries !== undefined) {
-        streamTextParams.maxRetries = this.maxRetries;
-      }
-
       // Apply forwardedProps overrides (if allowed)
       if (input.forwardedProps && typeof input.forwardedProps === "object") {
         const props = input.forwardedProps as Record<string, unknown>;
@@ -491,7 +460,6 @@ export class BasicAgent extends AbstractAgent {
         }
         if (props.toolChoice !== undefined && this.canOverride("toolChoice")) {
           // ToolChoice can be 'auto', 'required', 'none', or { type: 'tool', toolName: string }
-          // Runtime validation would be complex, so we trust the caller
           const toolChoice = props.toolChoice;
           if (
             toolChoice === "auto" ||
@@ -506,7 +474,7 @@ export class BasicAgent extends AbstractAgent {
           }
         }
         if (typeof props.maxOutputTokens === "number" && this.canOverride("maxOutputTokens")) {
-          streamTextParams.maxTokens = props.maxOutputTokens;
+          streamTextParams.maxOutputTokens = props.maxOutputTokens;
         }
         if (typeof props.temperature === "number" && this.canOverride("temperature")) {
           streamTextParams.temperature = props.temperature;
@@ -569,13 +537,6 @@ export class BasicAgent extends AbstractAgent {
           const response = streamText(streamTextParams);
 
           let messageId = randomUUID();
-          let assistantMessage: AssistantMessage = {
-            id: messageId,
-            role: "assistant",
-            content: "",
-            toolCalls: [],
-          };
-          finalMessages.push(assistantMessage);
 
           // Process fullStream events
           for await (const part of response.fullStream) {
@@ -583,7 +544,6 @@ export class BasicAgent extends AbstractAgent {
               case "text-delta": {
                 // Accumulate text content - in AI SDK 5.0, the property is 'text'
                 const textDelta = "text" in part ? part.text : "";
-                assistantMessage.content += textDelta;
                 // Emit text chunk event
                 const textEvent: TextMessageChunkEvent = {
                   type: EventType.TEXT_MESSAGE_CHUNK,
@@ -598,15 +558,6 @@ export class BasicAgent extends AbstractAgent {
               case "tool-call": {
                 // Create tool call object - in AI SDK 5.0, the property is 'input'
                 const toolArgs = "input" in part ? part.input : {};
-                const toolCall: ToolCall = {
-                  id: part.toolCallId,
-                  type: "function",
-                  function: {
-                    name: part.toolName,
-                    arguments: JSON.stringify(toolArgs),
-                  },
-                };
-                assistantMessage.toolCalls!.push(toolCall);
 
                 // Emit tool call events
                 const startEvent: ToolCallStartEvent = {
@@ -633,29 +584,20 @@ export class BasicAgent extends AbstractAgent {
               }
 
               case "tool-result": {
-                // Add tool result message - in AI SDK 5.0, the property is 'output'
                 const toolResult = "output" in part ? part.output : null;
-                const toolMessage: ToolMessage = {
+
+                const resultEvent: ToolCallResultEvent = {
+                  type: EventType.TOOL_CALL_RESULT,
                   role: "tool",
-                  id: randomUUID(),
+                  messageId: randomUUID(),
                   toolCallId: part.toolCallId,
                   content: JSON.stringify(toolResult),
                 };
-                finalMessages.push(toolMessage);
+                subscriber.next(resultEvent);
                 break;
               }
 
               case "finish":
-                // Close all MCP clients
-                await Promise.all(mcpClients.map((client) => client.close()));
-
-                // Emit messages snapshot
-                const messagesEvent: MessagesSnapshotEvent = {
-                  type: EventType.MESSAGES_SNAPSHOT,
-                  messages: finalMessages,
-                };
-                subscriber.next(messagesEvent);
-
                 // Emit run finished event
                 const finishedEvent: RunFinishedEvent = {
                   type: EventType.RUN_FINISHED,
@@ -669,17 +611,27 @@ export class BasicAgent extends AbstractAgent {
                 break;
 
               case "error":
-                // Close all MCP clients on error
-                await Promise.all(mcpClients.map((client) => client.close()));
+                const runErrorEvent: RunErrorEvent = {
+                  type: EventType.RUN_ERROR,
+                  message: part.error + "",
+                };
+                subscriber.next(runErrorEvent);
+
                 // Handle error
                 subscriber.error(part.error);
                 break;
             }
           }
         } catch (error) {
-          // Close all MCP clients on exception
-          await Promise.all(mcpClients.map((client) => client.close()));
+          const runErrorEvent: RunErrorEvent = {
+            type: EventType.RUN_ERROR,
+            message: error + "",
+          };
+          subscriber.next(runErrorEvent);
+
           subscriber.error(error);
+        } finally {
+          await Promise.all(mcpClients.map((client) => client.close()));
         }
       })();
 
