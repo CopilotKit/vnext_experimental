@@ -685,38 +685,63 @@ export class BasicAgent extends AbstractAgent {
 
           let messageId = randomUUID();
 
+          const toolCallStates = new Map<
+            string,
+            {
+              started: boolean;
+              hasArgsDelta: boolean;
+              ended: boolean;
+              toolName?: string;
+            }
+          >();
+
+          const ensureToolCallState = (toolCallId: string) => {
+            let state = toolCallStates.get(toolCallId);
+            if (!state) {
+              state = { started: false, hasArgsDelta: false, ended: false };
+              toolCallStates.set(toolCallId, state);
+            }
+            return state;
+          };
+
           // Process fullStream events
           for await (const part of response.fullStream) {
-            // Handle tool call streaming events (may not be in official types yet)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const partType = (part as any).type;
-
-            if (partType === "tool-call-streaming-start") {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const toolCallPart = part as any;
-              const startEvent: ToolCallStartEvent = {
-                type: EventType.TOOL_CALL_START,
-                parentMessageId: messageId,
-                toolCallId: toolCallPart.toolCallId,
-                toolCallName: toolCallPart.toolName,
-              };
-              subscriber.next(startEvent);
-              continue;
-            }
-
-            if (partType === "tool-call-delta") {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const toolCallDelta = part as any;
-              const argsEvent: ToolCallArgsEvent = {
-                type: EventType.TOOL_CALL_ARGS,
-                toolCallId: toolCallDelta.toolCallId,
-                delta: toolCallDelta.argsTextDelta,
-              };
-              subscriber.next(argsEvent);
-              continue;
-            }
-
             switch (part.type) {
+              case "tool-input-start": {
+                const toolCallId = part.id;
+                const state = ensureToolCallState(toolCallId);
+                state.toolName = part.toolName;
+                if (!state.started) {
+                  state.started = true;
+                  const startEvent: ToolCallStartEvent = {
+                    type: EventType.TOOL_CALL_START,
+                    parentMessageId: messageId,
+                    toolCallId,
+                    toolCallName: part.toolName,
+                  };
+                  subscriber.next(startEvent);
+                }
+                break;
+              }
+
+              case "tool-input-delta": {
+                const toolCallId = part.id;
+                const state = ensureToolCallState(toolCallId);
+                state.hasArgsDelta = true;
+                const argsEvent: ToolCallArgsEvent = {
+                  type: EventType.TOOL_CALL_ARGS,
+                  toolCallId,
+                  delta: part.delta,
+                };
+                subscriber.next(argsEvent);
+                break;
+              }
+
+              case "tool-input-end": {
+                // No direct event – the subsequent "tool-call" part marks completion.
+                break;
+              }
+
               case "text-delta": {
                 // Accumulate text content - in AI SDK 5.0, the property is 'text'
                 const textDelta = "text" in part ? part.text : "";
@@ -732,18 +757,59 @@ export class BasicAgent extends AbstractAgent {
               }
 
               case "tool-call": {
-                // Tool call completed
-                const endEvent: ToolCallEndEvent = {
-                  type: EventType.TOOL_CALL_END,
-                  toolCallId: part.toolCallId,
-                };
-                subscriber.next(endEvent);
+                const toolCallId = part.toolCallId;
+                const state = ensureToolCallState(toolCallId);
+                state.toolName = part.toolName ?? state.toolName;
+
+                if (!state.started) {
+                  state.started = true;
+                  const startEvent: ToolCallStartEvent = {
+                    type: EventType.TOOL_CALL_START,
+                    parentMessageId: messageId,
+                    toolCallId,
+                    toolCallName: part.toolName,
+                  };
+                  subscriber.next(startEvent);
+                }
+
+                if (!state.hasArgsDelta && "input" in part && part.input !== undefined) {
+                  let serializedInput = "";
+                  if (typeof part.input === "string") {
+                    serializedInput = part.input;
+                  } else {
+                    try {
+                      serializedInput = JSON.stringify(part.input);
+                    } catch {
+                      serializedInput = String(part.input);
+                    }
+                  }
+
+                  if (serializedInput.length > 0) {
+                    const argsEvent: ToolCallArgsEvent = {
+                      type: EventType.TOOL_CALL_ARGS,
+                      toolCallId,
+                      delta: serializedInput,
+                    };
+                    subscriber.next(argsEvent);
+                    state.hasArgsDelta = true;
+                  }
+                }
+
+                if (!state.ended) {
+                  state.ended = true;
+                  const endEvent: ToolCallEndEvent = {
+                    type: EventType.TOOL_CALL_END,
+                    toolCallId,
+                  };
+                  subscriber.next(endEvent);
+                }
                 break;
               }
 
               case "tool-result": {
                 const toolResult = "output" in part ? part.output : null;
                 const toolName = "toolName" in part ? part.toolName : "";
+                toolCallStates.delete(part.toolCallId);
 
                 // Check if this is a state update tool
                 if (toolName === "AGUISendStateSnapshot" && toolResult && typeof toolResult === "object") {

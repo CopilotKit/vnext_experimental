@@ -42,7 +42,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateSnapshot"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateSnapshot"),
           toolResult("call1", "AGUISendStateSnapshot", { success: true, snapshot: newState }),
           finish(),
         ]) as any,
@@ -76,7 +76,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateSnapshot"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateSnapshot"),
           toolResult("call1", "AGUISendStateSnapshot", { success: true, snapshot: { value: 1 } }),
           finish(),
         ]) as any,
@@ -120,7 +120,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -156,7 +156,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -187,7 +187,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -218,7 +218,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -253,7 +253,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -284,7 +284,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateDelta"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateDelta"),
           toolResult("call1", "AGUISendStateDelta", { success: true, delta }),
           finish(),
         ]) as any,
@@ -323,10 +323,10 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "AGUISendStateSnapshot"),
-          toolCall("call1"),
+          toolCall("call1", "AGUISendStateSnapshot"),
           toolResult("call1", "AGUISendStateSnapshot", { success: true, snapshot: { value: 1 } }),
           toolCallStreamingStart("call2", "AGUISendStateDelta"),
-          toolCall("call2"),
+          toolCall("call2", "AGUISendStateDelta"),
           toolResult("call2", "AGUISendStateDelta", { success: true, delta: [{ op: "replace", path: "/value", value: 2 }] }),
           finish(),
         ]) as any,
@@ -358,7 +358,7 @@ describe("State Update Tools", () => {
       vi.mocked(streamText).mockReturnValue(
         mockStreamTextResponse([
           toolCallStreamingStart("call1", "otherTool"),
-          toolCall("call1"),
+          toolCall("call1", "otherTool"),
           toolResult("call1", "otherTool", { result: "data" }),
           finish(),
         ]) as any,

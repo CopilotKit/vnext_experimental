@@ -134,7 +134,7 @@ describe("BasicAgent", () => {
           toolCallStreamingStart("call1", "testTool"),
           toolCallDelta("call1", '{"arg'),
           toolCallDelta("call1", '":"val"}'),
-          toolCall("call1"),
+          toolCall("call1", "testTool", { arg: "val" }),
           toolResult("call1", "testTool", { result: "success" }),
           finish(),
         ]) as any,

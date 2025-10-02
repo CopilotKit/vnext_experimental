@@ -35,8 +35,8 @@ export function textDelta(text: string): MockStreamEvent {
  */
 export function toolCallStreamingStart(toolCallId: string, toolName: string): MockStreamEvent {
   return {
-    type: "tool-call-streaming-start",
-    toolCallId,
+    type: "tool-input-start",
+    id: toolCallId,
     toolName,
   };
 }
@@ -46,19 +46,21 @@ export function toolCallStreamingStart(toolCallId: string, toolName: string): Mo
  */
 export function toolCallDelta(toolCallId: string, argsTextDelta: string): MockStreamEvent {
   return {
-    type: "tool-call-delta",
-    toolCallId,
-    argsTextDelta,
+    type: "tool-input-delta",
+    id: toolCallId,
+    delta: argsTextDelta,
   };
 }
 
 /**
  * Helper to create a tool call event
  */
-export function toolCall(toolCallId: string): MockStreamEvent {
+export function toolCall(toolCallId: string, toolName: string, input: unknown = {}): MockStreamEvent {
   return {
     type: "tool-call",
     toolCallId,
+    toolName,
+    input,
   };
 }
 
