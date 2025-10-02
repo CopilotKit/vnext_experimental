@@ -43,6 +43,7 @@ import {
   StreamableHTTPClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { u } from "vitest/dist/chunks/reporters.d.BFLkQcL6.js";
 
 /**
  * Properties that can be overridden by forwardedProps
@@ -59,7 +60,8 @@ export type OverridableProperty =
   | "frequencyPenalty"
   | "stopSequences"
   | "seed"
-  | "maxRetries";
+  | "maxRetries"
+  | "prompt";
 
 /**
  * Supported model identifiers for BasicAgent
@@ -397,6 +399,10 @@ export interface BasicAgentConfiguration {
    */
   maxRetries?: number;
   /**
+   * Prompt for the agent
+   */
+  prompt?: string;
+  /**
    * List of properties that can be overridden by forwardedProps.
    */
   overridableProperties?: OverridableProperty[];
@@ -431,9 +437,60 @@ export class BasicAgent extends AbstractAgent {
       // Resolve the model
       const model = resolveModel(this.config.model);
 
+      // Build prompt based on conditions
+      let systemPrompt: string | undefined = undefined;
+
+      // Check if we should build a prompt:
+      // - config.prompt is set, OR
+      // - input.context is non-empty, OR
+      // - input.state is non-empty and not an empty object
+      const hasPrompt = !!this.config.prompt;
+      const hasContext = input.context && input.context.length > 0;
+      const hasState =
+        input.state !== undefined &&
+        input.state !== null &&
+        !(typeof input.state === "object" && Object.keys(input.state).length === 0);
+
+      if (hasPrompt || hasContext || hasState) {
+        const parts: string[] = [];
+
+        // First: the prompt if any
+        if (hasPrompt) {
+          parts.push(this.config.prompt!);
+        }
+
+        // Second: context from the application
+        if (hasContext) {
+          parts.push("\n## Context from the application\n");
+          for (const ctx of input.context) {
+            parts.push(`${ctx.description}:\n${ctx.value}\n`);
+          }
+        }
+
+        // Third: state from the application that can be edited
+        if (hasState) {
+          parts.push(
+            "\n## Application State\n" +
+              "This is state from the application that you can edit by calling ag_ui_update_state.\n" +
+              `\`\`\`json\n${JSON.stringify(input.state, null, 2)}\n\`\`\`\n`,
+          );
+        }
+
+        systemPrompt = parts.join("");
+      }
+
+      // Convert messages and prepend system message if we have a prompt
+      const messages = convertMessagesToVercelAISDKMessages(input.messages);
+      if (systemPrompt) {
+        messages.unshift({
+          role: "system",
+          content: systemPrompt,
+        });
+      }
+
       const streamTextParams: Parameters<typeof streamText>[0] = {
         model,
-        messages: convertMessagesToVercelAISDKMessages(input.messages),
+        messages,
         tools: convertToolsToVercelAITools(input.tools),
         toolChoice: this.config.toolChoice,
         maxOutputTokens: this.config.maxOutputTokens,
