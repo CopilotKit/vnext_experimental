@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@ag-ui/client": "0.0.40-alpha.3",
-    "@copilotkitnext/basic-agent": "workspace:*",
+    "@copilotkitnext/agent": "workspace:*",
     "@copilotkitnext/core": "workspace:*",
     "@copilotkitnext/react": "workspace:*",
     "@copilotkitnext/runtime": "workspace:*",

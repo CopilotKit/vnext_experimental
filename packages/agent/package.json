@@ -1,7 +1,7 @@
 {
-  "name": "@copilotkitnext/basic-agent",
+  "name": "@copilotkitnext/agent",
   "version": "0.0.12",
-  "description": "Basic agent package for CopilotKit2",
+  "description": "Basic Agent for CopilotKit",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

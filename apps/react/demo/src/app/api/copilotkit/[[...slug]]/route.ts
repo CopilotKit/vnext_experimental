@@ -1,10 +1,6 @@
-import {
-  CopilotRuntime,
-  createCopilotEndpoint,
-  InMemoryAgentRunner,
-} from "@copilotkitnext/runtime";
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
-import { BasicAgent } from "@copilotkitnext/basic-agent";
+import { BasicAgent } from "@copilotkitnext/agent";
 
 // Determine which model to use based on available API keys
 const getModelConfig = () => {
@@ -16,7 +12,7 @@ const getModelConfig = () => {
     return "google/gemini-2.5-pro";
   }
   throw new Error(
-    "No API key found. Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY environment variable."
+    "No API key found. Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY environment variable.",
   );
 };
 
