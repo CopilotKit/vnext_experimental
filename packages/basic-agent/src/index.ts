@@ -22,6 +22,12 @@ import {
   streamText,
   LanguageModel,
   ModelMessage,
+  AssistantModelMessage,
+  UserModelMessage,
+  ToolModelMessage,
+  ToolCallPart,
+  ToolResultPart,
+  TextPart,
   tool as createVercelAISDKTool,
   ToolChoice,
   ToolSet,
@@ -82,8 +88,8 @@ export type BasicAgentModel =
   | "google/gemini-2.5-pro"
   | "google/gemini-2.5-flash"
   | "google/gemini-2.5-flash-lite"
-  // Allow any string for flexibility
-  | (LanguageModel & {});
+  // Allow any LanguageModel instance
+  | (string & {});
 
 /**
  * Model specifier - can be a string like "openai/gpt-4o" or a LanguageModel instance
@@ -206,29 +212,29 @@ export function convertMessagesToVercelAISDKMessages(messages: Message[]): Model
 
   for (const message of messages) {
     if (message.role === "assistant") {
-      type AssistantContentPart =
-        | { type: "text"; text: string }
-        | { type: "tool-call"; toolCallId: string; toolName: string; args: unknown };
-
-      const parts: AssistantContentPart[] = message.content ? [{ type: "text" as const, text: message.content }] : [];
+      const parts: Array<TextPart | ToolCallPart> = message.content ? [{ type: "text", text: message.content }] : [];
 
       for (const toolCall of message.toolCalls ?? []) {
-        parts.push({
-          type: "tool-call" as const,
+        const toolCallPart: ToolCallPart = {
+          type: "tool-call",
           toolCallId: toolCall.id,
           toolName: toolCall.function.name,
-          args: JSON.parse(toolCall.function.arguments),
-        });
+          input: JSON.parse(toolCall.function.arguments),
+        };
+        parts.push(toolCallPart);
       }
-      result.push({
+
+      const assistantMsg: AssistantModelMessage = {
         role: "assistant",
         content: parts,
-      } as ModelMessage);
+      };
+      result.push(assistantMsg);
     } else if (message.role === "user") {
-      result.push({
+      const userMsg: UserModelMessage = {
         role: "user",
         content: message.content || "",
-      });
+      };
+      result.push(userMsg);
     } else if (message.role === "tool") {
       let toolName = "unknown";
       // Find the tool name from the corresponding tool call
@@ -242,17 +248,22 @@ export function convertMessagesToVercelAISDKMessages(messages: Message[]): Model
           }
         }
       }
-      result.push({
+
+      const toolResultPart: ToolResultPart = {
+        type: "tool-result",
+        toolCallId: message.toolCallId,
+        toolName: toolName,
+        output: {
+          type: "text",
+          value: message.content,
+        },
+      };
+
+      const toolMsg: ToolModelMessage = {
         role: "tool",
-        content: [
-          {
-            type: "tool-result" as const,
-            toolCallId: message.toolCallId,
-            toolName: toolName,
-            result: message.content,
-          } as unknown,
-        ] as unknown,
-      } as ModelMessage);
+        content: [toolResultPart],
+      };
+      result.push(toolMsg);
     }
   }
 
@@ -309,19 +320,28 @@ export function convertJsonSchemaToZodSchema(jsonSchema: JsonSchema, required: b
 /**
  * Converts AG-UI tools to Vercel AI SDK ToolSet
  */
+function isJsonSchema(obj: unknown): obj is JsonSchema {
+  if (typeof obj !== "object" || obj === null) return false;
+  const schema = obj as Record<string, unknown>;
+  return typeof schema.type === "string" && ["object", "string", "number", "boolean", "array"].includes(schema.type);
+}
+
 export function convertToolsToVercelAITools(tools: RunAgentInput["tools"]): ToolSet {
-  const result: Record<string, unknown> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: Record<string, any> = {};
 
   for (const tool of tools) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (!isJsonSchema(tool.parameters)) {
+      throw new Error(`Invalid JSON schema for tool ${tool.name}`);
+    }
+    const zodSchema = convertJsonSchemaToZodSchema(tool.parameters, true);
     result[tool.name] = createVercelAISDKTool({
       description: tool.description,
-      // AI SDK 5.0 renamed 'parameters' to 'inputSchema'
-      inputSchema: convertJsonSchemaToZodSchema(tool.parameters as JsonSchema, true),
-    } as { description: string; inputSchema: z.ZodSchema });
+      inputSchema: zodSchema,
+    });
   }
 
-  return result as ToolSet;
+  return result;
 }
 
 /**
@@ -331,7 +351,7 @@ export interface BasicAgentConfiguration {
   /**
    * The model to use
    */
-  model: BasicAgentModel;
+  model: BasicAgentModel | LanguageModel;
   /**
    * Maximum number of steps/iterations for tool calling (default: 1)
    */
@@ -387,45 +407,15 @@ export interface BasicAgentConfiguration {
 }
 
 export class BasicAgent extends AbstractAgent {
-  private readonly allowedOverrides: Set<OverridableProperty>;
-  private readonly maxSteps: number;
-  private readonly toolChoice: ToolChoice<Record<string, unknown>>;
-  private readonly maxOutputTokens?: number;
-  private readonly temperature?: number;
-  private readonly topP?: number;
-  private readonly topK?: number;
-  private readonly presencePenalty?: number;
-  private readonly frequencyPenalty?: number;
-  private readonly stopSequences?: string[];
-  private readonly seed?: number;
-  private readonly maxRetries?: number;
-
   constructor(private config: BasicAgentConfiguration) {
     super();
-
-    // Initialize allowed overrides with defaults
-    const defaultOverrides: OverridableProperty[] = ["toolChoice"];
-    this.allowedOverrides = new Set(config.overridableProperties ?? defaultOverrides);
-
-    // Initialize properties with defaults or config values
-    this.maxSteps = config.maxSteps ?? 1;
-    this.toolChoice = config.toolChoice ?? "auto";
-    this.maxOutputTokens = config.maxOutputTokens;
-    this.temperature = config.temperature;
-    this.topP = config.topP;
-    this.topK = config.topK;
-    this.presencePenalty = config.presencePenalty;
-    this.frequencyPenalty = config.frequencyPenalty;
-    this.stopSequences = config.stopSequences;
-    this.seed = config.seed;
-    this.maxRetries = config.maxRetries;
   }
 
   /**
    * Check if a property can be overridden by forwardedProps
    */
   canOverride(property: OverridableProperty): boolean {
-    return this.allowedOverrides.has(property);
+    return this.config?.overridableProperties?.includes(property) ?? false;
   }
 
   protected run(input: RunAgentInput): Observable<BaseEvent> {
@@ -433,40 +423,30 @@ export class BasicAgent extends AbstractAgent {
 
     return new Observable<BaseEvent>((subscriber) => {
       // Emit RUN_STARTED event
-      subscriber.next({
+      const startEvent: RunStartedEvent = {
         type: EventType.RUN_STARTED,
         threadId: input.threadId,
         runId: input.runId,
-      } as RunStartedEvent);
+      };
+      subscriber.next(startEvent);
 
       // Resolve the model
       const model = resolveModel(this.config.model);
 
-      // Prepare streamText parameters with overrides from forwardedProps
-      interface StreamTextParams {
-        model: LanguageModel;
-        messages: ModelMessage[];
-        tools: ToolSet;
-        maxSteps: number;
-        toolChoice: ToolChoice<Record<string, unknown>>;
-        maxTokens?: number;
-        temperature?: number;
-        topP?: number;
-        topK?: number;
-        presencePenalty?: number;
-        frequencyPenalty?: number;
-        stopSequences?: string[];
-        seed?: number;
-        maxRetries?: number;
-        experimental_toolCallStreaming?: boolean;
-      }
-
-      const streamTextParams: StreamTextParams = {
+      const streamTextParams: Parameters<typeof streamText>[0] = {
         model,
         messages: convertMessagesToVercelAISDKMessages(input.messages),
         tools: convertToolsToVercelAITools(input.tools),
-        maxSteps: this.maxSteps,
-        toolChoice: this.toolChoice,
+        toolChoice: this.config.toolChoice,
+        maxOutputTokens: this.config.maxOutputTokens,
+        temperature: this.config.temperature,
+        topP: this.config.topP,
+        topK: this.config.topK,
+        presencePenalty: this.config.presencePenalty,
+        frequencyPenalty: this.config.frequencyPenalty,
+        stopSequences: this.config.stopSequences,
+        seed: this.config.seed,
+        maxRetries: this.config.maxRetries,
       };
 
       // Set default values from config
@@ -499,42 +479,61 @@ export class BasicAgent extends AbstractAgent {
       }
 
       // Apply forwardedProps overrides (if allowed)
-      if (input.forwardedProps) {
+      if (input.forwardedProps && typeof input.forwardedProps === "object") {
         const props = input.forwardedProps as Record<string, unknown>;
 
         // Check and apply each overridable property
         if (props.model !== undefined && this.canOverride("model")) {
-          streamTextParams.model = resolveModel(props.model as string | LanguageModel);
+          if (typeof props.model === "string" || typeof props.model === "object") {
+            // Accept any string or LanguageModel instance for model override
+            streamTextParams.model = resolveModel(props.model as string | LanguageModel);
+          }
         }
         if (props.toolChoice !== undefined && this.canOverride("toolChoice")) {
-          streamTextParams.toolChoice = props.toolChoice as ToolChoice<Record<string, unknown>>;
+          // ToolChoice can be 'auto', 'required', 'none', or { type: 'tool', toolName: string }
+          // Runtime validation would be complex, so we trust the caller
+          const toolChoice = props.toolChoice;
+          if (
+            toolChoice === "auto" ||
+            toolChoice === "required" ||
+            toolChoice === "none" ||
+            (typeof toolChoice === "object" &&
+              toolChoice !== null &&
+              "type" in toolChoice &&
+              toolChoice.type === "tool")
+          ) {
+            streamTextParams.toolChoice = toolChoice as ToolChoice<Record<string, unknown>>;
+          }
         }
-        if (props.maxOutputTokens !== undefined && this.canOverride("maxOutputTokens")) {
-          streamTextParams.maxTokens = props.maxOutputTokens as number;
+        if (typeof props.maxOutputTokens === "number" && this.canOverride("maxOutputTokens")) {
+          streamTextParams.maxTokens = props.maxOutputTokens;
         }
-        if (props.temperature !== undefined && this.canOverride("temperature")) {
-          streamTextParams.temperature = props.temperature as number;
+        if (typeof props.temperature === "number" && this.canOverride("temperature")) {
+          streamTextParams.temperature = props.temperature;
         }
-        if (props.topP !== undefined && this.canOverride("topP")) {
-          streamTextParams.topP = props.topP as number;
+        if (typeof props.topP === "number" && this.canOverride("topP")) {
+          streamTextParams.topP = props.topP;
         }
-        if (props.topK !== undefined && this.canOverride("topK")) {
-          streamTextParams.topK = props.topK as number;
+        if (typeof props.topK === "number" && this.canOverride("topK")) {
+          streamTextParams.topK = props.topK;
         }
-        if (props.presencePenalty !== undefined && this.canOverride("presencePenalty")) {
-          streamTextParams.presencePenalty = props.presencePenalty as number;
+        if (typeof props.presencePenalty === "number" && this.canOverride("presencePenalty")) {
+          streamTextParams.presencePenalty = props.presencePenalty;
         }
-        if (props.frequencyPenalty !== undefined && this.canOverride("frequencyPenalty")) {
-          streamTextParams.frequencyPenalty = props.frequencyPenalty as number;
+        if (typeof props.frequencyPenalty === "number" && this.canOverride("frequencyPenalty")) {
+          streamTextParams.frequencyPenalty = props.frequencyPenalty;
         }
-        if (props.stopSequences !== undefined && this.canOverride("stopSequences")) {
-          streamTextParams.stopSequences = props.stopSequences as string[];
+        if (Array.isArray(props.stopSequences) && this.canOverride("stopSequences")) {
+          // Validate all elements are strings
+          if (props.stopSequences.every((item): item is string => typeof item === "string")) {
+            streamTextParams.stopSequences = props.stopSequences;
+          }
         }
-        if (props.seed !== undefined && this.canOverride("seed")) {
-          streamTextParams.seed = props.seed as number;
+        if (typeof props.seed === "number" && this.canOverride("seed")) {
+          streamTextParams.seed = props.seed;
         }
-        if (props.maxRetries !== undefined && this.canOverride("maxRetries")) {
-          streamTextParams.maxRetries = props.maxRetries as number;
+        if (typeof props.maxRetries === "number" && this.canOverride("maxRetries")) {
+          streamTextParams.maxRetries = props.maxRetries;
         }
       }
 
@@ -550,15 +549,9 @@ export class BasicAgent extends AbstractAgent {
 
               if (serverConfig.type === "http") {
                 const url = new URL(serverConfig.url);
-                transport = new StreamableHTTPClientTransport(
-                  url,
-                  serverConfig.options
-                );
+                transport = new StreamableHTTPClientTransport(url, serverConfig.options);
               } else if (serverConfig.type === "sse") {
-                transport = new SSEClientTransport(
-                  new URL(serverConfig.url),
-                  serverConfig.headers
-                );
+                transport = new SSEClientTransport(new URL(serverConfig.url), serverConfig.headers);
               }
 
               if (transport) {
@@ -592,12 +585,13 @@ export class BasicAgent extends AbstractAgent {
                 const textDelta = "text" in part ? part.text : "";
                 assistantMessage.content += textDelta;
                 // Emit text chunk event
-                subscriber.next({
+                const textEvent: TextMessageChunkEvent = {
                   type: EventType.TEXT_MESSAGE_CHUNK,
                   role: "assistant",
                   messageId,
                   delta: textDelta,
-                } as TextMessageChunkEvent);
+                };
+                subscriber.next(textEvent);
                 break;
               }
 
@@ -615,23 +609,26 @@ export class BasicAgent extends AbstractAgent {
                 assistantMessage.toolCalls!.push(toolCall);
 
                 // Emit tool call events
-                subscriber.next({
+                const startEvent: ToolCallStartEvent = {
                   type: EventType.TOOL_CALL_START,
                   parentMessageId: messageId,
                   toolCallId: part.toolCallId,
                   toolCallName: part.toolName,
-                } as ToolCallStartEvent);
+                };
+                subscriber.next(startEvent);
 
-                subscriber.next({
+                const argsEvent: ToolCallArgsEvent = {
                   type: EventType.TOOL_CALL_ARGS,
                   toolCallId: part.toolCallId,
                   delta: JSON.stringify(toolArgs),
-                } as ToolCallArgsEvent);
+                };
+                subscriber.next(argsEvent);
 
-                subscriber.next({
+                const endEvent: ToolCallEndEvent = {
                   type: EventType.TOOL_CALL_END,
                   toolCallId: part.toolCallId,
-                } as ToolCallEndEvent);
+                };
+                subscriber.next(endEvent);
                 break;
               }
 
@@ -650,20 +647,22 @@ export class BasicAgent extends AbstractAgent {
 
               case "finish":
                 // Close all MCP clients
-                await Promise.all(mcpClients.map(client => client.close()));
+                await Promise.all(mcpClients.map((client) => client.close()));
 
                 // Emit messages snapshot
-                subscriber.next({
+                const messagesEvent: MessagesSnapshotEvent = {
                   type: EventType.MESSAGES_SNAPSHOT,
                   messages: finalMessages,
-                } as MessagesSnapshotEvent);
+                };
+                subscriber.next(messagesEvent);
 
                 // Emit run finished event
-                subscriber.next({
+                const finishedEvent: RunFinishedEvent = {
                   type: EventType.RUN_FINISHED,
                   threadId: input.threadId,
                   runId: input.runId,
-                } as RunFinishedEvent);
+                };
+                subscriber.next(finishedEvent);
 
                 // Complete the observable
                 subscriber.complete();
@@ -671,7 +670,7 @@ export class BasicAgent extends AbstractAgent {
 
               case "error":
                 // Close all MCP clients on error
-                await Promise.all(mcpClients.map(client => client.close()));
+                await Promise.all(mcpClients.map((client) => client.close()));
                 // Handle error
                 subscriber.error(part.error);
                 break;
@@ -679,7 +678,7 @@ export class BasicAgent extends AbstractAgent {
           }
         } catch (error) {
           // Close all MCP clients on exception
-          await Promise.all(mcpClients.map(client => client.close()));
+          await Promise.all(mcpClients.map((client) => client.close()));
           subscriber.error(error);
         }
       })();
@@ -687,7 +686,7 @@ export class BasicAgent extends AbstractAgent {
       // Cleanup function
       return () => {
         // Cleanup MCP clients if stream is unsubscribed
-        Promise.all(mcpClients.map(client => client.close())).catch(() => {
+        Promise.all(mcpClients.map((client) => client.close())).catch(() => {
           // Ignore cleanup errors
         });
       };
