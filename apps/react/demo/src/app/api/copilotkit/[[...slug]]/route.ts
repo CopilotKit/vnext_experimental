@@ -4,71 +4,31 @@ import {
   InMemoryAgentRunner,
 } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
-import { OpenAIAgent } from "./openai";
-import {
-  AbstractAgent,
-  BaseEvent,
-  EventType,
-  RunAgentInput,
-} from "@ag-ui/client";
-import { Observable } from "rxjs";
+import { BasicAgent } from "@copilotkitnext/basic-agent";
 
-class MissingOpenAIKeyAgent extends AbstractAgent {
-  clone(): MissingOpenAIKeyAgent {
-    return new MissingOpenAIKeyAgent();
+// Determine which model to use based on available API keys
+const getModelConfig = () => {
+  if (process.env.OPENAI_API_KEY?.trim()) {
+    return "openai/gpt-4o";
+  } else if (process.env.ANTHROPIC_API_KEY?.trim()) {
+    return "anthropic/claude-sonnet-4.5";
+  } else if (process.env.GOOGLE_API_KEY?.trim()) {
+    return "google/gemini-2.5-pro";
   }
+  throw new Error(
+    "No API key found. Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY environment variable."
+  );
+};
 
-  protected run(input: RunAgentInput): Observable<BaseEvent> {
-    return new Observable<BaseEvent>((observer) => {
-      const { runId, threadId } = input;
-      const messageId = runId ?? `missing-key-${Date.now()}`;
-
-      observer.next({
-        type: EventType.RUN_STARTED,
-        runId,
-        threadId,
-      } as BaseEvent);
-
-      observer.next({
-        type: EventType.TEXT_MESSAGE_START,
-        messageId,
-        role: "assistant",
-      } as BaseEvent);
-
-      observer.next({
-        type: EventType.TEXT_MESSAGE_CONTENT,
-        messageId,
-        delta:
-          "OPENAI_API_KEY is not set. Provide a key to enable the OpenAI demo agent.",
-      } as BaseEvent);
-
-      observer.next({
-        type: EventType.TEXT_MESSAGE_END,
-        messageId,
-      } as BaseEvent);
-
-      observer.next({
-        type: EventType.RUN_FINISHED,
-        runId,
-        threadId,
-      } as BaseEvent);
-
-      observer.complete();
-
-      return () => {};
-    });
-  }
-}
-
-const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY?.trim());
-
-const selectedAgent = hasOpenAIKey
-  ? new OpenAIAgent()
-  : new MissingOpenAIKeyAgent();
+const agent = new BasicAgent({
+  model: getModelConfig(),
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
 
 const runtime = new CopilotRuntime({
   agents: {
-    default: selectedAgent as unknown as AbstractAgent,
+    default: agent,
   },
   runner: new InMemoryAgentRunner(),
 });
