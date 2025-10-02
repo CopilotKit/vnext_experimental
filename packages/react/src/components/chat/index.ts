@@ -46,3 +46,25 @@ export {
 } from "./CopilotChatView";
 
 export { CopilotChat, type CopilotChatProps } from "./CopilotChat";
+
+export {
+  CopilotChatToggleButton,
+  type CopilotChatToggleButtonProps,
+  CopilotChatToggleButtonOpenIcon,
+  CopilotChatToggleButtonCloseIcon,
+} from "./CopilotChatToggleButton";
+
+export {
+  CopilotSidebarView,
+  type CopilotSidebarViewProps,
+} from "./CopilotSidebarView";
+
+export {
+  CopilotModalHeader,
+  type CopilotModalHeaderProps,
+} from "./CopilotModalHeader";
+
+export {
+  CopilotSidebar,
+  type CopilotSidebarProps,
+} from "./CopilotSidebar";

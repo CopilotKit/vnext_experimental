@@ -1,5 +1,5 @@
-import React, { createContext, useContext, ReactNode } from "react";
-import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
+import React, { createContext, useContext, ReactNode, useMemo, useState } from "react";
+import { DEFAULT_AGENT_ID, randomUUID } from "@copilotkitnext/shared";
 
 // Default labels
 export const CopilotChatDefaultLabels = {
@@ -18,8 +18,10 @@ export const CopilotChatDefaultLabels = {
   assistantMessageToolbarRegenerateLabel: "Regenerate",
   userMessageToolbarCopyMessageLabel: "Copy",
   userMessageToolbarEditMessageLabel: "Edit",
-  chatDisclaimerText:
-    "AI can make mistakes. Please verify important information.",
+  chatDisclaimerText: "AI can make mistakes. Please verify important information.",
+  chatToggleOpenLabel: "Open chat",
+  chatToggleCloseLabel: "Close chat",
+  modalHeaderTitle: "CopilotKit Chat",
 };
 
 export type CopilotChatLabels = typeof CopilotChatDefaultLabels;
@@ -29,6 +31,9 @@ export interface CopilotChatConfigurationValue {
   labels: CopilotChatLabels;
   agentId: string;
   threadId: string;
+  isModalOpen: boolean;
+  setModalOpen: (open: boolean) => void;
+  isModalDefaultOpen: boolean;
 }
 
 // Create the configuration context
@@ -40,29 +45,64 @@ export interface CopilotChatConfigurationProviderProps {
   children: ReactNode;
   labels?: Partial<CopilotChatLabels>;
   agentId?: string;
-  threadId: string;
+  threadId?: string;
+  isModalDefaultOpen?: boolean;
 }
 
 // Provider component
 export const CopilotChatConfigurationProvider: React.FC<
   CopilotChatConfigurationProviderProps
-> = ({
-  children,
-  labels = {},
-  agentId,
-  threadId,
-}) => {
-  // Merge default labels with provided labels
-  const mergedLabels: CopilotChatLabels = {
-    ...CopilotChatDefaultLabels,
-    ...labels,
-  };
+> = ({ children, labels, agentId, threadId, isModalDefaultOpen }) => {
+  const parentConfig = useContext(CopilotChatConfiguration);
 
-  const configurationValue: CopilotChatConfigurationValue = {
-    labels: mergedLabels,
-    agentId: agentId ?? DEFAULT_AGENT_ID,
-    threadId,
-  };
+  const mergedLabels: CopilotChatLabels = useMemo(
+    () => ({
+      ...CopilotChatDefaultLabels,
+      ...(parentConfig?.labels ?? {}),
+      ...(labels ?? {}),
+    }),
+    [labels, parentConfig?.labels],
+  );
+
+  const resolvedAgentId = agentId ?? parentConfig?.agentId ?? DEFAULT_AGENT_ID;
+
+  const resolvedThreadId = useMemo(() => {
+    if (threadId) {
+      return threadId;
+    }
+    if (parentConfig?.threadId) {
+      return parentConfig.threadId;
+    }
+    return randomUUID();
+  }, [threadId, parentConfig?.threadId]);
+
+  const resolvedDefaultOpen = isModalDefaultOpen ?? parentConfig?.isModalDefaultOpen ?? true;
+
+  const [internalModalOpen, setInternalModalOpen] = useState<boolean>(
+    parentConfig?.isModalOpen ?? resolvedDefaultOpen,
+  );
+
+  const resolvedIsModalOpen = parentConfig?.isModalOpen ?? internalModalOpen;
+  const resolvedSetModalOpen = parentConfig?.setModalOpen ?? setInternalModalOpen;
+
+  const configurationValue: CopilotChatConfigurationValue = useMemo(
+    () => ({
+      labels: mergedLabels,
+      agentId: resolvedAgentId,
+      threadId: resolvedThreadId,
+      isModalOpen: resolvedIsModalOpen,
+      setModalOpen: resolvedSetModalOpen,
+      isModalDefaultOpen: resolvedDefaultOpen,
+    }),
+    [
+      mergedLabels,
+      resolvedAgentId,
+      resolvedThreadId,
+      resolvedIsModalOpen,
+      resolvedSetModalOpen,
+      resolvedDefaultOpen,
+    ],
+  );
 
   return (
     <CopilotChatConfiguration.Provider value={configurationValue}>
