@@ -4,10 +4,6 @@ import {
   RunAgentInput,
   EventType,
   Message,
-  AssistantMessage,
-  ToolMessage,
-  ToolCall,
-  MessagesSnapshotEvent,
   RunFinishedEvent,
   RunStartedEvent,
   TextMessageChunkEvent,
@@ -16,6 +12,8 @@ import {
   ToolCallStartEvent,
   ToolCallResultEvent,
   RunErrorEvent,
+  StateSnapshotEvent,
+  StateDeltaEvent,
 } from "@ag-ui/client";
 import {
   streamText,
@@ -207,6 +205,34 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
 }
 
 /**
+ * Tool definition for BasicAgent
+ */
+export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny> {
+  name: string;
+  description: string;
+  parameters: TParameters;
+}
+
+/**
+ * Define a tool for use with BasicAgent
+ * @param name - The name of the tool
+ * @param description - Description of what the tool does
+ * @param parameters - Zod schema for the tool's input parameters
+ * @returns Tool definition
+ */
+export function defineTool<TParameters extends z.ZodTypeAny>(config: {
+  name: string;
+  description: string;
+  parameters: TParameters;
+}): ToolDefinition<TParameters> {
+  return {
+    name: config.name,
+    description: config.description,
+    parameters: config.parameters,
+  };
+}
+
+/**
  * Converts AG-UI messages to Vercel AI SDK ModelMessage format
  */
 export function convertMessagesToVercelAISDKMessages(messages: Message[]): ModelMessage[] {
@@ -347,6 +373,23 @@ export function convertToolsToVercelAITools(tools: RunAgentInput["tools"]): Tool
 }
 
 /**
+ * Converts ToolDefinition array to Vercel AI SDK ToolSet
+ */
+export function convertToolDefinitionsToVercelAITools(tools: ToolDefinition[]): ToolSet {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: Record<string, any> = {};
+
+  for (const tool of tools) {
+    result[tool.name] = createVercelAISDKTool({
+      description: tool.description,
+      inputSchema: tool.parameters,
+    });
+  }
+
+  return result;
+}
+
+/**
  * Configuration for BasicAgent
  */
 export interface BasicAgentConfiguration {
@@ -410,6 +453,10 @@ export interface BasicAgentConfiguration {
    * Optional list of MCP server configurations
    */
   mcpServers?: MCPClientConfig[];
+  /**
+   * Optional tools available to the agent
+   */
+  tools?: ToolDefinition[];
 }
 
 export class BasicAgent extends AbstractAgent {
@@ -471,7 +518,7 @@ export class BasicAgent extends AbstractAgent {
         if (hasState) {
           parts.push(
             "\n## Application State\n" +
-              "This is state from the application that you can edit by calling ag_ui_update_state.\n" +
+              "This is state from the application that you can edit by calling AGUISendStateSnapshot or AGUISendStateDelta.\n" +
               `\`\`\`json\n${JSON.stringify(input.state, null, 2)}\n\`\`\`\n`,
           );
         }
@@ -488,10 +535,17 @@ export class BasicAgent extends AbstractAgent {
         });
       }
 
+      // Merge tools from input and config
+      let allTools: ToolSet = convertToolsToVercelAITools(input.tools);
+      if (this.config.tools && this.config.tools.length > 0) {
+        const configTools = convertToolDefinitionsToVercelAITools(this.config.tools);
+        allTools = { ...allTools, ...configTools };
+      }
+
       const streamTextParams: Parameters<typeof streamText>[0] = {
         model,
         messages,
-        tools: convertToolsToVercelAITools(input.tools),
+        tools: allTools,
         toolChoice: this.config.toolChoice,
         maxOutputTokens: this.config.maxOutputTokens,
         temperature: this.config.temperature,
@@ -567,6 +621,42 @@ export class BasicAgent extends AbstractAgent {
 
       (async () => {
         try {
+          // Add AG-UI state update tools
+          streamTextParams.tools = {
+            ...streamTextParams.tools,
+            AGUISendStateSnapshot: createVercelAISDKTool({
+              description: "Replace the entire application state with a new snapshot",
+              inputSchema: z.object({
+                snapshot: z.any().describe("The complete new state object"),
+              }),
+              execute: async ({ snapshot }) => {
+                return { success: true, snapshot };
+              },
+            }),
+            AGUISendStateDelta: createVercelAISDKTool({
+              description: "Apply incremental updates to application state using JSON Patch operations",
+              inputSchema: z.object({
+                delta: z
+                  .array(
+                    z.object({
+                      op: z.enum(["add", "replace", "remove"]).describe("The operation to perform"),
+                      path: z.string().describe("JSON Pointer path (e.g., '/foo/bar')"),
+                      value: z
+                        .any()
+                        .optional()
+                        .describe(
+                          "The value to set. Required for 'add' and 'replace' operations, ignored for 'remove'.",
+                        ),
+                    }),
+                  )
+                  .describe("Array of JSON Patch operations"),
+              }),
+              execute: async ({ delta }) => {
+                return { success: true, delta };
+              },
+            }),
+          };
+
           // Initialize MCP clients and get their tools
           if (this.config.mcpServers && this.config.mcpServers.length > 0) {
             for (const serverConfig of this.config.mcpServers) {
@@ -653,7 +743,26 @@ export class BasicAgent extends AbstractAgent {
 
               case "tool-result": {
                 const toolResult = "output" in part ? part.output : null;
+                const toolName = "toolName" in part ? part.toolName : "";
 
+                // Check if this is a state update tool
+                if (toolName === "AGUISendStateSnapshot" && toolResult && typeof toolResult === "object") {
+                  // Emit StateSnapshotEvent
+                  const stateSnapshotEvent: StateSnapshotEvent = {
+                    type: EventType.STATE_SNAPSHOT,
+                    snapshot: toolResult.snapshot,
+                  };
+                  subscriber.next(stateSnapshotEvent);
+                } else if (toolName === "AGUISendStateDelta" && toolResult && typeof toolResult === "object") {
+                  // Emit StateDeltaEvent
+                  const stateDeltaEvent: StateDeltaEvent = {
+                    type: EventType.STATE_DELTA,
+                    delta: toolResult.delta,
+                  };
+                  subscriber.next(stateDeltaEvent);
+                }
+
+                // Always emit the tool result event for the LLM
                 const resultEvent: ToolCallResultEvent = {
                   type: EventType.TOOL_CALL_RESULT,
                   role: "tool",
