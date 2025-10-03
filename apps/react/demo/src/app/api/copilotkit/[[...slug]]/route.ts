@@ -11,9 +11,8 @@ const getModelConfig = () => {
   } else if (process.env.GOOGLE_API_KEY?.trim()) {
     return "google/gemini-2.5-pro";
   }
-  throw new Error(
-    "No API key found. Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY environment variable.",
-  );
+  // Default to OpenAI (will fail at runtime if no key is set)
+  return "openai/gpt-4o";
 };
 
 const agent = new BasicAgent({
