@@ -1,27 +1,27 @@
-import { ReactToolCallRender } from "@/types";
+import { ReactToolCallRenderer } from "@/types";
 import { CopilotKitCore, CopilotKitCoreConfig, CopilotKitCoreSubscriber } from "@copilotkitnext/core";
 
 export interface CopilotKitCoreReactConfig extends CopilotKitCoreConfig {
   // Add any additional configuration properties specific to the React implementation
-  renderToolCalls: ReactToolCallRender<any>[];
+  renderToolCalls: ReactToolCallRenderer<any>[];
 }
 
 export interface CopilotKitCoreReactSubscriber extends CopilotKitCoreSubscriber {
   onRenderToolCallsChanged?: (event: {
     copilotkit: CopilotKitCore;
-    renderToolCalls: ReactToolCallRender<any>[];
+    renderToolCalls: ReactToolCallRenderer<any>[];
   }) => void | Promise<void>;
 }
 
 export class CopilotKitCoreReact extends CopilotKitCore {
-  private _renderToolCalls: ReactToolCallRender<any>[] = [];
+  private _renderToolCalls: ReactToolCallRenderer<any>[] = [];
   private reactSubscribers: Set<CopilotKitCoreReactSubscriber> = new Set();
 
-  get renderToolCalls(): Readonly<ReactToolCallRender<any>>[] {
+  get renderToolCalls(): Readonly<ReactToolCallRenderer<any>>[] {
     return this._renderToolCalls;
   }
 
-  setRenderToolCalls(renderToolCalls: ReactToolCallRender<any>[]): void {
+  setRenderToolCalls(renderToolCalls: ReactToolCallRenderer<any>[]): void {
     this._renderToolCalls = renderToolCalls;
 
     this.reactSubscribers.forEach((subscriber) => {

@@ -1,7 +1,7 @@
-import { defineToolCallRender } from "../types/defineToolCallRender";
+import { defineToolCallRenderer } from "../types/defineToolCallRenderer";
 import { useState } from "react";
 
-export const WildcardToolCallRender = defineToolCallRender({
+export const WildcardToolCallRender = defineToolCallRenderer({
   name: "*",
   render: ({ args, result, name, status }) => {
     const [isExpanded, setIsExpanded] = useState(false);

@@ -113,7 +113,7 @@ const devAgent = new HttpAgent({
 
 ### renderToolCalls
 
-`ReactToolCallRender[]` **(optional)**
+`ReactToolCallRenderer[]` **(optional)**
 
 A static list of components to render when specific tools are called. Enables visual feedback for tool execution.
 
@@ -210,9 +210,9 @@ The provider makes a `CopilotKitContextValue` available to child components thro
 ```typescript
 interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: ReactToolCallRender<any>[];
-  currentRenderToolCalls: ReactToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRender<unknown>[]>>;
+  renderToolCalls: ReactToolCallRenderer<any>[];
+  currentRenderToolCalls: ReactToolCallRenderer<unknown>[];
+  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRenderer<unknown>[]>>;
 }
 ```
 

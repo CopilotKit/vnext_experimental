@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { z } from "zod";
-import { defineToolCallRender, ReactToolCallRender } from "@/types";
+import { defineToolCallRenderer, ReactToolCallRenderer } from "@/types";
 import {
   MockStepwiseAgent,
   SuggestionsProviderAgent,
@@ -94,7 +94,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
     it("should handle complete tool call lifecycle", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "getWeather",
           args: z.object({
             location: z.string(),
@@ -107,7 +107,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -174,7 +174,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
     it("should handle multiple tool calls in one assistant message", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "getWeather",
           args: z.object({ location: z.string() }),
           render: ({ name, args, result }) => (
@@ -183,7 +183,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "getTime",
           args: z.object({ timezone: z.string() }),
           render: ({ name, args, result }) => (
@@ -192,7 +192,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -269,7 +269,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
     it("should use wildcard renderer when no specific renderer exists", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "*",
           args: z.any(),
           render: ({ name, args }) => (
@@ -278,7 +278,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -322,7 +322,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       const agent = new MockStepwiseAgent();
       // Test that wildcard tool works without explicit args definition
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "*",
           // No args field - should default to z.any()
           render: ({ name, args }) => (
@@ -332,7 +332,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -383,14 +383,14 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
     it("should not show toolbar for messages with only tool calls and no content", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "testTool",
           args: z.object({ value: z.string() }),
           render: ({ args }) => (
             <div data-testid="test-tool">Tool: {args.value}</div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 
@@ -460,7 +460,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
     it("should prefer specific renderer over wildcard when both exist", async () => {
       const agent = new MockStepwiseAgent();
       const renderToolCalls = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "specificTool",
           args: z.object({ value: z.string() }),
           render: ({ args }) => (
@@ -469,7 +469,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "*",
           args: z.any(),
           render: ({ name }) => (
@@ -478,7 +478,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
             </div>
           ),
         }),
-      ] as unknown as ReactToolCallRender<unknown>[];
+      ] as unknown as ReactToolCallRenderer<unknown>[];
 
       renderWithCopilotKit({ agent, renderToolCalls });
 

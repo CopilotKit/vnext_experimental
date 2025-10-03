@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useCopilotKit } from "../providers/CopilotKitProvider";
 import { ReactFrontendTool } from "../types/frontend-tool";
-import { ReactToolCallRender } from "../types/react-tool-call-render";
+import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 
 export function useFrontendTool<
   T extends Record<string, unknown> = Record<string, unknown>,
@@ -23,11 +23,11 @@ export function useFrontendTool<
     // Register/override renderer by name and agentId through core
     if (tool.render) {
       // Get current render tool calls and merge with new entry
-      const keyOf = (rc: ReactToolCallRender<any>) => `${rc.agentId ?? ""}:${rc.name}`;
-      const currentRenderToolCalls = copilotkit.renderToolCalls as ReactToolCallRender<any>[];
+      const keyOf = (rc: ReactToolCallRenderer<any>) => `${rc.agentId ?? ""}:${rc.name}`;
+      const currentRenderToolCalls = copilotkit.renderToolCalls as ReactToolCallRenderer<any>[];
 
       // Build map from existing entries
-      const mergedMap = new Map<string, ReactToolCallRender<any>>();
+      const mergedMap = new Map<string, ReactToolCallRenderer<any>>();
       for (const rc of currentRenderToolCalls) {
         mergedMap.set(keyOf(rc), rc);
       }
@@ -38,7 +38,7 @@ export function useFrontendTool<
         args: tool.parameters,
         agentId: tool.agentId,
         render: tool.render,
-      } as ReactToolCallRender<any>;
+      } as ReactToolCallRenderer<any>;
       mergedMap.set(keyOf(newEntry), newEntry);
 
       // Set the merged list back

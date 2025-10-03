@@ -5,7 +5,7 @@ import {
   CopilotChat,
   CopilotKitProvider,
   useFrontendTool,
-  defineToolCallRender,
+  defineToolCallRenderer,
   useConfigureSuggestions,
 } from "@copilotkitnext/react";
 import { z } from "zod";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   // Define a wildcard renderer for any undefined tools
-  const wildcardRenderer = defineToolCallRender({
+  const wildcardRenderer = defineToolCallRenderer({
     name: "*",
     // No args needed for wildcard - defaults to z.any()
     render: ({ name, args, status }) => (

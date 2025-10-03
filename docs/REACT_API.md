@@ -10,7 +10,7 @@ Creates and owns a `CopilotKitCore` instance that manages agents, frontend tools
 - `headers?: Record<string,string>` – request headers forwarded with runtime calls; default `{}`.
 - `properties?: Record<string,unknown>` – runtime metadata payload; default `{}`.
 - `agents?: Record<string, AbstractAgent>` – preinstantiated agents, keyed by id.
-- `renderToolCalls?: ReactToolCallRender[]` – static set of tool renderers. The provider expects a stable array identity; changing the structure logs a console error.
+- `renderToolCalls?: ReactToolCallRenderer[]` – static set of tool renderers. The provider expects a stable array identity; changing the structure logs a console error.
 - `frontendTools?: ReactFrontendTool[]` – static tool handlers defined up front. Like `renderToolCalls`, the array should be stable.
 - `humanInTheLoop?: ReactHumanInTheLoop[]` – declarative human-in-the-loop tool definitions. Each becomes both a tool handler and a tool call renderer.
 
@@ -29,8 +29,8 @@ import { CopilotKitProvider } from "@copilotkitnext/react";
 ### `useCopilotKit`
 Context hook that returns:
 - `copilotkit: CopilotKitCore` – the live core instance.
-- `renderToolCalls: ReactToolCallRender[]` – full render list derived from provider props.
-- `currentRenderToolCalls: ReactToolCallRender[]` – current stateful render list used by `useRenderToolCall`.
+- `renderToolCalls: ReactToolCallRenderer[]` – full render list derived from provider props.
+- `currentRenderToolCalls: ReactToolCallRenderer[]` – current stateful render list used by `useRenderToolCall`.
 - `setCurrentRenderToolCalls` – setter for augmenting renderers (used internally by tooling hooks).
 
 The hook subscribes to runtime load events so components re-render if the core finishes loading or fails to load.

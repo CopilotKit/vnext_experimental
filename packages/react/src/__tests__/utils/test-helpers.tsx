@@ -11,7 +11,7 @@ import {
   type RunAgentInput,
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
-import { ReactToolCallRender } from "@/types";
+import { ReactToolCallRenderer } from "@/types";
 
 /**
  * A controllable mock agent for deterministic E2E testing.
@@ -72,7 +72,7 @@ export function renderWithCopilotKit({
 }: {
   agent?: AbstractAgent;
   agents?: Record<string, AbstractAgent>;
-  renderToolCalls?: ReactToolCallRender<any>[];
+  renderToolCalls?: ReactToolCallRenderer<any>[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
   agentId?: string;
