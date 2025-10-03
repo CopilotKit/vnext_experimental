@@ -2,9 +2,8 @@ import { ReactToolCallRender } from "@/types/react-tool-call-render";
 import { useFrontendTool } from "./use-frontend-tool";
 import { ReactFrontendTool } from "@/types/frontend-tool";
 import { ReactHumanInTheLoop } from "@/types/human-in-the-loop";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import React from "react";
-import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>
@@ -14,7 +13,6 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
   );
   const statusRef = useRef(status);
   const resolvePromiseRef = useRef<((result: unknown) => void) | null>(null);
-  const { setCurrentRenderToolCalls } = useCopilotKit();
 
   statusRef.current = status;
 
@@ -79,14 +77,4 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
   };
 
   useFrontendTool(frontendTool);
-
-  useEffect(() => {
-    return () => {
-      setCurrentRenderToolCalls((prev) =>
-        prev.filter(
-          (rc) => rc.name !== tool.name || rc.agentId !== tool.agentId
-        )
-      );
-    };
-  }, [setCurrentRenderToolCalls, tool.name, tool.agentId]);
 }

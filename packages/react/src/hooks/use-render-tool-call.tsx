@@ -18,12 +18,15 @@ export interface UseRenderToolCallProps {
  * @returns A function that takes a tool call and optional tool message and returns the rendered component
  */
 export function useRenderToolCall() {
-  const { currentRenderToolCalls, copilotkit } = useCopilotKit();
+  const { copilotkit } = useCopilotKit();
   const config = useCopilotChatConfiguration();
   const agentId = config?.agentId ?? DEFAULT_AGENT_ID;
   const [executingToolCallIds, setExecutingToolCallIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
+
+  // Get the merged render tool calls from core
+  const renderToolCalls = copilotkit.renderToolCalls;
 
   useEffect(() => {
     const unsubscribe = copilotkit.subscribe({
@@ -58,7 +61,7 @@ export function useRenderToolCall() {
       // Priority order:
       // 1. Exact match by name (prefer agent-specific if multiple exist)
       // 2. Wildcard (*) renderer
-      const exactMatches = currentRenderToolCalls.filter(
+      const exactMatches = renderToolCalls.filter(
         (rc) => rc.name === toolCall.function.name
       );
 
@@ -67,7 +70,7 @@ export function useRenderToolCall() {
         exactMatches.find((rc) => rc.agentId === agentId) ||
         exactMatches.find((rc) => !rc.agentId) ||
         exactMatches[0] ||
-        currentRenderToolCalls.find((rc) => rc.name === "*");
+        renderToolCalls.find((rc) => rc.name === "*");
 
       if (!renderConfig) {
         return null;
@@ -118,7 +121,7 @@ export function useRenderToolCall() {
         );
       }
     },
-    [currentRenderToolCalls, executingToolCallIds, agentId]
+    [renderToolCalls, executingToolCallIds, agentId]
   );
 
   return renderToolCall;

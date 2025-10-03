@@ -15,11 +15,10 @@ export interface CopilotKitCoreReactSubscriber extends CopilotKitCoreSubscriber 
 
 export class CopilotKitCoreReact extends CopilotKitCore {
   private _renderToolCalls: ReactToolCallRender<any>[] = [];
-  private _staticRenderToolCalls: ReactToolCallRender<any>[] = [];
   private reactSubscribers: Set<CopilotKitCoreReactSubscriber> = new Set();
 
   get renderToolCalls(): Readonly<ReactToolCallRender<any>>[] {
-    return [...this._staticRenderToolCalls, ...this._renderToolCalls];
+    return this._renderToolCalls;
   }
 
   setRenderToolCalls(renderToolCalls: ReactToolCallRender<any>[]): void {
@@ -52,6 +51,6 @@ export class CopilotKitCoreReact extends CopilotKitCore {
 
   constructor(config: CopilotKitCoreReactConfig) {
     super(config);
-    this._staticRenderToolCalls = config.renderToolCalls;
+    this._renderToolCalls = config.renderToolCalls;
   }
 }
