@@ -1,6 +1,7 @@
 import { Context } from "@ag-ui/client";
 import { randomUUID } from "@copilotkitnext/shared";
 import type { CopilotKitCore } from "./core";
+import { CopilotKitCoreFriendsAccess } from "./core";
 
 /**
  * Manages context storage and lifecycle for CopilotKitCore.
@@ -41,8 +42,8 @@ export class ContextStore {
    * Notify all subscribers of context changes
    */
   private async notifySubscribers(): Promise<void> {
-    await (this.core as any).notifySubscribers(
-      (subscriber: any) =>
+    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      (subscriber) =>
         subscriber.onContextChanged?.({
           copilotkit: this.core,
           context: this._context,

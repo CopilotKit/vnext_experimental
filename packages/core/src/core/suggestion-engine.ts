@@ -2,6 +2,7 @@ import { AbstractAgent, Message, Tool, Context } from "@ag-ui/client";
 import { randomUUID, partialJSONParse } from "@copilotkitnext/shared";
 import type { CopilotKitCore } from "./core";
 import type { CopilotKitCoreGetSuggestionsResult } from "./core";
+import { CopilotKitCoreFriendsAccess } from "./core";
 import { DynamicSuggestionsConfig, StaticSuggestionsConfig, Suggestion, SuggestionsConfig } from "../types";
 
 /**
@@ -51,7 +52,7 @@ export class SuggestionEngine {
     this.clearSuggestions(agentId);
 
     // Get agent to check message count for availability filtering
-    const agent = (this.core as any).getAgent(agentId);
+    const agent = (this.core as CopilotKitCoreFriendsAccess).getAgent(agentId);
     if (!agent) {
       return;
     }
@@ -123,11 +124,11 @@ export class SuggestionEngine {
   ): Promise<void> {
     let agent: AbstractAgent | undefined = undefined;
     try {
-      const suggestionsProviderAgent = (this.core as any).getAgent(config.providerAgentId ?? "default");
+      const suggestionsProviderAgent = (this.core as CopilotKitCoreFriendsAccess).getAgent(config.providerAgentId ?? "default");
       if (!suggestionsProviderAgent) {
         throw new Error(`Suggestions provider agent not found: ${config.providerAgentId}`);
       }
-      const suggestionsConsumerAgent = (this.core as any).getAgent(consumerAgentId);
+      const suggestionsConsumerAgent = (this.core as CopilotKitCoreFriendsAccess).getAgent(consumerAgentId);
       if (!suggestionsConsumerAgent) {
         throw new Error(`Suggestions consumer agent not found: ${consumerAgentId}`);
       }
@@ -152,16 +153,16 @@ export class SuggestionEngine {
         content: [
           `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
           `Provide at least ${config.minSuggestions ?? 1} and at most ${config.maxSuggestions ?? 3} suggestions.`,
-          `The user has the following tools available: ${JSON.stringify((this.core as any).buildFrontendTools(consumerAgentId))}.`,
+          `The user has the following tools available: ${JSON.stringify((this.core as CopilotKitCoreFriendsAccess).buildFrontendTools(consumerAgentId))}.`,
           ` ${config.instructions}`,
         ].join("\n"),
       });
 
       await agent.runAgent(
         {
-          context: Object.values((this.core as any).context),
+          context: Object.values((this.core as CopilotKitCoreFriendsAccess).context),
           forwardedProps: {
-            ...(this.core as any).properties,
+            ...(this.core as CopilotKitCoreFriendsAccess).properties,
             toolChoice: { type: "function", function: { name: "copilotkitSuggest" } },
           },
           tools: [SUGGEST_TOOL],
@@ -283,8 +284,8 @@ export class SuggestionEngine {
    * Notify subscribers of suggestions config changes
    */
   private async notifySuggestionsConfigChanged(): Promise<void> {
-    await (this.core as any).notifySubscribers(
-      (subscriber: any) =>
+    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      (subscriber) =>
         subscriber.onSuggestionsConfigChanged?.({
           copilotkit: this.core,
           suggestionsConfig: this._suggestionsConfig,
@@ -301,8 +302,8 @@ export class SuggestionEngine {
     suggestions: Suggestion[],
     context: string = "",
   ): Promise<void> {
-    await (this.core as any).notifySubscribers(
-      (subscriber: any) =>
+    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      (subscriber) =>
         subscriber.onSuggestionsChanged?.({
           copilotkit: this.core,
           agentId,
@@ -316,8 +317,8 @@ export class SuggestionEngine {
    * Notify subscribers that suggestions started loading
    */
   private async notifySuggestionsStartedLoading(agentId: string): Promise<void> {
-    await (this.core as any).notifySubscribers(
-      (subscriber: any) =>
+    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      (subscriber) =>
         subscriber.onSuggestionsStartedLoading?.({
           copilotkit: this.core,
           agentId,
@@ -330,8 +331,8 @@ export class SuggestionEngine {
    * Notify subscribers that suggestions finished loading
    */
   private async notifySuggestionsFinishedLoading(agentId: string): Promise<void> {
-    await (this.core as any).notifySubscribers(
-      (subscriber: any) =>
+    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      (subscriber) =>
         subscriber.onSuggestionsFinishedLoading?.({
           copilotkit: this.core,
           agentId,
