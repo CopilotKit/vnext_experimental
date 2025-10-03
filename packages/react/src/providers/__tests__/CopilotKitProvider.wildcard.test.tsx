@@ -79,7 +79,7 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
+      const wildcardRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "*");
       expect(wildcardRender).toBeDefined();
       expect(wildcardRender?.render).toBe(WildcardRender);
     });
@@ -130,7 +130,7 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
       });
 
       expect(result.current.copilotkit.getTool({ toolName: "*" })).toBeDefined();
-      const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
+      const wildcardRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "*");
       expect(wildcardRender).toBeDefined();
       expect(wildcardRender?.render).toBe(WildcardComponent);
     });
@@ -186,7 +186,7 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
+      const wildcardRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "*");
       expect(wildcardRender).toBeDefined();
       expect(wildcardRender?.render).toBe(WildcardRender);
     });
@@ -214,7 +214,7 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
         ),
       });
 
-      const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
+      const wildcardRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "*");
       expect(wildcardRender?.agentId).toBe("agent1");
     });
   });
@@ -255,8 +255,8 @@ describe("CopilotKitProvider - Wildcard Tool", () => {
       expect(result.current.copilotkit.getTool({ toolName: "*" })).toBeDefined();
       
       // Both renders should be registered
-      const specificToolRender = result.current.renderToolCalls.find(rc => rc.name === "specificTool");
-      const wildcardRender = result.current.renderToolCalls.find(rc => rc.name === "*");
+      const specificToolRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "specificTool");
+      const wildcardRender = result.current.copilotkit.renderToolCalls.find(rc => rc.name === "*");
       expect(specificToolRender).toBeDefined();
       expect(wildcardRender).toBeDefined();
     });
