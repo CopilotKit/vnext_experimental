@@ -2,12 +2,14 @@ import { ReactToolCallRender } from "@/types/react-tool-call-render";
 import { useFrontendTool } from "./use-frontend-tool";
 import { ReactFrontendTool } from "@/types/frontend-tool";
 import { ReactHumanInTheLoop } from "@/types/human-in-the-loop";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import React from "react";
+import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>
 ) {
+  const { copilotkit } = useCopilotKit();
   const [status, setStatus] = useState<"inProgress" | "executing" | "complete">(
     "inProgress"
   );
@@ -77,4 +79,17 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
   };
 
   useFrontendTool(frontendTool);
+
+  // Human-in-the-loop tools should remove their renderer on unmount
+  // since they can't respond to user interactions anymore
+  useEffect(() => {
+    return () => {
+      const keyOf = (rc: ReactToolCallRender<any>) => `${rc.agentId ?? ""}:${rc.name}`;
+      const currentRenderToolCalls = copilotkit.renderToolCalls as ReactToolCallRender<any>[];
+      const filtered = currentRenderToolCalls.filter(
+        rc => keyOf(rc) !== keyOf({ name: tool.name, agentId: tool.agentId } as any)
+      );
+      copilotkit.setRenderToolCalls(filtered);
+    };
+  }, [copilotkit, tool.name, tool.agentId]);
 }

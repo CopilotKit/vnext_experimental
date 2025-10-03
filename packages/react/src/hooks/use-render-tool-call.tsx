@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
@@ -25,8 +25,17 @@ export function useRenderToolCall() {
     ReadonlySet<string>
   >(() => new Set());
 
-  // Get the merged render tool calls from core
-  const renderToolCalls = copilotkit.renderToolCalls;
+  // Subscribe to render tool calls changes using useSyncExternalStore
+  // This ensures we always have the latest value, even if subscriptions run in any order
+  const renderToolCalls = useSyncExternalStore(
+    (callback) => {
+      return copilotkit.subscribe({
+        onRenderToolCallsChanged: callback,
+      });
+    },
+    () => copilotkit.renderToolCalls,
+    () => copilotkit.renderToolCalls
+  );
 
   useEffect(() => {
     const unsubscribe = copilotkit.subscribe({
