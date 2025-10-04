@@ -192,9 +192,9 @@ export class CopilotKitCore {
   }
 
   /**
-   * Internal method used by delegate classes to notify subscribers
+   * Internal method used by delegate classes and subclasses to notify subscribers
    */
-  private async notifySubscribers(
+  protected async notifySubscribers(
     handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
     errorMessage: string,
   ): Promise<void> {

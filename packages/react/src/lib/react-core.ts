@@ -38,11 +38,12 @@ export class CopilotKitCoreReact extends CopilotKitCore {
   setRenderToolCalls(renderToolCalls: ReactToolCallRenderer<any>[]): void {
     this._renderToolCalls = renderToolCalls;
 
-    // Use parent's notifySubscribers to notify React subscribers
-    void (this as unknown as { notifySubscribers: (handler: (subscriber: CopilotKitCoreReactSubscriber) => void | Promise<void>, errorMessage: string) => Promise<void> }).notifySubscribers(
+    // Notify React-specific subscribers
+    void this.notifySubscribers(
       (subscriber) => {
-        if ('onRenderToolCallsChanged' in subscriber && subscriber.onRenderToolCallsChanged) {
-          subscriber.onRenderToolCallsChanged({
+        const reactSubscriber = subscriber as CopilotKitCoreReactSubscriber;
+        if (reactSubscriber.onRenderToolCallsChanged) {
+          reactSubscriber.onRenderToolCallsChanged({
             copilotkit: this,
             renderToolCalls: this.renderToolCalls,
           });
