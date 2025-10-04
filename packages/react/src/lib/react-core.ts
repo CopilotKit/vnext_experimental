@@ -20,7 +20,6 @@ export interface CopilotKitCoreReactSubscriber extends CopilotKitCoreSubscriber 
 export class CopilotKitCoreReact extends CopilotKitCore {
   private _renderToolCalls: ReactToolCallRenderer<any>[] = [];
   private _renderCustomMessages: ReactCustomMessageRenderer[] = [];
-  private reactSubscribers: Set<CopilotKitCoreReactSubscriber> = new Set();
 
   constructor(config: CopilotKitCoreReactConfig) {
     super(config);
@@ -39,31 +38,26 @@ export class CopilotKitCoreReact extends CopilotKitCore {
   setRenderToolCalls(renderToolCalls: ReactToolCallRenderer<any>[]): void {
     this._renderToolCalls = renderToolCalls;
 
-    this.reactSubscribers.forEach((subscriber) => {
-      if (subscriber.onRenderToolCallsChanged) {
-        subscriber.onRenderToolCallsChanged({
-          copilotkit: this,
-          renderToolCalls: this.renderToolCalls,
-        });
-      }
-    });
+    // Use parent's notifySubscribers to notify React subscribers
+    void (this as unknown as { notifySubscribers: (handler: (subscriber: CopilotKitCoreReactSubscriber) => void | Promise<void>, errorMessage: string) => Promise<void> }).notifySubscribers(
+      (subscriber) => {
+        if ('onRenderToolCallsChanged' in subscriber && subscriber.onRenderToolCallsChanged) {
+          subscriber.onRenderToolCallsChanged({
+            copilotkit: this,
+            renderToolCalls: this.renderToolCalls,
+          });
+        }
+      },
+      "Subscriber onRenderToolCallsChanged error:"
+    );
   }
 
+  // Override to accept React-specific subscriber type
   subscribe(subscriber: CopilotKitCoreReactSubscriber): () => void {
-    // reactSubscribers might not be initialized if called from parent constructor
-    if (this.reactSubscribers) {
-      this.reactSubscribers.add(subscriber);
-    }
-    super.subscribe(subscriber);
-
-    // Return unsubscribe function
-    return () => {
-      this.unsubscribe(subscriber);
-    };
+    return super.subscribe(subscriber);
   }
 
   unsubscribe(subscriber: CopilotKitCoreReactSubscriber): void {
-    this.reactSubscribers.delete(subscriber);
     super.unsubscribe(subscriber);
   }
 }
