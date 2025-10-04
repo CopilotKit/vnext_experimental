@@ -3,6 +3,7 @@ import CopilotChatAssistantMessage from "./CopilotChatAssistantMessage";
 import CopilotChatUserMessage from "./CopilotChatUserMessage";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
+import { useRenderCustomMessages } from "@/hooks";
 
 export type CopilotChatMessageViewProps = Omit<
   WithSlots<
@@ -35,23 +36,52 @@ export function CopilotChatMessageView({
   className,
   ...props
 }: CopilotChatMessageViewProps) {
+  const renderCustomMessage = useRenderCustomMessages();
+
   const messageElements: React.ReactElement[] = messages
-    .map((message) => {
-      if (message.role === "assistant") {
-        return renderSlot(assistantMessage, CopilotChatAssistantMessage, {
-          key: message.id,
-          message,
-          messages,
-          isRunning,
-        });
-      } else if (message.role === "user") {
-        return renderSlot(userMessage, CopilotChatUserMessage, {
-          key: message.id,
-          message,
-        });
+    .flatMap((message) => {
+      const elements: (React.ReactElement | null | undefined)[] = [];
+
+      // Render custom message before
+      if (renderCustomMessage) {
+        elements.push(
+          renderCustomMessage({
+            message,
+            position: "before",
+          }),
+        );
       }
 
-      return;
+      // Render the main message
+      if (message.role === "assistant") {
+        elements.push(
+          renderSlot(assistantMessage, CopilotChatAssistantMessage, {
+            key: message.id,
+            message,
+            messages,
+            isRunning,
+          }),
+        );
+      } else if (message.role === "user") {
+        elements.push(
+          renderSlot(userMessage, CopilotChatUserMessage, {
+            key: message.id,
+            message,
+          }),
+        );
+      }
+
+      // Render custom message after
+      if (renderCustomMessage) {
+        elements.push(
+          renderCustomMessage({
+            message,
+            position: "after",
+          }),
+        );
+      }
+
+      return elements;
     })
     .filter(Boolean) as React.ReactElement[];
 
@@ -67,16 +97,10 @@ export function CopilotChatMessageView({
   );
 }
 
-CopilotChatMessageView.Cursor = function Cursor({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+CopilotChatMessageView.Cursor = function Cursor({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={twMerge(
-        "w-[11px] h-[11px] rounded-full bg-foreground animate-pulse-cursor ml-1",
-        className
-      )}
+      className={twMerge("w-[11px] h-[11px] rounded-full bg-foreground animate-pulse-cursor ml-1", className)}
       {...props}
     />
   );

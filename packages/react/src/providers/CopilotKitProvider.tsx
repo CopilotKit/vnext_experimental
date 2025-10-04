@@ -81,6 +81,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       return false;
     },
   );
+
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
     frontendTools,
     "frontendTools must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",

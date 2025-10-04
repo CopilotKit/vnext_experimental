@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { z } from "zod";
 import { defineToolCallRenderer } from "../defineToolCallRenderer";
 import { ToolCallStatus } from "@copilotkitnext/core";
-import type { ReactToolCallRenderer } from "../react-tool-call-render";
+import type { ReactToolCallRenderer } from "../react-tool-call-renderer";
 import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
 import { AbstractAgent } from "@ag-ui/client";
 
