@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useReducer, useRef } from "react";
 import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
+import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
 import { z } from "zod";
@@ -27,6 +28,7 @@ export interface CopilotKitProviderProps {
   properties?: Record<string, unknown>;
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
+  renderCustomMessages?: ReactCustomMessageRenderer[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
 }
@@ -62,6 +64,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   properties = {},
   agents__unsafe_dev_only: agents = {},
   renderToolCalls,
+  renderCustomMessages,
   frontendTools,
   humanInTheLoop,
 }) => {
@@ -80,6 +83,11 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       for (const k of a) if (!b.has(k)) return true;
       return false;
     },
+  );
+
+  const renderCustomMessagesList = useStableArrayProp<ReactCustomMessageRenderer>(
+    renderCustomMessages,
+    "renderCustomMessages must be a stable array.",
   );
 
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
@@ -179,11 +187,12 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       agents__unsafe_dev_only: agents,
       tools: allTools,
       renderToolCalls: allRenderToolCalls,
+      renderCustomMessages: renderCustomMessagesList,
     });
 
     return copilotkit;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTools, allRenderToolCalls]);
+  }, [allTools, allRenderToolCalls, renderCustomMessagesList]);
 
   // Subscribe to render tool calls changes to force re-renders
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
