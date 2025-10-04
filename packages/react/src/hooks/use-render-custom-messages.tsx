@@ -54,6 +54,7 @@ export function useRenderCustomMessages() {
       const Component = renderer.render;
       result = (
         <Component
+          key={`${runId}-${message.id}-${position}`}
           message={message}
           position={position}
           runId={runId}

@@ -12,6 +12,7 @@ import {
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
 import { ReactToolCallRenderer } from "@/types";
+import { ReactCustomMessageRenderer } from "@/types/react-custom-message-renderer";
 
 /**
  * A controllable mock agent for deterministic E2E testing.
@@ -64,6 +65,7 @@ export function renderWithCopilotKit({
   agent,
   agents,
   renderToolCalls,
+  renderCustomMessages,
   frontendTools,
   humanInTheLoop,
   agentId,
@@ -73,6 +75,7 @@ export function renderWithCopilotKit({
   agent?: AbstractAgent;
   agents?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
+  renderCustomMessages?: ReactCustomMessageRenderer[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
   agentId?: string;
@@ -87,6 +90,7 @@ export function renderWithCopilotKit({
     <CopilotKitProvider
       agents__unsafe_dev_only={resolvedAgents}
       renderToolCalls={renderToolCalls}
+      renderCustomMessages={renderCustomMessages}
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
     >
@@ -116,6 +120,51 @@ export function runStartedEvent(): BaseEvent {
  */
 export function runFinishedEvent(): BaseEvent {
   return { type: EventType.RUN_FINISHED } as BaseEvent;
+}
+
+/**
+ * Helper to create a STATE_SNAPSHOT event
+ */
+export function stateSnapshotEvent(snapshot: unknown): BaseEvent {
+  return {
+    type: EventType.STATE_SNAPSHOT,
+    snapshot,
+  } as BaseEvent;
+}
+
+/**
+ * Helper to start an assistant text message
+ */
+export function textMessageStartEvent(
+  messageId: string,
+  role: "assistant" | "developer" | "system" | "user" = "assistant",
+): BaseEvent {
+  return {
+    type: EventType.TEXT_MESSAGE_START,
+    messageId,
+    role,
+  } as BaseEvent;
+}
+
+/**
+ * Helper to stream text message content
+ */
+export function textMessageContentEvent(messageId: string, delta: string): BaseEvent {
+  return {
+    type: EventType.TEXT_MESSAGE_CONTENT,
+    messageId,
+    delta,
+  } as BaseEvent;
+}
+
+/**
+ * Helper to end a text message
+ */
+export function textMessageEndEvent(messageId: string): BaseEvent {
+  return {
+    type: EventType.TEXT_MESSAGE_END,
+    messageId,
+  } as BaseEvent;
 }
 
 /**
@@ -249,4 +298,3 @@ export class SuggestionsProviderAgent extends MockStepwiseAgent {
     return parentObservable;
   }
 }
-
