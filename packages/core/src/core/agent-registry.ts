@@ -129,7 +129,7 @@ export class AgentRegistry {
    */
   applyHeadersToAgent(agent: AbstractAgent): void {
     if (agent instanceof HttpAgent) {
-      agent.headers = { ...(this.core as CopilotKitCoreFriendsAccess).headers };
+      agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
     }
   }
 
@@ -167,7 +167,7 @@ export class AgentRegistry {
 
     try {
       const response = await fetch(`${this.runtimeUrl}/info`, {
-        headers: (this.core as CopilotKitCoreFriendsAccess).headers,
+        headers: (this.core as unknown as CopilotKitCoreFriendsAccess).headers,
       });
       const {
         version,
@@ -208,7 +208,7 @@ export class AgentRegistry {
       const message = error instanceof Error ? error.message : JSON.stringify(error);
       logger.warn(`Failed to load runtime info (${this.runtimeUrl}/info): ${message}`);
       const runtimeError = error instanceof Error ? error : new Error(String(error));
-      await (this.core as CopilotKitCoreFriendsAccess).emitError({
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
         error: runtimeError,
         code: CopilotKitCoreErrorCode.RUNTIME_INFO_FETCH_FAILED,
         context: {
@@ -249,7 +249,7 @@ export class AgentRegistry {
    * Notify subscribers of runtime status changes
    */
   private async notifyRuntimeStatusChanged(status: CopilotKitCoreRuntimeConnectionStatus): Promise<void> {
-    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+    await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
       (subscriber) =>
         subscriber.onRuntimeConnectionStatusChanged?.({
           copilotkit: this.core,
@@ -263,7 +263,7 @@ export class AgentRegistry {
    * Notify subscribers of agent changes
    */
   private async notifyAgentsChanged(): Promise<void> {
-    await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+    await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
       (subscriber) =>
         subscriber.onAgentsChanged?.({
           copilotkit: this.core,

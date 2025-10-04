@@ -149,8 +149,7 @@ export class CopilotKitCore {
   // Delegate classes
   private agentRegistry: AgentRegistry;
   private contextStore: ContextStore;
-  /** @internal - Do not use directly, only for delegate classes */
-  readonly suggestionEngine: SuggestionEngine;
+  private suggestionEngine: SuggestionEngine;
   private runHandler: RunHandler;
   private stateManager: StateManager;
 
@@ -194,9 +193,8 @@ export class CopilotKitCore {
 
   /**
    * Internal method used by delegate classes to notify subscribers
-   * @internal - Do not use directly, only for delegate classes
    */
-  async notifySubscribers(
+  private async notifySubscribers(
     handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
     errorMessage: string,
   ): Promise<void> {
@@ -213,9 +211,8 @@ export class CopilotKitCore {
 
   /**
    * Internal method used by delegate classes to emit errors
-   * @internal - Do not use directly, only for delegate classes
    */
-  async emitError({
+  private async emitError({
     error,
     code,
     context = {},
@@ -419,9 +416,8 @@ export class CopilotKitCore {
 
   /**
    * Internal method used by RunHandler to build frontend tools
-   * @internal - Do not use directly, only for delegate classes
    */
-  buildFrontendTools(agentId?: string): import("@ag-ui/client").Tool[] {
+  private buildFrontendTools(agentId?: string): import("@ag-ui/client").Tool[] {
     return this.runHandler.buildFrontendTools(agentId);
   }
 }

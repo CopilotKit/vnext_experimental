@@ -105,12 +105,12 @@ export class RunHandler {
   async connectAgent({ agent }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
       if (agent instanceof HttpAgent) {
-        agent.headers = { ...(this.core as CopilotKitCoreFriendsAccess).headers };
+        agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
       }
 
       const runAgentResult = await agent.connectAgent(
         {
-          forwardedProps: (this.core as CopilotKitCoreFriendsAccess).properties,
+          forwardedProps: (this.core as unknown as CopilotKitCoreFriendsAccess).properties,
           tools: this.buildFrontendTools(agent.agentId),
         },
         this.createAgentErrorSubscriber(agent),
@@ -123,7 +123,7 @@ export class RunHandler {
       if (agent.agentId) {
         context.agentId = agent.agentId;
       }
-      await (this.core as CopilotKitCoreFriendsAccess).emitError({
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
         error: connectError,
         code: CopilotKitCoreErrorCode.AGENT_CONNECT_FAILED,
         context,
@@ -138,11 +138,11 @@ export class RunHandler {
   async runAgent({ agent, withMessages }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
     // Agent ID is guaranteed to be set by validateAndAssignAgentId
     if (agent.agentId) {
-      void (this.core as CopilotKitCoreFriendsAccess).suggestionEngine.clearSuggestions(agent.agentId);
+      void (this.core as unknown as CopilotKitCoreFriendsAccess).suggestionEngine.clearSuggestions(agent.agentId);
     }
 
     if (agent instanceof HttpAgent) {
-      agent.headers = { ...(this.core as CopilotKitCoreFriendsAccess).headers };
+      agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
     }
 
     if (withMessages) {
@@ -151,7 +151,7 @@ export class RunHandler {
     try {
       const runAgentResult = await agent.runAgent(
         {
-          forwardedProps: (this.core as CopilotKitCoreFriendsAccess).properties,
+          forwardedProps: (this.core as unknown as CopilotKitCoreFriendsAccess).properties,
           tools: this.buildFrontendTools(agent.agentId),
         },
         this.createAgentErrorSubscriber(agent),
@@ -166,7 +166,7 @@ export class RunHandler {
       if (withMessages) {
         context.messageCount = withMessages.length;
       }
-      await (this.core as CopilotKitCoreFriendsAccess).emitError({
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
         error: runError,
         code: CopilotKitCoreErrorCode.AGENT_RUN_FAILED,
         context,
@@ -223,7 +223,7 @@ export class RunHandler {
       return await this.runAgent({ agent });
     }
 
-    void (this.core as CopilotKitCoreFriendsAccess).suggestionEngine.reloadSuggestions(agentId);
+    void (this.core as unknown as CopilotKitCoreFriendsAccess).suggestionEngine.reloadSuggestions(agentId);
 
     return runAgentResult;
   }
@@ -256,7 +256,7 @@ export class RunHandler {
         const parseError = error instanceof Error ? error : new Error(String(error));
         errorMessage = parseError.message;
         isArgumentError = true;
-        await (this.core as CopilotKitCoreFriendsAccess).emitError({
+        await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
           error: parseError,
           code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
           context: {
@@ -270,7 +270,7 @@ export class RunHandler {
         });
       }
 
-      await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
         (subscriber) =>
           subscriber.onToolExecutionStart?.({
             copilotkit: this.core,
@@ -295,7 +295,7 @@ export class RunHandler {
         } catch (error) {
           const handlerError = error instanceof Error ? error : new Error(String(error));
           errorMessage = handlerError.message;
-          await (this.core as CopilotKitCoreFriendsAccess).emitError({
+          await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
             error: handlerError,
             code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
             context: {
@@ -314,7 +314,7 @@ export class RunHandler {
         toolCallResult = `Error: ${errorMessage}`;
       }
 
-      await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
         (subscriber) =>
           subscriber.onToolExecutionEnd?.({
             copilotkit: this.core,
@@ -378,7 +378,7 @@ export class RunHandler {
         const parseError = error instanceof Error ? error : new Error(String(error));
         errorMessage = parseError.message;
         isArgumentError = true;
-        await (this.core as CopilotKitCoreFriendsAccess).emitError({
+        await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
           error: parseError,
           code: CopilotKitCoreErrorCode.TOOL_ARGUMENT_PARSE_FAILED,
           context: {
@@ -397,7 +397,7 @@ export class RunHandler {
         args: parsedArgs,
       };
 
-      await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
         (subscriber) =>
           subscriber.onToolExecutionStart?.({
             copilotkit: this.core,
@@ -422,7 +422,7 @@ export class RunHandler {
         } catch (error) {
           const handlerError = error instanceof Error ? error : new Error(String(error));
           errorMessage = handlerError.message;
-          await (this.core as CopilotKitCoreFriendsAccess).emitError({
+          await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
             error: handlerError,
             code: CopilotKitCoreErrorCode.TOOL_HANDLER_FAILED,
             context: {
@@ -441,7 +441,7 @@ export class RunHandler {
         toolCallResult = `Error: ${errorMessage}`;
       }
 
-      await (this.core as CopilotKitCoreFriendsAccess).notifySubscribers(
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).notifySubscribers(
         (subscriber) =>
           subscriber.onToolExecutionEnd?.({
             copilotkit: this.core,
@@ -503,7 +503,7 @@ export class RunHandler {
       if (agent.agentId) {
         context.agentId = agent.agentId;
       }
-      await (this.core as CopilotKitCoreFriendsAccess).emitError({
+      await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
         error,
         code,
         context,
