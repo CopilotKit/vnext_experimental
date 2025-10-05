@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@source "../**/*.{ts,tsx}";
+
+@layer base {
+  :host {
+    @apply block font-sans;
+    color: theme('colors.slate.900');
+    background-color: theme('colors.slate.50');
+  }
+}
