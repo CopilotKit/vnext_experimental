@@ -27,6 +27,9 @@ out/
 build
 dist
 
+# Generated Tailwind assets
+packages/web-inspector/src/styles/generated.css
+
 
 # Debug
 npm-debug.log*
