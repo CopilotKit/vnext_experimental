@@ -14,8 +14,8 @@ import {
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
 import {
-  defineToolCallRender,
-  ReactToolCallRender,
+  defineToolCallRenderer,
+  ReactToolCallRenderer,
   ReactFrontendTool,
 } from "@/types";
 import CopilotChatToolCallsView from "../CopilotChatToolCallsView";
@@ -83,7 +83,7 @@ describe("CopilotChat tool rendering with mock agent", () => {
   function renderWithProvider() {
     const agents = { default: new MockStreamingAgent() };
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "getWeather",
         args: z.object({
           location: z.string(),
@@ -96,7 +96,7 @@ describe("CopilotChat tool rendering with mock agent", () => {
           </div>
         ),
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     return render(
       <CopilotKitProvider
@@ -139,7 +139,7 @@ describe("Tool render status narrowing", () => {
     withResult: boolean;
   }) {
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "getWeather",
         args: z.object({ city: z.string().optional() }),
         render: ({ status, args, result }) => {
@@ -161,7 +161,7 @@ describe("Tool render status narrowing", () => {
           );
         },
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     const toolCallId = "tc_status_1";
 
@@ -262,7 +262,7 @@ describe("Streaming in-progress without timers", () => {
     const agent = new MockStepwiseAgent();
 
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "getWeather",
         args: z.object({
           location: z.string(),
@@ -277,7 +277,7 @@ describe("Streaming in-progress without timers", () => {
           </div>
         ),
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     render(
       <CopilotKitProvider
@@ -455,7 +455,7 @@ describe("Multiple Tool Calls in Same Message", () => {
     const agent = new MockStepwiseAgent();
 
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "tool1",
         args: z.object({ id: z.string() }),
         render: ({ status, args, result }) => (
@@ -465,7 +465,7 @@ describe("Multiple Tool Calls in Same Message", () => {
           </div>
         ),
       }),
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "tool2",
         args: z.object({ id: z.string() }),
         render: ({ status, args, result }) => (
@@ -475,7 +475,7 @@ describe("Multiple Tool Calls in Same Message", () => {
           </div>
         ),
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     render(
       <CopilotKitProvider
@@ -581,7 +581,7 @@ describe("Partial Args Accumulation", () => {
     const agent = new MockStepwiseAgent();
 
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "complexTool",
         args: z.object({
           name: z.string().optional(),
@@ -597,7 +597,7 @@ describe("Partial Args Accumulation", () => {
           </div>
         ),
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     render(
       <CopilotKitProvider
@@ -690,7 +690,7 @@ describe("Status Persistence After Agent Stops", () => {
     const agent = new MockStepwiseAgent();
 
     const renderToolCalls = [
-      defineToolCallRender({
+      defineToolCallRenderer({
         name: "testTool",
         args: z.object({ value: z.string() }),
         render: ({ args, status }) => (
@@ -700,7 +700,7 @@ describe("Status Persistence After Agent Stops", () => {
           </div>
         ),
       }),
-    ] as unknown as ReactToolCallRender<unknown>[];
+    ] as unknown as ReactToolCallRenderer<unknown>[];
 
     render(
       <CopilotKitProvider

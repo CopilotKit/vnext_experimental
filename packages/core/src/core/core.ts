@@ -1,4 +1,4 @@
-import { AbstractAgent, Context } from "@ag-ui/client";
+import { AbstractAgent, Context, State } from "@ag-ui/client";
 import { FrontendTool, SuggestionsConfig, Suggestion } from "../types";
 import { AgentRegistry, CopilotKitCoreAddAgentParams } from "./agent-registry";
 import { ContextStore } from "./context-store";
@@ -9,6 +9,7 @@ import {
   CopilotKitCoreConnectAgentParams,
   CopilotKitCoreGetToolParams,
 } from "./run-handler";
+import { StateManager } from "./state-manager";
 
 /** Configuration options for `CopilotKitCore`. */
 export interface CopilotKitCoreConfig {
@@ -106,6 +107,39 @@ export enum CopilotKitCoreRuntimeConnectionStatus {
   Error = "error",
 }
 
+/**
+ * Internal interface for delegate classes to access CopilotKitCore methods.
+ * This provides type safety while allowing controlled access to private functionality.
+ */
+export interface CopilotKitCoreFriendsAccess {
+  // Notification methods
+  notifySubscribers(
+    handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
+    errorMessage: string,
+  ): Promise<void>;
+
+  emitError(params: {
+    error: Error;
+    code: CopilotKitCoreErrorCode;
+    context?: Record<string, any>;
+  }): Promise<void>;
+
+  // Getters for internal state
+  readonly headers: Readonly<Record<string, string>>;
+  readonly properties: Readonly<Record<string, unknown>>;
+  readonly context: Readonly<Record<string, Context>>;
+
+  // Internal methods
+  buildFrontendTools(agentId?: string): import("@ag-ui/client").Tool[];
+  getAgent(id: string): AbstractAgent | undefined;
+
+  // References to delegate subsystems
+  readonly suggestionEngine: {
+    clearSuggestions(agentId: string): void;
+    reloadSuggestions(agentId: string): void;
+  };
+}
+
 export class CopilotKitCore {
   private _headers: Record<string, string>;
   private _properties: Record<string, unknown>;
@@ -117,6 +151,7 @@ export class CopilotKitCore {
   private contextStore: ContextStore;
   private suggestionEngine: SuggestionEngine;
   private runHandler: RunHandler;
+  private stateManager: StateManager;
 
   constructor({
     runtimeUrl,
@@ -134,19 +169,32 @@ export class CopilotKitCore {
     this.contextStore = new ContextStore(this);
     this.suggestionEngine = new SuggestionEngine(this);
     this.runHandler = new RunHandler(this);
+    this.stateManager = new StateManager(this);
 
     // Initialize each subsystem
     this.agentRegistry.initialize(agents__unsafe_dev_only);
     this.runHandler.initialize(tools);
     this.suggestionEngine.initialize(suggestionsConfig);
+    this.stateManager.initialize();
 
     this.agentRegistry.setRuntimeUrl(runtimeUrl);
+
+    // Subscribe to agent changes to track state for new agents
+    this.subscribe({
+      onAgentsChanged: ({ agents }) => {
+        Object.values(agents).forEach((agent) => {
+          if (agent.agentId) {
+            this.stateManager.subscribeToAgent(agent);
+          }
+        });
+      },
+    });
   }
 
   /**
-   * Internal method used by delegate classes to notify subscribers
+   * Internal method used by delegate classes and subclasses to notify subscribers
    */
-  private async notifySubscribers(
+  protected async notifySubscribers(
     handler: (subscriber: CopilotKitCoreSubscriber) => void | Promise<void>,
     errorMessage: string,
   ): Promise<void> {
@@ -349,6 +397,21 @@ export class CopilotKitCore {
 
   async runAgent(params: CopilotKitCoreRunAgentParams): Promise<import("@ag-ui/client").RunAgentResult> {
     return this.runHandler.runAgent(params);
+  }
+
+  /**
+   * State management (delegated to StateManager)
+   */
+  getStateByRun(agentId: string, threadId: string, runId: string): State | undefined {
+    return this.stateManager.getStateByRun(agentId, threadId, runId);
+  }
+
+  getRunIdForMessage(agentId: string, threadId: string, messageId: string): string | undefined {
+    return this.stateManager.getRunIdForMessage(agentId, threadId, messageId);
+  }
+
+  getRunIdsForThread(agentId: string, threadId: string): string[] {
+    return this.stateManager.getRunIdsForThread(agentId, threadId);
   }
 
   /**

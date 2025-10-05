@@ -2,25 +2,25 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { z } from "zod";
-import { defineToolCallRender } from "../defineToolCallRender";
+import { defineToolCallRenderer } from "../defineToolCallRenderer";
 import { ToolCallStatus } from "@copilotkitnext/core";
-import type { ReactToolCallRender } from "../react-tool-call-render";
+import type { ReactToolCallRenderer } from "../react-tool-call-renderer";
 import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
 import { AbstractAgent } from "@ag-ui/client";
 
-describe("defineToolCallRender", () => {
+describe("defineToolCallRenderer", () => {
   describe("Array compatibility", () => {
     it("should work with multiple tool renders in an array", () => {
       // This test verifies that multiple tool renders with different arg types
       // can be used together in the renderToolCalls array
-      const WildCardRender = defineToolCallRender({
+      const WildCardRender = defineToolCallRenderer({
         name: "*",
         render: ({ args, result, name, status }) => {
           return <div>Wildcard: {name}</div>;
         },
       });
 
-      const OtherToolRender = defineToolCallRender({
+      const OtherToolRender = defineToolCallRenderer({
         name: "get_weather",
         args: z.object({
           location: z.string(),
@@ -46,14 +46,14 @@ describe("defineToolCallRender", () => {
 
     it("should work with CopilotKitProvider accepting mixed tool renders", () => {
       // This is the exact scenario the user reported
-      const WildCardRender = defineToolCallRender({
+      const WildCardRender = defineToolCallRenderer({
         name: "*",
         render: ({ args, result, name, status }) => {
           return <div data-testid="wildcard">TODO: {name}</div>;
         },
       });
 
-      const OtherToolRender = defineToolCallRender({
+      const OtherToolRender = defineToolCallRenderer({
         name: "get_weather",
         args: z.object({
           location: z.string(),
@@ -69,7 +69,7 @@ describe("defineToolCallRender", () => {
 
         // In real usage, this would be passed to CopilotKitProvider
         // We're just checking that the type is compatible
-        const providerProps: { renderToolCalls?: ReactToolCallRender<any>[] } =
+        const providerProps: { renderToolCalls?: ReactToolCallRenderer<any>[] } =
           {
             renderToolCalls: renderToolCalls,
           };
@@ -83,14 +83,14 @@ describe("defineToolCallRender", () => {
 
     it("should work with actual CopilotKitProvider - replicating user's exact scenario", () => {
       // Exact replication of the user's code that was causing type errors
-      const WildCardRender = defineToolCallRender({
+      const WildCardRender = defineToolCallRenderer({
         name: "*",
         render: ({ args, result, name, status }) => {
           return <div>TODO</div>;
         },
       });
 
-      const OtherToolRender = defineToolCallRender({
+      const OtherToolRender = defineToolCallRenderer({
         name: "get_weather",
         args: z.object({
           location: z.string(),
@@ -127,7 +127,7 @@ describe("defineToolCallRender", () => {
   });
   describe("Type inference and rendering", () => {
     it("should properly infer types for regular tools", () => {
-      const weatherRender = defineToolCallRender({
+      const weatherRender = defineToolCallRenderer({
         name: "get_weather",
         args: z.object({
           location: z.string(),
@@ -201,7 +201,7 @@ describe("defineToolCallRender", () => {
 
     it("should work with wildcard tool without args definition", () => {
       // No args field - should default to z.any()
-      const wildcardRender = defineToolCallRender({
+      const wildcardRender = defineToolCallRenderer({
         name: "*",
         render: ({ name, args, status }) => (
           <div data-testid="wildcard">
@@ -234,7 +234,7 @@ describe("defineToolCallRender", () => {
     });
 
     it("should handle complex nested schemas", () => {
-      const complexRender = defineToolCallRender({
+      const complexRender = defineToolCallRenderer({
         name: "complex_tool",
         args: z.object({
           user: z.object({
@@ -293,7 +293,7 @@ describe("defineToolCallRender", () => {
     });
 
     it("should properly handle all status states in union", () => {
-      const unionTestRender = defineToolCallRender({
+      const unionTestRender = defineToolCallRenderer({
         name: "union_test",
         args: z.object({
           value: z.string(),
@@ -361,7 +361,7 @@ describe("defineToolCallRender", () => {
     });
 
     it("should support agentId parameter", () => {
-      const agentSpecificRender = defineToolCallRender({
+      const agentSpecificRender = defineToolCallRenderer({
         name: "agent_tool",
         args: z.object({ message: z.string() }),
         agentId: "special-agent",
@@ -373,7 +373,7 @@ describe("defineToolCallRender", () => {
     });
 
     it("should work with wildcard and agentId", () => {
-      const agentWildcard = defineToolCallRender({
+      const agentWildcard = defineToolCallRenderer({
         name: "*",
         agentId: "fallback-agent",
         render: ({ name }) => (
@@ -403,7 +403,7 @@ describe("defineToolCallRender", () => {
   describe("Real-world use cases", () => {
     it("should handle the user's original weather example without type errors", () => {
       // This is the exact code the user reported was causing errors
-      const weatherRender = defineToolCallRender({
+      const weatherRender = defineToolCallRenderer({
         name: "get_weather",
         args: z.object({
           location: z.string(),
@@ -431,14 +431,14 @@ describe("defineToolCallRender", () => {
 
     it("should allow wildcard as fallback for undefined tools", () => {
       const renders = [
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "known_tool",
           args: z.object({ id: z.number() }),
           render: ({ args }) => (
             <div data-testid="known">Known tool: {args.id}</div>
           ),
         }),
-        defineToolCallRender({
+        defineToolCallRenderer({
           name: "*",
           render: ({ name, args }) => (
             <div data-testid="fallback">
@@ -476,7 +476,7 @@ describe("defineToolCallRender", () => {
     });
 
     it("should handle optional fields correctly", () => {
-      const optionalRender = defineToolCallRender({
+      const optionalRender = defineToolCallRenderer({
         name: "optional_test",
         args: z.object({
           required: z.string(),

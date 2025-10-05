@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useCopilotKit } from "../providers/CopilotKitProvider";
 import { ReactFrontendTool } from "../types/frontend-tool";
-import { ReactToolCallRender } from "../types/react-tool-call-render";
+import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 
 export function useFrontendTool<
   T extends Record<string, unknown> = Record<string, unknown>,
 >(tool: ReactFrontendTool<T>) {
-  const { copilotkit, setCurrentRenderToolCalls } = useCopilotKit();
+  const { copilotkit } = useCopilotKit();
 
   useEffect(() => {
     const name = tool.name;
@@ -20,23 +20,29 @@ export function useFrontendTool<
     }
     copilotkit.addTool(tool);
 
-    // Register/override renderer by name and agentId
+    // Register/override renderer by name and agentId through core
     if (tool.render) {
-      setCurrentRenderToolCalls((prev) => {
-        // Only replace renderers with the same name AND agentId
-        const replaced = prev.filter((rc) => 
-          !(rc.name === name && rc.agentId === tool.agentId)
-        );
-        return [
-          ...replaced,
-          {
-            name,
-            args: tool.parameters,
-            agentId: tool.agentId,
-            render: tool.render,
-          } as ReactToolCallRender<unknown>,
-        ];
-      });
+      // Get current render tool calls and merge with new entry
+      const keyOf = (rc: ReactToolCallRenderer<any>) => `${rc.agentId ?? ""}:${rc.name}`;
+      const currentRenderToolCalls = copilotkit.renderToolCalls as ReactToolCallRenderer<any>[];
+
+      // Build map from existing entries
+      const mergedMap = new Map<string, ReactToolCallRenderer<any>>();
+      for (const rc of currentRenderToolCalls) {
+        mergedMap.set(keyOf(rc), rc);
+      }
+
+      // Add/overwrite with new entry
+      const newEntry = {
+        name,
+        args: tool.parameters,
+        agentId: tool.agentId,
+        render: tool.render,
+      } as ReactToolCallRenderer<any>;
+      mergedMap.set(keyOf(newEntry), newEntry);
+
+      // Set the merged list back
+      copilotkit.setRenderToolCalls(Array.from(mergedMap.values()));
     }
 
     return () => {
@@ -44,5 +50,5 @@ export function useFrontendTool<
       // we are intentionally not removing the render here so that the tools can still render in the chat history
     };
     // Depend only on stable keys to avoid re-register loops due to object identity
-  }, [tool.name, copilotkit, setCurrentRenderToolCalls]);
+  }, [tool.name, copilotkit]);
 }

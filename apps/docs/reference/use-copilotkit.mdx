@@ -47,20 +47,20 @@ for interacting with CopilotKit programmatically.
 
 ### renderToolCalls
 
-`ReactToolCallRender<any>[]`
+`ReactToolCallRenderer<any>[]`
 
 An array of tool call render configurations defined at the provider level. These are used to render visual feedback when
 tools are executed.
 
 ### currentRenderToolCalls
 
-`ReactToolCallRender<unknown>[]`
+`ReactToolCallRenderer<unknown>[]`
 
 The current list of render tool calls, including both static configurations and dynamically registered ones.
 
 ### setCurrentRenderToolCalls
 
-`React.Dispatch<React.SetStateAction<ReactToolCallRender<unknown>[]>>`
+`React.Dispatch<React.SetStateAction<ReactToolCallRenderer<unknown>[]>>`
 
 A setter function to update the current render tool calls. Useful for dynamically adding or removing tool renderers.
 

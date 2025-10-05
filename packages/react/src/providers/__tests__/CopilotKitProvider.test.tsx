@@ -34,9 +34,6 @@ describe("CopilotKitProvider", () => {
 
       expect(result.current).toBeDefined();
       expect(result.current.copilotkit).toBeDefined();
-      expect(result.current.renderToolCalls).toBeDefined();
-      expect(result.current.currentRenderToolCalls).toBeDefined();
-      expect(result.current.setCurrentRenderToolCalls).toBeDefined();
     });
 
     it("throws error when used outside provider", () => {
@@ -102,7 +99,7 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const renderTool = result.current.renderToolCalls.find(
+      const renderTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "renderTool"
       );
       expect(renderTool).toBeDefined();
@@ -175,7 +172,7 @@ describe("CopilotKitProvider", () => {
       expect(tool?.handler).toBeDefined();
 
       // Check that render component is registered
-      const approvalTool = result.current.renderToolCalls.find(
+      const approvalTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "approvalTool"
       );
       expect(approvalTool).toBeDefined();
@@ -380,13 +377,13 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      const frontendRenderTool = result.current.renderToolCalls.find(
+      const frontendRenderTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "frontendRenderTool"
       );
-      const humanRenderTool = result.current.renderToolCalls.find(
+      const humanRenderTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "humanRenderTool"
       );
-      const directRenderTool = result.current.renderToolCalls.find(
+      const directRenderTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "directRenderTool"
       );
 
@@ -400,8 +397,8 @@ describe("CopilotKitProvider", () => {
     });
   });
 
-  describe("currentRenderToolCalls state", () => {
-    it("initializes currentRenderToolCalls with all render tools", async () => {
+  describe("renderToolCalls management", () => {
+    it("includes render tools from frontendTools prop", async () => {
       const TestComponent: React.FC<any> = () => <div>Test</div>;
       const frontendTools: ReactFrontendTool[] = [
         {
@@ -420,41 +417,11 @@ describe("CopilotKitProvider", () => {
         ),
       });
 
-      await waitFor(() => {
-        const tool1 = result.current.currentRenderToolCalls.find(
-          (rc) => rc.name === "tool1"
-        );
-        expect(tool1).toBeDefined();
-      });
-    });
-
-    it("allows updating currentRenderToolCalls", async () => {
-      const TestComponent: React.FC<any> = () => <div>Test</div>;
-      const NewComponent: React.FC<any> = () => <div>New</div>;
-
-      const { result } = renderHook(() => useCopilotKit(), {
-        wrapper: ({ children }) => (
-          <CopilotKitProvider>{children}</CopilotKitProvider>
-        ),
-      });
-
-      const newRenderToolCall = [
-        {
-          name: "dynamicTool",
-          args: z.object({ x: z.string() }),
-          render: NewComponent,
-        },
-      ];
-
-      result.current.setCurrentRenderToolCalls(newRenderToolCall);
-
-      await waitFor(() => {
-        const dynamicTool = result.current.currentRenderToolCalls.find(
-          (rc) => rc.name === "dynamicTool"
-        );
-        expect(dynamicTool).toBeDefined();
-        expect(dynamicTool?.render).toBe(NewComponent);
-      });
+      const tool1 = result.current.copilotkit.renderToolCalls.find(
+        (rc) => rc.name === "tool1"
+      );
+      expect(tool1).toBeDefined();
+      expect(tool1?.render).toBe(TestComponent);
     });
   });
 
@@ -469,7 +436,7 @@ describe("CopilotKitProvider", () => {
       });
 
       expect(result.current.copilotkit.tools).toHaveLength(0);
-      expect(Object.keys(result.current.renderToolCalls)).toHaveLength(0);
+      expect(result.current.copilotkit.renderToolCalls).toHaveLength(0);
     });
 
     it("handles tools without render components", () => {
@@ -492,7 +459,7 @@ describe("CopilotKitProvider", () => {
       expect(
         result.current.copilotkit.getTool({ toolName: "noRenderTool" })
       ).toBeDefined();
-      const noRenderTool = result.current.renderToolCalls.find(
+      const noRenderTool = result.current.copilotkit.renderToolCalls.find(
         (rc) => rc.name === "noRenderTool"
       );
       expect(noRenderTool).toBeUndefined();

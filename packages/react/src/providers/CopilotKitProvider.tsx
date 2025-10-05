@@ -1,27 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useReducer, useRef } from "react";
-import { ReactToolCallRender } from "../types/react-tool-call-render";
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useReducer, useRef } from "react";
+import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
+import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
 import { z } from "zod";
-import { CopilotKitCore, CopilotKitCoreConfig, FrontendTool } from "@copilotkitnext/core";
+import { FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
+import { CopilotKitCoreReact } from "../lib/react-core";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
-  copilotkit: CopilotKitCore;
-  renderToolCalls: ReactToolCallRender<any>[];
-  currentRenderToolCalls: ReactToolCallRender<unknown>[];
-  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRender<unknown>[]>>;
+  copilotkit: CopilotKitCoreReact;
 }
 
 // Create the CopilotKit context
 const CopilotKitContext = createContext<CopilotKitContextValue>({
   copilotkit: null!,
-  renderToolCalls: [],
-  currentRenderToolCalls: [],
-  setCurrentRenderToolCalls: () => {},
 });
 
 // Provider props interface
@@ -31,7 +27,8 @@ export interface CopilotKitProviderProps {
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
-  renderToolCalls?: ReactToolCallRender<any>[];
+  renderToolCalls?: ReactToolCallRenderer<any>[];
+  renderCustomMessages?: ReactCustomMessageRenderer[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
 }
@@ -67,18 +64,19 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   properties = {},
   agents__unsafe_dev_only: agents = {},
   renderToolCalls,
+  renderCustomMessages,
   frontendTools,
   humanInTheLoop,
 }) => {
   // Normalize array props to stable references with clear dev warnings
-  const renderToolCallsList = useStableArrayProp<ReactToolCallRender<any>>(
+  const renderToolCallsList = useStableArrayProp<ReactToolCallRenderer<any>>(
     renderToolCalls,
     "renderToolCalls must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",
     (initial, next) => {
       // Only warn if the shape (names+agentId) changed. Allow identity changes
       // to support updated closures from parents (e.g., Storybook state).
-      const key = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
-      const setFrom = (arr: ReactToolCallRender<unknown>[]) => new Set(arr.map(key));
+      const key = (rc?: ReactToolCallRenderer<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
+      const setFrom = (arr: ReactToolCallRenderer<unknown>[]) => new Set(arr.map(key));
       const a = setFrom(initial);
       const b = setFrom(next);
       if (a.size !== b.size) return true;
@@ -86,6 +84,12 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       return false;
     },
   );
+
+  const renderCustomMessagesList = useStableArrayProp<ReactCustomMessageRenderer>(
+    renderCustomMessages,
+    "renderCustomMessages must be a stable array.",
+  );
+
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
     frontendTools,
     "frontendTools must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",
@@ -95,15 +99,12 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     "humanInTheLoop must be a stable array. If you want to dynamically add or remove human-in-the-loop tools, use `useHumanInTheLoop` instead.",
   );
 
-  const initialRenderToolCalls = useMemo(() => renderToolCallsList, []);
-  const [currentRenderToolCalls, setCurrentRenderToolCalls] = useState<ReactToolCallRender<unknown>[]>([]);
-
   // Note: warnings for array identity changes are handled by useStableArrayProp
 
   // Process humanInTheLoop tools to create handlers and add render components
   const processedHumanInTheLoopTools = useMemo(() => {
     const processedTools: FrontendTool[] = [];
-    const processedRenderToolCalls: ReactToolCallRender<unknown>[] = [];
+    const processedRenderToolCalls: ReactToolCallRenderer<unknown>[] = [];
 
     humanInTheLoopList.forEach((tool) => {
       // Create a promise-based handler for each human-in-the-loop tool
@@ -133,7 +134,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
           args: tool.parameters!,
           render: tool.render,
           ...(tool.agentId && { agentId: tool.agentId }),
-        } as ReactToolCallRender<unknown>);
+        } as ReactToolCallRenderer<unknown>);
       }
     });
 
@@ -155,7 +156,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   // Combine all render tool calls
   const allRenderToolCalls = useMemo(() => {
-    const combined: ReactToolCallRender<unknown>[] = [...renderToolCallsList];
+    const combined: ReactToolCallRenderer<unknown>[] = [...renderToolCallsList];
 
     // Add render components from frontend tools
     frontendToolsList.forEach((tool) => {
@@ -167,7 +168,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
             name: tool.name,
             args: args,
             render: tool.render,
-          } as ReactToolCallRender<unknown>);
+          } as ReactToolCallRenderer<unknown>);
         }
       }
     });
@@ -179,52 +180,34 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   }, [renderToolCallsList, frontendToolsList, processedHumanInTheLoopTools]);
 
   const copilotkit = useMemo(() => {
-    const config: CopilotKitCoreConfig = {
+    const copilotkit = new CopilotKitCoreReact({
       runtimeUrl,
       headers,
       properties,
       agents__unsafe_dev_only: agents,
       tools: allTools,
-    };
-    const copilotkit = new CopilotKitCore(config);
+      renderToolCalls: allRenderToolCalls,
+      renderCustomMessages: renderCustomMessagesList,
+    });
 
     return copilotkit;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTools]);
+  }, [allTools, allRenderToolCalls, renderCustomMessagesList]);
 
-  // Merge computed render tool calls with any dynamically registered ones.
-  // Computed entries (from props) take precedence for the same name/agentId.
+  // Subscribe to render tool calls changes to force re-renders
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
   useEffect(() => {
-    setCurrentRenderToolCalls((prev) => {
-      // Build a map from computed entries
-      const keyOf = (rc?: ReactToolCallRender<unknown>) => `${rc?.agentId ?? ""}:${rc?.name ?? ""}`;
-      const computedMap = new Map<string, ReactToolCallRender<unknown>>();
-      for (const rc of allRenderToolCalls) {
-        computedMap.set(keyOf(rc), rc);
-      }
-
-      // Start with computed, then add any dynamic entries not present
-      const merged: ReactToolCallRender<unknown>[] = [...computedMap.values()];
-      for (const rc of prev) {
-        const k = keyOf(rc);
-        if (!computedMap.has(k)) merged.push(rc);
-      }
-
-      // If equal by shallow key comparison and reference order, avoid updates
-      const sameLength = merged.length === prev.length;
-      if (sameLength) {
-        let same = true;
-        for (let i = 0; i < merged.length; i++) {
-          if (merged[i] !== prev[i]) {
-            same = false;
-            break;
-          }
-        }
-        if (same) return prev;
-      }
-      return merged;
+    const unsubscribe = copilotkit.subscribe({
+      onRenderToolCallsChanged: () => {
+        forceUpdate();
+      },
     });
-  }, [allRenderToolCalls]);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [copilotkit]);
 
   useEffect(() => {
     copilotkit.setRuntimeUrl(runtimeUrl);
@@ -237,9 +220,6 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     <CopilotKitContext.Provider
       value={{
         copilotkit,
-        renderToolCalls: allRenderToolCalls,
-        currentRenderToolCalls,
-        setCurrentRenderToolCalls,
       }}
     >
       {children}

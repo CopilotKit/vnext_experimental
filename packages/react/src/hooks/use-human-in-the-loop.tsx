@@ -1,4 +1,4 @@
-import { ReactToolCallRender } from "@/types/react-tool-call-render";
+import { ReactToolCallRenderer } from "@/types/react-tool-call-renderer";
 import { useFrontendTool } from "./use-frontend-tool";
 import { ReactFrontendTool } from "@/types/frontend-tool";
 import { ReactHumanInTheLoop } from "@/types/human-in-the-loop";
@@ -9,12 +9,12 @@ import { useCopilotKit } from "@/providers/CopilotKitProvider";
 export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>
 ) {
+  const { copilotkit } = useCopilotKit();
   const [status, setStatus] = useState<"inProgress" | "executing" | "complete">(
     "inProgress"
   );
   const statusRef = useRef(status);
   const resolvePromiseRef = useRef<((result: unknown) => void) | null>(null);
-  const { setCurrentRenderToolCalls } = useCopilotKit();
 
   statusRef.current = status;
 
@@ -33,7 +33,7 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
     });
   }, []);
 
-  const RenderComponent: ReactToolCallRender<T>["render"] = useCallback(
+  const RenderComponent: ReactToolCallRenderer<T>["render"] = useCallback(
     (props) => {
       const ToolComponent = tool.render;
       const currentStatus = statusRef.current;
@@ -80,13 +80,16 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
 
   useFrontendTool(frontendTool);
 
+  // Human-in-the-loop tools should remove their renderer on unmount
+  // since they can't respond to user interactions anymore
   useEffect(() => {
     return () => {
-      setCurrentRenderToolCalls((prev) =>
-        prev.filter(
-          (rc) => rc.name !== tool.name || rc.agentId !== tool.agentId
-        )
+      const keyOf = (rc: ReactToolCallRenderer<any>) => `${rc.agentId ?? ""}:${rc.name}`;
+      const currentRenderToolCalls = copilotkit.renderToolCalls as ReactToolCallRenderer<any>[];
+      const filtered = currentRenderToolCalls.filter(
+        rc => keyOf(rc) !== keyOf({ name: tool.name, agentId: tool.agentId } as any)
       );
+      copilotkit.setRenderToolCalls(filtered);
     };
-  }, [setCurrentRenderToolCalls, tool.name, tool.agentId]);
+  }, [copilotkit, tool.name, tool.agentId]);
 }

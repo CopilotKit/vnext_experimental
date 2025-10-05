@@ -140,9 +140,9 @@ The hook works with tool renderers defined at various levels:
 Renderers defined in `CopilotKitProvider`:
 
 ```tsx
-import { CopilotKitProvider, defineToolCallRender } from "@copilotkitnext/react";
+import { CopilotKitProvider, defineToolCallRenderer } from "@copilotkitnext/react";
 
-const searchRenderer = defineToolCallRender({
+const searchRenderer = defineToolCallRenderer({
   name: "search",
   render: ({ args, status }) => <SearchDisplay {...args} status={status} />,
 });
@@ -180,7 +180,7 @@ function DynamicTool() {
 A fallback renderer for unmatched tools:
 
 ```tsx
-const wildcardRenderer = defineToolCallRender({
+const wildcardRenderer = defineToolCallRenderer({
   name: "*",
   render: ({ name, args, status }) => (
     <div className="unknown-tool">

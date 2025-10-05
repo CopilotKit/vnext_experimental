@@ -3,7 +3,7 @@
 import {
   CopilotKitProvider,
   CopilotSidebar,
-  defineToolCallRender,
+  defineToolCallRenderer,
   useConfigureSuggestions,
   useFrontendTool,
 } from "@copilotkitnext/react";
@@ -12,7 +12,7 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 export default function SidebarDemoPage() {
-  const wildcardRenderer = defineToolCallRender({
+  const wildcardRenderer = defineToolCallRenderer({
     name: "*",
     render: ({ name, args, status }) => (
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 shadow-sm">
