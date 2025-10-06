@@ -41,7 +41,7 @@ const MIN_WINDOW_WIDTH = 260;
 const MIN_WINDOW_HEIGHT = 200;
 const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
-const DEFAULT_BUTTON_SIZE: Size = { width: 40, height: 40 };
+const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 320, height: 380 };
 
 export class WebInspectorElement extends LitElement {
@@ -166,8 +166,8 @@ export class WebInspectorElement extends LitElement {
       "group",
       "pointer-events-auto",
       "inline-flex",
-      "h-10",
-      "w-10",
+      "h-12",
+      "w-12",
       "items-center",
       "justify-center",
       "rounded-lg",
@@ -205,7 +205,7 @@ export class WebInspectorElement extends LitElement {
         @pointercancel=${this.handlePointerCancel}
         @click=${this.handleButtonClick}
       >
-        <img src=${logoMarkUrl} alt="" class="h-5 w-5" loading="lazy" />
+        <img src=${logoMarkUrl} alt="" class="h-7 w-7" loading="lazy" />
       </button>
     `;
   }
@@ -231,7 +231,7 @@ export class WebInspectorElement extends LitElement {
             class="flex w-56 shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs"
             aria-label="Inspector sections"
           >
-            <div class="flex flex-col gap-3 overflow-y-auto">
+            <div class="flex flex-col gap-4 overflow-y-auto">
               <div class="flex items-center gap-2 pl-1">
                 <span
                   class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white"
@@ -244,7 +244,7 @@ export class WebInspectorElement extends LitElement {
                 </div>
               </div>
 
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-2 pt-2">
                 <div class="px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Platform</div>
                 <div class="flex flex-col gap-0.5">
                   ${this.menuItems.map(({ key, label, icon }) => {
