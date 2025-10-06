@@ -1,7 +1,9 @@
-import { LitElement, css, html, unsafeCSS } from 'lit';
+import { LitElement, css, html, nothing, unsafeCSS } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import tailwindStyles from './styles/generated.css';
 import logoMarkUrl from './assets/logo-mark.svg';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { icons } from 'lucide';
 import type { Anchor, ContextKey, ContextState, Position, Size } from './lib/types';
 import {
   applyAnchorPosition as applyAnchorPositionHelper,
@@ -23,6 +25,16 @@ import {
 
 export const WEB_INSPECTOR_TAG = 'web-inspector' as const;
 
+type LucideIconName = keyof typeof icons;
+
+type MenuKey = 'events' | 'agents' | 'frontend-tools' | 'agent-context';
+
+type MenuItem = {
+  key: MenuKey;
+  label: string;
+  icon: LucideIconName;
+};
+
 const EDGE_MARGIN = 24;
 const DRAG_THRESHOLD = 6;
 const MIN_WINDOW_WIDTH = 280;
@@ -41,6 +53,7 @@ export class WebInspectorElement extends LitElement {
   private isOpen = false;
   private draggedDuringInteraction = false;
   private ignoreNextButtonClick = false;
+  private selectedMenu: MenuKey = 'events';
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
@@ -66,6 +79,13 @@ export class WebInspectorElement extends LitElement {
   private resizeStart: Position | null = null;
   private resizeInitialSize: { width: number; height: number } | null = null;
   private isResizing = false;
+
+  private readonly menuItems: MenuItem[] = [
+    { key: 'events', label: 'Events', icon: 'List' },
+    { key: 'agents', label: 'Agents', icon: 'Users' },
+    { key: 'frontend-tools', label: 'Frontend Tools', icon: 'Wrench' },
+    { key: 'agent-context', label: 'Agent Context', icon: 'FileText' },
+  ];
 
   static styles = [
     unsafeCSS(tailwindStyles),
@@ -232,8 +252,45 @@ export class WebInspectorElement extends LitElement {
             </svg>
           </button>
         </header>
-        <div class="flex-1 overflow-auto bg-white px-4 py-4 pr-8 pb-8 text-sm text-gray-700">
-          <slot></slot>
+        <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
+          <nav
+            class="flex w-56 shrink-0 flex-col gap-1.5 border-r border-gray-200/70 bg-gradient-to-b from-white via-white to-gray-50 px-3 py-5 text-sm text-gray-600"
+            aria-label="Inspector sections"
+          >
+            ${this.menuItems.map(({ key, label, icon }, index) => {
+              const isSelected = this.selectedMenu === key;
+              const isPrimarySelected = index === 0 && isSelected;
+              const selectedClasses = isSelected
+                ? 'bg-gray-900 text-white shadow-sm'
+                : 'hover:bg-gray-100/70 hover:text-gray-900';
+              const badgeClasses = isSelected
+                ? 'border-gray-900/70 bg-gray-900 text-white'
+                : 'border-gray-200/80 bg-white text-gray-500 group-hover:border-gray-300 group-hover:text-gray-800';
+
+              return html`
+                <button
+                  type="button"
+                  class="group relative flex items-center gap-3 rounded-xl px-3 py-2 text-left font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400 ${selectedClasses}"
+                  aria-pressed=${isSelected}
+                  @click=${() => this.handleMenuSelect(key)}
+                >
+                  <span
+                    class="flex h-9 w-9 items-center justify-center rounded-lg border ${badgeClasses}"
+                    aria-hidden="true"
+                  >
+                    ${this.renderIcon(icon)}
+                  </span>
+                  <span>${label}</span>
+                  ${isPrimarySelected
+                    ? html`<span class="absolute inset-y-1 right-1 rounded-lg bg-white/10"></span>`
+                    : null}
+                </button>
+              `;
+            })}
+          </nav>
+          <div class="flex-1 overflow-auto px-6 py-6 text-sm text-gray-700">
+            <slot></slot>
+          </div>
         </div>
         <div
           class="resize-handle pointer-events-auto absolute bottom-2 right-2 flex h-6 w-6 cursor-nwse-resize items-center justify-center text-gray-400 transition hover:text-gray-600"
@@ -653,6 +710,7 @@ export class WebInspectorElement extends LitElement {
     this.dragStart = null;
     this.pointerContext = null;
     this.setDragging(false);
+    this.draggedDuringInteraction = false;
   }
 
   private openInspector(): void {
@@ -685,6 +743,46 @@ export class WebInspectorElement extends LitElement {
       this.measureContext('button');
       this.applyAnchorPosition('button');
     });
+  }
+
+  private renderIcon(name: LucideIconName) {
+    const iconNode = icons[name];
+    if (!iconNode) {
+      return nothing;
+    }
+
+    const svgAttrs: Record<string, string | number> = {
+      xmlns: 'http://www.w3.org/2000/svg',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '1.7',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      class: 'h-4 w-4',
+    };
+
+    const svgMarkup = `<svg ${this.serializeAttributes(svgAttrs)}>${iconNode
+      .map(([tag, attrs]) => `<${tag} ${this.serializeAttributes(attrs)} />`)
+      .join('')}</svg>`;
+
+    return unsafeHTML(svgMarkup);
+  }
+
+  private serializeAttributes(attributes: Record<string, string | number | undefined>): string {
+    return Object.entries(attributes)
+      .filter(([key, value]) => key !== 'key' && value !== undefined && value !== null && value !== '')
+      .map(([key, value]) => `${key}="${String(value).replace(/"/g, '&quot;')}"`)
+      .join(' ');
+  }
+
+  private handleMenuSelect(key: MenuKey): void {
+    if (this.selectedMenu === key) {
+      return;
+    }
+
+    this.selectedMenu = key;
+    this.requestUpdate();
   }
 }
 
