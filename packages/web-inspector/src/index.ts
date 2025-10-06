@@ -2,36 +2,26 @@ import { LitElement, css, html, unsafeCSS } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
 import tailwindStyles from './styles/generated.css';
 import logoMarkUrl from './assets/logo-mark.svg';
+import type { Anchor, ContextKey, ContextState, Position, Size } from './lib/types';
+import {
+  applyAnchorPosition as applyAnchorPositionHelper,
+  centerContext as centerContextHelper,
+  constrainToViewport,
+  keepPositionWithinViewport,
+  updateAnchorFromPosition as updateAnchorFromPositionHelper,
+  updateSizeFromElement,
+  clampSize as clampSizeToViewport,
+} from './lib/context-helpers';
+import {
+  loadInspectorState,
+  saveInspectorState,
+  type PersistedState,
+  isValidAnchor,
+  isValidPosition,
+  isValidSize,
+} from './lib/persistence';
 
 export const WEB_INSPECTOR_TAG = 'web-inspector' as const;
-
-type Position = { x: number; y: number };
-
-type Anchor = {
-  horizontal: 'left' | 'right';
-  vertical: 'top' | 'bottom';
-};
-
-type ContextKey = 'button' | 'window';
-
-type ContextState = {
-  position: Position;
-  size: { width: number; height: number };
-  anchor: Anchor;
-  anchorOffset: Position;
-};
-
-type PersistedContextState = {
-  anchor?: Anchor;
-  anchorOffset?: Position;
-  size?: { width: number; height: number };
-  hasCustomPosition?: boolean;
-};
-
-type PersistedState = {
-  button?: Omit<PersistedContextState, 'size'>;
-  window?: PersistedContextState;
-};
 
 const EDGE_MARGIN = 24;
 const DRAG_THRESHOLD = 6;
@@ -39,6 +29,8 @@ const MIN_WINDOW_WIDTH = 280;
 const MIN_WINDOW_HEIGHT = 240;
 const COOKIE_NAME = 'copilotkit_inspector_state';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
+const DEFAULT_WINDOW_SIZE: Size = { width: 360, height: 420 };
 
 export class WebInspectorElement extends LitElement {
   private pointerId: number | null = null;
@@ -47,17 +39,19 @@ export class WebInspectorElement extends LitElement {
   private isDragging = false;
   private pointerContext: ContextKey | null = null;
   private isOpen = false;
+  private draggedDuringInteraction = false;
+  private ignoreNextButtonClick = false;
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
-      size: { width: 48, height: 48 },
+      size: { ...DEFAULT_BUTTON_SIZE },
       anchor: { horizontal: 'right', vertical: 'bottom' },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
     window: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
-      size: { width: 360, height: 420 },
+      size: { ...DEFAULT_WINDOW_SIZE },
       anchor: { horizontal: 'right', vertical: 'bottom' },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
@@ -264,18 +258,18 @@ export class WebInspectorElement extends LitElement {
       return;
     }
 
-    const persisted = this.readPersistedState();
+    const persisted = loadInspectorState(COOKIE_NAME);
     if (!persisted) {
       return;
     }
 
     const persistedButton = persisted.button;
     if (persistedButton) {
-      if (this.isValidAnchor(persistedButton.anchor)) {
+      if (isValidAnchor(persistedButton.anchor)) {
         this.contextState.button.anchor = persistedButton.anchor;
       }
 
-      if (this.isValidPosition(persistedButton.anchorOffset)) {
+      if (isValidPosition(persistedButton.anchorOffset)) {
         this.contextState.button.anchorOffset = persistedButton.anchorOffset;
       }
 
@@ -286,15 +280,15 @@ export class WebInspectorElement extends LitElement {
 
     const persistedWindow = persisted.window;
     if (persistedWindow) {
-      if (this.isValidAnchor(persistedWindow.anchor)) {
+      if (isValidAnchor(persistedWindow.anchor)) {
         this.contextState.window.anchor = persistedWindow.anchor;
       }
 
-      if (this.isValidPosition(persistedWindow.anchorOffset)) {
+      if (isValidPosition(persistedWindow.anchorOffset)) {
         this.contextState.window.anchorOffset = persistedWindow.anchorOffset;
       }
 
-      if (this.isValidSize(persistedWindow.size)) {
+      if (isValidSize(persistedWindow.size)) {
         this.contextState.window.size = this.clampWindowSize(persistedWindow.size);
       }
 
@@ -326,6 +320,8 @@ export class WebInspectorElement extends LitElement {
       y: event.clientY - state.position.y,
     };
     this.isDragging = false;
+    this.draggedDuringInteraction = false;
+    this.ignoreNextButtonClick = false;
 
     target?.setPointerCapture?.(this.pointerId);
   };
@@ -342,6 +338,7 @@ export class WebInspectorElement extends LitElement {
 
     event.preventDefault();
     this.setDragging(true);
+    this.draggedDuringInteraction = true;
 
     const desired: Position = {
       x: event.clientX - this.dragOffset.x,
@@ -373,9 +370,12 @@ export class WebInspectorElement extends LitElement {
         this.hasCustomPosition.window = true;
       } else if (this.pointerContext === 'button') {
         this.hasCustomPosition.button = true;
+        if (this.draggedDuringInteraction) {
+          this.ignoreNextButtonClick = true;
+        }
       }
       this.applyAnchorPosition(this.pointerContext);
-    } else if (context === 'button' && !this.isOpen) {
+    } else if (context === 'button' && !this.isOpen && !this.draggedDuringInteraction) {
       this.openInspector();
     }
 
@@ -398,6 +398,12 @@ export class WebInspectorElement extends LitElement {
   private handleButtonClick = (event: Event) => {
     if (this.isDragging) {
       event.preventDefault();
+      return;
+    }
+
+    if (this.ignoreNextButtonClick) {
+      event.preventDefault();
+      this.ignoreNextButtonClick = false;
       return;
     }
 
@@ -446,20 +452,10 @@ export class WebInspectorElement extends LitElement {
     const deltaY = event.clientY - this.resizeStart.y;
     const state = this.contextState.window;
 
-    let nextWidth = this.resizeInitialSize.width + deltaX;
-    let nextHeight = this.resizeInitialSize.height + deltaY;
-
-    nextWidth = Math.max(MIN_WINDOW_WIDTH, nextWidth);
-    nextHeight = Math.max(MIN_WINDOW_HEIGHT, nextHeight);
-
-    if (typeof window !== 'undefined') {
-      const maxWidth = Math.max(MIN_WINDOW_WIDTH, window.innerWidth - state.position.x - EDGE_MARGIN);
-      const maxHeight = Math.max(MIN_WINDOW_HEIGHT, window.innerHeight - state.position.y - EDGE_MARGIN);
-      nextWidth = Math.min(nextWidth, maxWidth);
-      nextHeight = Math.min(nextHeight, maxHeight);
-    }
-
-    state.size = { width: nextWidth, height: nextHeight };
+    state.size = this.clampWindowSize({
+      width: this.resizeInitialSize.width + deltaX,
+      height: this.resizeInitialSize.height + deltaY,
+    });
     this.keepPositionWithinViewport('window');
     this.updateAnchorFromPosition('window');
     this.requestUpdate();
@@ -516,12 +512,8 @@ export class WebInspectorElement extends LitElement {
     if (!element) {
       return;
     }
-
-    const rect = element.getBoundingClientRect();
-    this.contextState[context].size = {
-      width: rect.width || this.contextState[context].size.width,
-      height: rect.height || this.contextState[context].size.height,
-    };
+    const fallback = context === 'window' ? DEFAULT_WINDOW_SIZE : DEFAULT_BUTTON_SIZE;
+    updateSizeFromElement(this.contextState[context], element, fallback);
   }
 
   private centerContext(context: ContextKey): void {
@@ -529,14 +521,8 @@ export class WebInspectorElement extends LitElement {
       return;
     }
 
-    const state = this.contextState[context];
-    const centered: Position = {
-      x: Math.round((window.innerWidth - state.size.width) / 2),
-      y: Math.round((window.innerHeight - state.size.height) / 2),
-    };
-
-    state.position = this.constrainToViewport(centered, context);
-    this.updateAnchorFromPosition(context);
+    const viewport = this.getViewportSize();
+    centerContextHelper(this.contextState[context], viewport, EDGE_MARGIN);
 
     if (context === this.activeContext) {
       this.updateHostTransform(context);
@@ -547,13 +533,18 @@ export class WebInspectorElement extends LitElement {
   }
 
   private ensureWindowPlacement(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (!this.hasCustomPosition.window) {
       this.centerContext('window');
       return;
     }
 
-    this.keepPositionWithinViewport('window');
-    this.updateAnchorFromPosition('window');
+    const viewport = this.getViewportSize();
+    keepPositionWithinViewport(this.contextState.window, viewport, EDGE_MARGIN);
+    updateAnchorFromPositionHelper(this.contextState.window, viewport, EDGE_MARGIN);
     this.updateHostTransform('window');
     this.persistState();
   }
@@ -563,53 +554,28 @@ export class WebInspectorElement extends LitElement {
       return position;
     }
 
-    const { size } = this.contextState[context];
-    const maxX = Math.max(EDGE_MARGIN, window.innerWidth - size.width - EDGE_MARGIN);
-    const maxY = Math.max(EDGE_MARGIN, window.innerHeight - size.height - EDGE_MARGIN);
-
-    return {
-      x: Math.min(Math.max(EDGE_MARGIN, position.x), maxX),
-      y: Math.min(Math.max(EDGE_MARGIN, position.y), maxY),
-    };
+    const viewport = this.getViewportSize();
+    return constrainToViewport(this.contextState[context], position, viewport, EDGE_MARGIN);
   }
 
   private keepPositionWithinViewport(context: ContextKey): void {
-    this.contextState[context].position = this.constrainToViewport(this.contextState[context].position, context);
-  }
-
-  private readPersistedState(): PersistedState | null {
-    if (typeof document === 'undefined') {
-      return null;
-    }
-
-    const prefix = `${COOKIE_NAME}=`;
-    const entry = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
-    if (!entry) {
-      return null;
-    }
-
-    const raw = entry.substring(prefix.length);
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(decodeURIComponent(raw));
-      if (parsed && typeof parsed === 'object') {
-        return parsed as PersistedState;
-      }
-    } catch (error) {
-      // Ignore malformed cookie contents.
-    }
-
-    return null;
-  }
-
-  private persistState(): void {
-    if (typeof document === 'undefined') {
+    if (typeof window === 'undefined') {
       return;
     }
 
+    const viewport = this.getViewportSize();
+    keepPositionWithinViewport(this.contextState[context], viewport, EDGE_MARGIN);
+  }
+
+  private getViewportSize(): Size {
+    if (typeof window === 'undefined') {
+      return { ...DEFAULT_WINDOW_SIZE };
+    }
+
+    return { width: window.innerWidth, height: window.innerHeight };
+  }
+
+  private persistState(): void {
     const state: PersistedState = {
       button: {
         anchor: this.contextState.button.anchor,
@@ -626,60 +592,19 @@ export class WebInspectorElement extends LitElement {
         hasCustomPosition: this.hasCustomPosition.window,
       },
     };
-
-    const encoded = encodeURIComponent(JSON.stringify(state));
-    document.cookie = `${COOKIE_NAME}=${encoded}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+    saveInspectorState(COOKIE_NAME, state, COOKIE_MAX_AGE_SECONDS);
   }
 
-  private clampWindowSize(size: { width: number; height: number }): { width: number; height: number } {
-    const width = Math.max(MIN_WINDOW_WIDTH, size.width);
-    const height = Math.max(MIN_WINDOW_HEIGHT, size.height);
-
+  private clampWindowSize(size: Size): Size {
     if (typeof window === 'undefined') {
-      return { width, height };
+      return {
+        width: Math.max(MIN_WINDOW_WIDTH, size.width),
+        height: Math.max(MIN_WINDOW_HEIGHT, size.height),
+      };
     }
 
-    const maxWidth = Math.max(MIN_WINDOW_WIDTH, window.innerWidth - EDGE_MARGIN * 2);
-    const maxHeight = Math.max(MIN_WINDOW_HEIGHT, window.innerHeight - EDGE_MARGIN * 2);
-
-    return {
-      width: Math.min(width, maxWidth),
-      height: Math.min(height, maxHeight),
-    };
-  }
-
-  private isFiniteNumber(value: unknown): value is number {
-    return typeof value === 'number' && Number.isFinite(value);
-  }
-
-  private isValidPosition(value: unknown): value is Position {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const candidate = value as Position;
-    return this.isFiniteNumber(candidate.x) && this.isFiniteNumber(candidate.y);
-  }
-
-  private isValidAnchor(value: unknown): value is Anchor {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const candidate = value as Anchor;
-    return (
-      (candidate.horizontal === 'left' || candidate.horizontal === 'right') &&
-      (candidate.vertical === 'top' || candidate.vertical === 'bottom')
-    );
-  }
-
-  private isValidSize(value: unknown): value is { width: number; height: number } {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const candidate = value as { width: number; height: number };
-    return this.isFiniteNumber(candidate.width) && this.isFiniteNumber(candidate.height);
+    const viewport = this.getViewportSize();
+    return clampSizeToViewport(size, viewport, EDGE_MARGIN, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
   }
 
   private updateHostTransform(context: ContextKey = this.activeContext): void {
@@ -702,67 +627,16 @@ export class WebInspectorElement extends LitElement {
     if (typeof window === 'undefined') {
       return;
     }
-
-    const { innerWidth, innerHeight } = window;
-    const state = this.contextState[context];
-    const centerX = state.position.x + state.size.width / 2;
-    const centerY = state.position.y + state.size.height / 2;
-
-    const horizontal: Anchor['horizontal'] = centerX < innerWidth / 2 ? 'left' : 'right';
-    const vertical: Anchor['vertical'] = centerY < innerHeight / 2 ? 'top' : 'bottom';
-
-    state.anchor = { horizontal, vertical };
-
-    const maxHorizontalOffset = Math.max(EDGE_MARGIN, innerWidth - state.size.width - EDGE_MARGIN);
-    const maxVerticalOffset = Math.max(EDGE_MARGIN, innerHeight - state.size.height - EDGE_MARGIN);
-
-    state.anchorOffset = {
-      x:
-        horizontal === 'left'
-          ? Math.min(Math.max(EDGE_MARGIN, state.position.x), maxHorizontalOffset)
-          : Math.min(
-              Math.max(EDGE_MARGIN, innerWidth - state.position.x - state.size.width),
-              maxHorizontalOffset,
-            ),
-      y:
-        vertical === 'top'
-          ? Math.min(Math.max(EDGE_MARGIN, state.position.y), maxVerticalOffset)
-          : Math.min(
-              Math.max(EDGE_MARGIN, innerHeight - state.position.y - state.size.height),
-              maxVerticalOffset,
-            ),
-    };
+    const viewport = this.getViewportSize();
+    updateAnchorFromPositionHelper(this.contextState[context], viewport, EDGE_MARGIN);
   }
 
   private applyAnchorPosition(context: ContextKey): void {
     if (typeof window === 'undefined') {
       return;
     }
-
-    const { innerWidth, innerHeight } = window;
-    const state = this.contextState[context];
-
-    const maxHorizontalOffset = Math.max(EDGE_MARGIN, innerWidth - state.size.width - EDGE_MARGIN);
-    const maxVerticalOffset = Math.max(EDGE_MARGIN, innerHeight - state.size.height - EDGE_MARGIN);
-
-    const horizontalOffset = Math.min(Math.max(EDGE_MARGIN, state.anchorOffset.x), maxHorizontalOffset);
-    const verticalOffset = Math.min(Math.max(EDGE_MARGIN, state.anchorOffset.y), maxVerticalOffset);
-
-    const x =
-      state.anchor.horizontal === 'left'
-        ? horizontalOffset
-        : innerWidth - state.size.width - horizontalOffset;
-
-    const y =
-      state.anchor.vertical === 'top'
-        ? verticalOffset
-        : innerHeight - state.size.height - verticalOffset;
-
-    state.anchorOffset = {
-      x: horizontalOffset,
-      y: verticalOffset,
-    };
-    state.position = this.constrainToViewport({ x, y }, context);
+    const viewport = this.getViewportSize();
+    applyAnchorPositionHelper(this.contextState[context], viewport, EDGE_MARGIN);
     this.updateHostTransform(context);
     this.persistState();
   }
