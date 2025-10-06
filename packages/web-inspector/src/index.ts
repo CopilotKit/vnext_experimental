@@ -835,6 +835,7 @@ export class WebInspectorElement extends LitElement {
   ];
 
   private selectedContext: "all-agents" | "default" = "all-agents";
+  private expandedRows: Set<number> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
@@ -856,18 +857,18 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderEventsTable() {
-    // Generate fake event data
+    // Generate fake AG-UI event data
     const events = [
-      { type: "agent.start", timestamp: new Date(Date.now() - 5000), event: { action: "initialize", agent: "weather", status: "ready" } },
-      { type: "tool.call", timestamp: new Date(Date.now() - 12000), event: { tool: "get_current_weather", params: { location: "San Francisco" } } },
-      { type: "tool.response", timestamp: new Date(Date.now() - 15000), event: { temperature: "68°F", condition: "Sunny", humidity: "45%" } },
-      { type: "agent.complete", timestamp: new Date(Date.now() - 18000), event: { agent: "weather", status: "success", duration_ms: 13000 } },
-      { type: "agent.start", timestamp: new Date(Date.now() - 25000), event: { action: "initialize", agent: "search", version: "2.1.0" } },
-      { type: "tool.call", timestamp: new Date(Date.now() - 32000), event: { tool: "web_search", params: { query: "TypeScript best practices", limit: 10 } } },
-      { type: "agent.error", timestamp: new Date(Date.now() - 45000), event: { error: "Rate limit exceeded", code: "RATE_LIMIT", retry_after: 60 } },
-      { type: "tool.retry", timestamp: new Date(Date.now() - 60000), event: { tool: "web_search", attempt: 2, delay_ms: 2000 } },
-      { type: "tool.response", timestamp: new Date(Date.now() - 72000), event: { results: 15, relevant: 12, cached: false } },
-      { type: "agent.complete", timestamp: new Date(Date.now() - 85000), event: { agent: "search", status: "success", results_found: 15 } },
+      { type: "agui.runtime.start", timestamp: new Date(Date.now() - 5000), event: { runtime: "node", version: "2.0.0", mode: "development", agent: "weather", status: "ready" } },
+      { type: "agui.tool.invoke", timestamp: new Date(Date.now() - 12000), event: { tool: "get_current_weather", params: { location: "San Francisco", units: "fahrenheit" }, requestId: "req_12345" } },
+      { type: "agui.tool.result", timestamp: new Date(Date.now() - 15000), event: { temperature: "68°F", condition: "Sunny", humidity: "45%", wind_speed: "12mph", uv_index: 6 } },
+      { type: "agui.agent.complete", timestamp: new Date(Date.now() - 18000), event: { agent: "weather", status: "success", duration_ms: 13000, tokens_used: 450 } },
+      { type: "agui.runtime.start", timestamp: new Date(Date.now() - 25000), event: { runtime: "edge", version: "2.1.0", agent: "search", memory_mb: 128 } },
+      { type: "agui.tool.invoke", timestamp: new Date(Date.now() - 32000), event: { tool: "web_search", params: { query: "TypeScript best practices", limit: 10, safe_search: true }, correlation_id: "corr_789" } },
+      { type: "agui.error.thrown", timestamp: new Date(Date.now() - 45000), event: { error: "Rate limit exceeded", code: "RATE_LIMIT", retry_after: 60, stack_trace: "at WebSearchTool.invoke()" } },
+      { type: "agui.tool.retry", timestamp: new Date(Date.now() - 60000), event: { tool: "web_search", attempt: 2, delay_ms: 2000, backoff: "exponential" } },
+      { type: "agui.tool.result", timestamp: new Date(Date.now() - 72000), event: { results: 15, relevant: 12, cached: false, response_time_ms: 230 } },
+      { type: "agui.agent.complete", timestamp: new Date(Date.now() - 85000), event: { agent: "search", status: "success", results_found: 15, cache_hits: 3 } },
     ];
 
     return html`
@@ -885,23 +886,35 @@ export class WebInspectorElement extends LitElement {
               const typeColor = event.type.includes("error") ? "text-red-600 bg-red-50" :
                                event.type.includes("complete") ? "text-green-600 bg-green-50" :
                                event.type.includes("start") ? "text-blue-600 bg-blue-50" :
+                               event.type.includes("invoke") ? "text-purple-600 bg-purple-50" :
+                               event.type.includes("result") ? "text-cyan-600 bg-cyan-50" :
                                "text-gray-600 bg-gray-50";
 
               const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/30";
               const isLastRow = index === events.length - 1;
+              const isExpanded = this.expandedRows.has(index);
+
+              const jsonString = JSON.stringify(event.event);
+              const jsonFormatted = JSON.stringify(event.event, null, 2);
 
               return html`
-                <tr class="${rowBg} hover:bg-blue-50/50 transition">
+                <tr
+                  class="${rowBg} hover:bg-blue-50/50 transition cursor-pointer"
+                  @click=${() => this.toggleRowExpansion(index)}
+                >
                   <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2">
-                    <span class="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${typeColor}">
+                    <span class="font-mono text-[10px] font-medium ${typeColor} inline-flex items-center rounded-sm px-1.5 py-0.5">
                       ${event.type}
                     </span>
                   </td>
                   <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[11px]">
                     ${event.timestamp.toLocaleTimeString()}
                   </td>
-                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[10px]">
-                    ${JSON.stringify(event.event)}
+                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[10px] ${isExpanded ? '' : 'truncate max-w-xs'}">
+                    ${isExpanded
+                      ? html`<pre class="m-0 text-[10px] font-mono text-gray-600">${jsonFormatted}</pre>`
+                      : jsonString
+                    }
                   </td>
                 </tr>
               `;
@@ -996,6 +1009,15 @@ export class WebInspectorElement extends LitElement {
       this.requestUpdate();
     }
   };
+
+  private toggleRowExpansion(index: number): void {
+    if (this.expandedRows.has(index)) {
+      this.expandedRows.delete(index);
+    } else {
+      this.expandedRows.add(index);
+    }
+    this.requestUpdate();
+  }
 }
 
 export function defineWebInspector(): void {
