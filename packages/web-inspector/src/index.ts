@@ -848,29 +848,29 @@ export class WebInspectorElement extends LitElement {
       <div class="relative" data-context-dropdown-root="true">
         <button
           type="button"
-          class="flex items-center gap-1 rounded bg-transparent px-0 py-0 text-[10px] font-medium text-gray-500 transition hover:text-gray-700"
+          class="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
           @pointerdown=${this.handleContextDropdownToggle}
         >
           <span>${selectedLabel}</span>
-          <span class="text-gray-300">${this.renderIcon("ChevronDown")}</span>
+          <span class="text-gray-400">${this.renderIcon("ChevronDown")}</span>
         </button>
         ${this.contextMenuOpen
           ? html`
               <div
-                class="absolute right-0 mt-1 w-32 rounded-md border border-gray-200 bg-white py-0.5 text-[10px] shadow-lg"
+                class="absolute left-0 z-50 mt-1.5 w-40 rounded-md border border-gray-200 bg-white py-1 shadow-md ring-1 ring-black/5"
                 data-context-dropdown-root="true"
               >
                 ${this.contextOptions.map(
                   (option) => html`
                     <button
                       type="button"
-                      class="flex w-full items-center justify-between px-2 py-1 text-left transition hover:bg-gray-50"
+                      class="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
                       data-context-dropdown-root="true"
                       @click=${() => this.handleContextOptionSelect(option.key)}
                     >
-                      <span class="text-gray-700">${option.label}</span>
+                      <span class="${option.key === this.selectedContext ? 'text-gray-900 font-medium' : 'text-gray-600'}">${option.label}</span>
                       ${option.key === this.selectedContext
-                        ? html`<span class="text-gray-400">${this.renderIcon("Check")}</span>`
+                        ? html`<span class="text-gray-500">${this.renderIcon("Check")}</span>`
                         : nothing}
                     </button>
                   `,
