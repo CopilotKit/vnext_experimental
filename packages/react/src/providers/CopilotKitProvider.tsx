@@ -1,6 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect, useReducer, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useMemo,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
 import { ReactFrontendTool } from "../types/frontend-tool";
@@ -9,6 +18,7 @@ import { z } from "zod";
 import { FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 import { CopilotKitCoreReact } from "../lib/react-core";
+import { WebInspector } from "../components/WebInspector";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
@@ -68,6 +78,18 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   frontendTools,
   humanInTheLoop,
 }) => {
+  const [shouldRenderInspector, setShouldRenderInspector] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const localhostHosts = new Set(["localhost", "127.0.0.1"]);
+    if (localhostHosts.has(window.location.hostname)) {
+      setShouldRenderInspector(true);
+    }
+  }, []);
+
   // Normalize array props to stable references with clear dev warnings
   const renderToolCallsList = useStableArrayProp<ReactToolCallRenderer<any>>(
     renderToolCalls,
@@ -223,6 +245,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       }}
     >
       {children}
+      {shouldRenderInspector ? <WebInspector core={copilotkit} /> : null}
     </CopilotKitContext.Provider>
   );
 };

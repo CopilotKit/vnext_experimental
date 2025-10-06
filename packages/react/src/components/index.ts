@@ -3,3 +3,4 @@
 
 export * from "./chat";
 export * from "./WildcardToolCallRender";
+export * from "./WebInspector";
