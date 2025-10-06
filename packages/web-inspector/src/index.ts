@@ -170,7 +170,7 @@ export class WebInspectorElement extends LitElement {
       "w-12",
       "items-center",
       "justify-center",
-      "rounded-lg",
+      "rounded-full",
       "border",
       "border-white/20",
       "bg-slate-950/95",
@@ -232,13 +232,20 @@ export class WebInspectorElement extends LitElement {
             aria-label="Inspector sections"
           >
             <div class="flex flex-col gap-4 overflow-y-auto">
-              <div class="flex items-center gap-2 pl-1">
+              <div
+                class="flex items-center gap-2 pl-1 touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
+                data-drag-context="window"
+                @pointerdown=${this.handlePointerDown}
+                @pointermove=${this.handlePointerMove}
+                @pointerup=${this.handlePointerUp}
+                @pointercancel=${this.handlePointerCancel}
+              >
                 <span
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white pointer-events-none"
                 >
                   ${this.renderIcon("Building2")}
                 </span>
-                <div class="flex flex-1 flex-col leading-tight">
+                <div class="flex flex-1 flex-col leading-tight pointer-events-none">
                   <span class="text-sm font-semibold text-gray-900">Acme Inc</span>
                   <span class="text-[10px] text-gray-500">Enterprise</span>
                 </div>
@@ -283,7 +290,7 @@ export class WebInspectorElement extends LitElement {
             </div>
 
             <div
-              class="relative flex items-center rounded-lg border border-gray-200 bg-white px-2 py-2 text-left text-xs text-gray-700"
+              class="relative flex items-center rounded-lg border border-gray-200 bg-white px-2 py-2 text-left text-xs text-gray-700 cursor-pointer hover:bg-gray-50 transition"
             >
               <span
                 class="w-6 h-6 flex items-center justify-center overflow-hidden rounded bg-gray-100 text-[10px] font-semibold text-gray-700"
@@ -299,7 +306,7 @@ export class WebInspectorElement extends LitElement {
           </nav>
           <div class="relative flex flex-1 flex-col overflow-hidden">
             <div
-              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3"
+              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3 touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
               data-drag-context="window"
               @pointerdown=${this.handlePointerDown}
               @pointermove=${this.handlePointerMove}
