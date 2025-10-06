@@ -27,7 +27,7 @@ export const WEB_INSPECTOR_TAG = "web-inspector" as const;
 
 type LucideIconName = keyof typeof icons;
 
-type MenuKey = "playground" | "models" | "documentation" | "settings";
+type MenuKey = "ag-ui-events" | "models" | "documentation" | "settings";
 
 type MenuItem = {
   key: MenuKey;
@@ -53,7 +53,7 @@ export class WebInspectorElement extends LitElement {
   private isOpen = false;
   private draggedDuringInteraction = false;
   private ignoreNextButtonClick = false;
-  private selectedMenu: MenuKey = "playground";
+  private selectedMenu: MenuKey = "ag-ui-events";
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
@@ -81,7 +81,7 @@ export class WebInspectorElement extends LitElement {
   private isResizing = false;
 
   private readonly menuItems: MenuItem[] = [
-    { key: "playground", label: "Playground", icon: "PanelsTopLeft" },
+    { key: "ag-ui-events", label: "Events", icon: "Zap" },
     { key: "models", label: "Models", icon: "Bot" },
     { key: "documentation", label: "Documentation", icon: "BookOpen" },
     { key: "settings", label: "Settings", icon: "SlidersHorizontal" },
@@ -227,23 +227,20 @@ export class WebInspectorElement extends LitElement {
             aria-label="Inspector sections"
           >
             <div class="flex flex-col gap-6 overflow-y-auto">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-3 pl-2">
                 <span
                   class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
                 >
                   ${this.renderIcon("Building2")}
                 </span>
-                <div class="flex flex-1 items-center justify-between">
-                  <div class="flex flex-col leading-tight">
-                    <span class="text-[1rem] font-semibold text-gray-900">Acme Inc</span>
-                    <span class="text-xs text-gray-500">Enterprise</span>
-                  </div>
-                  <span class="text-gray-300">${this.renderIcon("ChevronsUpDown")}</span>
+                <div class="flex flex-1 flex-col leading-tight">
+                  <span class="text-[1rem] font-semibold text-gray-900">Acme Inc</span>
+                  <span class="text-xs text-gray-500">Enterprise</span>
                 </div>
               </div>
 
               <div class="flex flex-col gap-5">
-                <div class="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Platform</div>
+                <div class="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">AG-UI Platform</div>
                 <div class="flex flex-col gap-1.5">
                   ${this.menuItems.map(({ key, label, icon }) => {
                     const isSelected = this.selectedMenu === key;
