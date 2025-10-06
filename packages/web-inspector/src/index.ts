@@ -177,29 +177,43 @@ export class WebInspectorElement extends LitElement {
 
     return html`
       <section
-        class="inspector-window pointer-events-auto relative flex flex-col overflow-hidden rounded-2xl bg-gray-100 text-gray-900 shadow-xl shadow-gray-900/15"
+        class="inspector-window pointer-events-auto relative flex flex-col overflow-hidden rounded-2xl border border-gray-200/70 bg-white text-gray-900 shadow-xl shadow-gray-900/10"
         style=${styleMap(windowStyles)}
       >
         <header
-          class="drag-handle flex items-center justify-between border-y border-gray-200 bg-gray-100 px-4 py-3 text-sm font-medium text-gray-900"
+          class="drag-handle relative flex cursor-grab items-center bg-white px-4 py-3 text-sm font-medium text-gray-900 active:cursor-grabbing"
           data-drag-context="window"
           @pointerdown=${this.handlePointerDown}
           @pointermove=${this.handlePointerMove}
           @pointerup=${this.handlePointerUp}
           @pointercancel=${this.handlePointerCancel}
         >
-          <span>Web Inspector</span>
+          <span class="flex-1"></span>
+          <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 select-none text-[0.95rem] font-semibold tracking-wide text-gray-800">
+            CopilotKit Inspector
+          </span>
           <button
-            class="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-300/60 bg-gray-200 text-[0.7rem] font-semibold text-gray-600 transition hover:border-gray-400 hover:bg-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-500"
+            class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-gray-500"
             type="button"
             aria-label="Close Web Inspector"
             @pointerdown=${this.handleClosePointerDown}
             @click=${this.handleCloseClick}
           >
-            <span aria-hidden="true">X</span>
+            <svg
+              aria-hidden="true"
+              class="h-3.5 w-3.5"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-width="1.4"
+            >
+              <path d="M4.5 4.5l7 7" />
+              <path d="M11.5 4.5l-7 7" />
+            </svg>
           </button>
         </header>
-        <div class="flex-1 overflow-auto bg-gray-50 px-4 py-4 pr-8 pb-8 text-sm text-gray-700">
+        <div class="flex-1 overflow-auto bg-white px-4 py-4 pr-8 pb-8 text-sm text-gray-700">
           <slot></slot>
         </div>
         <div
