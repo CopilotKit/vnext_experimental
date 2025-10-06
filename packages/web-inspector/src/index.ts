@@ -82,8 +82,8 @@ export class WebInspectorElement extends LitElement {
   private isResizing = false;
 
   private readonly menuItems: MenuItem[] = [
-    { key: "ag-ui-events", label: "Events", icon: "Zap" },
-    { key: "agents", label: "Agents", icon: "Users" },
+    { key: "ag-ui-events", label: "AG-UI Events", icon: "Zap" },
+    { key: "agents", label: "Agents", icon: "Bot" },
     { key: "frontend-tools", label: "Frontend Tools", icon: "Hammer" },
     { key: "agent-context", label: "Agent Context", icon: "FileText" },
   ];
@@ -218,6 +218,8 @@ export class WebInspectorElement extends LitElement {
       minWidth: `${MIN_WINDOW_WIDTH}px`,
       minHeight: `${MIN_WINDOW_HEIGHT}px`,
     };
+    const contextDropdown = this.renderContextDropdown();
+    const hasContextDropdown = contextDropdown !== nothing;
 
     return html`
       <section
@@ -243,7 +245,7 @@ export class WebInspectorElement extends LitElement {
               </div>
 
               <div class="flex flex-col gap-5">
-                <div class="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">AG-UI Platform</div>
+                <div class="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Platform</div>
                 <div class="flex flex-col gap-1.5">
                   ${this.menuItems.map(({ key, label, icon }) => {
                     const isSelected = this.selectedMenu === key;
@@ -305,15 +307,17 @@ export class WebInspectorElement extends LitElement {
               @pointercancel=${this.handlePointerCancel}
             >
               <div class="flex items-center gap-3 text-[0.95rem] text-gray-500">
-                <span
-                  class="rounded-lg border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
-                >
+                <span class="text-gray-400">
                   ${this.renderIcon(this.getSelectedMenu().icon)}
                 </span>
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                  <span>${this.getSelectedMenu().label}</span>
-                  <span class="h-4 w-px bg-gray-200/90"></span>
-                  ${this.renderContextDropdown()}
+                <div class="flex items-center text-sm text-gray-600">
+                  <span class="pr-4">${this.getSelectedMenu().label}</span>
+                  ${hasContextDropdown
+                    ? html`
+                        <span class="h-4 w-px bg-gray-200/90"></span>
+                        <div class="pl-4">${contextDropdown}</div>
+                      `
+                    : nothing}
                 </div>
               </div>
               <button
@@ -843,7 +847,7 @@ export class WebInspectorElement extends LitElement {
       <div class="relative" data-context-dropdown-root="true">
         <button
           type="button"
-          class="flex items-center gap-1 rounded-full bg-transparent px-2 py-0.5 text-xs font-medium text-gray-500 transition hover:text-gray-700"
+          class="flex items-center gap-2 rounded-full bg-transparent px-0 py-0.5 text-xs font-medium text-gray-500 transition hover:text-gray-700"
           @pointerdown=${this.handleContextDropdownToggle}
         >
           <span>${selectedLabel}</span>
