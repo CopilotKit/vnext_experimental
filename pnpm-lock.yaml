@@ -341,6 +341,9 @@ importers:
         specifier: ^8
         version: 8.6.14(prettier@3.6.0)
     devDependencies:
+      '@copilotkitnext/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
       '@copilotkitnext/react':
         specifier: workspace:*
         version: link:../../../packages/react
@@ -362,9 +365,15 @@ importers:
       concurrently:
         specifier: ^9.1.0
         version: 9.2.0
+      lucide-react:
+        specifier: ^0.525.0
+        version: 0.525.0(react@18.3.1)
       typescript:
         specifier: 5.8.2
         version: 5.8.2
+      zod:
+        specifier: ^3.25.75
+        version: 3.25.75
 
   packages/agent:
     dependencies:
@@ -22152,6 +22161,10 @@ snapshots:
       '@angular/common': 18.2.13(@angular/core@18.2.13(rxjs@7.8.1)(zone.js@0.14.10))(rxjs@7.8.1)
       '@angular/core': 18.2.13(rxjs@7.8.1)(zone.js@0.14.10)
       tslib: 2.8.1
+
+  lucide-react@0.525.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   lucide-react@0.525.0(react@19.1.0):
     dependencies:

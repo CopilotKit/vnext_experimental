@@ -39,11 +39,8 @@ export const LoadingSecond: Story = {
 
 export const CustomSuggestionSlot: Story = {
   args: {
-    suggestion: (props) => (
-      <CopilotChatSuggestionPill
-        {...props}
-        icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
-      />
-    ),
+    suggestion: {
+      icon: <Sparkles className="h-4 w-4" aria-hidden="true" />,
+    },
   },
 };

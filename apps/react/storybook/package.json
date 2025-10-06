@@ -19,6 +19,7 @@
     "storybook": "^8"
   },
   "devDependencies": {
+    "@copilotkitnext/core": "workspace:*",
     "@copilotkitnext/react": "workspace:*",
     "@copilotkitnext/typescript-config": "workspace:*",
     "@storybook/addon-themes": "^8",
@@ -26,6 +27,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.0.2",
     "concurrently": "^9.1.0",
-    "typescript": "5.8.2"
+    "lucide-react": "^0.525.0",
+    "typescript": "5.8.2",
+    "zod": "^3.25.75"
   }
 }
