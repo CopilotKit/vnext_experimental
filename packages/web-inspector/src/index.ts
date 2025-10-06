@@ -35,14 +35,14 @@ type MenuItem = {
   icon: LucideIconName;
 };
 
-const EDGE_MARGIN = 24;
+const EDGE_MARGIN = 16;
 const DRAG_THRESHOLD = 6;
-const MIN_WINDOW_WIDTH = 280;
-const MIN_WINDOW_HEIGHT = 240;
+const MIN_WINDOW_WIDTH = 260;
+const MIN_WINDOW_HEIGHT = 200;
 const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
-const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
-const DEFAULT_WINDOW_SIZE: Size = { width: 360, height: 420 };
+const DEFAULT_BUTTON_SIZE: Size = { width: 40, height: 40 };
+const DEFAULT_WINDOW_SIZE: Size = { width: 320, height: 380 };
 
 export class WebInspectorElement extends LitElement {
   private pointerId: number | null = null;
@@ -166,23 +166,23 @@ export class WebInspectorElement extends LitElement {
       "group",
       "pointer-events-auto",
       "inline-flex",
-      "h-12",
-      "w-12",
+      "h-10",
+      "w-10",
       "items-center",
       "justify-center",
-      "rounded-full",
+      "rounded-lg",
       "border",
-      "border-white/25",
-      "bg-slate-950/90",
-      "text-sm",
+      "border-white/20",
+      "bg-slate-950/95",
+      "text-xs",
       "font-medium",
       "text-white",
       "ring-1",
       "ring-white/10",
       "backdrop-blur-md",
       "transition",
-      "hover:border-white/40",
-      "hover:bg-slate-900/90",
+      "hover:border-white/30",
+      "hover:bg-slate-900/95",
       "hover:scale-105",
       "focus-visible:outline",
       "focus-visible:outline-2",
@@ -205,7 +205,7 @@ export class WebInspectorElement extends LitElement {
         @pointercancel=${this.handlePointerCancel}
         @click=${this.handleButtonClick}
       >
-        <img src=${logoMarkUrl} alt="" class="h-7 w-7" loading="lazy" />
+        <img src=${logoMarkUrl} alt="" class="h-5 w-5" loading="lazy" />
       </button>
     `;
   }
@@ -223,42 +223,42 @@ export class WebInspectorElement extends LitElement {
 
     return html`
       <section
-        class="inspector-window pointer-events-auto relative flex flex-col overflow-hidden rounded-3xl border border-gray-200/80 bg-white text-gray-900 shadow-[0_18px_45px_rgba(15,23,42,0.07)]"
+        class="inspector-window pointer-events-auto relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-900 shadow-lg"
         style=${styleMap(windowStyles)}
       >
         <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
           <nav
-            class="flex w-72 shrink-0 flex-col justify-between border-r border-gray-200/80 bg-white/60 px-6 pb-6 pt-5 text-sm"
+            class="flex w-56 shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs"
             aria-label="Inspector sections"
           >
-            <div class="flex flex-col gap-6 overflow-y-auto">
-              <div class="flex items-center gap-3 pl-2">
+            <div class="flex flex-col gap-3 overflow-y-auto">
+              <div class="flex items-center gap-2 pl-1">
                 <span
-                  class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white"
                 >
                   ${this.renderIcon("Building2")}
                 </span>
                 <div class="flex flex-1 flex-col leading-tight">
-                  <span class="text-[1rem] font-semibold text-gray-900">Acme Inc</span>
-                  <span class="text-xs text-gray-500">Enterprise</span>
+                  <span class="text-sm font-semibold text-gray-900">Acme Inc</span>
+                  <span class="text-[10px] text-gray-500">Enterprise</span>
                 </div>
               </div>
 
-              <div class="flex flex-col gap-5">
-                <div class="px-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Platform</div>
-                <div class="flex flex-col gap-1.5">
+              <div class="flex flex-col gap-2">
+                <div class="px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Platform</div>
+                <div class="flex flex-col gap-0.5">
                   ${this.menuItems.map(({ key, label, icon }) => {
                     const isSelected = this.selectedMenu === key;
                     const buttonClasses = [
-                      "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[0.95rem] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
+                      "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
                       isSelected
-                        ? "bg-[#0f172a] text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+                        ? "bg-gray-900 text-white"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                     ].join(" ");
 
                     const badgeClasses = isSelected
-                      ? "border-transparent bg-[#121c34] text-white"
-                      : "border-gray-200/80 bg-white text-gray-500 group-hover:border-gray-300 group-hover:text-gray-900";
+                      ? "bg-gray-800 text-white"
+                      : "bg-white border border-gray-200 text-gray-500 group-hover:border-gray-300 group-hover:text-gray-700";
 
                     return html`
                       <button
@@ -268,13 +268,13 @@ export class WebInspectorElement extends LitElement {
                         @click=${() => this.handleMenuSelect(key)}
                       >
                         <span
-                          class="flex h-9 w-9 items-center justify-center rounded-xl border ${badgeClasses}"
+                          class="flex h-6 w-6 items-center justify-center rounded ${badgeClasses}"
                           aria-hidden="true"
                         >
                           ${this.renderIcon(icon)}
                         </span>
                         <span class="flex-1">${label}</span>
-                        <span class="text-gray-400 group-hover:text-gray-600">${this.renderIcon("ChevronRight")}</span>
+                        <span class="text-gray-400 opacity-60">${this.renderIcon("ChevronRight")}</span>
                       </button>
                     `;
                   })}
@@ -283,45 +283,45 @@ export class WebInspectorElement extends LitElement {
             </div>
 
             <div
-              class="relative flex items-center rounded-2xl border border-gray-200/80 bg-white px-3 py-3 text-left text-[0.95rem] text-gray-700 shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+              class="relative flex items-center rounded-lg border border-gray-200 bg-white px-2 py-2 text-left text-xs text-gray-700"
             >
               <span
-                class="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full bg-gray-100 text-base font-semibold text-gray-700"
+                class="w-6 h-6 flex items-center justify-center overflow-hidden rounded bg-gray-100 text-[10px] font-semibold text-gray-700"
               >
                 JS
               </span>
-              <div class="pl-4 flex flex-1 flex-col leading-tight">
+              <div class="pl-2 flex flex-1 flex-col leading-tight">
                 <span class="font-medium text-gray-900">John Snow</span>
-                <span class="text-xs text-gray-500">john@snow.com</span>
+                <span class="text-[10px] text-gray-500">john@snow.com</span>
               </div>
               <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
             </div>
           </nav>
           <div class="relative flex flex-1 flex-col overflow-hidden">
             <div
-              class="drag-handle flex items-center justify-between border-b border-gray-200/80 px-7 py-5"
+              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3"
               data-drag-context="window"
               @pointerdown=${this.handlePointerDown}
               @pointermove=${this.handlePointerMove}
               @pointerup=${this.handlePointerUp}
               @pointercancel=${this.handlePointerCancel}
             >
-              <div class="flex items-center gap-3 text-[0.95rem] text-gray-500">
+              <div class="flex items-center gap-2 text-xs text-gray-500">
                 <span class="text-gray-400">
                   ${this.renderIcon(this.getSelectedMenu().icon)}
                 </span>
-                <div class="flex items-center text-sm text-gray-600">
-                  <span class="pr-4">${this.getSelectedMenu().label}</span>
+                <div class="flex items-center text-xs text-gray-600">
+                  <span class="pr-3">${this.getSelectedMenu().label}</span>
                   ${hasContextDropdown
                     ? html`
-                        <span class="h-4 w-px bg-gray-200/90"></span>
-                        <div class="pl-4">${contextDropdown}</div>
+                        <span class="h-3 w-px bg-gray-200"></span>
+                        <div class="pl-3">${contextDropdown}</div>
                       `
                     : nothing}
                 </div>
               </div>
               <button
-                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
                 type="button"
                 aria-label="Close Web Inspector"
                 @pointerdown=${this.handleClosePointerDown}
@@ -330,17 +330,17 @@ export class WebInspectorElement extends LitElement {
                 ${this.renderIcon("X")}
               </button>
             </div>
-            <div class="flex-1 overflow-auto px-7 py-7">
-              <div class="flex flex-col gap-6">
-                <div class="h-40 rounded-2xl bg-[#f8f8f8]"></div>
-                <div class="h-32 rounded-2xl bg-[#f8f8f8]"></div>
+            <div class="flex-1 overflow-auto px-4 py-4">
+              <div class="flex flex-col gap-3">
+                <div class="h-24 rounded-lg bg-gray-50"></div>
+                <div class="h-20 rounded-lg bg-gray-50"></div>
               </div>
               <slot></slot>
             </div>
           </div>
         </div>
         <div
-          class="resize-handle pointer-events-auto absolute bottom-2 right-2 flex h-6 w-6 cursor-nwse-resize items-center justify-center text-gray-400 transition hover:text-gray-600"
+          class="resize-handle pointer-events-auto absolute bottom-1 right-1 flex h-5 w-5 cursor-nwse-resize items-center justify-center text-gray-400 transition hover:text-gray-600"
           role="presentation"
           aria-hidden="true"
           @pointerdown=${this.handleResizePointerDown}
@@ -349,12 +349,12 @@ export class WebInspectorElement extends LitElement {
           @pointercancel=${this.handleResizePointerCancel}
         >
           <svg
-            class="h-4 w-4"
+            class="h-3 w-3"
             viewBox="0 0 16 16"
             fill="none"
             stroke="currentColor"
             stroke-linecap="round"
-            stroke-width="1.3"
+            stroke-width="1.5"
           >
             <path d="M5 15L15 5" />
             <path d="M9 15L15 9" />
@@ -805,10 +805,10 @@ export class WebInspectorElement extends LitElement {
       viewBox: "0 0 24 24",
       fill: "none",
       stroke: "currentColor",
-      "stroke-width": "1.7",
+      "stroke-width": "1.5",
       "stroke-linecap": "round",
       "stroke-linejoin": "round",
-      class: "h-4 w-4",
+      class: "h-3.5 w-3.5",
     };
 
     const svgMarkup = `<svg ${this.serializeAttributes(svgAttrs)}>${iconNode
@@ -833,7 +833,7 @@ export class WebInspectorElement extends LitElement {
   private selectedContext = this.contextOptions[0].key;
 
   private getSelectedMenu(): MenuItem {
-    return this.menuItems.find((item) => item.key === this.selectedMenu) ?? this.menuItems[0];
+    return this.menuItems.find((item) => item.key === this.selectedMenu) || this.menuItems[0];
   }
 
   private renderContextDropdown() {
@@ -847,7 +847,7 @@ export class WebInspectorElement extends LitElement {
       <div class="relative" data-context-dropdown-root="true">
         <button
           type="button"
-          class="flex items-center gap-2 rounded-full bg-transparent px-0 py-0.5 text-xs font-medium text-gray-500 transition hover:text-gray-700"
+          class="flex items-center gap-1 rounded bg-transparent px-0 py-0 text-[10px] font-medium text-gray-500 transition hover:text-gray-700"
           @pointerdown=${this.handleContextDropdownToggle}
         >
           <span>${selectedLabel}</span>
@@ -856,14 +856,14 @@ export class WebInspectorElement extends LitElement {
         ${this.contextMenuOpen
           ? html`
               <div
-                class="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200/80 bg-white py-1 text-xs shadow-lg"
+                class="absolute right-0 mt-1 w-32 rounded-md border border-gray-200 bg-white py-0.5 text-[10px] shadow-lg"
                 data-context-dropdown-root="true"
               >
                 ${this.contextOptions.map(
                   (option) => html`
                     <button
                       type="button"
-                      class="flex w-full items-center justify-between px-3 py-1.5 text-left transition hover:bg-gray-50"
+                      class="flex w-full items-center justify-between px-2 py-1 text-left transition hover:bg-gray-50"
                       data-context-dropdown-root="true"
                       @click=${() => this.handleContextOptionSelect(option.key)}
                     >
@@ -898,7 +898,7 @@ export class WebInspectorElement extends LitElement {
     this.requestUpdate();
   }
 
-  private handleContextOptionSelect(key: (typeof this.contextOptions)[number]["key"]): void {
+  private handleContextOptionSelect(key: "all-agents" | "default"): void {
     if (this.selectedContext !== key) {
       this.selectedContext = key;
     }
