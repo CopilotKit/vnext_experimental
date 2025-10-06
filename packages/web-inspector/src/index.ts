@@ -21,10 +21,24 @@ type ContextState = {
   anchorOffset: Position;
 };
 
+type PersistedContextState = {
+  anchor?: Anchor;
+  anchorOffset?: Position;
+  size?: { width: number; height: number };
+  hasCustomPosition?: boolean;
+};
+
+type PersistedState = {
+  button?: Omit<PersistedContextState, 'size'>;
+  window?: PersistedContextState;
+};
+
 const EDGE_MARGIN = 24;
 const DRAG_THRESHOLD = 6;
 const MIN_WINDOW_WIDTH = 280;
 const MIN_WINDOW_HEIGHT = 240;
+const COOKIE_NAME = 'copilotkit_inspector_state';
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export class WebInspectorElement extends LitElement {
   private pointerId: number | null = null;
@@ -50,7 +64,7 @@ export class WebInspectorElement extends LitElement {
   };
 
   private hasCustomPosition: Record<ContextKey, boolean> = {
-    button: true,
+    button: false,
     window: false,
   };
 
@@ -102,12 +116,23 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.measureContext('button');
+    this.measureContext('window');
+
     this.contextState.button.anchor = { horizontal: 'right', vertical: 'bottom' };
     this.contextState.button.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
+
+    this.contextState.window.anchor = { horizontal: 'right', vertical: 'bottom' };
+    this.contextState.window.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
+
+    this.hydrateStateFromCookie();
+
     this.applyAnchorPosition('button');
 
-    this.measureContext('window');
-    this.centerContext('window');
+    if (this.hasCustomPosition.window) {
+      this.applyAnchorPosition('window');
+    } else {
+      this.centerContext('window');
+    }
 
     this.updateHostTransform('button');
   }
@@ -234,6 +259,51 @@ export class WebInspectorElement extends LitElement {
     `;
   }
 
+  private hydrateStateFromCookie(): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return;
+    }
+
+    const persisted = this.readPersistedState();
+    if (!persisted) {
+      return;
+    }
+
+    const persistedButton = persisted.button;
+    if (persistedButton) {
+      if (this.isValidAnchor(persistedButton.anchor)) {
+        this.contextState.button.anchor = persistedButton.anchor;
+      }
+
+      if (this.isValidPosition(persistedButton.anchorOffset)) {
+        this.contextState.button.anchorOffset = persistedButton.anchorOffset;
+      }
+
+      if (typeof persistedButton.hasCustomPosition === 'boolean') {
+        this.hasCustomPosition.button = persistedButton.hasCustomPosition;
+      }
+    }
+
+    const persistedWindow = persisted.window;
+    if (persistedWindow) {
+      if (this.isValidAnchor(persistedWindow.anchor)) {
+        this.contextState.window.anchor = persistedWindow.anchor;
+      }
+
+      if (this.isValidPosition(persistedWindow.anchorOffset)) {
+        this.contextState.window.anchorOffset = persistedWindow.anchorOffset;
+      }
+
+      if (this.isValidSize(persistedWindow.size)) {
+        this.contextState.window.size = this.clampWindowSize(persistedWindow.size);
+      }
+
+      if (typeof persistedWindow.hasCustomPosition === 'boolean') {
+        this.hasCustomPosition.window = persistedWindow.hasCustomPosition;
+      }
+    }
+  }
+
   private get activeContext(): ContextKey {
     return this.isOpen ? 'window' : 'button';
   }
@@ -299,11 +369,12 @@ export class WebInspectorElement extends LitElement {
       event.preventDefault();
       this.setDragging(false);
       this.updateAnchorFromPosition(this.pointerContext);
-      this.applyAnchorPosition(this.pointerContext);
       if (this.pointerContext === 'window') {
         this.hasCustomPosition.window = true;
+      } else if (this.pointerContext === 'button') {
+        this.hasCustomPosition.button = true;
       }
-      this.updateHostTransform(this.pointerContext);
+      this.applyAnchorPosition(this.pointerContext);
     } else if (context === 'button' && !this.isOpen) {
       this.openInspector();
     }
@@ -407,7 +478,6 @@ export class WebInspectorElement extends LitElement {
 
     this.updateAnchorFromPosition('window');
     this.applyAnchorPosition('window');
-    this.updateHostTransform('window');
     this.resetResizeTracking();
   };
 
@@ -423,7 +493,6 @@ export class WebInspectorElement extends LitElement {
 
     this.updateAnchorFromPosition('window');
     this.applyAnchorPosition('window');
-    this.updateHostTransform('window');
     this.resetResizeTracking();
   };
 
@@ -472,6 +541,9 @@ export class WebInspectorElement extends LitElement {
     if (context === this.activeContext) {
       this.updateHostTransform(context);
     }
+
+    this.hasCustomPosition[context] = false;
+    this.persistState();
   }
 
   private ensureWindowPlacement(): void {
@@ -481,7 +553,9 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.keepPositionWithinViewport('window');
+    this.updateAnchorFromPosition('window');
     this.updateHostTransform('window');
+    this.persistState();
   }
 
   private constrainToViewport(position: Position, context: ContextKey): Position {
@@ -501,6 +575,111 @@ export class WebInspectorElement extends LitElement {
 
   private keepPositionWithinViewport(context: ContextKey): void {
     this.contextState[context].position = this.constrainToViewport(this.contextState[context].position, context);
+  }
+
+  private readPersistedState(): PersistedState | null {
+    if (typeof document === 'undefined') {
+      return null;
+    }
+
+    const prefix = `${COOKIE_NAME}=`;
+    const entry = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
+    if (!entry) {
+      return null;
+    }
+
+    const raw = entry.substring(prefix.length);
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(decodeURIComponent(raw));
+      if (parsed && typeof parsed === 'object') {
+        return parsed as PersistedState;
+      }
+    } catch (error) {
+      // Ignore malformed cookie contents.
+    }
+
+    return null;
+  }
+
+  private persistState(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const state: PersistedState = {
+      button: {
+        anchor: this.contextState.button.anchor,
+        anchorOffset: this.contextState.button.anchorOffset,
+        hasCustomPosition: this.hasCustomPosition.button,
+      },
+      window: {
+        anchor: this.contextState.window.anchor,
+        anchorOffset: this.contextState.window.anchorOffset,
+        size: {
+          width: Math.round(this.contextState.window.size.width),
+          height: Math.round(this.contextState.window.size.height),
+        },
+        hasCustomPosition: this.hasCustomPosition.window,
+      },
+    };
+
+    const encoded = encodeURIComponent(JSON.stringify(state));
+    document.cookie = `${COOKIE_NAME}=${encoded}; path=/; max-age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+  }
+
+  private clampWindowSize(size: { width: number; height: number }): { width: number; height: number } {
+    const width = Math.max(MIN_WINDOW_WIDTH, size.width);
+    const height = Math.max(MIN_WINDOW_HEIGHT, size.height);
+
+    if (typeof window === 'undefined') {
+      return { width, height };
+    }
+
+    const maxWidth = Math.max(MIN_WINDOW_WIDTH, window.innerWidth - EDGE_MARGIN * 2);
+    const maxHeight = Math.max(MIN_WINDOW_HEIGHT, window.innerHeight - EDGE_MARGIN * 2);
+
+    return {
+      width: Math.min(width, maxWidth),
+      height: Math.min(height, maxHeight),
+    };
+  }
+
+  private isFiniteNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
+  }
+
+  private isValidPosition(value: unknown): value is Position {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as Position;
+    return this.isFiniteNumber(candidate.x) && this.isFiniteNumber(candidate.y);
+  }
+
+  private isValidAnchor(value: unknown): value is Anchor {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as Anchor;
+    return (
+      (candidate.horizontal === 'left' || candidate.horizontal === 'right') &&
+      (candidate.vertical === 'top' || candidate.vertical === 'bottom')
+    );
+  }
+
+  private isValidSize(value: unknown): value is { width: number; height: number } {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const candidate = value as { width: number; height: number };
+    return this.isFiniteNumber(candidate.width) && this.isFiniteNumber(candidate.height);
   }
 
   private updateHostTransform(context: ContextKey = this.activeContext): void {
@@ -579,8 +758,13 @@ export class WebInspectorElement extends LitElement {
         ? verticalOffset
         : innerHeight - state.size.height - verticalOffset;
 
+    state.anchorOffset = {
+      x: horizontalOffset,
+      y: verticalOffset,
+    };
     state.position = this.constrainToViewport({ x, y }, context);
     this.updateHostTransform(context);
+    this.persistState();
   }
 
   private resetResizeTracking(): void {
