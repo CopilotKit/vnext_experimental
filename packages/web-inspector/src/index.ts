@@ -857,18 +857,18 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderEventsTable() {
-    // Generate fake AG-UI event data
+    // Generate fake AG-UI event data using real event types
     const events = [
-      { type: "agui.runtime.start", timestamp: new Date(Date.now() - 5000), event: { runtime: "node", version: "2.0.0", mode: "development", agent: "weather", status: "ready" } },
-      { type: "agui.tool.invoke", timestamp: new Date(Date.now() - 12000), event: { tool: "get_current_weather", params: { location: "San Francisco", units: "fahrenheit" }, requestId: "req_12345" } },
-      { type: "agui.tool.result", timestamp: new Date(Date.now() - 15000), event: { temperature: "68°F", condition: "Sunny", humidity: "45%", wind_speed: "12mph", uv_index: 6 } },
-      { type: "agui.agent.complete", timestamp: new Date(Date.now() - 18000), event: { agent: "weather", status: "success", duration_ms: 13000, tokens_used: 450 } },
-      { type: "agui.runtime.start", timestamp: new Date(Date.now() - 25000), event: { runtime: "edge", version: "2.1.0", agent: "search", memory_mb: 128 } },
-      { type: "agui.tool.invoke", timestamp: new Date(Date.now() - 32000), event: { tool: "web_search", params: { query: "TypeScript best practices", limit: 10, safe_search: true }, correlation_id: "corr_789" } },
-      { type: "agui.error.thrown", timestamp: new Date(Date.now() - 45000), event: { error: "Rate limit exceeded", code: "RATE_LIMIT", retry_after: 60, stack_trace: "at WebSearchTool.invoke()" } },
-      { type: "agui.tool.retry", timestamp: new Date(Date.now() - 60000), event: { tool: "web_search", attempt: 2, delay_ms: 2000, backoff: "exponential" } },
-      { type: "agui.tool.result", timestamp: new Date(Date.now() - 72000), event: { results: 15, relevant: 12, cached: false, response_time_ms: 230 } },
-      { type: "agui.agent.complete", timestamp: new Date(Date.now() - 85000), event: { agent: "search", status: "success", results_found: 15, cache_hits: 3 } },
+      { type: "RUN_STARTED", timestamp: new Date(Date.now() - 5000), event: { runId: "run_abc123", agentId: "weather-agent", mode: "development", timestamp: Date.now() - 5000 } },
+      { type: "STATE_SNAPSHOT", timestamp: new Date(Date.now() - 8000), event: { state: { initialized: true, connected: true, version: "2.0.0" }, timestamp: Date.now() - 8000 } },
+      { type: "TEXT_MESSAGE_START", timestamp: new Date(Date.now() - 10000), event: { messageId: "msg_456", role: "assistant", timestamp: Date.now() - 10000 } },
+      { type: "TEXT_MESSAGE_CHUNK", timestamp: new Date(Date.now() - 12000), event: { messageId: "msg_456", content: "Fetching weather data for San Francisco...", delta: "Fetching weather data" } },
+      { type: "TOOL_CALL_CHUNK", timestamp: new Date(Date.now() - 15000), event: { toolCallId: "call_789", toolName: "get_current_weather", args: { location: "San Francisco", units: "fahrenheit" }, status: "pending" } },
+      { type: "TOOL_CALL_RESULT", timestamp: new Date(Date.now() - 18000), event: { toolCallId: "call_789", result: { temperature: "68°F", condition: "Sunny", humidity: "45%" }, success: true } },
+      { type: "TEXT_MESSAGE_CONTENT", timestamp: new Date(Date.now() - 20000), event: { messageId: "msg_456", content: "The weather in San Francisco is 68°F and Sunny with 45% humidity." } },
+      { type: "TEXT_MESSAGE_END", timestamp: new Date(Date.now() - 22000), event: { messageId: "msg_456", totalLength: 128, timestamp: Date.now() - 22000 } },
+      { type: "RUN_FINISHED", timestamp: new Date(Date.now() - 25000), event: { runId: "run_abc123", status: "success", duration_ms: 20000, tokensUsed: 450 } },
+      { type: "RUN_ERROR", timestamp: new Date(Date.now() - 30000), event: { runId: "run_xyz789", error: "Rate limit exceeded", code: "RATE_LIMIT", retryAfter: 60 } },
     ];
 
     return html`
@@ -883,11 +883,12 @@ export class WebInspectorElement extends LitElement {
           </thead>
           <tbody>
             ${events.map((event, index) => {
-              const typeColor = event.type.includes("error") ? "text-red-600 bg-red-50" :
-                               event.type.includes("complete") ? "text-green-600 bg-green-50" :
-                               event.type.includes("start") ? "text-blue-600 bg-blue-50" :
-                               event.type.includes("invoke") ? "text-purple-600 bg-purple-50" :
-                               event.type.includes("result") ? "text-cyan-600 bg-cyan-50" :
+              const typeColor = event.type === "RUN_ERROR" ? "text-red-600 bg-red-50" :
+                               event.type === "RUN_FINISHED" ? "text-green-600 bg-green-50" :
+                               event.type === "RUN_STARTED" ? "text-blue-600 bg-blue-50" :
+                               event.type.includes("TOOL_CALL") ? "text-purple-600 bg-purple-50" :
+                               event.type.includes("TEXT_MESSAGE") ? "text-cyan-600 bg-cyan-50" :
+                               event.type === "STATE_SNAPSHOT" ? "text-amber-600 bg-amber-50" :
                                "text-gray-600 bg-gray-50";
 
               const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/30";
