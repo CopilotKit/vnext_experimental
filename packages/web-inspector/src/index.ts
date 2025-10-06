@@ -337,11 +337,8 @@ export class WebInspectorElement extends LitElement {
                 ${this.renderIcon("X")}
               </button>
             </div>
-            <div class="flex-1 overflow-auto px-4 py-4">
-              <div class="flex flex-col gap-3">
-                <div class="h-24 rounded-lg bg-gray-50"></div>
-                <div class="h-20 rounded-lg bg-gray-50"></div>
-              </div>
+            <div class="flex-1 overflow-auto">
+              ${this.renderMainContent()}
               <slot></slot>
             </div>
           </div>
@@ -842,6 +839,77 @@ export class WebInspectorElement extends LitElement {
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
     return found ?? this.menuItems[0]!;
+  }
+
+  private renderMainContent() {
+    if (this.selectedMenu === "ag-ui-events") {
+      return this.renderEventsTable();
+    }
+
+    // Default placeholder content for other sections
+    return html`
+      <div class="flex flex-col gap-3 p-4">
+        <div class="h-24 rounded-lg bg-gray-50"></div>
+        <div class="h-20 rounded-lg bg-gray-50"></div>
+      </div>
+    `;
+  }
+
+  private renderEventsTable() {
+    // Generate fake event data
+    const events = [
+      { type: "agent.start", timestamp: new Date(Date.now() - 5000), event: { action: "initialize", agent: "weather", status: "ready" } },
+      { type: "tool.call", timestamp: new Date(Date.now() - 12000), event: { tool: "get_current_weather", params: { location: "San Francisco" } } },
+      { type: "tool.response", timestamp: new Date(Date.now() - 15000), event: { temperature: "68°F", condition: "Sunny", humidity: "45%" } },
+      { type: "agent.complete", timestamp: new Date(Date.now() - 18000), event: { agent: "weather", status: "success", duration_ms: 13000 } },
+      { type: "agent.start", timestamp: new Date(Date.now() - 25000), event: { action: "initialize", agent: "search", version: "2.1.0" } },
+      { type: "tool.call", timestamp: new Date(Date.now() - 32000), event: { tool: "web_search", params: { query: "TypeScript best practices", limit: 10 } } },
+      { type: "agent.error", timestamp: new Date(Date.now() - 45000), event: { error: "Rate limit exceeded", code: "RATE_LIMIT", retry_after: 60 } },
+      { type: "tool.retry", timestamp: new Date(Date.now() - 60000), event: { tool: "web_search", attempt: 2, delay_ms: 2000 } },
+      { type: "tool.response", timestamp: new Date(Date.now() - 72000), event: { results: 15, relevant: 12, cached: false } },
+      { type: "agent.complete", timestamp: new Date(Date.now() - 85000), event: { agent: "search", status: "success", results_found: 15 } },
+    ];
+
+    return html`
+      <div class="overflow-hidden">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-white">
+              <th class="border-r border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Type</th>
+              <th class="border-r border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Time</th>
+              <th class="border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Event</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${events.map((event, index) => {
+              const typeColor = event.type.includes("error") ? "text-red-600 bg-red-50" :
+                               event.type.includes("complete") ? "text-green-600 bg-green-50" :
+                               event.type.includes("start") ? "text-blue-600 bg-blue-50" :
+                               "text-gray-600 bg-gray-50";
+
+              const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/30";
+              const isLastRow = index === events.length - 1;
+
+              return html`
+                <tr class="${rowBg} hover:bg-blue-50/50 transition">
+                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2">
+                    <span class="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${typeColor}">
+                      ${event.type}
+                    </span>
+                  </td>
+                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[11px]">
+                    ${event.timestamp.toLocaleTimeString()}
+                  </td>
+                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[10px]">
+                    ${JSON.stringify(event.event)}
+                  </td>
+                </tr>
+              `;
+            })}
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
   private renderContextDropdown() {
