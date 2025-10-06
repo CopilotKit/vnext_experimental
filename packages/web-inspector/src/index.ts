@@ -1,10 +1,10 @@
-import { LitElement, css, html, nothing, unsafeCSS } from 'lit';
-import { styleMap } from 'lit/directives/style-map.js';
-import tailwindStyles from './styles/generated.css';
-import logoMarkUrl from './assets/logo-mark.svg';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { icons } from 'lucide';
-import type { Anchor, ContextKey, ContextState, Position, Size } from './lib/types';
+import { LitElement, css, html, nothing, unsafeCSS } from "lit";
+import { styleMap } from "lit/directives/style-map.js";
+import tailwindStyles from "./styles/generated.css";
+import logoMarkUrl from "./assets/logo-mark.svg";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { icons } from "lucide";
+import type { Anchor, ContextKey, ContextState, Position, Size } from "./lib/types";
 import {
   applyAnchorPosition as applyAnchorPositionHelper,
   centerContext as centerContextHelper,
@@ -13,7 +13,7 @@ import {
   updateAnchorFromPosition as updateAnchorFromPositionHelper,
   updateSizeFromElement,
   clampSize as clampSizeToViewport,
-} from './lib/context-helpers';
+} from "./lib/context-helpers";
 import {
   loadInspectorState,
   saveInspectorState,
@@ -21,13 +21,13 @@ import {
   isValidAnchor,
   isValidPosition,
   isValidSize,
-} from './lib/persistence';
+} from "./lib/persistence";
 
-export const WEB_INSPECTOR_TAG = 'web-inspector' as const;
+export const WEB_INSPECTOR_TAG = "web-inspector" as const;
 
 type LucideIconName = keyof typeof icons;
 
-type MenuKey = 'events' | 'agents' | 'frontend-tools' | 'agent-context';
+type MenuKey = "events" | "agents" | "frontend-tools" | "agent-context";
 
 type MenuItem = {
   key: MenuKey;
@@ -40,7 +40,7 @@ const EDGE_MARGIN = 24;
 const DRAG_THRESHOLD = 6;
 const MIN_WINDOW_WIDTH = 280;
 const MIN_WINDOW_HEIGHT = 240;
-const COOKIE_NAME = 'copilotkit_inspector_state';
+const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 360, height: 420 };
@@ -54,21 +54,21 @@ export class WebInspectorElement extends LitElement {
   private isOpen = false;
   private draggedDuringInteraction = false;
   private ignoreNextButtonClick = false;
-  private selectedMenu: MenuKey = 'events';
-  private selectedSubItem: string | null = 'settings-general';
-  private expandedMenus = new Set<MenuKey>(['agent-context']);
+  private selectedMenu: MenuKey = "events";
+  private selectedSubItem: string | null = "settings-general";
+  private expandedMenus = new Set<MenuKey>(["agent-context"]);
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
       size: { ...DEFAULT_BUTTON_SIZE },
-      anchor: { horizontal: 'right', vertical: 'bottom' },
+      anchor: { horizontal: "right", vertical: "bottom" },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
     window: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
       size: { ...DEFAULT_WINDOW_SIZE },
-      anchor: { horizontal: 'right', vertical: 'bottom' },
+      anchor: { horizontal: "right", vertical: "bottom" },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
   };
@@ -84,18 +84,18 @@ export class WebInspectorElement extends LitElement {
   private isResizing = false;
 
   private readonly menuItems: MenuItem[] = [
-    { key: 'events', label: 'Playground', icon: 'PanelsTopLeft' },
-    { key: 'agents', label: 'Models', icon: 'Bot' },
-    { key: 'frontend-tools', label: 'Documentation', icon: 'BookOpen' },
+    { key: "events", label: "Playground", icon: "PanelsTopLeft" },
+    { key: "agents", label: "Models", icon: "Bot" },
+    { key: "frontend-tools", label: "Documentation", icon: "BookOpen" },
     {
-      key: 'agent-context',
-      label: 'Settings',
-      icon: 'SlidersHorizontal',
+      key: "agent-context",
+      label: "Settings",
+      icon: "SlidersHorizontal",
       children: [
-        { key: 'settings-general', label: 'General' },
-        { key: 'settings-team', label: 'Team' },
-        { key: 'settings-billing', label: 'Billing' },
-        { key: 'settings-limits', label: 'Limits' },
+        { key: "settings-general", label: "General" },
+        { key: "settings-team", label: "Team" },
+        { key: "settings-billing", label: "Billing" },
+        { key: "settings-limits", label: "Limits" },
       ],
     },
   ];
@@ -113,7 +113,9 @@ export class WebInspectorElement extends LitElement {
       }
 
       .console-button {
-        transition: transform 160ms ease, opacity 160ms ease;
+        transition:
+          transform 160ms ease,
+          opacity 160ms ease;
       }
 
       .resize-handle {
@@ -125,43 +127,43 @@ export class WebInspectorElement extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this.handleResize);
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", this.handleResize);
     }
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this.handleResize);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("resize", this.handleResize);
     }
   }
 
   firstUpdated(): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
-    this.measureContext('button');
-    this.measureContext('window');
+    this.measureContext("button");
+    this.measureContext("window");
 
-    this.contextState.button.anchor = { horizontal: 'right', vertical: 'bottom' };
+    this.contextState.button.anchor = { horizontal: "right", vertical: "bottom" };
     this.contextState.button.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
 
-    this.contextState.window.anchor = { horizontal: 'right', vertical: 'bottom' };
+    this.contextState.window.anchor = { horizontal: "right", vertical: "bottom" };
     this.contextState.window.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
 
     this.hydrateStateFromCookie();
 
-    this.applyAnchorPosition('button');
+    this.applyAnchorPosition("button");
 
     if (this.hasCustomPosition.window) {
-      this.applyAnchorPosition('window');
+      this.applyAnchorPosition("window");
     } else {
-      this.centerContext('window');
+      this.centerContext("window");
     }
 
-    this.updateHostTransform('button');
+    this.updateHostTransform("button");
   }
 
   render() {
@@ -170,36 +172,36 @@ export class WebInspectorElement extends LitElement {
 
   private renderButton() {
     const buttonClasses = [
-      'console-button',
-      'group',
-      'pointer-events-auto',
-      'inline-flex',
-      'h-12',
-      'w-12',
-      'items-center',
-      'justify-center',
-      'rounded-full',
-      'border',
-      'border-white/25',
-      'bg-slate-950/90',
-      'text-sm',
-      'font-medium',
-      'text-white',
-      'ring-1',
-      'ring-white/10',
-      'backdrop-blur-md',
-      'transition',
-      'hover:border-white/40',
-      'hover:bg-slate-900/90',
-      'hover:scale-105',
-      'focus-visible:outline',
-      'focus-visible:outline-2',
-      'focus-visible:outline-offset-2',
-      'focus-visible:outline-rose-500',
-      'touch-none',
-      'select-none',
-      this.isDragging ? 'cursor-grabbing' : 'cursor-grab',
-    ].join(' ');
+      "console-button",
+      "group",
+      "pointer-events-auto",
+      "inline-flex",
+      "h-12",
+      "w-12",
+      "items-center",
+      "justify-center",
+      "rounded-full",
+      "border",
+      "border-white/25",
+      "bg-slate-950/90",
+      "text-sm",
+      "font-medium",
+      "text-white",
+      "ring-1",
+      "ring-white/10",
+      "backdrop-blur-md",
+      "transition",
+      "hover:border-white/40",
+      "hover:bg-slate-900/90",
+      "hover:scale-105",
+      "focus-visible:outline",
+      "focus-visible:outline-2",
+      "focus-visible:outline-offset-2",
+      "focus-visible:outline-rose-500",
+      "touch-none",
+      "select-none",
+      this.isDragging ? "cursor-grabbing" : "cursor-grab",
+    ].join(" ");
 
     return html`
       <button
@@ -234,26 +236,19 @@ export class WebInspectorElement extends LitElement {
       >
         <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
           <nav
-            class="flex w-64 shrink-0 flex-col justify-between border-r border-gray-200/80 bg-white/60 px-5 py-6 text-sm"
+            class="flex w-64 shrink-0 flex-col justify-between border-r border-gray-200/80 bg-white/60 px-5 pb-6 pt-[6px] text-sm"
             aria-label="Inspector sections"
           >
-            <div class="flex flex-col gap-6">
-              <div class="flex items-center gap-3 rounded-2xl border border-gray-200/70 bg-white px-3 py-3">
+            <div class="flex flex-col gap-5">
+              <div class="flex items-center gap-3 rounded-2xl bg-white px-3 py-3">
                 <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-900 text-white">
-                  ${this.renderIcon('Building2')}
+                  ${this.renderIcon("Building2")}
                 </span>
                 <div class="flex flex-1 items-center justify-between">
                   <div class="flex flex-col leading-tight">
                     <span class="text-[0.96rem] font-semibold text-gray-900">Acme Inc</span>
                     <span class="text-xs text-gray-500">Enterprise</span>
                   </div>
-                  <button
-                    type="button"
-                    class="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-                    aria-label="Switch workspace"
-                  >
-                    ${this.renderIcon('ChevronsUpDown')}
-                  </button>
                 </div>
               </div>
 
@@ -268,19 +263,19 @@ export class WebInspectorElement extends LitElement {
                     const showChildren = Boolean(childItems.length && isExpanded);
 
                     const parentClasses = [
-                      'group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-[0.95rem] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300',
+                      "group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-[0.95rem] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
                       isSelected
-                        ? 'bg-gray-900 text-white shadow-sm'
+                        ? "bg-gray-900 text-white shadow-sm"
                         : hasActiveChild
-                          ? 'text-gray-900 hover:bg-gray-100'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-                    ].join(' ');
+                          ? "text-gray-900 hover:bg-gray-100"
+                          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    ].join(" ");
 
                     const badgeClasses = isSelected
-                      ? 'border-gray-900/80 bg-gray-900 text-white'
+                      ? "border-gray-900/80 bg-gray-900 text-white"
                       : hasActiveChild
-                        ? 'border-gray-200/80 bg-white text-gray-700'
-                        : 'border-gray-200/80 bg-white text-gray-500 group-hover:border-gray-300 group-hover:text-gray-900';
+                        ? "border-gray-200/80 bg-white text-gray-700"
+                        : "border-gray-200/80 bg-white text-gray-500 group-hover:border-gray-300 group-hover:text-gray-900";
 
                     return html`
                       <div class="flex flex-col gap-1">
@@ -290,35 +285,42 @@ export class WebInspectorElement extends LitElement {
                           aria-pressed=${isSelected}
                           @click=${() => this.handleMenuSelect(key)}
                         >
-                          <span class="flex h-9 w-9 items-center justify-center rounded-xl border ${badgeClasses}" aria-hidden="true">
+                          <span
+                            class="flex h-9 w-9 items-center justify-center rounded-xl border ${badgeClasses}"
+                            aria-hidden="true"
+                          >
                             ${this.renderIcon(icon)}
                           </span>
                           <span class="flex-1">${label}</span>
                           ${children
-                            ? html`<span class="text-gray-400 group-hover:text-gray-600">${this.renderIcon(
-                                isExpanded ? 'ChevronDown' : 'ChevronRight',
-                              )}</span>`
-                            : html`<span class="text-gray-400 group-hover:text-gray-600">${this.renderIcon(
-                                'ChevronRight',
-                              )}</span>`}
+                            ? html`<span class="text-gray-400 group-hover:text-gray-600"
+                                >${this.renderIcon(isExpanded ? "ChevronDown" : "ChevronRight")}</span
+                              >`
+                            : html`<span class="text-gray-400 group-hover:text-gray-600"
+                                >${this.renderIcon("ChevronRight")}</span
+                              >`}
                         </button>
                         ${showChildren
                           ? html`
-                              <div class="ml-6 flex flex-col gap-1 border-l border-gray-200/80 pl-3 text-[0.9rem] text-gray-500">
+                              <div
+                                class="ml-6 flex flex-col gap-1 border-l border-gray-200/80 pl-3 text-[0.9rem] text-gray-500"
+                              >
                                 ${childItems.map((child) => {
                                   const childActive = this.selectedSubItem === child.key;
                                   return html`
                                     <button
                                       type="button"
                                       class=${[
-                                        'flex w-full items-center justify-between rounded-lg px-2 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300',
-                                        childActive ? 'text-gray-900 font-medium' : 'hover:bg-gray-100 hover:text-gray-900',
-                                      ].join(' ')}
+                                        "flex w-full items-center justify-between rounded-lg px-2 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
+                                        childActive
+                                          ? "text-gray-900 font-medium"
+                                          : "hover:bg-gray-100 hover:text-gray-900",
+                                      ].join(" ")}
                                       @click=${() => this.handleSubMenuSelect(key, child.key)}
                                     >
                                       <span>${child.label}</span>
                                       ${childActive
-                                        ? html`<span class="text-gray-400">${this.renderIcon('Check')}</span>`
+                                        ? html`<span class="text-gray-400">${this.renderIcon("Check")}</span>`
                                         : html``}
                                     </button>
                                   `;
@@ -333,8 +335,12 @@ export class WebInspectorElement extends LitElement {
               </div>
             </div>
 
-            <div class="mt-6 flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-3 py-3 text-left text-[0.95rem] text-gray-700">
-              <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#ec4899] text-sm font-semibold text-white">
+            <div
+              class="mt-6 flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-3 py-3 text-left text-[0.95rem] text-gray-700"
+            >
+              <span
+                class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#ec4899] text-sm font-semibold text-white"
+              >
                 SJ
               </span>
               <div class="flex flex-1 items-center justify-between">
@@ -347,7 +353,7 @@ export class WebInspectorElement extends LitElement {
                   class="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
                   aria-label="Account menu"
                 >
-                  ${this.renderIcon('ChevronsUpDown')}
+                  ${this.renderIcon("ChevronsUpDown")}
                 </button>
               </div>
             </div>
@@ -362,12 +368,14 @@ export class WebInspectorElement extends LitElement {
               @pointercancel=${this.handlePointerCancel}
             >
               <div class="flex items-center gap-3 text-[0.95rem] text-gray-500">
-                <span class="rounded-lg border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-medium text-gray-600">
-                  ${this.renderIcon('LayoutDashboard')}
+                <span
+                  class="rounded-lg border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
+                >
+                  ${this.renderIcon("LayoutDashboard")}
                 </span>
                 <div class="flex items-center gap-2 text-sm">
                   <span class="text-gray-500">Building Your Application</span>
-                  <span class="text-gray-300">${this.renderIcon('ChevronRight')}</span>
+                  <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
                   <span class="font-medium text-gray-900">Data Fetching</span>
                 </div>
               </div>
@@ -378,7 +386,7 @@ export class WebInspectorElement extends LitElement {
                 @pointerdown=${this.handleClosePointerDown}
                 @click=${this.handleCloseClick}
               >
-                ${this.renderIcon('X')}
+                ${this.renderIcon("X")}
               </button>
             </div>
             <div class="flex-1 overflow-auto px-7 py-7">
@@ -399,7 +407,14 @@ export class WebInspectorElement extends LitElement {
           @pointerup=${this.handleResizePointerUp}
           @pointercancel=${this.handleResizePointerCancel}
         >
-          <svg class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.3">
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.3"
+          >
             <path d="M5 15L15 5" />
             <path d="M9 15L15 9" />
           </svg>
@@ -409,7 +424,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private hydrateStateFromCookie(): void {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
+    if (typeof document === "undefined" || typeof window === "undefined") {
       return;
     }
 
@@ -428,7 +443,7 @@ export class WebInspectorElement extends LitElement {
         this.contextState.button.anchorOffset = persistedButton.anchorOffset;
       }
 
-      if (typeof persistedButton.hasCustomPosition === 'boolean') {
+      if (typeof persistedButton.hasCustomPosition === "boolean") {
         this.hasCustomPosition.button = persistedButton.hasCustomPosition;
       }
     }
@@ -447,20 +462,20 @@ export class WebInspectorElement extends LitElement {
         this.contextState.window.size = this.clampWindowSize(persistedWindow.size);
       }
 
-      if (typeof persistedWindow.hasCustomPosition === 'boolean') {
+      if (typeof persistedWindow.hasCustomPosition === "boolean") {
         this.hasCustomPosition.window = persistedWindow.hasCustomPosition;
       }
     }
   }
 
   private get activeContext(): ContextKey {
-    return this.isOpen ? 'window' : 'button';
+    return this.isOpen ? "window" : "button";
   }
 
   private handlePointerDown = (event: PointerEvent) => {
     const target = event.currentTarget as HTMLElement | null;
     const contextAttr = target?.dataset.dragContext;
-    const context: ContextKey = contextAttr === 'window' ? 'window' : 'button';
+    const context: ContextKey = contextAttr === "window" ? "window" : "button";
 
     this.pointerContext = context;
     this.measureContext(context);
@@ -521,16 +536,16 @@ export class WebInspectorElement extends LitElement {
       event.preventDefault();
       this.setDragging(false);
       this.updateAnchorFromPosition(this.pointerContext);
-      if (this.pointerContext === 'window') {
+      if (this.pointerContext === "window") {
         this.hasCustomPosition.window = true;
-      } else if (this.pointerContext === 'button') {
+      } else if (this.pointerContext === "button") {
         this.hasCustomPosition.button = true;
         if (this.draggedDuringInteraction) {
           this.ignoreNextButtonClick = true;
         }
       }
       this.applyAnchorPosition(this.pointerContext);
-    } else if (context === 'button' && !this.isOpen && !this.draggedDuringInteraction) {
+    } else if (context === "button" && !this.isOpen && !this.draggedDuringInteraction) {
       this.openInspector();
     }
 
@@ -592,12 +607,7 @@ export class WebInspectorElement extends LitElement {
   };
 
   private handleResizePointerMove = (event: PointerEvent) => {
-    if (
-      !this.isResizing ||
-      this.resizePointerId !== event.pointerId ||
-      !this.resizeStart ||
-      !this.resizeInitialSize
-    ) {
+    if (!this.isResizing || this.resizePointerId !== event.pointerId || !this.resizeStart || !this.resizeInitialSize) {
       return;
     }
 
@@ -611,10 +621,10 @@ export class WebInspectorElement extends LitElement {
       width: this.resizeInitialSize.width + deltaX,
       height: this.resizeInitialSize.height + deltaY,
     });
-    this.keepPositionWithinViewport('window');
-    this.updateAnchorFromPosition('window');
+    this.keepPositionWithinViewport("window");
+    this.updateAnchorFromPosition("window");
     this.requestUpdate();
-    this.updateHostTransform('window');
+    this.updateHostTransform("window");
   };
 
   private handleResizePointerUp = (event: PointerEvent) => {
@@ -627,8 +637,8 @@ export class WebInspectorElement extends LitElement {
       target.releasePointerCapture(this.resizePointerId);
     }
 
-    this.updateAnchorFromPosition('window');
-    this.applyAnchorPosition('window');
+    this.updateAnchorFromPosition("window");
+    this.applyAnchorPosition("window");
     this.resetResizeTracking();
   };
 
@@ -642,37 +652,37 @@ export class WebInspectorElement extends LitElement {
       target.releasePointerCapture(this.resizePointerId);
     }
 
-    this.updateAnchorFromPosition('window');
-    this.applyAnchorPosition('window');
+    this.updateAnchorFromPosition("window");
+    this.applyAnchorPosition("window");
     this.resetResizeTracking();
   };
 
   private handleResize = () => {
-    this.measureContext('button');
-    this.applyAnchorPosition('button');
+    this.measureContext("button");
+    this.applyAnchorPosition("button");
 
-    this.measureContext('window');
+    this.measureContext("window");
     if (this.hasCustomPosition.window) {
-      this.applyAnchorPosition('window');
+      this.applyAnchorPosition("window");
     } else {
-      this.centerContext('window');
+      this.centerContext("window");
     }
 
     this.updateHostTransform();
   };
 
   private measureContext(context: ContextKey): void {
-    const selector = context === 'window' ? '.inspector-window' : '.console-button';
+    const selector = context === "window" ? ".inspector-window" : ".console-button";
     const element = this.renderRoot?.querySelector(selector) as HTMLElement | null;
     if (!element) {
       return;
     }
-    const fallback = context === 'window' ? DEFAULT_WINDOW_SIZE : DEFAULT_BUTTON_SIZE;
+    const fallback = context === "window" ? DEFAULT_WINDOW_SIZE : DEFAULT_BUTTON_SIZE;
     updateSizeFromElement(this.contextState[context], element, fallback);
   }
 
   private centerContext(context: ContextKey): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -688,24 +698,24 @@ export class WebInspectorElement extends LitElement {
   }
 
   private ensureWindowPlacement(): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
     if (!this.hasCustomPosition.window) {
-      this.centerContext('window');
+      this.centerContext("window");
       return;
     }
 
     const viewport = this.getViewportSize();
     keepPositionWithinViewport(this.contextState.window, viewport, EDGE_MARGIN);
     updateAnchorFromPositionHelper(this.contextState.window, viewport, EDGE_MARGIN);
-    this.updateHostTransform('window');
+    this.updateHostTransform("window");
     this.persistState();
   }
 
   private constrainToViewport(position: Position, context: ContextKey): Position {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return position;
     }
 
@@ -714,7 +724,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private keepPositionWithinViewport(context: ContextKey): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -723,7 +733,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private getViewportSize(): Size {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return { ...DEFAULT_WINDOW_SIZE };
     }
 
@@ -751,7 +761,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private clampWindowSize(size: Size): Size {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return {
         width: Math.max(MIN_WINDOW_WIDTH, size.width),
         height: Math.max(MIN_WINDOW_HEIGHT, size.height),
@@ -779,7 +789,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private updateAnchorFromPosition(context: ContextKey): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
     const viewport = this.getViewportSize();
@@ -787,7 +797,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private applyAnchorPosition(context: ContextKey): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
     const viewport = this.getViewportSize();
@@ -820,11 +830,11 @@ export class WebInspectorElement extends LitElement {
     this.ensureWindowPlacement();
     this.requestUpdate();
     void this.updateComplete.then(() => {
-      this.measureContext('window');
+      this.measureContext("window");
       if (this.hasCustomPosition.window) {
-        this.applyAnchorPosition('window');
+        this.applyAnchorPosition("window");
       } else {
-        this.centerContext('window');
+        this.centerContext("window");
       }
     });
   }
@@ -835,11 +845,11 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.isOpen = false;
-    this.updateHostTransform('button');
+    this.updateHostTransform("button");
     this.requestUpdate();
     void this.updateComplete.then(() => {
-      this.measureContext('button');
-      this.applyAnchorPosition('button');
+      this.measureContext("button");
+      this.applyAnchorPosition("button");
     });
   }
 
@@ -850,28 +860,28 @@ export class WebInspectorElement extends LitElement {
     }
 
     const svgAttrs: Record<string, string | number> = {
-      xmlns: 'http://www.w3.org/2000/svg',
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'currentColor',
-      'stroke-width': '1.7',
-      'stroke-linecap': 'round',
-      'stroke-linejoin': 'round',
-      class: 'h-4 w-4',
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": "1.7",
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      class: "h-4 w-4",
     };
 
     const svgMarkup = `<svg ${this.serializeAttributes(svgAttrs)}>${iconNode
       .map(([tag, attrs]) => `<${tag} ${this.serializeAttributes(attrs)} />`)
-      .join('')}</svg>`;
+      .join("")}</svg>`;
 
     return unsafeHTML(svgMarkup);
   }
 
   private serializeAttributes(attributes: Record<string, string | number | undefined>): string {
     return Object.entries(attributes)
-      .filter(([key, value]) => key !== 'key' && value !== undefined && value !== null && value !== '')
-      .map(([key, value]) => `${key}="${String(value).replace(/"/g, '&quot;')}"`)
-      .join(' ');
+      .filter(([key, value]) => key !== "key" && value !== undefined && value !== null && value !== "")
+      .map(([key, value]) => `${key}="${String(value).replace(/"/g, "&quot;")}"`)
+      .join(" ");
   }
 
   private handleMenuSelect(key: MenuKey): void {
@@ -915,6 +925,6 @@ defineWebInspector();
 
 declare global {
   interface HTMLElementTagNameMap {
-    'web-inspector': WebInspectorElement;
+    "web-inspector": WebInspectorElement;
   }
 }
