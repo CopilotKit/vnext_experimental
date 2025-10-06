@@ -226,10 +226,10 @@ export class WebInspectorElement extends LitElement {
             class="flex w-72 shrink-0 flex-col justify-between border-r border-gray-200/80 bg-white/60 px-6 pb-6 pt-5 text-sm"
             aria-label="Inspector sections"
           >
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6 overflow-y-auto">
               <div class="flex items-center gap-3">
                 <span
-                  class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_12px_30px_rgba(15,23,42,0.15)]"
+                  class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]"
                 >
                   ${this.renderIcon("Building2")}
                 </span>
@@ -250,7 +250,7 @@ export class WebInspectorElement extends LitElement {
                     const buttonClasses = [
                       "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[0.95rem] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
                       isSelected
-                        ? "bg-[#0f172a] text-white shadow-[0_14px_32px_rgba(15,23,42,0.22)]"
+                        ? "bg-[#0f172a] text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                     ].join(" ");
 
@@ -281,16 +281,16 @@ export class WebInspectorElement extends LitElement {
             </div>
 
             <div
-              class="flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-3 py-3 text-left text-[0.95rem] text-gray-700 shadow-[0_10px_25px_rgba(15,23,42,0.12)]"
+              class="relative flex items-center rounded-2xl border border-gray-200/80 bg-white px-3 py-3 text-left text-[0.95rem] text-gray-700 shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
             >
               <span
-                class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#ec4899] text-sm font-semibold text-white"
+                class="w-8 h-8 flex items-center justify-center overflow-hidden rounded-full bg-gray-100 text-base font-semibold text-gray-700"
               >
-                SJ
+                JS
               </span>
-              <div class="flex flex-1 flex-col leading-tight">
-                <span class="font-medium text-gray-900">shadcn</span>
-                <span class="text-xs text-gray-500">m@example.com</span>
+              <div class="pl-4 flex flex-1 flex-col leading-tight">
+                <span class="font-medium text-gray-900">John Snow</span>
+                <span class="text-xs text-gray-500">john@snow.com</span>
               </div>
               <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
             </div>
