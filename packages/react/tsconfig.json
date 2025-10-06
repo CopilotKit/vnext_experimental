@@ -14,6 +14,10 @@
       "@copilotkitnext/shared": [
         "../shared/dist/index.d.ts",
         "../shared/src/index.ts"
+      ],
+      "@copilotkitnext/web-inspector": [
+        "../web-inspector/dist/index.d.ts",
+        "../web-inspector/src/index.ts"
       ]
     },
     "types": ["vitest/globals"]

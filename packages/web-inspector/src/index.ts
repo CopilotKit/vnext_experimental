@@ -4,6 +4,8 @@ import tailwindStyles from "./styles/generated.css";
 import logoMarkUrl from "./assets/logo-mark.svg";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { icons } from "lucide";
+import type { CopilotKitCore, CopilotKitCoreSubscriber } from "@copilotkitnext/core";
+import type { AbstractAgent, AgentSubscriber } from "@ag-ui/client";
 import type { Anchor, ContextKey, ContextState, Position, Size } from "./lib/types";
 import {
   applyAnchorPosition as applyAnchorPositionHelper,
@@ -43,8 +45,30 @@ const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 320, height: 380 };
+const MAX_AGENT_EVENTS = 200;
+const MAX_TOTAL_EVENTS = 500;
+
+type InspectorEvent = {
+  id: string;
+  agentId: string;
+  type: string;
+  timestamp: number;
+  payload: unknown;
+};
 
 export class WebInspectorElement extends LitElement {
+  static properties = {
+    core: { attribute: false },
+  } as const;
+
+  private _core: CopilotKitCore | null = null;
+  private coreSubscriber: CopilotKitCoreSubscriber | null = null;
+  private coreUnsubscribe: (() => void) | null = null;
+  private agentSubscriptions: Map<string, () => void> = new Map();
+  private agentEvents: Map<string, InspectorEvent[]> = new Map();
+  private flattenedEvents: InspectorEvent[] = [];
+  private eventCounter = 0;
+
   private pointerId: number | null = null;
   private dragStart: Position | null = null;
   private dragOffset: Position = { x: 0, y: 0 };
@@ -55,6 +79,26 @@ export class WebInspectorElement extends LitElement {
   private ignoreNextButtonClick = false;
   private selectedMenu: MenuKey = "ag-ui-events";
   private contextMenuOpen = false;
+
+  get core(): CopilotKitCore | null {
+    return this._core;
+  }
+
+  set core(value: CopilotKitCore | null) {
+    const oldValue = this._core;
+    if (oldValue === value) {
+      return;
+    }
+
+    this.detachFromCore();
+
+    this._core = value ?? null;
+    this.requestUpdate("core", oldValue);
+
+    if (this._core) {
+      this.attachToCore(this._core);
+    }
+  }
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
@@ -87,6 +131,224 @@ export class WebInspectorElement extends LitElement {
     { key: "frontend-tools", label: "Frontend Tools", icon: "Hammer" },
     { key: "agent-context", label: "Agent Context", icon: "FileText" },
   ];
+
+  private attachToCore(core: CopilotKitCore): void {
+    this.coreSubscriber = {
+      onAgentsChanged: ({ agents }) => {
+        this.processAgentsChanged(agents);
+      },
+    } satisfies CopilotKitCoreSubscriber;
+
+    this.coreUnsubscribe = core.subscribe(this.coreSubscriber);
+    this.processAgentsChanged(core.agents);
+  }
+
+  private detachFromCore(): void {
+    if (this.coreUnsubscribe) {
+      this.coreUnsubscribe();
+      this.coreUnsubscribe = null;
+    }
+    this.coreSubscriber = null;
+    this.teardownAgentSubscriptions();
+  }
+
+  private teardownAgentSubscriptions(): void {
+    for (const unsubscribe of this.agentSubscriptions.values()) {
+      unsubscribe();
+    }
+    this.agentSubscriptions.clear();
+    this.agentEvents.clear();
+    this.flattenedEvents = [];
+    this.eventCounter = 0;
+  }
+
+  private processAgentsChanged(agents: Readonly<Record<string, AbstractAgent>>): void {
+    const seenAgentIds = new Set<string>();
+
+    for (const agent of Object.values(agents)) {
+      if (!agent?.agentId) {
+        continue;
+      }
+      seenAgentIds.add(agent.agentId);
+      this.subscribeToAgent(agent);
+    }
+
+    for (const agentId of Array.from(this.agentSubscriptions.keys())) {
+      if (!seenAgentIds.has(agentId)) {
+        this.unsubscribeFromAgent(agentId);
+        this.agentEvents.delete(agentId);
+      }
+    }
+
+    this.updateContextOptions(seenAgentIds);
+    this.requestUpdate();
+  }
+
+  private subscribeToAgent(agent: AbstractAgent): void {
+    if (!agent.agentId) {
+      return;
+    }
+
+    const agentId = agent.agentId;
+
+    this.unsubscribeFromAgent(agentId);
+
+    const subscriber: AgentSubscriber = {
+      onRunStartedEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "RUN_STARTED", event);
+      },
+      onRunFinishedEvent: ({ event, result }) => {
+        this.recordAgentEvent(agentId, "RUN_FINISHED", { event, result });
+      },
+      onRunErrorEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "RUN_ERROR", event);
+      },
+      onTextMessageStartEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "TEXT_MESSAGE_START", event);
+      },
+      onTextMessageContentEvent: ({ event, textMessageBuffer }) => {
+        this.recordAgentEvent(agentId, "TEXT_MESSAGE_CONTENT", { event, textMessageBuffer });
+      },
+      onTextMessageEndEvent: ({ event, textMessageBuffer }) => {
+        this.recordAgentEvent(agentId, "TEXT_MESSAGE_END", { event, textMessageBuffer });
+      },
+      onToolCallStartEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "TOOL_CALL_START", event);
+      },
+      onToolCallArgsEvent: ({ event, toolCallBuffer, toolCallName, partialToolCallArgs }) => {
+        this.recordAgentEvent(agentId, "TOOL_CALL_ARGS", { event, toolCallBuffer, toolCallName, partialToolCallArgs });
+      },
+      onToolCallEndEvent: ({ event, toolCallArgs, toolCallName }) => {
+        this.recordAgentEvent(agentId, "TOOL_CALL_END", { event, toolCallArgs, toolCallName });
+      },
+      onToolCallResultEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "TOOL_CALL_RESULT", event);
+      },
+      onStateSnapshotEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "STATE_SNAPSHOT", event);
+      },
+      onStateDeltaEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "STATE_DELTA", event);
+      },
+      onMessagesSnapshotEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "MESSAGES_SNAPSHOT", event);
+      },
+      onRawEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "RAW_EVENT", event);
+      },
+      onCustomEvent: ({ event }) => {
+        this.recordAgentEvent(agentId, "CUSTOM_EVENT", event);
+      },
+    };
+
+    const { unsubscribe } = agent.subscribe(subscriber);
+    this.agentSubscriptions.set(agentId, unsubscribe);
+
+    if (!this.agentEvents.has(agentId)) {
+      this.agentEvents.set(agentId, []);
+    }
+  }
+
+  private unsubscribeFromAgent(agentId: string): void {
+    const unsubscribe = this.agentSubscriptions.get(agentId);
+    if (unsubscribe) {
+      unsubscribe();
+      this.agentSubscriptions.delete(agentId);
+    }
+  }
+
+  private recordAgentEvent(agentId: string, type: string, payload: unknown): void {
+    const eventId = `${agentId}:${++this.eventCounter}`;
+    const event: InspectorEvent = {
+      id: eventId,
+      agentId,
+      type,
+      timestamp: Date.now(),
+      payload,
+    };
+
+    const currentAgentEvents = this.agentEvents.get(agentId) ?? [];
+    const nextAgentEvents = [event, ...currentAgentEvents].slice(0, MAX_AGENT_EVENTS);
+    this.agentEvents.set(agentId, nextAgentEvents);
+
+    this.flattenedEvents = [event, ...this.flattenedEvents].slice(0, MAX_TOTAL_EVENTS);
+    this.requestUpdate();
+  }
+
+  private updateContextOptions(agentIds: Set<string>): void {
+    const nextOptions: Array<{ key: string; label: string }> = [
+      { key: "all-agents", label: "All Agents" },
+      ...Array.from(agentIds)
+        .sort((a, b) => a.localeCompare(b))
+        .map((id) => ({ key: id, label: id })),
+    ];
+
+    const optionsChanged =
+      this.contextOptions.length !== nextOptions.length ||
+      this.contextOptions.some((option, index) => option.key !== nextOptions[index]?.key);
+
+    if (optionsChanged) {
+      this.contextOptions = nextOptions;
+    }
+
+    if (!nextOptions.some((option) => option.key === this.selectedContext)) {
+      this.selectedContext = "all-agents";
+      this.expandedRows.clear();
+    }
+  }
+
+  private getEventsForSelectedContext(): InspectorEvent[] {
+    if (this.selectedContext === "all-agents") {
+      return this.flattenedEvents;
+    }
+
+    return this.agentEvents.get(this.selectedContext) ?? [];
+  }
+
+  private getEventBadgeClasses(type: string): string {
+    const base = "font-mono text-[10px] font-medium inline-flex items-center rounded-sm px-1.5 py-0.5 border";
+
+    if (type.startsWith("RUN_")) {
+      return `${base} bg-blue-50 text-blue-700 border-blue-200`;
+    }
+
+    if (type.startsWith("TEXT_MESSAGE")) {
+      return `${base} bg-emerald-50 text-emerald-700 border-emerald-200`;
+    }
+
+    if (type.startsWith("TOOL_CALL")) {
+      return `${base} bg-amber-50 text-amber-700 border-amber-200`;
+    }
+
+    if (type.startsWith("STATE")) {
+      return `${base} bg-violet-50 text-violet-700 border-violet-200`;
+    }
+
+    if (type.startsWith("MESSAGES")) {
+      return `${base} bg-sky-50 text-sky-700 border-sky-200`;
+    }
+
+    if (type === "RUN_ERROR") {
+      return `${base} bg-rose-50 text-rose-700 border-rose-200`;
+    }
+
+    return `${base} bg-gray-100 text-gray-600 border-gray-200`;
+  }
+
+  private stringifyPayload(payload: unknown, pretty: boolean): string {
+    try {
+      if (payload === undefined) {
+        return pretty ? "undefined" : "undefined";
+      }
+      if (typeof payload === "string") {
+        return payload;
+      }
+      return JSON.stringify(payload, null, pretty ? 2 : 0) ?? "";
+    } catch (error) {
+      console.warn("Failed to stringify inspector payload", error);
+      return String(payload);
+    }
+  }
 
   static styles = [
     unsafeCSS(tailwindStyles),
@@ -127,6 +389,7 @@ export class WebInspectorElement extends LitElement {
       window.removeEventListener("resize", this.handleResize);
       window.removeEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
     }
+    this.detachFromCore();
   }
 
   firstUpdated(): void {
@@ -829,13 +1092,12 @@ export class WebInspectorElement extends LitElement {
       .join(" ");
   }
 
-  private contextOptions = [
-    { key: "all-agents" as const, label: "All Agents" },
-    { key: "default" as const, label: "default" },
+  private contextOptions: Array<{ key: string; label: string }> = [
+    { key: "all-agents", label: "All Agents" },
   ];
 
-  private selectedContext: "all-agents" | "default" = "all-agents";
-  private expandedRows: Set<number> = new Set();
+  private selectedContext = "all-agents";
+  private expandedRows: Set<string> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
@@ -857,65 +1119,61 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderEventsTable() {
-    // Generate fake AG-UI event data using real event types
-    const events = [
-      { type: "RUN_STARTED", timestamp: new Date(Date.now() - 5000), event: { runId: "run_abc123", agentId: "weather-agent", mode: "development", timestamp: Date.now() - 5000 } },
-      { type: "STATE_SNAPSHOT", timestamp: new Date(Date.now() - 8000), event: { state: { initialized: true, connected: true, version: "2.0.0" }, timestamp: Date.now() - 8000 } },
-      { type: "TEXT_MESSAGE_START", timestamp: new Date(Date.now() - 10000), event: { messageId: "msg_456", role: "assistant", timestamp: Date.now() - 10000 } },
-      { type: "TEXT_MESSAGE_CHUNK", timestamp: new Date(Date.now() - 12000), event: { messageId: "msg_456", content: "Fetching weather data for San Francisco...", delta: "Fetching weather data" } },
-      { type: "TOOL_CALL_CHUNK", timestamp: new Date(Date.now() - 15000), event: { toolCallId: "call_789", toolName: "get_current_weather", args: { location: "San Francisco", units: "fahrenheit" }, status: "pending" } },
-      { type: "TOOL_CALL_RESULT", timestamp: new Date(Date.now() - 18000), event: { toolCallId: "call_789", result: { temperature: "68°F", condition: "Sunny", humidity: "45%" }, success: true } },
-      { type: "TEXT_MESSAGE_CONTENT", timestamp: new Date(Date.now() - 20000), event: { messageId: "msg_456", content: "The weather in San Francisco is 68°F and Sunny with 45% humidity." } },
-      { type: "TEXT_MESSAGE_END", timestamp: new Date(Date.now() - 22000), event: { messageId: "msg_456", totalLength: 128, timestamp: Date.now() - 22000 } },
-      { type: "RUN_FINISHED", timestamp: new Date(Date.now() - 25000), event: { runId: "run_abc123", status: "success", duration_ms: 20000, tokensUsed: 450 } },
-      { type: "RUN_ERROR", timestamp: new Date(Date.now() - 30000), event: { runId: "run_xyz789", error: "Rate limit exceeded", code: "RATE_LIMIT", retryAfter: 60 } },
-    ];
+    const events = this.getEventsForSelectedContext();
+
+    if (events.length === 0) {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-xs text-gray-500">
+          No events yet. Trigger an agent run to see live activity.
+        </div>
+      `;
+    }
 
     return html`
       <div class="overflow-hidden">
-        <table class="w-full text-xs border-collapse">
+        <table class="w-full border-collapse text-xs">
           <thead>
             <tr class="bg-white">
-              <th class="border-r border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Type</th>
-              <th class="border-r border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Time</th>
-              <th class="border-b border-gray-200 px-3 py-2 text-left font-medium text-gray-900 bg-white">Event</th>
+              <th class="border-r border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                Type
+              </th>
+              <th class="border-r border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                Time
+              </th>
+              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                Payload
+              </th>
             </tr>
           </thead>
           <tbody>
             ${events.map((event, index) => {
-              const typeColor = event.type === "RUN_ERROR" ? "text-red-600 bg-red-50" :
-                               event.type === "RUN_FINISHED" ? "text-green-600 bg-green-50" :
-                               event.type === "RUN_STARTED" ? "text-blue-600 bg-blue-50" :
-                               event.type.includes("TOOL_CALL") ? "text-purple-600 bg-purple-50" :
-                               event.type.includes("TEXT_MESSAGE") ? "text-cyan-600 bg-cyan-50" :
-                               event.type === "STATE_SNAPSHOT" ? "text-amber-600 bg-amber-50" :
-                               "text-gray-600 bg-gray-50";
-
-              const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/30";
               const isLastRow = index === events.length - 1;
-              const isExpanded = this.expandedRows.has(index);
-
-              const jsonString = JSON.stringify(event.event);
-              const jsonFormatted = JSON.stringify(event.event, null, 2);
+              const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/50";
+              const badgeClasses = this.getEventBadgeClasses(event.type);
+              const inlinePayload = this.stringifyPayload(event.payload, false) || "—";
+              const prettyPayload = this.stringifyPayload(event.payload, true) || inlinePayload;
+              const isExpanded = this.expandedRows.has(event.id);
 
               return html`
                 <tr
-                  class="${rowBg} hover:bg-blue-50/50 transition cursor-pointer"
-                  @click=${() => this.toggleRowExpansion(index)}
+                  class="${rowBg} transition hover:bg-blue-50/50"
+                  @click=${() => this.toggleRowExpansion(event.id)}
                 >
                   <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2">
-                    <span class="font-mono text-[10px] font-medium ${typeColor} inline-flex items-center rounded-sm px-1.5 py-0.5">
-                      ${event.type}
+                    <div class="flex flex-col gap-1">
+                      <span class=${badgeClasses}>${event.type}</span>
+                      <span class="font-mono text-[10px] text-gray-400">${event.agentId}</span>
+                    </div>
+                  </td>
+                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 font-mono text-[11px] text-gray-600">
+                    <span title=${new Date(event.timestamp).toLocaleString()}>
+                      ${new Date(event.timestamp).toLocaleTimeString()}
                     </span>
                   </td>
-                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[11px]">
-                    ${event.timestamp.toLocaleTimeString()}
-                  </td>
-                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 text-gray-600 font-mono text-[10px] ${isExpanded ? '' : 'truncate max-w-xs'}">
+                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 font-mono text-[10px] text-gray-600 ${isExpanded ? '' : 'truncate max-w-xs'}">
                     ${isExpanded
-                      ? html`<pre class="m-0 text-[10px] font-mono text-gray-600">${jsonFormatted}</pre>`
-                      : jsonString
-                    }
+                      ? html`<pre class="m-0 whitespace-pre-wrap text-[10px] font-mono text-gray-600">${prettyPayload}</pre>`
+                      : inlinePayload}
                   </td>
                 </tr>
               `;
@@ -988,10 +1246,16 @@ export class WebInspectorElement extends LitElement {
     this.requestUpdate();
   }
 
-  private handleContextOptionSelect(key: "all-agents" | "default"): void {
+  private handleContextOptionSelect(key: string): void {
+    if (!this.contextOptions.some((option) => option.key === key)) {
+      return;
+    }
+
     if (this.selectedContext !== key) {
       this.selectedContext = key;
+      this.expandedRows.clear();
     }
+
     this.contextMenuOpen = false;
     this.requestUpdate();
   }
@@ -1011,11 +1275,11 @@ export class WebInspectorElement extends LitElement {
     }
   };
 
-  private toggleRowExpansion(index: number): void {
-    if (this.expandedRows.has(index)) {
-      this.expandedRows.delete(index);
+  private toggleRowExpansion(eventId: string): void {
+    if (this.expandedRows.has(eventId)) {
+      this.expandedRows.delete(eventId);
     } else {
-      this.expandedRows.add(index);
+      this.expandedRows.add(eventId);
     }
     this.requestUpdate();
   }

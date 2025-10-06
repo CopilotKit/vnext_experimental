@@ -911,6 +911,12 @@ importers:
 
   packages/web-inspector:
     dependencies:
+      '@ag-ui/client':
+        specifier: 0.0.40-alpha.3
+        version: 0.0.40-alpha.3
+      '@copilotkitnext/core':
+        specifier: workspace:*
+        version: link:../core
       lit:
         specifier: ^3.2.0
         version: 3.3.1
