@@ -826,14 +826,15 @@ export class WebInspectorElement extends LitElement {
   }
 
   private contextOptions = [
-    { key: "all-agents", label: "All Agents" },
-    { key: "default", label: "default" },
-  ] as const;
+    { key: "all-agents" as const, label: "All Agents" },
+    { key: "default" as const, label: "default" },
+  ];
 
-  private selectedContext = this.contextOptions[0].key;
+  private selectedContext: "all-agents" | "default" = "all-agents";
 
   private getSelectedMenu(): MenuItem {
-    return this.menuItems.find((item) => item.key === this.selectedMenu) || this.menuItems[0];
+    const found = this.menuItems.find((item) => item.key === this.selectedMenu);
+    return found ?? this.menuItems[0]!;
   }
 
   private renderContextDropdown() {
