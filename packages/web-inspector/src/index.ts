@@ -27,7 +27,7 @@ export const WEB_INSPECTOR_TAG = "web-inspector" as const;
 
 type LucideIconName = keyof typeof icons;
 
-type MenuKey = "ag-ui-events" | "models" | "documentation" | "settings";
+type MenuKey = "ag-ui-events" | "agents" | "frontend-tools" | "agent-context";
 
 type MenuItem = {
   key: MenuKey;
@@ -54,6 +54,7 @@ export class WebInspectorElement extends LitElement {
   private draggedDuringInteraction = false;
   private ignoreNextButtonClick = false;
   private selectedMenu: MenuKey = "ag-ui-events";
+  private contextMenuOpen = false;
 
   private readonly contextState: Record<ContextKey, ContextState> = {
     button: {
@@ -82,9 +83,9 @@ export class WebInspectorElement extends LitElement {
 
   private readonly menuItems: MenuItem[] = [
     { key: "ag-ui-events", label: "Events", icon: "Zap" },
-    { key: "models", label: "Models", icon: "Bot" },
-    { key: "documentation", label: "Documentation", icon: "BookOpen" },
-    { key: "settings", label: "Settings", icon: "SlidersHorizontal" },
+    { key: "agents", label: "Agents", icon: "Users" },
+    { key: "frontend-tools", label: "Frontend Tools", icon: "Hammer" },
+    { key: "agent-context", label: "Agent Context", icon: "FileText" },
   ];
 
   static styles = [
@@ -116,6 +117,7 @@ export class WebInspectorElement extends LitElement {
     super.connectedCallback();
     if (typeof window !== "undefined") {
       window.addEventListener("resize", this.handleResize);
+      window.addEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
     }
   }
 
@@ -123,6 +125,7 @@ export class WebInspectorElement extends LitElement {
     super.disconnectedCallback();
     if (typeof window !== "undefined") {
       window.removeEventListener("resize", this.handleResize);
+      window.removeEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
     }
   }
 
@@ -305,12 +308,12 @@ export class WebInspectorElement extends LitElement {
                 <span
                   class="rounded-lg border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
                 >
-                  ${this.renderIcon("LayoutDashboard")}
+                  ${this.renderIcon(this.getSelectedMenu().icon)}
                 </span>
-                <div class="flex items-center gap-2 text-sm">
-                  <span class="text-gray-500">Building Your Application</span>
-                  <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
-                  <span class="font-medium text-gray-900">Data Fetching</span>
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                  <span>${this.getSelectedMenu().label}</span>
+                  <span class="h-4 w-px bg-gray-200/90"></span>
+                  ${this.renderContextDropdown()}
                 </div>
               </div>
               <button
@@ -818,14 +821,101 @@ export class WebInspectorElement extends LitElement {
       .join(" ");
   }
 
+  private contextOptions = [
+    { key: "all-agents", label: "All Agents" },
+    { key: "default", label: "default" },
+  ] as const;
+
+  private selectedContext = this.contextOptions[0].key;
+
+  private getSelectedMenu(): MenuItem {
+    return this.menuItems.find((item) => item.key === this.selectedMenu) ?? this.menuItems[0];
+  }
+
+  private renderContextDropdown() {
+    if (this.selectedMenu !== "ag-ui-events") {
+      return nothing;
+    }
+
+    const selectedLabel = this.contextOptions.find((opt) => opt.key === this.selectedContext)?.label ?? "";
+
+    return html`
+      <div class="relative" data-context-dropdown-root="true">
+        <button
+          type="button"
+          class="flex items-center gap-1 rounded-full bg-transparent px-2 py-0.5 text-xs font-medium text-gray-500 transition hover:text-gray-700"
+          @pointerdown=${this.handleContextDropdownToggle}
+        >
+          <span>${selectedLabel}</span>
+          <span class="text-gray-300">${this.renderIcon("ChevronDown")}</span>
+        </button>
+        ${this.contextMenuOpen
+          ? html`
+              <div
+                class="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200/80 bg-white py-1 text-xs shadow-lg"
+                data-context-dropdown-root="true"
+              >
+                ${this.contextOptions.map(
+                  (option) => html`
+                    <button
+                      type="button"
+                      class="flex w-full items-center justify-between px-3 py-1.5 text-left transition hover:bg-gray-50"
+                      data-context-dropdown-root="true"
+                      @click=${() => this.handleContextOptionSelect(option.key)}
+                    >
+                      <span class="text-gray-700">${option.label}</span>
+                      ${option.key === this.selectedContext
+                        ? html`<span class="text-gray-400">${this.renderIcon("Check")}</span>`
+                        : nothing}
+                    </button>
+                  `,
+                )}
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
   private handleMenuSelect(key: MenuKey): void {
     if (!this.menuItems.some((item) => item.key === key)) {
       return;
     }
 
     this.selectedMenu = key;
+    this.contextMenuOpen = false;
     this.requestUpdate();
   }
+
+  private handleContextDropdownToggle(event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuOpen = !this.contextMenuOpen;
+    this.requestUpdate();
+  }
+
+  private handleContextOptionSelect(key: (typeof this.contextOptions)[number]["key"]): void {
+    if (this.selectedContext !== key) {
+      this.selectedContext = key;
+    }
+    this.contextMenuOpen = false;
+    this.requestUpdate();
+  }
+
+  private handleGlobalPointerDown = (event: PointerEvent): void => {
+    if (!this.contextMenuOpen) {
+      return;
+    }
+
+    const clickedDropdown = event.composedPath().some((node) => {
+      return node instanceof HTMLElement && node.dataset?.contextDropdownRoot === "true";
+    });
+
+    if (!clickedDropdown) {
+      this.contextMenuOpen = false;
+      this.requestUpdate();
+    }
+  };
 }
 
 export function defineWebInspector(): void {
