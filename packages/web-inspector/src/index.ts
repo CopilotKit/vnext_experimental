@@ -45,8 +45,8 @@ const MIN_WINDOW_HEIGHT = 200;
 const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
-const DEFAULT_WINDOW_SIZE: Size = { width: 320, height: 380 };
-const DOCKED_LEFT_WIDTH = 280; // Sensible width for left dock with collapsed sidebar
+const DEFAULT_WINDOW_SIZE: Size = { width: 720, height: 480 };
+const DOCKED_LEFT_WIDTH = 560; // Sensible width for left dock with collapsed sidebar
 const DOCKED_BOTTOM_HEIGHT = 300; // Sensible height for bottom dock
 const MAX_AGENT_EVENTS = 200;
 const MAX_TOTAL_EVENTS = 500;
@@ -452,9 +452,9 @@ export class WebInspectorElement extends LitElement {
 
     this.hydrateStateFromCookie();
 
-    // Apply docking styles if open and docked
+    // Apply docking styles if open and docked (skip transition on initial load)
     if (this.isOpen && this.dockMode !== 'floating') {
-      this.applyDockStyles();
+      this.applyDockStyles(true);
     }
 
     this.applyAnchorPosition("button");
@@ -770,6 +770,13 @@ export class WebInspectorElement extends LitElement {
     // Restore the dock mode
     if (isValidDockMode(persisted.dockMode)) {
       this.dockMode = persisted.dockMode;
+
+      // Ensure window sizes match docked constants when restoring docked state
+      if (this.dockMode === 'docked-left') {
+        this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
+      } else if (this.dockMode === 'docked-bottom') {
+        this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
+      }
     }
   }
 
@@ -1165,7 +1172,7 @@ export class WebInspectorElement extends LitElement {
     }, 300);
   }
 
-  private applyDockStyles(): void {
+  private applyDockStyles(skipTransition = false): void {
     if (typeof document === 'undefined' || !document.body) {
       return;
     }
@@ -1177,8 +1184,8 @@ export class WebInspectorElement extends LitElement {
       bottom: computedStyle.marginBottom,
     };
 
-    // Apply transition to body for smooth animation (only when docking, not during resize)
-    if (!this.isResizing) {
+    // Apply transition to body for smooth animation (only when docking, not during resize or initial load)
+    if (!this.isResizing && !skipTransition) {
       document.body.style.transition = 'margin 300ms ease';
     }
 
@@ -1190,7 +1197,7 @@ export class WebInspectorElement extends LitElement {
     }
 
     // Remove transition after animation completes
-    if (!this.isResizing) {
+    if (!this.isResizing && !skipTransition) {
       setTimeout(() => {
         if (document.body) {
           document.body.style.transition = '';
