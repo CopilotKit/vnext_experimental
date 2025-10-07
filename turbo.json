@@ -50,7 +50,15 @@
     },
     "build:css": {
       "cache": true,
-      "outputs": ["dist/styles.css"]
+      "outputs": ["dist/styles.css", "src/styles/generated.css"]
+    },
+    "@copilotkitnext/web-inspector#build:css": {
+      "cache": true,
+      "outputs": ["src/styles/generated.css"]
+    },
+    "@copilotkitnext/web-inspector#build": {
+      "dependsOn": ["^build", "@copilotkitnext/web-inspector#build:css"],
+      "outputs": ["dist/**"]
     },
     "demo#dev": {
       "cache": false,
