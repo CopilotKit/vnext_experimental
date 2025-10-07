@@ -1,4 +1,4 @@
-import type { Anchor, Position, Size } from './types';
+import type { Anchor, DockMode, Position, Size } from './types';
 
 export type PersistedContextState = {
   anchor?: Anchor;
@@ -10,6 +10,10 @@ export type PersistedContextState = {
 export type PersistedState = {
   button?: Omit<PersistedContextState, 'size'>;
   window?: PersistedContextState;
+  isOpen?: boolean;
+  dockMode?: DockMode;
+  selectedMenu?: string;
+  selectedContext?: string;
 };
 
 export function loadInspectorState(cookieName: string): PersistedState | null {
@@ -85,4 +89,8 @@ export function isValidSize(value: unknown): value is Size {
 
 export function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
+}
+
+export function isValidDockMode(value: unknown): value is DockMode {
+  return value === 'floating' || value === 'docked-left';
 }

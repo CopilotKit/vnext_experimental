@@ -15,11 +15,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pnpm run build:css && tsup",
+    "build": "tsup",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/tailwind.css -o ./src/styles/generated.css -m",
     "dev": "pnpm run build:css && concurrently \"pnpm run dev:css\" \"tsup --watch\"",
     "dev:css": "npx @tailwindcss/cli -i ./src/styles/tailwind.css -o ./src/styles/generated.css --watch --minify",
-    "prepublishOnly": "pnpm run build",
+    "prepublishOnly": "pnpm run build:css && pnpm run build",
     "lint": "eslint . --max-warnings 0",
     "check-types": "pnpm run build:css && tsc --noEmit",
     "clean": "rm -rf dist src/styles/generated.css"
