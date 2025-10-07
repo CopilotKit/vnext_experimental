@@ -430,7 +430,7 @@ export class WebInspectorElement extends LitElement {
     return "idle";
   }
 
-  private getAgentStats(agentId: string): { totalEvents: number; lastActivity: number | null; toolCalls: number; errors: number } {
+  private getAgentStats(agentId: string): { totalEvents: number; lastActivity: number | null; messages: number; toolCalls: number; errors: number } {
     const events = this.agentEvents.get(agentId) ?? [];
 
     const messages = this.agentMessages.get(agentId);
@@ -450,9 +450,12 @@ export class WebInspectorElement extends LitElement {
         }, 0)
       : events.filter((e) => e.type === "TOOL_CALL_END").length;
 
+    const messageCount = Array.isArray(messages) ? messages.length : 0;
+
     return {
       totalEvents: events.length,
       lastActivity: events[0]?.timestamp ?? null,
+      messages: messageCount,
       toolCalls: toolCallCount,
       errors: events.filter((e) => e.type === "RUN_ERROR").length,
     };
@@ -1903,22 +1906,26 @@ export class WebInspectorElement extends LitElement {
               ? html`<span class="text-xs text-gray-500">Last activity: ${new Date(stats.lastActivity).toLocaleTimeString()}</span>`
               : nothing}
           </div>
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <button
               type="button"
-              class="rounded-md bg-gray-50 px-3 py-2 text-left transition hover:bg-gray-100 cursor-pointer"
+              class="rounded-md bg-gray-50 px-3 py-2 text-left transition hover:bg-gray-100 cursor-pointer overflow-hidden"
               @click=${() => this.handleMenuSelect("ag-ui-events")}
               title="View all events in AG-UI Events"
             >
-              <div class="text-xs text-gray-600">Total Events</div>
+              <div class="truncate whitespace-nowrap text-xs text-gray-600">Total Events</div>
               <div class="text-lg font-semibold text-gray-900">${stats.totalEvents}</div>
             </button>
-            <div class="rounded-md bg-gray-50 px-3 py-2">
-              <div class="text-xs text-gray-600">Tool Calls</div>
+            <div class="rounded-md bg-gray-50 px-3 py-2 overflow-hidden">
+              <div class="truncate whitespace-nowrap text-xs text-gray-600">Messages</div>
+              <div class="text-lg font-semibold text-gray-900">${stats.messages}</div>
+            </div>
+            <div class="rounded-md bg-gray-50 px-3 py-2 overflow-hidden">
+              <div class="truncate whitespace-nowrap text-xs text-gray-600">Tool Calls</div>
               <div class="text-lg font-semibold text-gray-900">${stats.toolCalls}</div>
             </div>
-            <div class="rounded-md bg-gray-50 px-3 py-2">
-              <div class="text-xs text-gray-600">Errors</div>
+            <div class="rounded-md bg-gray-50 px-3 py-2 overflow-hidden">
+              <div class="truncate whitespace-nowrap text-xs text-gray-600">Errors</div>
               <div class="text-lg font-semibold text-gray-900">${stats.errors}</div>
             </div>
           </div>
