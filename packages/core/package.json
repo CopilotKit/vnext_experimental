@@ -1,6 +1,6 @@
 {
   "name": "@copilotkitnext/core",
-  "version": "0.0.13-alpha.1",
+  "version": "0.0.13",
   "description": "Core web utilities for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
