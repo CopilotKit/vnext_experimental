@@ -40,13 +40,14 @@ type MenuItem = {
 
 const EDGE_MARGIN = 16;
 const DRAG_THRESHOLD = 6;
-const MIN_WINDOW_WIDTH = 260;
+const MIN_WINDOW_WIDTH = 600;
+const MIN_WINDOW_WIDTH_DOCKED_LEFT = 420;
 const MIN_WINDOW_HEIGHT = 200;
 const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
-const DEFAULT_WINDOW_SIZE: Size = { width: 720, height: 480 };
-const DOCKED_LEFT_WIDTH = 560; // Sensible width for left dock with collapsed sidebar
+const DEFAULT_WINDOW_SIZE: Size = { width: 840, height: 560 };
+const DOCKED_LEFT_WIDTH = 500; // Sensible width for left dock with collapsed sidebar
 const DOCKED_BOTTOM_HEIGHT = 300; // Sensible height for bottom dock
 const MAX_AGENT_EVENTS = 200;
 const MAX_TOTAL_EVENTS = 500;
@@ -655,21 +656,21 @@ export class WebInspectorElement extends LitElement {
               @pointerup=${isDocked ? undefined : this.handlePointerUp}
               @pointercancel=${isDocked ? undefined : this.handlePointerCancel}
             >
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <div class="flex items-center text-xs text-gray-600">
-                  <span class="flex items-center gap-1">
+              <div class="flex min-w-0 flex-1 items-center gap-2 text-xs text-gray-500">
+                <div class="flex min-w-0 flex-1 items-center text-xs text-gray-600">
+                  <span class="flex shrink-0 items-center gap-1">
                     <span>🪁</span>
-                    <span class="font-medium">CopilotKit Inspector</span>
+                    <span class="font-medium whitespace-nowrap">CopilotKit Inspector</span>
                   </span>
-                  <span class="mx-3 h-3 w-px bg-gray-200"></span>
-                  <span class="text-gray-400">
+                  <span class="mx-3 h-3 w-px shrink-0 bg-gray-200"></span>
+                  <span class="shrink-0 text-gray-400">
                     ${this.renderIcon(this.getSelectedMenu().icon)}
                   </span>
-                  <span class="ml-2">${this.getSelectedMenu().label}</span>
+                  <span class="ml-2 truncate">${this.getSelectedMenu().label}</span>
                   ${hasContextDropdown
                     ? html`
-                        <span class="mx-3 h-3 w-px bg-gray-200"></span>
-                        <div>${contextDropdown}</div>
+                        <span class="mx-3 h-3 w-px shrink-0 bg-gray-200"></span>
+                        <div class="min-w-0">${contextDropdown}</div>
                       `
                     : nothing}
                 </div>
@@ -743,6 +744,11 @@ export class WebInspectorElement extends LitElement {
       }
     }
 
+    // Restore the dock mode first (before clamping window size)
+    if (isValidDockMode(persisted.dockMode)) {
+      this.dockMode = persisted.dockMode;
+    }
+
     const persistedWindow = persisted.window;
     if (persistedWindow) {
       if (isValidAnchor(persistedWindow.anchor)) {
@@ -754,6 +760,7 @@ export class WebInspectorElement extends LitElement {
       }
 
       if (isValidSize(persistedWindow.size)) {
+        // Now clampWindowSize will use the correct minimum based on dockMode
         this.contextState.window.size = this.clampWindowSize(persistedWindow.size);
       }
 
@@ -765,18 +772,6 @@ export class WebInspectorElement extends LitElement {
     // Restore the open/closed state
     if (typeof persisted.isOpen === "boolean") {
       this.isOpen = persisted.isOpen;
-    }
-
-    // Restore the dock mode
-    if (isValidDockMode(persisted.dockMode)) {
-      this.dockMode = persisted.dockMode;
-
-      // Ensure window sizes match docked constants when restoring docked state
-      if (this.dockMode === 'docked-left') {
-        this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
-      } else if (this.dockMode === 'docked-bottom') {
-        this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
-      }
     }
   }
 
@@ -990,6 +985,8 @@ export class WebInspectorElement extends LitElement {
       this.applyAnchorPosition("window");
     }
 
+    // Persist the new size after resize completes
+    this.persistState();
     this.resetResizeTracking();
   };
 
@@ -1009,6 +1006,8 @@ export class WebInspectorElement extends LitElement {
       this.applyAnchorPosition("window");
     }
 
+    // Persist the new size after resize completes
+    this.persistState();
     this.resetResizeTracking();
   };
 
@@ -1118,15 +1117,18 @@ export class WebInspectorElement extends LitElement {
   }
 
   private clampWindowSize(size: Size): Size {
+    // Use smaller minimum width when docked left
+    const minWidth = this.dockMode === 'docked-left' ? MIN_WINDOW_WIDTH_DOCKED_LEFT : MIN_WINDOW_WIDTH;
+
     if (typeof window === "undefined") {
       return {
-        width: Math.max(MIN_WINDOW_WIDTH, size.width),
+        width: Math.max(minWidth, size.width),
         height: Math.max(MIN_WINDOW_HEIGHT, size.height),
       };
     }
 
     const viewport = this.getViewportSize();
-    return clampSizeToViewport(size, viewport, EDGE_MARGIN, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
+    return clampSizeToViewport(size, viewport, EDGE_MARGIN, minWidth, MIN_WINDOW_HEIGHT);
   }
 
   private setDockMode(mode: DockMode): void {
@@ -1144,18 +1146,15 @@ export class WebInspectorElement extends LitElement {
     this.dockMode = mode;
 
     if (mode !== 'floating') {
-      // For docking, apply dock styles first (position change)
-      this.applyDockStyles();
+      // For docking, set the target size immediately so body margins are correct
+      if (mode === 'docked-left') {
+        this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
+      } else if (mode === 'docked-bottom') {
+        this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
+      }
 
-      // Then update sizes after a frame to let position transition start
-      requestAnimationFrame(() => {
-        if (mode === 'docked-left') {
-          this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
-        } else if (mode === 'docked-bottom') {
-          this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
-        }
-        this.requestUpdate();
-      });
+      // Then apply dock styles with correct sizes
+      this.applyDockStyles();
     } else {
       // When floating, set size first then center
       this.contextState.window.size = { ...DEFAULT_WINDOW_SIZE };
@@ -1189,11 +1188,11 @@ export class WebInspectorElement extends LitElement {
       document.body.style.transition = 'margin 300ms ease';
     }
 
-    // Apply body margins with the target docked sizes
+    // Apply body margins with the actual window sizes
     if (this.dockMode === 'docked-left') {
-      document.body.style.marginLeft = `${DOCKED_LEFT_WIDTH}px`;
+      document.body.style.marginLeft = `${this.contextState.window.size.width}px`;
     } else if (this.dockMode === 'docked-bottom') {
-      document.body.style.marginBottom = `${DOCKED_BOTTOM_HEIGHT}px`;
+      document.body.style.marginBottom = `${this.contextState.window.size.height}px`;
     }
 
     // Remove transition after animation completes
@@ -1418,7 +1417,7 @@ export class WebInspectorElement extends LitElement {
         bottom: '0',
         width: `${Math.round(this.contextState.window.size.width)}px`,
         height: '100vh',
-        minWidth: `${MIN_WINDOW_WIDTH}px`,
+        minWidth: `${MIN_WINDOW_WIDTH_DOCKED_LEFT}px`,
         borderRadius: '0',
       };
     } else if (this.dockMode === 'docked-bottom') {
@@ -1576,14 +1575,14 @@ export class WebInspectorElement extends LitElement {
     const selectedLabel = this.contextOptions.find((opt) => opt.key === this.selectedContext)?.label ?? "";
 
     return html`
-      <div class="relative" data-context-dropdown-root="true">
+      <div class="relative min-w-0 flex-1" data-context-dropdown-root="true">
         <button
           type="button"
-          class="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+          class="flex w-full min-w-0 max-w-[150px] items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
           @pointerdown=${this.handleContextDropdownToggle}
         >
-          <span>${selectedLabel}</span>
-          <span class="text-gray-400">${this.renderIcon("ChevronDown")}</span>
+          <span class="truncate flex-1 text-left">${selectedLabel}</span>
+          <span class="shrink-0 text-gray-400">${this.renderIcon("ChevronDown")}</span>
         </button>
         ${this.contextMenuOpen
           ? html`
@@ -1599,7 +1598,7 @@ export class WebInspectorElement extends LitElement {
                       data-context-dropdown-root="true"
                       @click=${() => this.handleContextOptionSelect(option.key)}
                     >
-                      <span class="${option.key === this.selectedContext ? 'text-gray-900 font-medium' : 'text-gray-600'}">${option.label}</span>
+                      <span class="truncate ${option.key === this.selectedContext ? 'text-gray-900 font-medium' : 'text-gray-600'}">${option.label}</span>
                       ${option.key === this.selectedContext
                         ? html`<span class="text-gray-500">${this.renderIcon("Check")}</span>`
                         : nothing}
