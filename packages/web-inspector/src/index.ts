@@ -2039,9 +2039,6 @@ export class WebInspectorElement extends LitElement {
                             : "";
 
                         const toolCalls = Array.isArray(msg?.toolCalls) ? msg.toolCalls : [];
-                        const truncatedContent = rawContent.length > 500
-                          ? `${rawContent.slice(0, 500)}...`
-                          : rawContent;
                         const hasContent = rawContent.trim().length > 0;
                         const contentFallback = toolCalls.length > 0
                           ? "Invoked tool call"
@@ -2056,7 +2053,7 @@ export class WebInspectorElement extends LitElement {
                             </td>
                             <td class="px-4 py-2">
                               ${hasContent
-                                ? html`<div class="max-w-2xl whitespace-pre-wrap break-words text-gray-700">${truncatedContent}</div>`
+                                ? html`<div class="max-w-2xl whitespace-pre-wrap break-words text-gray-700">${rawContent}</div>`
                                 : html`<div class="text-xs italic text-gray-400">${contentFallback}</div>`}
                               ${role === 'assistant' && toolCalls.length > 0
                                 ? this.renderToolCallDetails(toolCalls)

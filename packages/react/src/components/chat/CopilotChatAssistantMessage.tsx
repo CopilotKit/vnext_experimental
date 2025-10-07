@@ -1,9 +1,4 @@
 import { AssistantMessage, Message } from "@ag-ui/core";
-import { MarkdownHooks } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypePrettyCode from "rehype-pretty-code";
-import rehypeKatex from "rehype-katex";
 import { useState } from "react";
 import {
   Copy,
@@ -13,7 +8,6 @@ import {
   Volume2,
   RefreshCw,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   useCopilotChatConfiguration,
   CopilotChatDefaultLabels,
@@ -27,7 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import "katex/dist/katex.min.css";
 import { WithSlots, renderSlot } from "@/lib/slots";
-import { completePartialMarkdown } from "@copilotkitnext/core";
+import { Streamdown } from "streamdown";
 import CopilotChatToolCallsView from "./CopilotChatToolCallsView";
 
 export type CopilotChatAssistantMessageProps = WithSlots<
@@ -81,6 +75,7 @@ export function CopilotChatAssistantMessage({
     CopilotChatAssistantMessage.MarkdownRenderer,
     {
       content: message.content || "",
+      
     }
   );
 
@@ -206,139 +201,14 @@ export function CopilotChatAssistantMessage({
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotChatAssistantMessage {
-  const InlineCode = ({
-    children,
-    ...props
-  }: React.HTMLAttributes<HTMLElement>) => {
-    return (
-      <code
-        className="px-[4.8px] py-[2.5px] bg-[rgb(236,236,236)] dark:bg-gray-800 rounded text-sm font-mono font-medium! text-foreground!"
-        {...props}
-      >
-        {children}
-      </code>
-    );
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CodeBlock = ({ children, className, onClick, ...props }: any) => {
-    const config = useCopilotChatConfiguration();
-    const labels = config?.labels ?? CopilotChatDefaultLabels;
-    const [copied, setCopied] = useState(false);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getCodeContent = (node: any): string => {
-      if (typeof node === "string") return node;
-      if (Array.isArray(node)) return node.map(getCodeContent).join("");
-      if (node?.props?.children) return getCodeContent(node.props.children);
-      return "";
-    };
-
-    const codeContent = getCodeContent(children);
-    const language = props["data-language"] as string | undefined;
-
-    const copyToClipboard = async () => {
-      if (!codeContent.trim()) return;
-
-      try {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        if (onClick) {
-          onClick();
-        }
-      } catch (err) {
-        console.error("Failed to copy code:", err);
-      }
-    };
-
-    return (
-      <div className="relative">
-        <div className="flex items-center justify-between px-4 pr-3 py-3 text-xs">
-          {language && (
-            <span className="font-regular text-muted-foreground dark:text-white">
-              {language}
-            </span>
-          )}
-
-          <button
-            className={cn(
-              "px-2 gap-0.5 text-xs flex items-center cursor-pointer text-muted-foreground dark:text-white"
-            )}
-            onClick={copyToClipboard}
-            title={
-              copied
-                ? labels.assistantMessageToolbarCopyCodeCopiedLabel
-                : `${labels.assistantMessageToolbarCopyCodeLabel} code`
-            }
-          >
-            {copied ? (
-              <Check className="h-[10px]! w-[10px]!" />
-            ) : (
-              <Copy className="h-[10px]! w-[10px]!" />
-            )}
-            <span className="text-[11px]">
-              {copied
-                ? labels.assistantMessageToolbarCopyCodeCopiedLabel
-                : labels.assistantMessageToolbarCopyCodeLabel}
-            </span>
-          </button>
-        </div>
-
-        <pre
-          className={cn(
-            className,
-            "rounded-2xl bg-transparent border-t-0 my-1!"
-          )}
-          {...props}
-        >
-          {children}
-        </pre>
-      </div>
-    );
-  };
-
   export const MarkdownRenderer: React.FC<
-    React.HTMLAttributes<HTMLDivElement> & { content: string }
-  > = ({ content, className }) => (
-    <div className={className}>
-      <MarkdownHooks
-        /* async plugins are now fine ✨ */
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[
-          [
-            rehypePrettyCode,
-            {
-              keepBackground: false,
-              theme: {
-                dark: "one-dark-pro",
-                light: "one-light",
-              },
-              bypassInlineCode: true,
-            },
-          ],
-          rehypeKatex,
-        ]}
-        components={{
-          pre: CodeBlock,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          code: ({ className, children, ...props }: any) => {
-            // For inline code, use custom styling
-            if (typeof children === "string") {
-              return <InlineCode {...props}>{children}</InlineCode>;
-            }
-
-            // For code blocks, just return the code element as-is
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
-          },
-        }}
-      >
-        {completePartialMarkdown(content || "")}
-      </MarkdownHooks>
-    </div>
+    Omit<React.ComponentProps<typeof Streamdown>, "children"> & {
+      content: string;
+    }
+  > = ({ content, className, ...props }) => (
+    <Streamdown className={className} {...props}>
+      {content ?? ""}
+    </Streamdown>
   );
 
   export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
