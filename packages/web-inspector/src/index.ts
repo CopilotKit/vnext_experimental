@@ -602,15 +602,20 @@ export class WebInspectorElement extends LitElement {
               @pointercancel=${this.handlePointerCancel}
             >
               <div class="flex items-center gap-2 text-xs text-gray-500">
-                <span class="text-gray-400">
-                  ${this.renderIcon(this.getSelectedMenu().icon)}
-                </span>
                 <div class="flex items-center text-xs text-gray-600">
-                  <span class="pr-3">${this.getSelectedMenu().label}</span>
+                  <span class="flex items-center gap-1">
+                    <span>🪁</span>
+                    <span class="font-medium">CopilotKit Inspector</span>
+                  </span>
+                  <span class="mx-3 h-3 w-px bg-gray-200"></span>
+                  <span class="text-gray-400">
+                    ${this.renderIcon(this.getSelectedMenu().icon)}
+                  </span>
+                  <span class="ml-2">${this.getSelectedMenu().label}</span>
                   ${hasContextDropdown
                     ? html`
-                        <span class="h-3 w-px bg-gray-200"></span>
-                        <div class="pl-3">${contextDropdown}</div>
+                        <span class="mx-3 h-3 w-px bg-gray-200"></span>
+                        <div>${contextDropdown}</div>
                       `
                     : nothing}
                 </div>
