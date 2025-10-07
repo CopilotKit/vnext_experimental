@@ -48,7 +48,6 @@ const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 840, height: 560 };
 const DOCKED_LEFT_WIDTH = 500; // Sensible width for left dock with collapsed sidebar
-const DOCKED_BOTTOM_HEIGHT = 300; // Sensible height for bottom dock
 const MAX_AGENT_EVENTS = 200;
 const MAX_TOTAL_EVENTS = 500;
 
@@ -945,16 +944,6 @@ export class WebInspectorElement extends LitElement {
       if (document.body) {
         document.body.style.marginLeft = `${state.size.width}px`;
       }
-    } else if (this.dockMode === 'docked-bottom') {
-      // Only resize height for bottom dock
-      state.size = this.clampWindowSize({
-        width: state.size.width,
-        height: this.resizeInitialSize.height - deltaY, // Negative because dragging up should increase height
-      });
-      // Update the body margin
-      if (document.body) {
-        document.body.style.marginBottom = `${state.size.height}px`;
-      }
     } else {
       // Full resize for floating mode
       state.size = this.clampWindowSize({
@@ -1149,8 +1138,6 @@ export class WebInspectorElement extends LitElement {
       // For docking, set the target size immediately so body margins are correct
       if (mode === 'docked-left') {
         this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
-      } else if (mode === 'docked-bottom') {
-        this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
       }
 
       // Then apply dock styles with correct sizes
@@ -1191,8 +1178,6 @@ export class WebInspectorElement extends LitElement {
     // Apply body margins with the actual window sizes
     if (this.dockMode === 'docked-left') {
       document.body.style.marginLeft = `${this.contextState.window.size.width}px`;
-    } else if (this.dockMode === 'docked-bottom') {
-      document.body.style.marginBottom = `${this.contextState.window.size.height}px`;
     }
 
     // Remove transition after animation completes
@@ -1239,15 +1224,9 @@ export class WebInspectorElement extends LitElement {
       return;
     }
 
-    // For docked states, override position
-    if (this.isOpen && this.dockMode !== 'floating') {
-      if (this.dockMode === 'docked-left') {
-        this.style.transform = `translate3d(0, 0, 0)`;
-      } else if (this.dockMode === 'docked-bottom') {
-        const viewport = this.getViewportSize();
-        const bottomY = viewport.height - this.contextState.window.size.height;
-        this.style.transform = `translate3d(0, ${bottomY}px, 0)`;
-      }
+    // For docked states, CSS handles positioning with fixed positioning
+    if (this.isOpen && this.dockMode === 'docked-left') {
+      this.style.transform = `translate3d(0, 0, 0)`;
     } else {
       const { position } = this.contextState[context];
       this.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
@@ -1371,7 +1350,7 @@ export class WebInspectorElement extends LitElement {
 
   private renderDockControls() {
     if (this.dockMode === 'floating') {
-      // Show dock buttons
+      // Show dock left button
       return html`
         <button
           class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
@@ -1381,15 +1360,6 @@ export class WebInspectorElement extends LitElement {
           @click=${() => this.handleDockClick('docked-left')}
         >
           ${this.renderIcon("PanelLeft")}
-        </button>
-        <button
-          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-          type="button"
-          aria-label="Dock to bottom"
-          title="Dock Bottom"
-          @click=${() => this.handleDockClick('docked-bottom')}
-        >
-          ${this.renderIcon("PanelBottom")}
         </button>
       `;
     } else {
@@ -1418,17 +1388,6 @@ export class WebInspectorElement extends LitElement {
         width: `${Math.round(this.contextState.window.size.width)}px`,
         height: '100vh',
         minWidth: `${MIN_WINDOW_WIDTH_DOCKED_LEFT}px`,
-        borderRadius: '0',
-      };
-    } else if (this.dockMode === 'docked-bottom') {
-      return {
-        position: 'fixed',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        width: '100vw',
-        height: `${Math.round(this.contextState.window.size.height)}px`,
-        minHeight: `${MIN_WINDOW_HEIGHT}px`,
         borderRadius: '0',
       };
     }

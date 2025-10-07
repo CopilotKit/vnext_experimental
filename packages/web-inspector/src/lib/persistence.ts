@@ -90,5 +90,5 @@ export function isFiniteNumber(value: unknown): value is number {
 }
 
 export function isValidDockMode(value: unknown): value is DockMode {
-  return value === 'floating' || value === 'docked-left' || value === 'docked-bottom';
+  return value === 'floating' || value === 'docked-left';
 }
