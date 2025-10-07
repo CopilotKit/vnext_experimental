@@ -12,6 +12,8 @@ export type PersistedState = {
   window?: PersistedContextState;
   isOpen?: boolean;
   dockMode?: DockMode;
+  selectedMenu?: string;
+  selectedContext?: string;
 };
 
 export function loadInspectorState(cookieName: string): PersistedState | null {

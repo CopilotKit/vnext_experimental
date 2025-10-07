@@ -69,6 +69,8 @@ export class WebInspectorElement extends LitElement {
   private coreUnsubscribe: (() => void) | null = null;
   private agentSubscriptions: Map<string, () => void> = new Map();
   private agentEvents: Map<string, InspectorEvent[]> = new Map();
+  private agentMessages: Map<string, unknown[]> = new Map();
+  private agentStates: Map<string, unknown> = new Map();
   private flattenedEvents: InspectorEvent[] = [];
   private eventCounter = 0;
 
@@ -85,6 +87,7 @@ export class WebInspectorElement extends LitElement {
   private dockMode: DockMode = "floating";
   private previousBodyMargins: { left: string; bottom: string } | null = null;
   private transitionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private pendingSelectedContext: string | null = null;
 
   get core(): CopilotKitCore | null {
     return this._core;
@@ -164,6 +167,8 @@ export class WebInspectorElement extends LitElement {
     }
     this.agentSubscriptions.clear();
     this.agentEvents.clear();
+    this.agentMessages.clear();
+    this.agentStates.clear();
     this.flattenedEvents = [];
     this.eventCounter = 0;
   }
@@ -183,6 +188,8 @@ export class WebInspectorElement extends LitElement {
       if (!seenAgentIds.has(agentId)) {
         this.unsubscribeFromAgent(agentId);
         this.agentEvents.delete(agentId);
+        this.agentMessages.delete(agentId);
+        this.agentStates.delete(agentId);
       }
     }
 
@@ -232,12 +239,18 @@ export class WebInspectorElement extends LitElement {
       },
       onStateSnapshotEvent: ({ event }) => {
         this.recordAgentEvent(agentId, "STATE_SNAPSHOT", event);
+        this.syncAgentState(agent);
       },
       onStateDeltaEvent: ({ event }) => {
         this.recordAgentEvent(agentId, "STATE_DELTA", event);
+        this.syncAgentState(agent);
       },
       onMessagesSnapshotEvent: ({ event }) => {
         this.recordAgentEvent(agentId, "MESSAGES_SNAPSHOT", event);
+        this.syncAgentMessages(agent);
+      },
+      onMessagesChanged: () => {
+        this.syncAgentMessages(agent);
       },
       onRawEvent: ({ event }) => {
         this.recordAgentEvent(agentId, "RAW_EVENT", event);
@@ -249,6 +262,8 @@ export class WebInspectorElement extends LitElement {
 
     const { unsubscribe } = agent.subscribe(subscriber);
     this.agentSubscriptions.set(agentId, unsubscribe);
+    this.syncAgentMessages(agent);
+    this.syncAgentState(agent);
 
     if (!this.agentEvents.has(agentId)) {
       this.agentEvents.set(agentId, []);
@@ -281,6 +296,38 @@ export class WebInspectorElement extends LitElement {
     this.requestUpdate();
   }
 
+  private syncAgentMessages(agent: AbstractAgent): void {
+    if (!agent?.agentId) {
+      return;
+    }
+
+    const messages = (agent as { messages?: unknown }).messages;
+
+    if (Array.isArray(messages)) {
+      this.agentMessages.set(agent.agentId, messages);
+    } else {
+      this.agentMessages.delete(agent.agentId);
+    }
+
+    this.requestUpdate();
+  }
+
+  private syncAgentState(agent: AbstractAgent): void {
+    if (!agent?.agentId) {
+      return;
+    }
+
+    const state = (agent as { state?: unknown }).state;
+
+    if (state === undefined || state === null) {
+      this.agentStates.delete(agent.agentId);
+    } else {
+      this.agentStates.set(agent.agentId, state);
+    }
+
+    this.requestUpdate();
+  }
+
   private updateContextOptions(agentIds: Set<string>): void {
     const nextOptions: Array<{ key: string; label: string }> = [
       { key: "all-agents", label: "All Agents" },
@@ -297,9 +344,38 @@ export class WebInspectorElement extends LitElement {
       this.contextOptions = nextOptions;
     }
 
-    if (!nextOptions.some((option) => option.key === this.selectedContext)) {
-      this.selectedContext = "all-agents";
-      this.expandedRows.clear();
+    const pendingContext = this.pendingSelectedContext;
+    if (pendingContext) {
+      const isPendingAvailable = pendingContext === "all-agents" || agentIds.has(pendingContext);
+      if (isPendingAvailable) {
+        if (this.selectedContext !== pendingContext) {
+          this.selectedContext = pendingContext;
+          this.expandedRows.clear();
+        }
+        this.pendingSelectedContext = null;
+      } else if (agentIds.size > 0) {
+        // Agents are loaded but the pending selection no longer exists
+        this.pendingSelectedContext = null;
+      }
+    }
+
+    const hasSelectedContext = nextOptions.some((option) => option.key === this.selectedContext);
+
+    if (!hasSelectedContext && this.pendingSelectedContext === null) {
+      // Auto-select "default" agent if it exists, otherwise first agent, otherwise "all-agents"
+      let nextSelected: string = "all-agents";
+
+      if (agentIds.has("default")) {
+        nextSelected = "default";
+      } else if (agentIds.size > 0) {
+        nextSelected = Array.from(agentIds).sort((a, b) => a.localeCompare(b))[0]!;
+      }
+
+      if (this.selectedContext !== nextSelected) {
+        this.selectedContext = nextSelected;
+        this.expandedRows.clear();
+        this.persistState();
+      }
     }
   }
 
@@ -309,6 +385,163 @@ export class WebInspectorElement extends LitElement {
     }
 
     return this.agentEvents.get(this.selectedContext) ?? [];
+  }
+
+  private getLatestStateForAgent(agentId: string): unknown | null {
+    if (this.agentStates.has(agentId)) {
+      return this.agentStates.get(agentId);
+    }
+
+    const events = this.agentEvents.get(agentId) ?? [];
+    const stateEvent = events.find((e) => e.type === "STATE_SNAPSHOT");
+    return stateEvent?.payload ?? null;
+  }
+
+  private getLatestMessagesForAgent(agentId: string): unknown[] | null {
+    const messages = this.agentMessages.get(agentId);
+    return messages ?? null;
+  }
+
+  private getAgentStatus(agentId: string): "running" | "idle" | "error" {
+    const events = this.agentEvents.get(agentId) ?? [];
+    if (events.length === 0) {
+      return "idle";
+    }
+
+    // Check most recent run-related event
+    const runEvent = events.find((e) => e.type === "RUN_STARTED" || e.type === "RUN_FINISHED" || e.type === "RUN_ERROR");
+
+    if (!runEvent) {
+      return "idle";
+    }
+
+    if (runEvent.type === "RUN_ERROR") {
+      return "error";
+    }
+
+    if (runEvent.type === "RUN_STARTED") {
+      // Check if there's a RUN_FINISHED after this
+      const finishedAfter = events.find(
+        (e) => e.type === "RUN_FINISHED" && e.timestamp > runEvent.timestamp
+      );
+      return finishedAfter ? "idle" : "running";
+    }
+
+    return "idle";
+  }
+
+  private getAgentStats(agentId: string): { totalEvents: number; lastActivity: number | null; toolCalls: number; errors: number } {
+    const events = this.agentEvents.get(agentId) ?? [];
+
+    return {
+      totalEvents: events.length,
+      lastActivity: events[0]?.timestamp ?? null,
+      toolCalls: events.filter((e) => e.type === "TOOL_CALL_END").length,
+      errors: events.filter((e) => e.type === "RUN_ERROR").length,
+    };
+  }
+
+  private renderToolCallDetails(toolCalls: unknown[]) {
+    if (!Array.isArray(toolCalls) || toolCalls.length === 0) {
+      return nothing;
+    }
+
+    return html`
+      <div class="mt-2 space-y-2">
+        ${toolCalls.map((call, index) => {
+          const toolCall = call as any;
+          const functionName = typeof toolCall?.function?.name === 'string' ? toolCall.function.name : 'Unknown function';
+          const callId = typeof toolCall?.id === 'string' ? toolCall.id : `tool-call-${index + 1}`;
+          const argsString = this.formatToolCallArguments(toolCall?.function?.arguments);
+          return html`
+            <div class="rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+              <div class="flex flex-wrap items-center justify-between gap-1 font-medium text-gray-900">
+                <span>${functionName}</span>
+                <span class="text-[10px] text-gray-500">ID: ${callId}</span>
+              </div>
+              ${argsString
+                ? html`<pre class="mt-2 overflow-auto rounded bg-white p-2 text-[11px] leading-relaxed text-gray-800">${argsString}</pre>`
+                : nothing}
+            </div>
+          `;
+        })}
+      </div>
+    `;
+  }
+
+  private formatToolCallArguments(args: unknown): string | null {
+    if (args === undefined || args === null || args === '') {
+      return null;
+    }
+
+    if (typeof args === 'string') {
+      try {
+        const parsed = JSON.parse(args);
+        return JSON.stringify(parsed, null, 2);
+      } catch (error) {
+        return args;
+      }
+    }
+
+    if (typeof args === 'object') {
+      try {
+        return JSON.stringify(args, null, 2);
+      } catch (error) {
+        return String(args);
+      }
+    }
+
+    return String(args);
+  }
+
+  private hasRenderableState(state: unknown): boolean {
+    if (state === null || state === undefined) {
+      return false;
+    }
+
+    if (Array.isArray(state)) {
+      return state.length > 0;
+    }
+
+    if (typeof state === 'object') {
+      return Object.keys(state as Record<string, unknown>).length > 0;
+    }
+
+    if (typeof state === 'string') {
+      const trimmed = state.trim();
+      return trimmed.length > 0 && trimmed !== '{}';
+    }
+
+    return true;
+  }
+
+  private formatStateForDisplay(state: unknown): string {
+    if (state === null || state === undefined) {
+      return '';
+    }
+
+    if (typeof state === 'string') {
+      const trimmed = state.trim();
+      if (trimmed.length === 0) {
+        return '';
+      }
+      try {
+        const parsed = JSON.parse(trimmed);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return state;
+      }
+    }
+
+    if (typeof state === 'object') {
+      try {
+        return JSON.stringify(state, null, 2);
+      } catch {
+        return String(state);
+      }
+    }
+
+    return String(state);
   }
 
   private getEventBadgeClasses(type: string): string {
@@ -428,6 +661,9 @@ export class WebInspectorElement extends LitElement {
     if (typeof window !== "undefined") {
       window.addEventListener("resize", this.handleResize);
       window.addEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
+
+      // Load state early (before first render) so menu selection is correct
+      this.hydrateStateFromCookieEarly();
     }
   }
 
@@ -724,6 +960,41 @@ export class WebInspectorElement extends LitElement {
     `;
   }
 
+  private hydrateStateFromCookieEarly(): void {
+    if (typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const persisted = loadInspectorState(COOKIE_NAME);
+    if (!persisted) {
+      return;
+    }
+
+    // Restore the open/closed state
+    if (typeof persisted.isOpen === "boolean") {
+      this.isOpen = persisted.isOpen;
+    }
+
+    // Restore the dock mode
+    if (isValidDockMode(persisted.dockMode)) {
+      this.dockMode = persisted.dockMode;
+    }
+
+    // Restore selected menu
+    if (typeof persisted.selectedMenu === "string") {
+      const validMenu = this.menuItems.find((item) => item.key === persisted.selectedMenu);
+      if (validMenu) {
+        this.selectedMenu = validMenu.key;
+      }
+    }
+
+    // Restore selected context (agent), will be validated later against available agents
+    if (typeof persisted.selectedContext === "string") {
+      this.selectedContext = persisted.selectedContext;
+      this.pendingSelectedContext = persisted.selectedContext;
+    }
+  }
+
   private hydrateStateFromCookie(): void {
     if (typeof document === "undefined" || typeof window === "undefined") {
       return;
@@ -749,11 +1020,6 @@ export class WebInspectorElement extends LitElement {
       }
     }
 
-    // Restore the dock mode first (before clamping window size)
-    if (isValidDockMode(persisted.dockMode)) {
-      this.dockMode = persisted.dockMode;
-    }
-
     const persistedWindow = persisted.window;
     if (persistedWindow) {
       if (isValidAnchor(persistedWindow.anchor)) {
@@ -774,9 +1040,9 @@ export class WebInspectorElement extends LitElement {
       }
     }
 
-    // Restore the open/closed state
-    if (typeof persisted.isOpen === "boolean") {
-      this.isOpen = persisted.isOpen;
+    if (typeof persisted.selectedContext === "string") {
+      this.selectedContext = persisted.selectedContext;
+      this.pendingSelectedContext = persisted.selectedContext;
     }
   }
 
@@ -1109,8 +1375,11 @@ export class WebInspectorElement extends LitElement {
       },
       isOpen: this.isOpen,
       dockMode: this.dockMode,
+      selectedMenu: this.selectedMenu,
+      selectedContext: this.selectedContext,
     };
     saveInspectorState(COOKIE_NAME, state, COOKIE_MAX_AGE_SECONDS);
+    this.pendingSelectedContext = state.selectedContext ?? null;
   }
 
   private clampWindowSize(size: Size): Size {
@@ -1471,6 +1740,10 @@ export class WebInspectorElement extends LitElement {
       return this.renderEventsTable();
     }
 
+    if (this.selectedMenu === "agents") {
+      return this.renderAgentsView();
+    }
+
     // Default placeholder content for other sections
     return html`
       <div class="flex flex-col gap-3 p-4">
@@ -1568,12 +1841,179 @@ export class WebInspectorElement extends LitElement {
     `;
   }
 
+  private renderAgentsView() {
+    // Show message if "all-agents" is selected or no agents available
+    if (this.selectedContext === "all-agents") {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-center">
+          <div class="max-w-md">
+            <p class="text-sm text-gray-600">No Agent found</p>
+          </div>
+        </div>
+      `;
+    }
+
+    const agentId = this.selectedContext;
+    const status = this.getAgentStatus(agentId);
+    const stats = this.getAgentStats(agentId);
+    const state = this.getLatestStateForAgent(agentId);
+    const messages = this.getLatestMessagesForAgent(agentId);
+
+    const statusColors = {
+      running: "bg-green-100 text-green-800 border-green-200",
+      idle: "bg-gray-100 text-gray-700 border-gray-200",
+      error: "bg-red-100 text-red-800 border-red-200",
+    };
+
+    return html`
+      <div class="flex flex-col gap-4 p-4 overflow-auto">
+        <!-- Agent Overview Card -->
+        <div class="rounded-lg border border-gray-200 bg-white p-4">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                ${this.renderIcon("Bot")}
+              </div>
+              <div>
+                <h3 class="font-semibold text-sm text-gray-900">${agentId}</h3>
+                <span class="inline-flex items-center gap-1.5 mt-1 rounded-full border px-2 py-0.5 text-xs font-medium ${statusColors[status]}">
+                  <span class="h-1.5 w-1.5 rounded-full ${status === 'running' ? 'bg-green-600 animate-pulse' : status === 'error' ? 'bg-red-600' : 'bg-gray-600'}"></span>
+                  ${status.charAt(0).toUpperCase() + status.slice(1)}
+                </span>
+              </div>
+            </div>
+            ${stats.lastActivity
+              ? html`<span class="text-xs text-gray-500">Last activity: ${new Date(stats.lastActivity).toLocaleTimeString()}</span>`
+              : nothing}
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <button
+              type="button"
+              class="rounded-md bg-gray-50 px-3 py-2 text-left transition hover:bg-gray-100 cursor-pointer"
+              @click=${() => this.handleMenuSelect("ag-ui-events")}
+              title="View all events in AG-UI Events"
+            >
+              <div class="text-xs text-gray-600">Total Events</div>
+              <div class="text-lg font-semibold text-gray-900">${stats.totalEvents}</div>
+            </button>
+            <div class="rounded-md bg-gray-50 px-3 py-2">
+              <div class="text-xs text-gray-600">Tool Calls</div>
+              <div class="text-lg font-semibold text-gray-900">${stats.toolCalls}</div>
+            </div>
+            <div class="rounded-md bg-gray-50 px-3 py-2">
+              <div class="text-xs text-gray-600">Errors</div>
+              <div class="text-lg font-semibold text-gray-900">${stats.errors}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current State Section -->
+        <div class="rounded-lg border border-gray-200 bg-white">
+          <div class="border-b border-gray-200 px-4 py-3">
+            <h4 class="text-sm font-semibold text-gray-900">Current State</h4>
+          </div>
+          <div class="p-4">
+            ${this.hasRenderableState(state)
+              ? html`
+                  <pre class="overflow-auto rounded-md bg-gray-50 p-3 text-xs text-gray-800 max-h-64"><code>${this.formatStateForDisplay(state)}</code></pre>
+                `
+              : html`
+                  <div class="flex items-center justify-center py-8 text-xs text-gray-500">
+                    <div class="flex items-center gap-2 text-gray-500">
+                      <span class="text-lg text-gray-400">${this.renderIcon("Database")}</span>
+                      <span>No state data available</span>
+                    </div>
+                  </div>
+                `}
+          </div>
+        </div>
+
+        <!-- Current Messages Section -->
+        <div class="rounded-lg border border-gray-200 bg-white">
+          <div class="border-b border-gray-200 px-4 py-3">
+            <h4 class="text-sm font-semibold text-gray-900">Current Messages</h4>
+          </div>
+          <div class="overflow-auto">
+            ${messages && Array.isArray(messages) && messages.length > 0
+              ? html`
+                  <table class="w-full text-xs">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-4 py-2 text-left font-medium text-gray-700">Role</th>
+                        <th class="px-4 py-2 text-left font-medium text-gray-700">Content</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                      ${messages.map((msg: any, idx: number) => {
+                        const role = msg?.role ?? "unknown";
+                        const roleColors: Record<string, string> = {
+                          user: "bg-blue-100 text-blue-800",
+                          assistant: "bg-green-100 text-green-800",
+                          system: "bg-gray-100 text-gray-800",
+                          unknown: "bg-gray-100 text-gray-600",
+                        };
+
+                        const rawContent = typeof msg?.content === "string"
+                          ? msg.content
+                          : msg?.content != null
+                            ? JSON.stringify(msg.content)
+                            : "";
+
+                        const toolCalls = Array.isArray(msg?.toolCalls) ? msg.toolCalls : [];
+                        const truncatedContent = rawContent.length > 500
+                          ? `${rawContent.slice(0, 500)}...`
+                          : rawContent;
+                        const hasContent = rawContent.trim().length > 0;
+                        const contentFallback = toolCalls.length > 0
+                          ? "Invoked tool call"
+                          : "—";
+
+                        return html`
+                          <tr>
+                            <td class="px-4 py-2 align-top">
+                              <span class="inline-flex rounded px-2 py-0.5 text-[10px] font-medium ${roleColors[role] || roleColors.unknown}">
+                                ${role}
+                              </span>
+                            </td>
+                            <td class="px-4 py-2">
+                              ${hasContent
+                                ? html`<div class="max-w-2xl whitespace-pre-wrap break-words text-gray-700">${truncatedContent}</div>`
+                                : html`<div class="text-xs italic text-gray-400">${contentFallback}</div>`}
+                              ${role === 'assistant' && toolCalls.length > 0
+                                ? this.renderToolCallDetails(toolCalls)
+                                : nothing}
+                            </td>
+                          </tr>
+                        `;
+                      })}
+                    </tbody>
+                  </table>
+                `
+              : html`
+                  <div class="flex items-center justify-center py-8 text-xs text-gray-500">
+                    <div class="flex items-center gap-2 text-gray-500">
+                      <span class="text-lg text-gray-400">${this.renderIcon("MessageSquare")}</span>
+                      <span>No messages available</span>
+                    </div>
+                  </div>
+                `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   private renderContextDropdown() {
-    if (this.selectedMenu !== "ag-ui-events") {
+    if (this.selectedMenu !== "ag-ui-events" && this.selectedMenu !== "agents") {
       return nothing;
     }
 
-    const selectedLabel = this.contextOptions.find((opt) => opt.key === this.selectedContext)?.label ?? "";
+    // Filter out "all-agents" when in agents view
+    const filteredOptions = this.selectedMenu === "agents"
+      ? this.contextOptions.filter((opt) => opt.key !== "all-agents")
+      : this.contextOptions;
+
+    const selectedLabel = filteredOptions.find((opt) => opt.key === this.selectedContext)?.label ?? "";
 
     return html`
       <div class="relative min-w-0 flex-1" data-context-dropdown-root="true">
@@ -1591,7 +2031,7 @@ export class WebInspectorElement extends LitElement {
                 class="absolute left-0 z-50 mt-1.5 w-40 rounded-md border border-gray-200 bg-white py-1 shadow-md ring-1 ring-black/5"
                 data-context-dropdown-root="true"
               >
-                ${this.contextOptions.map(
+                ${filteredOptions.map(
                   (option) => html`
                     <button
                       type="button"
@@ -1619,7 +2059,19 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.selectedMenu = key;
+
+    // If switching to agents view and "all-agents" is selected, switch to default or first agent
+    if (key === "agents" && this.selectedContext === "all-agents") {
+      const agentOptions = this.contextOptions.filter((opt) => opt.key !== "all-agents");
+      if (agentOptions.length > 0) {
+        // Try to find "default" agent first
+        const defaultAgent = agentOptions.find((opt) => opt.key === "default");
+        this.selectedContext = defaultAgent ? defaultAgent.key : agentOptions[0]!.key;
+      }
+    }
+
     this.contextMenuOpen = false;
+    this.persistState();
     this.requestUpdate();
   }
 
@@ -1641,6 +2093,7 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.contextMenuOpen = false;
+    this.persistState();
     this.requestUpdate();
   }
 
