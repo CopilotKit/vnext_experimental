@@ -73,6 +73,7 @@ export class WebInspectorElement extends LitElement {
   private agentStates: Map<string, unknown> = new Map();
   private flattenedEvents: InspectorEvent[] = [];
   private eventCounter = 0;
+  private contextStore: Record<string, { description?: string; value: unknown }> = {};
 
   private pointerId: number | null = null;
   private dragStart: Position | null = null;
@@ -146,10 +147,19 @@ export class WebInspectorElement extends LitElement {
       onAgentsChanged: ({ agents }) => {
         this.processAgentsChanged(agents);
       },
+      onContextChanged: ({ context }) => {
+        this.contextStore = { ...context };
+        this.requestUpdate();
+      },
     } satisfies CopilotKitCoreSubscriber;
 
     this.coreUnsubscribe = core.subscribe(this.coreSubscriber);
     this.processAgentsChanged(core.agents);
+
+    // Initialize context from core
+    if (core.context) {
+      this.contextStore = { ...core.context };
+    }
   }
 
   private detachFromCore(): void {
@@ -1775,6 +1785,7 @@ export class WebInspectorElement extends LitElement {
   private expandedRows: Set<string> = new Set();
   private copiedEvents: Set<string> = new Set();
   private expandedTools: Set<string> = new Set();
+  private expandedContextItems: Set<string> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
@@ -1792,6 +1803,10 @@ export class WebInspectorElement extends LitElement {
 
     if (this.selectedMenu === "frontend-tools") {
       return this.renderToolsView();
+    }
+
+    if (this.selectedMenu === "agent-context") {
+      return this.renderContextView();
     }
 
     // Default placeholder content for other sections
@@ -2068,6 +2083,11 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderContextDropdown() {
+    // Agent Context doesn't use the dropdown - it's global
+    if (this.selectedMenu === "agent-context") {
+      return nothing;
+    }
+
     if (this.selectedMenu !== "ag-ui-events" && this.selectedMenu !== "agents" && this.selectedMenu !== "frontend-tools") {
       return nothing;
     }
@@ -2536,6 +2556,151 @@ export class WebInspectorElement extends LitElement {
       this.expandedTools.delete(toolId);
     } else {
       this.expandedTools.add(toolId);
+    }
+    this.requestUpdate();
+  }
+
+  private renderContextView() {
+    const contextEntries = Object.entries(this.contextStore);
+
+    if (contextEntries.length === 0) {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-center">
+          <div class="max-w-md">
+            <div class="mb-3 flex justify-center text-gray-300 [&>svg]:!h-8 [&>svg]:!w-8">
+              ${this.renderIcon("FileText")}
+            </div>
+            <p class="text-sm text-gray-600">No context available</p>
+            <p class="mt-2 text-xs text-gray-500">Context will appear here once added to CopilotKit.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    return html`
+      <div class="flex h-full flex-col overflow-hidden">
+        <div class="overflow-auto p-4">
+          <div class="space-y-3">
+            ${contextEntries.map(([id, context]) => this.renderContextCard(id, context))}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderContextCard(id: string, context: { description?: string; value: unknown }) {
+    const isExpanded = this.expandedContextItems.has(id);
+    const valuePreview = this.getContextValuePreview(context.value);
+    const hasValue = context.value !== undefined && context.value !== null;
+
+    return html`
+      <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <button
+          type="button"
+          class="w-full px-4 py-3 text-left transition hover:bg-gray-50"
+          @click=${() => this.toggleContextExpansion(id)}
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              ${context.description
+                ? html`<p class="text-sm font-medium text-gray-900 mb-1">${context.description}</p>`
+                : html`<p class="text-sm font-medium text-gray-500 italic mb-1">No description</p>`}
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span class="font-mono">${id.substring(0, 8)}...</span>
+                ${hasValue
+                  ? html`
+                      <span class="text-gray-300">•</span>
+                      <span class="truncate">${valuePreview}</span>
+                    `
+                  : nothing}
+              </div>
+            </div>
+            <span class="shrink-0 text-gray-400 transition ${isExpanded ? 'rotate-180' : ''}">
+              ${this.renderIcon("ChevronDown")}
+            </span>
+          </div>
+        </button>
+
+        ${isExpanded
+          ? html`
+              <div class="border-t border-gray-200 bg-gray-50/50 px-4 py-3">
+                <div class="mb-3">
+                  <h5 class="mb-1 text-xs font-semibold text-gray-700">ID</h5>
+                  <code class="block rounded bg-white border border-gray-200 px-2 py-1 text-[10px] font-mono text-gray-600">${id}</code>
+                </div>
+                ${hasValue
+                  ? html`
+                      <h5 class="mb-2 text-xs font-semibold text-gray-700">Value</h5>
+                      <div class="rounded-md border border-gray-200 bg-white p-3">
+                        <pre class="overflow-auto text-xs text-gray-800 max-h-96"><code>${this.formatContextValue(context.value)}</code></pre>
+                      </div>
+                    `
+                  : html`
+                      <div class="flex items-center justify-center py-4 text-xs text-gray-500">
+                        <span>No value available</span>
+                      </div>
+                    `}
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
+  private getContextValuePreview(value: unknown): string {
+    if (value === undefined || value === null) {
+      return '—';
+    }
+
+    if (typeof value === 'string') {
+      return value.length > 50 ? `${value.substring(0, 50)}...` : value;
+    }
+
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      return `Array(${value.length})`;
+    }
+
+    if (typeof value === 'object') {
+      const keys = Object.keys(value);
+      return `Object with ${keys.length} key${keys.length !== 1 ? 's' : ''}`;
+    }
+
+    if (typeof value === 'function') {
+      return 'Function';
+    }
+
+    return String(value);
+  }
+
+  private formatContextValue(value: unknown): string {
+    if (value === undefined) {
+      return 'undefined';
+    }
+
+    if (value === null) {
+      return 'null';
+    }
+
+    if (typeof value === 'function') {
+      return value.toString();
+    }
+
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch (error) {
+      return String(value);
+    }
+  }
+
+  private toggleContextExpansion(contextId: string): void {
+    if (this.expandedContextItems.has(contextId)) {
+      this.expandedContextItems.delete(contextId);
+    } else {
+      this.expandedContextItems.add(contextId);
     }
     this.requestUpdate();
   }
