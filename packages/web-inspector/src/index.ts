@@ -673,6 +673,18 @@ export class WebInspectorElement extends LitElement {
         touch-action: none;
         user-select: none;
       }
+
+      .dock-resize-handle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 10px;
+        height: 100%;
+        cursor: ew-resize;
+        touch-action: none;
+        z-index: 50;
+        background: transparent;
+      }
     `,
   ];
 
@@ -811,6 +823,19 @@ export class WebInspectorElement extends LitElement {
         data-docked=${isDocked}
         data-transitioning=${isTransitioning}
       >
+        ${isDocked
+          ? html`
+              <div
+                class="dock-resize-handle pointer-events-auto"
+                role="presentation"
+                aria-hidden="true"
+                @pointerdown=${this.handleResizePointerDown}
+                @pointermove=${this.handleResizePointerMove}
+                @pointerup=${this.handleResizePointerUp}
+                @pointercancel=${this.handleResizePointerCancel}
+              ></div>
+            `
+          : nothing}
         <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
           <nav
             class="flex ${isCollapsed ? 'w-16' : 'w-56'} shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs transition-all duration-300"
