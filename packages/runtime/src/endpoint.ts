@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { CopilotRuntime } from "./runtime";
 import { handleRunAgent } from "./handlers/handle-run";
 import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
@@ -30,6 +31,14 @@ export function createCopilotEndpoint({
 
   return app
     .basePath(basePath)
+    .use(
+      "*",
+      cors({
+        origin: "*",
+        allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"],
+        allowHeaders: ["*"],
+      })
+    )
     .use("*", async (c, next) => {
       const request = c.req.raw;
       const path = c.req.path;

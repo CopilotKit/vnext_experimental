@@ -12,6 +12,7 @@
     "demo:react": "pnpm -C apps/react/demo dev",
     "storybook:react": "pnpm -C apps/react/storybook dev",
     "docs": "pnpm -C apps/docs dev",
+    "server:node": "pnpm -C apps/node dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",

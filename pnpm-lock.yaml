@@ -238,6 +238,28 @@ importers:
         specifier: ^4.2.127
         version: 4.2.127(@radix-ui/react-popover@1.1.15(@types/react-dom@19.1.6(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@types/node@22.15.3)(@types/react@19.1.0)(encoding@0.1.13)(react-dom@19.1.0(react@19.1.0))(typescript@5.8.2)
 
+  apps/node:
+    dependencies:
+      '@copilotkitnext/agent':
+        specifier: workspace:^
+        version: link:../../packages/agent
+      '@copilotkitnext/runtime':
+        specifier: workspace:^
+        version: link:../../packages/runtime
+      '@hono/node-server':
+        specifier: ^1.13.6
+        version: 1.19.0(hono@4.8.10)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.15.3
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.5
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
   apps/react/demo:
     dependencies:
       '@ag-ui/client':
