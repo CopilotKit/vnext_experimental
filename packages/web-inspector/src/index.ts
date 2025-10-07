@@ -350,6 +350,31 @@ export class WebInspectorElement extends LitElement {
     }
   }
 
+  private extractEventFromPayload(payload: unknown): unknown {
+    // If payload is an object with an 'event' field, extract it
+    if (payload && typeof payload === "object" && "event" in payload) {
+      return (payload as any).event;
+    }
+    // Otherwise, assume the payload itself is the event
+    return payload;
+  }
+
+  private async copyToClipboard(text: string, eventId: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copiedEvents.add(eventId);
+      this.requestUpdate();
+
+      // Clear the "copied" state after 2 seconds
+      setTimeout(() => {
+        this.copiedEvents.delete(eventId);
+        this.requestUpdate();
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  }
+
   static styles = [
     unsafeCSS(tailwindStyles),
     css`
@@ -674,6 +699,11 @@ export class WebInspectorElement extends LitElement {
         this.hasCustomPosition.window = persistedWindow.hasCustomPosition;
       }
     }
+
+    // Restore the open/closed state
+    if (typeof persisted.isOpen === "boolean") {
+      this.isOpen = persisted.isOpen;
+    }
   }
 
   private get activeContext(): ContextKey {
@@ -964,6 +994,7 @@ export class WebInspectorElement extends LitElement {
         },
         hasCustomPosition: this.hasCustomPosition.window,
       },
+      isOpen: this.isOpen,
     };
     saveInspectorState(COOKIE_NAME, state, COOKIE_MAX_AGE_SECONDS);
   }
@@ -1035,6 +1066,7 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.isOpen = true;
+    this.persistState(); // Save the open state
     this.ensureWindowPlacement();
     this.requestUpdate();
     void this.updateComplete.then(() => {
@@ -1053,6 +1085,7 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.isOpen = false;
+    this.persistState(); // Save the closed state
     this.updateHostTransform("button");
     this.requestUpdate();
     void this.updateComplete.then(() => {
@@ -1098,6 +1131,7 @@ export class WebInspectorElement extends LitElement {
 
   private selectedContext = "all-agents";
   private expandedRows: Set<string> = new Set();
+  private copiedEvents: Set<string> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
@@ -1130,50 +1164,72 @@ export class WebInspectorElement extends LitElement {
     }
 
     return html`
-      <div class="overflow-hidden">
-        <table class="w-full border-collapse text-xs">
-          <thead>
+      <div class="relative h-full overflow-auto">
+        <table class="w-full border-separate border-spacing-0 text-xs">
+          <thead class="sticky top-0 z-10">
             <tr class="bg-white">
-              <th class="border-r border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                Type
+              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                Agent
               </th>
-              <th class="border-r border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
                 Time
               </th>
               <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                Payload
+                Event Type
+              </th>
+              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                AG-UI Event
               </th>
             </tr>
           </thead>
           <tbody>
             ${events.map((event, index) => {
-              const isLastRow = index === events.length - 1;
               const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/50";
               const badgeClasses = this.getEventBadgeClasses(event.type);
-              const inlinePayload = this.stringifyPayload(event.payload, false) || "—";
-              const prettyPayload = this.stringifyPayload(event.payload, true) || inlinePayload;
+              const extractedEvent = this.extractEventFromPayload(event.payload);
+              const inlineEvent = this.stringifyPayload(extractedEvent, false) || "—";
+              const prettyEvent = this.stringifyPayload(extractedEvent, true) || inlineEvent;
               const isExpanded = this.expandedRows.has(event.id);
 
               return html`
                 <tr
-                  class="${rowBg} transition hover:bg-blue-50/50"
+                  class="${rowBg} cursor-pointer transition hover:bg-blue-50/50"
                   @click=${() => this.toggleRowExpansion(event.id)}
                 >
-                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2">
-                    <div class="flex flex-col gap-1">
-                      <span class=${badgeClasses}>${event.type}</span>
-                      <span class="font-mono text-[10px] text-gray-400">${event.agentId}</span>
-                    </div>
+                  <td class="border-l border-r border-b border-gray-200 px-3 py-2">
+                    <span class="font-mono text-[11px] text-gray-600">${event.agentId}</span>
                   </td>
-                  <td class="border-r ${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 font-mono text-[11px] text-gray-600">
+                  <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[11px] text-gray-600">
                     <span title=${new Date(event.timestamp).toLocaleString()}>
                       ${new Date(event.timestamp).toLocaleTimeString()}
                     </span>
                   </td>
-                  <td class="${!isLastRow ? 'border-b' : ''} border-gray-200 px-3 py-2 font-mono text-[10px] text-gray-600 ${isExpanded ? '' : 'truncate max-w-xs'}">
+                  <td class="border-r border-b border-gray-200 px-3 py-2">
+                    <span class=${badgeClasses}>${event.type}</span>
+                  </td>
+                  <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[10px] text-gray-600 ${isExpanded ? '' : 'truncate max-w-xs'}">
                     ${isExpanded
-                      ? html`<pre class="m-0 whitespace-pre-wrap text-[10px] font-mono text-gray-600">${prettyPayload}</pre>`
-                      : inlinePayload}
+                      ? html`
+                          <div class="group relative">
+                            <pre class="m-0 whitespace-pre-wrap text-[10px] font-mono text-gray-600">${prettyEvent}</pre>
+                            <button
+                              class="absolute right-0 top-0 cursor-pointer rounded px-2 py-1 text-[10px] opacity-0 transition group-hover:opacity-100 ${
+                                this.copiedEvents.has(event.id)
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                              }"
+                              @click=${(e: Event) => {
+                                e.stopPropagation();
+                                this.copyToClipboard(prettyEvent, event.id);
+                              }}
+                            >
+                              ${this.copiedEvents.has(event.id)
+                                ? html`<span>✓ Copied</span>`
+                                : html`<span>Copy</span>`}
+                            </button>
+                          </div>
+                        `
+                      : inlineEvent}
                   </td>
                 </tr>
               `;
@@ -1276,6 +1332,12 @@ export class WebInspectorElement extends LitElement {
   };
 
   private toggleRowExpansion(eventId: string): void {
+    // Don't toggle if user is selecting text
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) {
+      return;
+    }
+
     if (this.expandedRows.has(eventId)) {
       this.expandedRows.delete(eventId);
     } else {

@@ -10,6 +10,7 @@ export type PersistedContextState = {
 export type PersistedState = {
   button?: Omit<PersistedContextState, 'size'>;
   window?: PersistedContextState;
+  isOpen?: boolean;
 };
 
 export function loadInspectorState(cookieName: string): PersistedState | null {
