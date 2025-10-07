@@ -433,10 +433,27 @@ export class WebInspectorElement extends LitElement {
   private getAgentStats(agentId: string): { totalEvents: number; lastActivity: number | null; toolCalls: number; errors: number } {
     const events = this.agentEvents.get(agentId) ?? [];
 
+    const messages = this.agentMessages.get(agentId);
+
+    const toolCallCount = Array.isArray(messages)
+      ? (messages as unknown[]).reduce<number>((count, rawMessage) => {
+          if (!rawMessage || typeof rawMessage !== 'object') {
+            return count;
+          }
+
+          const toolCalls = (rawMessage as { toolCalls?: unknown }).toolCalls;
+          if (!Array.isArray(toolCalls)) {
+            return count;
+          }
+
+          return count + toolCalls.length;
+        }, 0)
+      : events.filter((e) => e.type === "TOOL_CALL_END").length;
+
     return {
       totalEvents: events.length,
       lastActivity: events[0]?.timestamp ?? null,
-      toolCalls: events.filter((e) => e.type === "TOOL_CALL_END").length,
+      toolCalls: toolCallCount,
       errors: events.filter((e) => e.type === "RUN_ERROR").length,
     };
   }
@@ -1912,13 +1929,13 @@ export class WebInspectorElement extends LitElement {
           <div class="border-b border-gray-200 px-4 py-3">
             <h4 class="text-sm font-semibold text-gray-900">Current State</h4>
           </div>
-          <div class="p-4">
+          <div class="overflow-auto p-4">
             ${this.hasRenderableState(state)
               ? html`
                   <pre class="overflow-auto rounded-md bg-gray-50 p-3 text-xs text-gray-800 max-h-64"><code>${this.formatStateForDisplay(state)}</code></pre>
                 `
               : html`
-                  <div class="flex items-center justify-center py-8 text-xs text-gray-500">
+                  <div class="flex h-40 items-center justify-center text-xs text-gray-500">
                     <div class="flex items-center gap-2 text-gray-500">
                       <span class="text-lg text-gray-400">${this.renderIcon("Database")}</span>
                       <span>No state data available</span>
@@ -1933,7 +1950,7 @@ export class WebInspectorElement extends LitElement {
           <div class="border-b border-gray-200 px-4 py-3">
             <h4 class="text-sm font-semibold text-gray-900">Current Messages</h4>
           </div>
-          <div class="overflow-auto">
+          <div class="overflow-auto p-4">
             ${messages && Array.isArray(messages) && messages.length > 0
               ? html`
                   <table class="w-full text-xs">
@@ -1990,7 +2007,7 @@ export class WebInspectorElement extends LitElement {
                   </table>
                 `
               : html`
-                  <div class="flex items-center justify-center py-8 text-xs text-gray-500">
+                  <div class="flex h-40 items-center justify-center text-xs text-gray-500">
                     <div class="flex items-center gap-2 text-gray-500">
                       <span class="text-lg text-gray-400">${this.renderIcon("MessageSquare")}</span>
                       <span>No messages available</span>
