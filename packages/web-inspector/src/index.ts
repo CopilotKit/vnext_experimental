@@ -1774,6 +1774,7 @@ export class WebInspectorElement extends LitElement {
   private selectedContext = "all-agents";
   private expandedRows: Set<string> = new Set();
   private copiedEvents: Set<string> = new Set();
+  private expandedTools: Set<string> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
@@ -1787,6 +1788,10 @@ export class WebInspectorElement extends LitElement {
 
     if (this.selectedMenu === "agents") {
       return this.renderAgentsView();
+    }
+
+    if (this.selectedMenu === "frontend-tools") {
+      return this.renderToolsView();
     }
 
     // Default placeholder content for other sections
@@ -1803,8 +1808,14 @@ export class WebInspectorElement extends LitElement {
 
     if (events.length === 0) {
       return html`
-        <div class="flex h-full items-center justify-center px-4 py-8 text-xs text-gray-500">
-          No events yet. Trigger an agent run to see live activity.
+        <div class="flex h-full items-center justify-center px-4 py-8 text-center">
+          <div class="max-w-md">
+            <div class="mb-3 flex justify-center text-gray-300 [&>svg]:!h-8 [&>svg]:!w-8">
+              ${this.renderIcon("Zap")}
+            </div>
+            <p class="text-sm text-gray-600">No events yet</p>
+            <p class="mt-2 text-xs text-gray-500">Trigger an agent run to see live activity.</p>
+          </div>
         </div>
       `;
     }
@@ -1892,7 +1903,11 @@ export class WebInspectorElement extends LitElement {
       return html`
         <div class="flex h-full items-center justify-center px-4 py-8 text-center">
           <div class="max-w-md">
-            <p class="text-sm text-gray-600">No Agent found</p>
+            <div class="mb-3 flex justify-center text-gray-300 [&>svg]:!h-8 [&>svg]:!w-8">
+              ${this.renderIcon("Bot")}
+            </div>
+            <p class="text-sm text-gray-600">No agent selected</p>
+            <p class="mt-2 text-xs text-gray-500">Select an agent from the dropdown above to view details.</p>
           </div>
         </div>
       `;
@@ -2053,7 +2068,7 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderContextDropdown() {
-    if (this.selectedMenu !== "ag-ui-events" && this.selectedMenu !== "agents") {
+    if (this.selectedMenu !== "ag-ui-events" && this.selectedMenu !== "agents" && this.selectedMenu !== "frontend-tools") {
       return nothing;
     }
 
@@ -2143,6 +2158,385 @@ export class WebInspectorElement extends LitElement {
 
     this.contextMenuOpen = false;
     this.persistState();
+    this.requestUpdate();
+  }
+
+  private renderToolsView() {
+    if (!this._core) {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-xs text-gray-500">
+          No core instance available
+        </div>
+      `;
+    }
+
+    const allTools = this.extractToolsFromAgents();
+
+    if (allTools.length === 0) {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-center">
+          <div class="max-w-md">
+            <div class="mb-3 flex justify-center text-gray-300 [&>svg]:!h-8 [&>svg]:!w-8">
+              ${this.renderIcon("Hammer")}
+            </div>
+            <p class="text-sm text-gray-600">No tools available</p>
+            <p class="mt-2 text-xs text-gray-500">Tools will appear here once agents are configured with tool handlers or renderers.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Filter tools by selected agent
+    const filteredTools = this.selectedContext === "all-agents"
+      ? allTools
+      : allTools.filter(tool => tool.agentId === this.selectedContext);
+
+    return html`
+      <div class="flex h-full flex-col overflow-hidden">
+        <div class="overflow-auto p-4">
+          <div class="space-y-3">
+            ${filteredTools.map(tool => this.renderToolCard(tool))}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private extractToolsFromAgents(): Array<{
+    agentId: string;
+    name: string;
+    description?: string;
+    parameters?: unknown;
+    type: 'handler' | 'renderer';
+  }> {
+    if (!this._core) {
+      return [];
+    }
+
+    const tools: Array<{
+      agentId: string;
+      name: string;
+      description?: string;
+      parameters?: unknown;
+      type: 'handler' | 'renderer';
+    }> = [];
+
+    for (const [agentId, agent] of Object.entries(this._core.agents)) {
+      if (!agent) continue;
+
+      // Try to extract tool handlers
+      const handlers = (agent as any).toolHandlers;
+      if (handlers && typeof handlers === 'object') {
+        for (const [toolName, handler] of Object.entries(handlers)) {
+          if (handler && typeof handler === 'object') {
+            const handlerObj = handler as any;
+            tools.push({
+              agentId,
+              name: toolName,
+              description: handlerObj.description || handlerObj.tool?.description,
+              parameters: handlerObj.parameters || handlerObj.tool?.parameters,
+              type: 'handler',
+            });
+          }
+        }
+      }
+
+      // Try to extract tool renderers
+      const renderers = (agent as any).toolRenderers;
+      if (renderers && typeof renderers === 'object') {
+        for (const [toolName, renderer] of Object.entries(renderers)) {
+          // Don't duplicate if we already have it as a handler
+          if (!tools.some(t => t.agentId === agentId && t.name === toolName)) {
+            if (renderer && typeof renderer === 'object') {
+              const rendererObj = renderer as any;
+              tools.push({
+                agentId,
+                name: toolName,
+                description: rendererObj.description || rendererObj.tool?.description,
+                parameters: rendererObj.parameters || rendererObj.tool?.parameters,
+                type: 'renderer',
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return tools.sort((a, b) => {
+      const agentCompare = a.agentId.localeCompare(b.agentId);
+      if (agentCompare !== 0) return agentCompare;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  private renderToolCard(tool: {
+    agentId: string;
+    name: string;
+    description?: string;
+    parameters?: unknown;
+    type: 'handler' | 'renderer';
+  }) {
+    const isExpanded = this.expandedTools.has(`${tool.agentId}:${tool.name}`);
+    const schema = this.extractSchemaInfo(tool.parameters);
+
+    const typeColors = {
+      handler: "bg-blue-50 text-blue-700 border-blue-200",
+      renderer: "bg-purple-50 text-purple-700 border-purple-200",
+    };
+
+    return html`
+      <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <button
+          type="button"
+          class="w-full px-4 py-3 text-left transition hover:bg-gray-50"
+          @click=${() => this.toggleToolExpansion(`${tool.agentId}:${tool.name}`)}
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-sm font-semibold text-gray-900">${tool.name}</span>
+                <span class="inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[10px] font-medium ${typeColors[tool.type]}">
+                  ${tool.type}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span class="flex items-center gap-1">
+                  ${this.renderIcon("Bot")}
+                  <span class="font-mono">${tool.agentId}</span>
+                </span>
+                ${schema.properties.length > 0
+                  ? html`
+                      <span class="text-gray-300">•</span>
+                      <span>${schema.properties.length} parameter${schema.properties.length !== 1 ? 's' : ''}</span>
+                    `
+                  : nothing}
+              </div>
+              ${tool.description
+                ? html`<p class="mt-2 text-xs text-gray-600">${tool.description}</p>`
+                : nothing}
+            </div>
+            <span class="shrink-0 text-gray-400 transition ${isExpanded ? 'rotate-180' : ''}">
+              ${this.renderIcon("ChevronDown")}
+            </span>
+          </div>
+        </button>
+
+        ${isExpanded
+          ? html`
+              <div class="border-t border-gray-200 bg-gray-50/50 px-4 py-3">
+                ${schema.properties.length > 0
+                  ? html`
+                      <h5 class="mb-3 text-xs font-semibold text-gray-700">Parameters</h5>
+                      <div class="space-y-3">
+                        ${schema.properties.map(prop => html`
+                          <div class="rounded-md border border-gray-200 bg-white p-3">
+                            <div class="flex items-start justify-between gap-2 mb-1">
+                              <span class="font-mono text-xs font-medium text-gray-900">${prop.name}</span>
+                              <div class="flex items-center gap-1.5 shrink-0">
+                                ${prop.required
+                                  ? html`<span class="text-[9px] rounded border border-rose-200 bg-rose-50 px-1 py-0.5 font-medium text-rose-700">required</span>`
+                                  : html`<span class="text-[9px] rounded border border-gray-200 bg-gray-50 px-1 py-0.5 font-medium text-gray-600">optional</span>`}
+                                ${prop.type
+                                  ? html`<span class="text-[9px] rounded border border-gray-200 bg-gray-50 px-1 py-0.5 font-mono text-gray-600">${prop.type}</span>`
+                                  : nothing}
+                              </div>
+                            </div>
+                            ${prop.description
+                              ? html`<p class="mt-1 text-xs text-gray-600">${prop.description}</p>`
+                              : nothing}
+                            ${prop.defaultValue !== undefined
+                              ? html`
+                                  <div class="mt-2 flex items-center gap-1.5 text-[10px] text-gray-500">
+                                    <span>Default:</span>
+                                    <code class="rounded bg-gray-100 px-1 py-0.5 font-mono">${JSON.stringify(prop.defaultValue)}</code>
+                                  </div>
+                                `
+                              : nothing}
+                            ${prop.enum && prop.enum.length > 0
+                              ? html`
+                                  <div class="mt-2">
+                                    <span class="text-[10px] text-gray-500">Allowed values:</span>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                      ${prop.enum.map(val => html`
+                                        <code class="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-mono text-gray-700">${JSON.stringify(val)}</code>
+                                      `)}
+                                    </div>
+                                  </div>
+                                `
+                              : nothing}
+                          </div>
+                        `)}
+                      </div>
+                    `
+                  : html`
+                      <div class="flex items-center justify-center py-4 text-xs text-gray-500">
+                        <span>No parameters defined</span>
+                      </div>
+                    `}
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
+  private extractSchemaInfo(parameters: unknown): {
+    properties: Array<{
+      name: string;
+      type?: string;
+      description?: string;
+      required: boolean;
+      defaultValue?: unknown;
+      enum?: unknown[];
+    }>;
+  } {
+    const result: {
+      properties: Array<{
+        name: string;
+        type?: string;
+        description?: string;
+        required: boolean;
+        defaultValue?: unknown;
+        enum?: unknown[];
+      }>;
+    } = { properties: [] };
+
+    if (!parameters || typeof parameters !== 'object') {
+      return result;
+    }
+
+    // Try Zod schema introspection
+    const zodDef = (parameters as any)._def;
+    if (zodDef) {
+      // Handle Zod object schema
+      if (zodDef.typeName === 'ZodObject') {
+        const shape = zodDef.shape?.() || zodDef.shape;
+        const requiredKeys = new Set<string>();
+
+        // Get required fields
+        if (zodDef.unknownKeys === 'strict' || !zodDef.catchall) {
+          Object.keys(shape || {}).forEach(key => {
+            const fieldDef = shape[key]?._def;
+            if (fieldDef && !this.isZodOptional(shape[key])) {
+              requiredKeys.add(key);
+            }
+          });
+        }
+
+        // Extract properties
+        for (const [key, value] of Object.entries(shape || {})) {
+          const fieldInfo = this.extractZodFieldInfo(value);
+          result.properties.push({
+            name: key,
+            type: fieldInfo.type,
+            description: fieldInfo.description,
+            required: requiredKeys.has(key),
+            defaultValue: fieldInfo.defaultValue,
+            enum: fieldInfo.enum,
+          });
+        }
+      }
+    } else if ((parameters as any).type === 'object' && (parameters as any).properties) {
+      // Handle JSON Schema format
+      const props = (parameters as any).properties;
+      const required = new Set((parameters as any).required || []);
+
+      for (const [key, value] of Object.entries(props)) {
+        const prop = value as any;
+        result.properties.push({
+          name: key,
+          type: prop.type,
+          description: prop.description,
+          required: required.has(key),
+          defaultValue: prop.default,
+          enum: prop.enum,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  private isZodOptional(zodSchema: any): boolean {
+    if (!zodSchema?._def) return false;
+
+    const def = zodSchema._def;
+
+    // Check if it's explicitly optional or nullable
+    if (def.typeName === 'ZodOptional' || def.typeName === 'ZodNullable') {
+      return true;
+    }
+
+    // Check if it has a default value
+    if (def.defaultValue !== undefined) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private extractZodFieldInfo(zodSchema: any): {
+    type?: string;
+    description?: string;
+    defaultValue?: unknown;
+    enum?: unknown[];
+  } {
+    const info: {
+      type?: string;
+      description?: string;
+      defaultValue?: unknown;
+      enum?: unknown[];
+    } = {};
+
+    if (!zodSchema?._def) return info;
+
+    let currentSchema = zodSchema;
+    let def = currentSchema._def;
+
+    // Unwrap optional/nullable
+    while (def.typeName === 'ZodOptional' || def.typeName === 'ZodNullable' || def.typeName === 'ZodDefault') {
+      if (def.typeName === 'ZodDefault' && def.defaultValue !== undefined) {
+        info.defaultValue = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
+      }
+      currentSchema = def.innerType;
+      if (!currentSchema?._def) break;
+      def = currentSchema._def;
+    }
+
+    // Extract description
+    info.description = def.description;
+
+    // Extract type
+    const typeMap: Record<string, string> = {
+      ZodString: 'string',
+      ZodNumber: 'number',
+      ZodBoolean: 'boolean',
+      ZodArray: 'array',
+      ZodObject: 'object',
+      ZodEnum: 'enum',
+      ZodLiteral: 'literal',
+      ZodUnion: 'union',
+      ZodAny: 'any',
+      ZodUnknown: 'unknown',
+    };
+    info.type = typeMap[def.typeName] || def.typeName?.replace('Zod', '').toLowerCase();
+
+    // Extract enum values
+    if (def.typeName === 'ZodEnum' && Array.isArray(def.values)) {
+      info.enum = def.values;
+    } else if (def.typeName === 'ZodLiteral' && def.value !== undefined) {
+      info.enum = [def.value];
+    }
+
+    return info;
+  }
+
+  private toggleToolExpansion(toolId: string): void {
+    if (this.expandedTools.has(toolId)) {
+      this.expandedTools.delete(toolId);
+    } else {
+      this.expandedTools.add(toolId);
+    }
     this.requestUpdate();
   }
 
