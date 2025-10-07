@@ -46,6 +46,8 @@ const COOKIE_NAME = "copilotkit_inspector_state";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 320, height: 380 };
+const DOCKED_LEFT_WIDTH = 280; // Sensible width for left dock with collapsed sidebar
+const DOCKED_BOTTOM_HEIGHT = 300; // Sensible height for bottom dock
 const MAX_AGENT_EVENTS = 200;
 const MAX_TOTAL_EVENTS = 500;
 
@@ -526,6 +528,7 @@ export class WebInspectorElement extends LitElement {
     const windowState = this.contextState.window;
     const isDocked = this.dockMode !== 'floating';
     const isTransitioning = this.hasAttribute('data-transitioning');
+    const isCollapsed = this.dockMode === 'docked-left';
 
     const windowStyles = isDocked
       ? this.getDockedWindowStyles()
@@ -548,36 +551,45 @@ export class WebInspectorElement extends LitElement {
       >
         <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
           <nav
-            class="flex w-56 shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs"
+            class="flex ${isCollapsed ? 'w-16' : 'w-56'} shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs transition-all duration-300"
             aria-label="Inspector sections"
           >
             <div class="flex flex-col gap-4 overflow-y-auto">
               <div
-                class="flex items-center gap-2 pl-1 touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
+                class="flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 pl-1'} touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
                 data-drag-context="window"
                 @pointerdown=${this.handlePointerDown}
                 @pointermove=${this.handlePointerMove}
                 @pointerup=${this.handlePointerUp}
                 @pointercancel=${this.handlePointerCancel}
+                title="${isCollapsed ? 'Acme Inc - Enterprise' : ''}"
               >
                 <span
                   class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white pointer-events-none"
                 >
                   ${this.renderIcon("Building2")}
                 </span>
-                <div class="flex flex-1 flex-col leading-tight pointer-events-none">
-                  <span class="text-sm font-semibold text-gray-900">Acme Inc</span>
-                  <span class="text-[10px] text-gray-500">Enterprise</span>
-                </div>
+                ${!isCollapsed
+                  ? html`
+                    <div class="flex flex-1 flex-col leading-tight pointer-events-none">
+                      <span class="text-sm font-semibold text-gray-900">Acme Inc</span>
+                      <span class="text-[10px] text-gray-500">Enterprise</span>
+                    </div>
+                  `
+                  : nothing}
               </div>
 
               <div class="flex flex-col gap-2 pt-2">
-                <div class="px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Platform</div>
+                ${!isCollapsed
+                  ? html`<div class="px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Platform</div>`
+                  : nothing}
                 <div class="flex flex-col gap-0.5">
                   ${this.menuItems.map(({ key, label, icon }) => {
                     const isSelected = this.selectedMenu === key;
                     const buttonClasses = [
-                      "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
+                      "group flex w-full items-center",
+                      isCollapsed ? "justify-center p-2" : "gap-2 px-2 py-1.5",
+                      "rounded-md text-left text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
                       isSelected
                         ? "bg-gray-900 text-white"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
@@ -592,16 +604,21 @@ export class WebInspectorElement extends LitElement {
                         type="button"
                         class=${buttonClasses}
                         aria-pressed=${isSelected}
+                        title="${isCollapsed ? label : ''}"
                         @click=${() => this.handleMenuSelect(key)}
                       >
                         <span
-                          class="flex h-6 w-6 items-center justify-center rounded ${badgeClasses}"
+                          class="flex h-6 w-6 items-center justify-center rounded ${isCollapsed && isSelected ? 'text-white' : isCollapsed ? 'text-gray-600' : badgeClasses}"
                           aria-hidden="true"
                         >
                           ${this.renderIcon(icon)}
                         </span>
-                        <span class="flex-1">${label}</span>
-                        <span class="text-gray-400 opacity-60">${this.renderIcon("ChevronRight")}</span>
+                        ${!isCollapsed
+                          ? html`
+                            <span class="flex-1">${label}</span>
+                            <span class="text-gray-400 opacity-60">${this.renderIcon("ChevronRight")}</span>
+                          `
+                          : nothing}
                       </button>
                     `;
                   })}
@@ -610,18 +627,23 @@ export class WebInspectorElement extends LitElement {
             </div>
 
             <div
-              class="relative flex items-center rounded-lg border border-gray-200 bg-white px-2 py-2 text-left text-xs text-gray-700 cursor-pointer hover:bg-gray-50 transition"
+              class="relative flex items-center ${isCollapsed ? 'justify-center p-1' : ''} rounded-lg border border-gray-200 bg-white ${isCollapsed ? '' : 'px-2 py-2'} text-left text-xs text-gray-700 cursor-pointer hover:bg-gray-50 transition"
+              title="${isCollapsed ? 'John Snow - john@snow.com' : ''}"
             >
               <span
-                class="w-6 h-6 flex items-center justify-center overflow-hidden rounded bg-gray-100 text-[10px] font-semibold text-gray-700"
+                class="${isCollapsed ? 'w-8 h-8 shrink-0' : 'w-6 h-6'} flex items-center justify-center overflow-hidden rounded bg-gray-100 text-[10px] font-semibold text-gray-700"
               >
                 JS
               </span>
-              <div class="pl-2 flex flex-1 flex-col leading-tight">
-                <span class="font-medium text-gray-900">John Snow</span>
-                <span class="text-[10px] text-gray-500">john@snow.com</span>
-              </div>
-              <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
+              ${!isCollapsed
+                ? html`
+                  <div class="pl-2 flex flex-1 flex-col leading-tight">
+                    <span class="font-medium text-gray-900">John Snow</span>
+                    <span class="text-[10px] text-gray-500">john@snow.com</span>
+                  </div>
+                  <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
+                `
+                : nothing}
             </div>
           </nav>
           <div class="relative flex flex-1 flex-col overflow-hidden">
@@ -1111,14 +1133,31 @@ export class WebInspectorElement extends LitElement {
     // Clean up previous dock state
     this.removeDockStyles();
 
+    const previousMode = this.dockMode;
     this.dockMode = mode;
 
     if (mode !== 'floating') {
+      // For docking, apply dock styles first (position change)
       this.applyDockStyles();
+
+      // Then update sizes after a frame to let position transition start
+      requestAnimationFrame(() => {
+        if (mode === 'docked-left') {
+          this.contextState.window.size.width = DOCKED_LEFT_WIDTH;
+        } else if (mode === 'docked-bottom') {
+          this.contextState.window.size.height = DOCKED_BOTTOM_HEIGHT;
+        }
+        this.requestUpdate();
+      });
+    } else {
+      // When floating, set size first then center
+      this.contextState.window.size = { ...DEFAULT_WINDOW_SIZE };
+      this.centerContext('window');
     }
 
     this.persistState();
     this.requestUpdate();
+    this.updateHostTransform('window');
 
     // Remove transition class after animation completes
     setTimeout(() => {
@@ -1143,14 +1182,11 @@ export class WebInspectorElement extends LitElement {
       document.body.style.transition = 'margin 300ms ease';
     }
 
+    // Apply body margins with the target docked sizes
     if (this.dockMode === 'docked-left') {
-      // Apply left docking
-      const dockedWidth = this.contextState.window.size.width;
-      document.body.style.marginLeft = `${dockedWidth}px`;
+      document.body.style.marginLeft = `${DOCKED_LEFT_WIDTH}px`;
     } else if (this.dockMode === 'docked-bottom') {
-      // Apply bottom docking
-      const dockedHeight = this.contextState.window.size.height;
-      document.body.style.marginBottom = `${dockedHeight}px`;
+      document.body.style.marginBottom = `${DOCKED_BOTTOM_HEIGHT}px`;
     }
 
     // Remove transition after animation completes
@@ -1401,7 +1437,6 @@ export class WebInspectorElement extends LitElement {
 
   private handleDockClick(mode: DockMode): void {
     this.setDockMode(mode);
-    this.updateHostTransform('window');
   }
 
   private serializeAttributes(attributes: Record<string, string | number | undefined>): string {
