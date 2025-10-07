@@ -84,6 +84,7 @@ export class WebInspectorElement extends LitElement {
   private contextMenuOpen = false;
   private dockMode: DockMode = "floating";
   private previousBodyMargins: { left: string; bottom: string } | null = null;
+  private transitionTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   get core(): CopilotKitCore | null {
     return this._core;
@@ -398,8 +399,12 @@ export class WebInspectorElement extends LitElement {
 
       .console-button {
         transition:
-          transform 160ms ease,
+          transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
           opacity 160ms ease;
+      }
+
+      .console-button[data-dragging="true"] {
+        transition: opacity 160ms ease;
       }
 
       .inspector-window[data-transitioning="true"] {
@@ -513,6 +518,7 @@ export class WebInspectorElement extends LitElement {
         type="button"
         aria-label="Web Inspector"
         data-drag-context="button"
+        data-dragging=${this.isDragging && this.pointerContext === "button" ? "true" : "false"}
         @pointerdown=${this.handlePointerDown}
         @pointermove=${this.handlePointerMove}
         @pointerup=${this.handlePointerUp}
@@ -846,16 +852,18 @@ export class WebInspectorElement extends LitElement {
     if (this.isDragging && this.pointerContext) {
       event.preventDefault();
       this.setDragging(false);
-      this.updateAnchorFromPosition(this.pointerContext);
       if (this.pointerContext === "window") {
+        this.updateAnchorFromPosition(this.pointerContext);
         this.hasCustomPosition.window = true;
+        this.applyAnchorPosition(this.pointerContext);
       } else if (this.pointerContext === "button") {
+        // Snap button to nearest corner
+        this.snapButtonToCorner();
         this.hasCustomPosition.button = true;
         if (this.draggedDuringInteraction) {
           this.ignoreNextButtonClick = true;
         }
       }
-      this.applyAnchorPosition(this.pointerContext);
     } else if (context === "button" && !this.isOpen && !this.draggedDuringInteraction) {
       this.openInspector();
     }
@@ -1126,7 +1134,7 @@ export class WebInspectorElement extends LitElement {
     }
 
     // Add transition class for smooth dock mode changes
-    this.setAttribute('data-transitioning', 'true');
+    this.startHostTransition();
 
     // Clean up previous dock state
     this.removeDockStyles();
@@ -1151,11 +1159,19 @@ export class WebInspectorElement extends LitElement {
     this.persistState();
     this.requestUpdate();
     this.updateHostTransform('window');
+  }
 
-    // Remove transition class after animation completes
-    setTimeout(() => {
+  private startHostTransition(duration = 300): void {
+    this.setAttribute('data-transitioning', 'true');
+
+    if (this.transitionTimeoutId !== null) {
+      clearTimeout(this.transitionTimeoutId);
+    }
+
+    this.transitionTimeoutId = setTimeout(() => {
       this.removeAttribute('data-transitioning');
-    }, 300);
+      this.transitionTimeoutId = null;
+    }, duration);
   }
 
   private applyDockStyles(skipTransition = false): void {
@@ -1246,6 +1262,32 @@ export class WebInspectorElement extends LitElement {
     }
     const viewport = this.getViewportSize();
     updateAnchorFromPositionHelper(this.contextState[context], viewport, EDGE_MARGIN);
+  }
+
+  private snapButtonToCorner(): void {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const viewport = this.getViewportSize();
+    const state = this.contextState.button;
+
+    // Determine which corner is closest based on center of button
+    const centerX = state.position.x + state.size.width / 2;
+    const centerY = state.position.y + state.size.height / 2;
+
+    const horizontal: Anchor['horizontal'] = centerX < viewport.width / 2 ? 'left' : 'right';
+    const vertical: Anchor['vertical'] = centerY < viewport.height / 2 ? 'top' : 'bottom';
+
+    // Set anchor to nearest corner
+    state.anchor = { horizontal, vertical };
+
+    // Always use EDGE_MARGIN as offset (pinned to corner)
+    state.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
+
+    // Apply the anchor position to snap to corner
+    this.startHostTransition();
+    this.applyAnchorPosition('button');
   }
 
   private applyAnchorPosition(context: ContextKey): void {
