@@ -1877,9 +1877,9 @@ export class WebInspectorElement extends LitElement {
     const messages = this.getLatestMessagesForAgent(agentId);
 
     const statusColors = {
-      running: "bg-green-100 text-green-800 border-green-200",
-      idle: "bg-gray-100 text-gray-700 border-gray-200",
-      error: "bg-red-100 text-red-800 border-red-200",
+      running: "bg-emerald-50 text-emerald-700",
+      idle: "bg-gray-100 text-gray-600",
+      error: "bg-rose-50 text-rose-700",
     };
 
     return html`
@@ -1893,8 +1893,8 @@ export class WebInspectorElement extends LitElement {
               </div>
               <div>
                 <h3 class="font-semibold text-sm text-gray-900">${agentId}</h3>
-                <span class="inline-flex items-center gap-1.5 mt-1 rounded-full border px-2 py-0.5 text-xs font-medium ${statusColors[status]}">
-                  <span class="h-1.5 w-1.5 rounded-full ${status === 'running' ? 'bg-green-600 animate-pulse' : status === 'error' ? 'bg-red-600' : 'bg-gray-600'}"></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status]} relative -translate-y-[2px]">
+                  <span class="h-1.5 w-1.5 rounded-full ${status === 'running' ? 'bg-emerald-500 animate-pulse' : status === 'error' ? 'bg-rose-500' : 'bg-gray-400'}"></span>
                   ${status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>
               </div>
@@ -1938,7 +1938,7 @@ export class WebInspectorElement extends LitElement {
                   <div class="flex h-40 items-center justify-center text-xs text-gray-500">
                     <div class="flex items-center gap-2 text-gray-500">
                       <span class="text-lg text-gray-400">${this.renderIcon("Database")}</span>
-                      <span>No state data available</span>
+                      <span>State is empty</span>
                     </div>
                   </div>
                 `}
@@ -1950,7 +1950,7 @@ export class WebInspectorElement extends LitElement {
           <div class="border-b border-gray-200 px-4 py-3">
             <h4 class="text-sm font-semibold text-gray-900">Current Messages</h4>
           </div>
-          <div class="overflow-auto p-4">
+          <div class="overflow-auto">
             ${messages && Array.isArray(messages) && messages.length > 0
               ? html`
                   <table class="w-full text-xs">
