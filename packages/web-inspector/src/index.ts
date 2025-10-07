@@ -6,7 +6,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { icons } from "lucide";
 import type { CopilotKitCore, CopilotKitCoreSubscriber } from "@copilotkitnext/core";
 import type { AbstractAgent, AgentSubscriber } from "@ag-ui/client";
-import type { Anchor, ContextKey, ContextState, Position, Size } from "./lib/types";
+import type { Anchor, ContextKey, ContextState, DockMode, Position, Size } from "./lib/types";
 import {
   applyAnchorPosition as applyAnchorPositionHelper,
   centerContext as centerContextHelper,
@@ -23,6 +23,7 @@ import {
   isValidAnchor,
   isValidPosition,
   isValidSize,
+  isValidDockMode,
 } from "./lib/persistence";
 
 export const WEB_INSPECTOR_TAG = "web-inspector" as const;
@@ -79,6 +80,8 @@ export class WebInspectorElement extends LitElement {
   private ignoreNextButtonClick = false;
   private selectedMenu: MenuKey = "ag-ui-events";
   private contextMenuOpen = false;
+  private dockMode: DockMode = "floating";
+  private previousBodyMargins: { left: string; bottom: string } | null = null;
 
   get core(): CopilotKitCore | null {
     return this._core;
@@ -387,10 +390,23 @@ export class WebInspectorElement extends LitElement {
         will-change: transform;
       }
 
+      :host([data-transitioning="true"]) {
+        transition: transform 300ms ease;
+      }
+
       .console-button {
         transition:
           transform 160ms ease,
           opacity 160ms ease;
+      }
+
+      .inspector-window[data-transitioning="true"] {
+        transition: width 300ms ease, height 300ms ease;
+      }
+
+      .inspector-window[data-docked="true"] {
+        border-radius: 0 !important;
+        box-shadow: none !important;
       }
 
       .resize-handle {
@@ -414,6 +430,7 @@ export class WebInspectorElement extends LitElement {
       window.removeEventListener("resize", this.handleResize);
       window.removeEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
     }
+    this.removeDockStyles(); // Clean up any docking styles
     this.detachFromCore();
   }
 
@@ -433,15 +450,22 @@ export class WebInspectorElement extends LitElement {
 
     this.hydrateStateFromCookie();
 
-    this.applyAnchorPosition("button");
-
-    if (this.hasCustomPosition.window) {
-      this.applyAnchorPosition("window");
-    } else {
-      this.centerContext("window");
+    // Apply docking styles if open and docked
+    if (this.isOpen && this.dockMode !== 'floating') {
+      this.applyDockStyles();
     }
 
-    this.updateHostTransform("button");
+    this.applyAnchorPosition("button");
+
+    if (this.dockMode === 'floating') {
+      if (this.hasCustomPosition.window) {
+        this.applyAnchorPosition("window");
+      } else {
+        this.centerContext("window");
+      }
+    }
+
+    this.updateHostTransform(this.isOpen ? "window" : "button");
   }
 
   render() {
@@ -500,12 +524,18 @@ export class WebInspectorElement extends LitElement {
 
   private renderWindow() {
     const windowState = this.contextState.window;
-    const windowStyles = {
-      width: `${Math.round(windowState.size.width)}px`,
-      height: `${Math.round(windowState.size.height)}px`,
-      minWidth: `${MIN_WINDOW_WIDTH}px`,
-      minHeight: `${MIN_WINDOW_HEIGHT}px`,
-    };
+    const isDocked = this.dockMode !== 'floating';
+    const isTransitioning = this.hasAttribute('data-transitioning');
+
+    const windowStyles = isDocked
+      ? this.getDockedWindowStyles()
+      : {
+          width: `${Math.round(windowState.size.width)}px`,
+          height: `${Math.round(windowState.size.height)}px`,
+          minWidth: `${MIN_WINDOW_WIDTH}px`,
+          minHeight: `${MIN_WINDOW_HEIGHT}px`,
+        };
+
     const contextDropdown = this.renderContextDropdown();
     const hasContextDropdown = contextDropdown !== nothing;
 
@@ -513,6 +543,8 @@ export class WebInspectorElement extends LitElement {
       <section
         class="inspector-window pointer-events-auto relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-900 shadow-lg"
         style=${styleMap(windowStyles)}
+        data-docked=${isDocked}
+        data-transitioning=${isTransitioning}
       >
         <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
           <nav
@@ -594,12 +626,12 @@ export class WebInspectorElement extends LitElement {
           </nav>
           <div class="relative flex flex-1 flex-col overflow-hidden">
             <div
-              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3 touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
+              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3 touch-none select-none ${isDocked ? '' : (this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab')}"
               data-drag-context="window"
-              @pointerdown=${this.handlePointerDown}
-              @pointermove=${this.handlePointerMove}
-              @pointerup=${this.handlePointerUp}
-              @pointercancel=${this.handlePointerCancel}
+              @pointerdown=${isDocked ? undefined : this.handlePointerDown}
+              @pointermove=${isDocked ? undefined : this.handlePointerMove}
+              @pointerup=${isDocked ? undefined : this.handlePointerUp}
+              @pointercancel=${isDocked ? undefined : this.handlePointerCancel}
             >
               <div class="flex items-center gap-2 text-xs text-gray-500">
                 <div class="flex items-center text-xs text-gray-600">
@@ -620,15 +652,18 @@ export class WebInspectorElement extends LitElement {
                     : nothing}
                 </div>
               </div>
-              <button
-                class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-                type="button"
-                aria-label="Close Web Inspector"
-                @pointerdown=${this.handleClosePointerDown}
-                @click=${this.handleCloseClick}
-              >
-                ${this.renderIcon("X")}
-              </button>
+              <div class="flex items-center gap-1">
+                ${this.renderDockControls()}
+                <button
+                  class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                  type="button"
+                  aria-label="Close Web Inspector"
+                  @pointerdown=${this.handleClosePointerDown}
+                  @click=${this.handleCloseClick}
+                >
+                  ${this.renderIcon("X")}
+                </button>
+              </div>
             </div>
             <div class="flex-1 overflow-auto">
               ${this.renderMainContent()}
@@ -709,6 +744,11 @@ export class WebInspectorElement extends LitElement {
     if (typeof persisted.isOpen === "boolean") {
       this.isOpen = persisted.isOpen;
     }
+
+    // Restore the dock mode
+    if (isValidDockMode(persisted.dockMode)) {
+      this.dockMode = persisted.dockMode;
+    }
   }
 
   private get activeContext(): ContextKey {
@@ -716,6 +756,11 @@ export class WebInspectorElement extends LitElement {
   }
 
   private handlePointerDown = (event: PointerEvent) => {
+    // Don't allow dragging when docked
+    if (this.dockMode !== 'floating' && this.isOpen) {
+      return;
+    }
+
     const target = event.currentTarget as HTMLElement | null;
     const contextAttr = target?.dataset.dragContext;
     const context: ContextKey = contextAttr === "window" ? "window" : "button";
@@ -845,6 +890,11 @@ export class WebInspectorElement extends LitElement {
     this.resizeStart = { x: event.clientX, y: event.clientY };
     this.resizeInitialSize = { ...this.contextState.window.size };
 
+    // Remove transition from body during resize to prevent lag
+    if (document.body && this.dockMode !== 'floating') {
+      document.body.style.transition = '';
+    }
+
     const target = event.currentTarget as HTMLElement | null;
     target?.setPointerCapture?.(event.pointerId);
   };
@@ -860,12 +910,37 @@ export class WebInspectorElement extends LitElement {
     const deltaY = event.clientY - this.resizeStart.y;
     const state = this.contextState.window;
 
-    state.size = this.clampWindowSize({
-      width: this.resizeInitialSize.width + deltaX,
-      height: this.resizeInitialSize.height + deltaY,
-    });
-    this.keepPositionWithinViewport("window");
-    this.updateAnchorFromPosition("window");
+    // For docked states, only resize in the appropriate dimension
+    if (this.dockMode === 'docked-left') {
+      // Only resize width for left dock
+      state.size = this.clampWindowSize({
+        width: this.resizeInitialSize.width + deltaX,
+        height: state.size.height,
+      });
+      // Update the body margin
+      if (document.body) {
+        document.body.style.marginLeft = `${state.size.width}px`;
+      }
+    } else if (this.dockMode === 'docked-bottom') {
+      // Only resize height for bottom dock
+      state.size = this.clampWindowSize({
+        width: state.size.width,
+        height: this.resizeInitialSize.height - deltaY, // Negative because dragging up should increase height
+      });
+      // Update the body margin
+      if (document.body) {
+        document.body.style.marginBottom = `${state.size.height}px`;
+      }
+    } else {
+      // Full resize for floating mode
+      state.size = this.clampWindowSize({
+        width: this.resizeInitialSize.width + deltaX,
+        height: this.resizeInitialSize.height + deltaY,
+      });
+      this.keepPositionWithinViewport("window");
+      this.updateAnchorFromPosition("window");
+    }
+
     this.requestUpdate();
     this.updateHostTransform("window");
   };
@@ -880,8 +955,12 @@ export class WebInspectorElement extends LitElement {
       target.releasePointerCapture(this.resizePointerId);
     }
 
-    this.updateAnchorFromPosition("window");
-    this.applyAnchorPosition("window");
+    // Only update anchor position for floating mode
+    if (this.dockMode === 'floating') {
+      this.updateAnchorFromPosition("window");
+      this.applyAnchorPosition("window");
+    }
+
     this.resetResizeTracking();
   };
 
@@ -895,8 +974,12 @@ export class WebInspectorElement extends LitElement {
       target.releasePointerCapture(this.resizePointerId);
     }
 
-    this.updateAnchorFromPosition("window");
-    this.applyAnchorPosition("window");
+    // Only update anchor position for floating mode
+    if (this.dockMode === 'floating') {
+      this.updateAnchorFromPosition("window");
+      this.applyAnchorPosition("window");
+    }
+
     this.resetResizeTracking();
   };
 
@@ -1000,6 +1083,7 @@ export class WebInspectorElement extends LitElement {
         hasCustomPosition: this.hasCustomPosition.window,
       },
       isOpen: this.isOpen,
+      dockMode: this.dockMode,
     };
     saveInspectorState(COOKIE_NAME, state, COOKIE_MAX_AGE_SECONDS);
   }
@@ -1016,13 +1100,116 @@ export class WebInspectorElement extends LitElement {
     return clampSizeToViewport(size, viewport, EDGE_MARGIN, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT);
   }
 
+  private setDockMode(mode: DockMode): void {
+    if (this.dockMode === mode) {
+      return;
+    }
+
+    // Add transition class for smooth dock mode changes
+    this.setAttribute('data-transitioning', 'true');
+
+    // Clean up previous dock state
+    this.removeDockStyles();
+
+    this.dockMode = mode;
+
+    if (mode !== 'floating') {
+      this.applyDockStyles();
+    }
+
+    this.persistState();
+    this.requestUpdate();
+
+    // Remove transition class after animation completes
+    setTimeout(() => {
+      this.removeAttribute('data-transitioning');
+    }, 300);
+  }
+
+  private applyDockStyles(): void {
+    if (typeof document === 'undefined' || !document.body) {
+      return;
+    }
+
+    // Save original body margins
+    const computedStyle = window.getComputedStyle(document.body);
+    this.previousBodyMargins = {
+      left: computedStyle.marginLeft,
+      bottom: computedStyle.marginBottom,
+    };
+
+    // Apply transition to body for smooth animation (only when docking, not during resize)
+    if (!this.isResizing) {
+      document.body.style.transition = 'margin 300ms ease';
+    }
+
+    if (this.dockMode === 'docked-left') {
+      // Apply left docking
+      const dockedWidth = this.contextState.window.size.width;
+      document.body.style.marginLeft = `${dockedWidth}px`;
+    } else if (this.dockMode === 'docked-bottom') {
+      // Apply bottom docking
+      const dockedHeight = this.contextState.window.size.height;
+      document.body.style.marginBottom = `${dockedHeight}px`;
+    }
+
+    // Remove transition after animation completes
+    if (!this.isResizing) {
+      setTimeout(() => {
+        if (document.body) {
+          document.body.style.transition = '';
+        }
+      }, 300);
+    }
+  }
+
+  private removeDockStyles(): void {
+    if (typeof document === 'undefined' || !document.body) {
+      return;
+    }
+
+    // Only add transition if not resizing
+    if (!this.isResizing) {
+      document.body.style.transition = 'margin 300ms ease';
+    }
+
+    // Restore original margins if saved
+    if (this.previousBodyMargins) {
+      document.body.style.marginLeft = this.previousBodyMargins.left;
+      document.body.style.marginBottom = this.previousBodyMargins.bottom;
+      this.previousBodyMargins = null;
+    } else {
+      // Reset to default if no previous values
+      document.body.style.marginLeft = '';
+      document.body.style.marginBottom = '';
+    }
+
+    // Clean up transition after animation completes
+    setTimeout(() => {
+      if (document.body) {
+        document.body.style.transition = '';
+      }
+    }, 300);
+  }
+
   private updateHostTransform(context: ContextKey = this.activeContext): void {
     if (context !== this.activeContext) {
       return;
     }
 
-    const { position } = this.contextState[context];
-    this.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+    // For docked states, override position
+    if (this.isOpen && this.dockMode !== 'floating') {
+      if (this.dockMode === 'docked-left') {
+        this.style.transform = `translate3d(0, 0, 0)`;
+      } else if (this.dockMode === 'docked-bottom') {
+        const viewport = this.getViewportSize();
+        const bottomY = viewport.height - this.contextState.window.size.height;
+        this.style.transform = `translate3d(0, ${bottomY}px, 0)`;
+      }
+    } else {
+      const { position } = this.contextState[context];
+      this.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+    }
   }
 
   private setDragging(value: boolean): void {
@@ -1072,14 +1259,25 @@ export class WebInspectorElement extends LitElement {
 
     this.isOpen = true;
     this.persistState(); // Save the open state
+
+    // Apply docking styles if in docked mode
+    if (this.dockMode !== 'floating') {
+      this.applyDockStyles();
+    }
+
     this.ensureWindowPlacement();
     this.requestUpdate();
     void this.updateComplete.then(() => {
       this.measureContext("window");
-      if (this.hasCustomPosition.window) {
-        this.applyAnchorPosition("window");
+      if (this.dockMode === 'floating') {
+        if (this.hasCustomPosition.window) {
+          this.applyAnchorPosition("window");
+        } else {
+          this.centerContext("window");
+        }
       } else {
-        this.centerContext("window");
+        // Update transform for docked position
+        this.updateHostTransform("window");
       }
     });
   }
@@ -1090,6 +1288,12 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.isOpen = false;
+
+    // Remove docking styles when closing
+    if (this.dockMode !== 'floating') {
+      this.removeDockStyles();
+    }
+
     this.persistState(); // Save the closed state
     this.updateHostTransform("button");
     this.requestUpdate();
@@ -1121,6 +1325,83 @@ export class WebInspectorElement extends LitElement {
       .join("")}</svg>`;
 
     return unsafeHTML(svgMarkup);
+  }
+
+  private renderDockControls() {
+    if (this.dockMode === 'floating') {
+      // Show dock buttons
+      return html`
+        <button
+          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+          type="button"
+          aria-label="Dock to left"
+          title="Dock Left"
+          @click=${() => this.handleDockClick('docked-left')}
+        >
+          ${this.renderIcon("PanelLeft")}
+        </button>
+        <button
+          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+          type="button"
+          aria-label="Dock to bottom"
+          title="Dock Bottom"
+          @click=${() => this.handleDockClick('docked-bottom')}
+        >
+          ${this.renderIcon("PanelBottom")}
+        </button>
+      `;
+    } else {
+      // Show float button
+      return html`
+        <button
+          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+          type="button"
+          aria-label="Float window"
+          title="Float"
+          @click=${() => this.handleDockClick('floating')}
+        >
+          ${this.renderIcon("Maximize2")}
+        </button>
+      `;
+    }
+  }
+
+  private getDockedWindowStyles(): Record<string, string> {
+    if (this.dockMode === 'docked-left') {
+      return {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        bottom: '0',
+        width: `${Math.round(this.contextState.window.size.width)}px`,
+        height: '100vh',
+        minWidth: `${MIN_WINDOW_WIDTH}px`,
+        borderRadius: '0',
+      };
+    } else if (this.dockMode === 'docked-bottom') {
+      return {
+        position: 'fixed',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        width: '100vw',
+        height: `${Math.round(this.contextState.window.size.height)}px`,
+        minHeight: `${MIN_WINDOW_HEIGHT}px`,
+        borderRadius: '0',
+      };
+    }
+    // Default to floating styles
+    return {
+      width: `${Math.round(this.contextState.window.size.width)}px`,
+      height: `${Math.round(this.contextState.window.size.height)}px`,
+      minWidth: `${MIN_WINDOW_WIDTH}px`,
+      minHeight: `${MIN_WINDOW_HEIGHT}px`,
+    };
+  }
+
+  private handleDockClick(mode: DockMode): void {
+    this.setDockMode(mode);
+    this.updateHostTransform('window');
   }
 
   private serializeAttributes(attributes: Record<string, string | number | undefined>): string {
