@@ -41,6 +41,7 @@ export interface CopilotKitProviderProps {
   renderCustomMessages?: ReactCustomMessageRenderer[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
+  showDevConsole?: boolean | "auto";
 }
 
 // Small helper to normalize array props to a stable reference and warn
@@ -77,6 +78,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   renderCustomMessages,
   frontendTools,
   humanInTheLoop,
+  showDevConsole = false,
 }) => {
   const [shouldRenderInspector, setShouldRenderInspector] = useState(false);
 
@@ -84,11 +86,23 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     if (typeof window === "undefined") {
       return;
     }
-    const localhostHosts = new Set(["localhost", "127.0.0.1"]);
-    if (localhostHosts.has(window.location.hostname)) {
+
+    if (showDevConsole === true) {
+      // Explicitly show the inspector
       setShouldRenderInspector(true);
+    } else if (showDevConsole === "auto") {
+      // Show on localhost or 127.0.0.1 only
+      const localhostHosts = new Set(["localhost", "127.0.0.1"]);
+      if (localhostHosts.has(window.location.hostname)) {
+        setShouldRenderInspector(true);
+      } else {
+        setShouldRenderInspector(false);
+      }
+    } else {
+      // showDevConsole is false or undefined (default false)
+      setShouldRenderInspector(false);
     }
-  }, []);
+  }, [showDevConsole]);
 
   // Normalize array props to stable references with clear dev warnings
   const renderToolCallsList = useStableArrayProp<ReactToolCallRenderer<any>>(
