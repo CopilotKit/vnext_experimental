@@ -331,30 +331,19 @@ describe("CopilotChatInput", () => {
     expect(customLayout.textContent?.includes("Custom Layout:")).toBe(true);
   });
 
-  it("provides multiline state through the children render prop", async () => {
-    const states: boolean[] = [];
-
+  it("updates its internal layout data attribute when content expands", async () => {
     renderWithProvider(
-      <CopilotChatInput onSubmitMessage={mockOnSubmitMessage}>
-        {({ textArea: TextArea, sendButton: SendButton, isMultiline }) => {
-          states.push(isMultiline);
-          return (
-            <div>
-              {SendButton}
-              {TextArea}
-            </div>
-          );
-        }}
-      </CopilotChatInput>
+      <CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />
     );
 
     const textarea = screen.getByRole("textbox");
-    expect(states[states.length - 1]).toBe(false);
+    const grid = textarea.closest("[data-layout]") as HTMLElement | null;
+    expect(grid?.getAttribute("data-layout")).toBe("compact");
 
     fireEvent.change(textarea, { target: { value: "line one\nline two" } });
 
     await waitFor(() => {
-      expect(states[states.length - 1]).toBe(true);
+      expect(grid?.getAttribute("data-layout")).toBe("expanded");
     });
   });
 
