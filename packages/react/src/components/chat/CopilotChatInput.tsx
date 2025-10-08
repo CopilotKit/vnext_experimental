@@ -1,6 +1,16 @@
-import React, { useState, useRef, KeyboardEvent, ChangeEvent, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  useRef,
+  KeyboardEvent,
+  ChangeEvent,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+  useMemo,
+} from "react";
 import { twMerge } from "tailwind-merge";
-import { Plus, Settings2, Mic, ArrowUp, X, Check } from "lucide-react";
+import { Plus, Mic, ArrowUp, X, Check } from "lucide-react";
 
 import {
   CopilotChatLabels,
@@ -38,32 +48,40 @@ export type ToolsMenuItem = {
     }
 );
 
-export type CopilotChatInputProps = WithSlots<
-  {
-    textArea: typeof CopilotChatInput.TextArea;
-    sendButton: typeof CopilotChatInput.SendButton;
-    startTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
-    cancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
-    finishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
-    addFileButton: typeof CopilotChatInput.AddFileButton;
-    toolsButton: typeof CopilotChatInput.ToolsButton;
-    toolbar: typeof CopilotChatInput.Toolbar;
-    audioRecorder: typeof CopilotChatAudioRecorder;
-  },
-  {
-    mode?: CopilotChatInputMode;
-    toolsMenu?: (ToolsMenuItem | "-")[];
-    autoFocus?: boolean;
-    additionalToolbarItems?: React.ReactNode;
-    onSubmitMessage?: (value: string) => void;
-    onStartTranscribe?: () => void;
-    onCancelTranscribe?: () => void;
-    onFinishTranscribe?: () => void;
-    onAddFile?: () => void;
-    value?: string;
-    onChange?: (value: string) => void;
-  } & Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">
->;
+type CopilotChatInputSlots = {
+  textArea: typeof CopilotChatInput.TextArea;
+  sendButton: typeof CopilotChatInput.SendButton;
+  startTranscribeButton: typeof CopilotChatInput.StartTranscribeButton;
+  cancelTranscribeButton: typeof CopilotChatInput.CancelTranscribeButton;
+  finishTranscribeButton: typeof CopilotChatInput.FinishTranscribeButton;
+  addMenuButton: typeof CopilotChatInput.AddMenuButton;
+  audioRecorder: typeof CopilotChatAudioRecorder;
+};
+
+type CopilotChatInputRestProps = {
+  mode?: CopilotChatInputMode;
+  toolsMenu?: (ToolsMenuItem | "-")[];
+  autoFocus?: boolean;
+  onSubmitMessage?: (value: string) => void;
+  onStartTranscribe?: () => void;
+  onCancelTranscribe?: () => void;
+  onFinishTranscribe?: () => void;
+  onAddFile?: () => void;
+  value?: string;
+  onChange?: (value: string) => void;
+} & Omit<React.HTMLAttributes<HTMLDivElement>, "onChange">;
+
+type CopilotChatInputBaseProps = WithSlots<CopilotChatInputSlots, CopilotChatInputRestProps>;
+
+type CopilotChatInputChildrenArgs = CopilotChatInputBaseProps extends { children?: infer C }
+  ? C extends (props: infer P) => React.ReactNode
+    ? P
+    : never
+  : never;
+
+export type CopilotChatInputProps = Omit<CopilotChatInputBaseProps, "children"> & {
+  children?: (props: CopilotChatInputChildrenArgs & { isMultiline: boolean }) => React.ReactNode;
+};
 
 export function CopilotChatInput({
   mode = "input",
@@ -76,15 +94,12 @@ export function CopilotChatInput({
   value,
   toolsMenu,
   autoFocus = true,
-  additionalToolbarItems,
   textArea,
   sendButton,
   startTranscribeButton,
   cancelTranscribeButton,
   finishTranscribeButton,
-  addFileButton,
-  toolsButton,
-  toolbar,
+  addMenuButton,
   audioRecorder,
   children,
   className,
@@ -100,6 +115,8 @@ export function CopilotChatInput({
   }, [isControlled, value]);
 
   const resolvedValue = isControlled ? (value ?? "") : internalValue;
+
+  const [isMultiline, setIsMultiline] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRecorderRef = useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
@@ -135,6 +152,12 @@ export function CopilotChatInput({
       if (recorder.state === "recording") {
         recorder.stop().catch(console.error);
       }
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "input") {
+      setIsMultiline(false);
     }
   }, [mode]);
 
@@ -181,6 +204,7 @@ export function CopilotChatInput({
     onChange: handleChange,
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
+    onMultilineChange: setIsMultiline,
   });
 
   const BoundAudioRecorder = renderSlot(audioRecorder, CopilotChatAudioRecorder, {
@@ -204,72 +228,34 @@ export function CopilotChatInput({
     onClick: onFinishTranscribe,
   });
 
-  const BoundAddFileButton = renderSlot(addFileButton, CopilotChatInput.AddFileButton, {
-    onClick: onAddFile,
+  const BoundAddMenuButton = renderSlot(addMenuButton, CopilotChatInput.AddMenuButton, {
     disabled: mode === "transcribe",
+    onAddFile,
+    toolsMenu,
+    isMultiline,
   });
-
-  const BoundToolsButton = renderSlot(toolsButton, CopilotChatInput.ToolsButton, {
-    disabled: mode === "transcribe",
-    toolsMenu: toolsMenu,
-  });
-
-  const BoundToolbar = renderSlot(
-    typeof toolbar === "string" || toolbar === undefined
-      ? twMerge(toolbar, "w-full h-[60px] bg-transparent flex items-center justify-between")
-      : toolbar,
-    CopilotChatInput.Toolbar,
-    {
-      children: (
-        <>
-          <div className="flex items-center">
-            {onAddFile && BoundAddFileButton}
-            {BoundToolsButton}
-            {additionalToolbarItems}
-          </div>
-          <div className="flex items-center">
-            {mode === "transcribe" ? (
-              <>
-                {onCancelTranscribe && BoundCancelTranscribeButton}
-                {onFinishTranscribe && BoundFinishTranscribeButton}
-              </>
-            ) : (
-              <>
-                {onStartTranscribe && BoundStartTranscribeButton}
-                {BoundSendButton}
-              </>
-            )}
-          </div>
-        </>
-      ),
-    },
-  );
 
   if (children) {
-    return (
-      <>
-        {children({
-          textArea: BoundTextArea,
-          audioRecorder: BoundAudioRecorder,
-          sendButton: BoundSendButton,
-          startTranscribeButton: BoundStartTranscribeButton,
-          cancelTranscribeButton: BoundCancelTranscribeButton,
-          finishTranscribeButton: BoundFinishTranscribeButton,
-          addFileButton: BoundAddFileButton,
-          toolsButton: BoundToolsButton,
-          toolbar: BoundToolbar,
-          onSubmitMessage,
-          onStartTranscribe,
-          onCancelTranscribe,
-          onFinishTranscribe,
-          onAddFile,
-          mode,
-          toolsMenu,
-          autoFocus,
-          additionalToolbarItems,
-        })}
-      </>
-    );
+    const childProps = {
+      textArea: BoundTextArea,
+      audioRecorder: BoundAudioRecorder,
+      sendButton: BoundSendButton,
+      startTranscribeButton: BoundStartTranscribeButton,
+      cancelTranscribeButton: BoundCancelTranscribeButton,
+      finishTranscribeButton: BoundFinishTranscribeButton,
+      addMenuButton: BoundAddMenuButton,
+      onSubmitMessage,
+      onStartTranscribe,
+      onCancelTranscribe,
+      onFinishTranscribe,
+      onAddFile,
+      mode,
+      toolsMenu,
+      autoFocus,
+      isMultiline,
+    } as CopilotChatInputChildrenArgs & { isMultiline: boolean };
+
+    return <>{children(childProps)}</>;
   }
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -298,8 +284,50 @@ export function CopilotChatInput({
       onClick={handleContainerClick}
       {...props}
     >
-      {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
-      {BoundToolbar}
+      <div
+        className={twMerge(
+          "grid w-full gap-x-3 gap-y-3 px-3 pb-3 pt-2",
+          isMultiline
+            ? "grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_auto]"
+            : "grid-cols-[auto_minmax(0,1fr)_auto] items-end",
+        )}
+      >
+        <div
+          className={twMerge(
+            "flex items-center",
+            isMultiline ? "row-start-2" : "row-start-1",
+            "col-start-1",
+          )}
+        >
+          {BoundAddMenuButton}
+        </div>
+        <div
+          className={twMerge(
+            "flex min-w-0 flex-col",
+            isMultiline ? "col-span-3 row-start-1" : "col-start-2 row-start-1",
+          )}
+        >
+          {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
+        </div>
+        <div
+          className={twMerge(
+            "flex items-center justify-end gap-2",
+            isMultiline ? "col-start-3 row-start-2" : "col-start-3 row-start-1",
+          )}
+        >
+          {mode === "transcribe" ? (
+            <>
+              {onCancelTranscribe && BoundCancelTranscribeButton}
+              {onFinishTranscribe && BoundFinishTranscribeButton}
+            </>
+          ) : (
+            <>
+              {onStartTranscribe && BoundStartTranscribeButton}
+              {BoundSendButton}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -376,88 +404,121 @@ export namespace CopilotChatInput {
     />
   );
 
-  export const AddFileButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = (props) => (
-    <ToolbarButton
-      icon={<Plus className="size-[20px]" />}
-      labelKey="chatInputToolbarAddButtonLabel"
-      defaultClassName="ml-2"
-      {...props}
-    />
-  );
-
-  export const ToolsButton: React.FC<
+  export const AddMenuButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement> & {
       toolsMenu?: (ToolsMenuItem | "-")[];
+      onAddFile?: () => void;
+      isMultiline?: boolean;
     }
-  > = ({ className, toolsMenu, ...props }) => {
+  > = ({ className, toolsMenu, onAddFile, disabled, isMultiline: _ignored, ...props }) => {
     const config = useCopilotChatConfiguration();
     const labels = config?.labels ?? CopilotChatDefaultLabels;
 
-    const renderMenuItems = (items: (ToolsMenuItem | "-")[]): React.ReactNode => {
-      return items.map((item, index) => {
-        if (item === "-") {
-          // Separator
-          return <DropdownMenuSeparator key={index} />;
-        } else if (item.items && item.items.length > 0) {
-          // Nested menu
+    const menuItems = useMemo<(ToolsMenuItem | "-")[]>(() => {
+      const items: (ToolsMenuItem | "-")[] = [];
+
+      if (onAddFile) {
+        items.push({
+          label: labels.chatInputToolbarAddButtonLabel,
+          action: onAddFile,
+        });
+      }
+
+      if (toolsMenu && toolsMenu.length > 0) {
+        if (items.length > 0) {
+          items.push("-");
+        }
+
+        for (const item of toolsMenu) {
+          if (item === "-") {
+            if (items.length === 0 || items[items.length - 1] === "-") {
+              continue;
+            }
+            items.push(item);
+          } else {
+            items.push(item);
+          }
+        }
+
+        while (items.length > 0 && items[items.length - 1] === "-") {
+          items.pop();
+        }
+      }
+
+      return items;
+    }, [onAddFile, toolsMenu, labels.chatInputToolbarAddButtonLabel]);
+
+    const renderMenuItems = useCallback(
+      (items: (ToolsMenuItem | "-")[]): React.ReactNode =>
+        items.map((item, index) => {
+          if (item === "-") {
+            return <DropdownMenuSeparator key={`separator-${index}`} />;
+          }
+
+          if (item.items && item.items.length > 0) {
+            return (
+              <DropdownMenuSub key={`group-${index}`}>
+                <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>{renderMenuItems(item.items)}</DropdownMenuSubContent>
+              </DropdownMenuSub>
+            );
+          }
+
           return (
-            <DropdownMenuSub key={index}>
-              <DropdownMenuSubTrigger>{item.label}</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>{renderMenuItems(item.items)}</DropdownMenuSubContent>
-            </DropdownMenuSub>
-          );
-        } else {
-          // Regular menu item
-          return (
-            <DropdownMenuItem key={index} onClick={item.action}>
+            <DropdownMenuItem key={`item-${index}`} onClick={item.action}>
               {item.label}
             </DropdownMenuItem>
           );
-        }
-      });
-    };
+        }),
+      [],
+    );
 
-    // Only render if toolsMenu is provided and has items
-    if (!toolsMenu || toolsMenu.length === 0) {
-      return null;
-    }
+    const hasMenuItems = menuItems.length > 0;
+    const isDisabled = disabled || !hasMenuItems;
 
-    // Render dropdown menu
     return (
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="chatInputToolbarSecondary"
-            size="chatInputToolbarIconLabel"
-            className={className}
-            {...props}
-          >
-            <Settings2 className="size-[18px]" />
-            <span className="text-sm font-normal">{labels.chatInputToolbarToolsButtonLabel}</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="end">
-          {renderMenuItems(toolsMenu)}
-        </DropdownMenuContent>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="chatInputToolbarSecondary"
+                size="chatInputToolbarIcon"
+                className={twMerge("ml-1", className)}
+                disabled={isDisabled}
+                {...props}
+              >
+                <Plus className="size-[20px]" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>{labels.chatInputToolbarAddButtonLabel}</p>
+          </TooltipContent>
+        </Tooltip>
+        {hasMenuItems && (
+          <DropdownMenuContent side="top" align="start">
+            {renderMenuItems(menuItems)}
+          </DropdownMenuContent>
+        )}
       </DropdownMenu>
     );
   };
 
-  export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, ...props }) => (
-    <div className={twMerge("w-full h-[60px] bg-transparent flex items-center", className)} {...props} />
-  );
-
   export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     maxRows?: number;
+    onMultilineChange?: (isMultiline: boolean) => void;
   }
 
   export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-    { maxRows = 5, style, className, ...props },
+    { maxRows = 5, style, className, onMultilineChange, ...props },
     ref,
   ) {
     const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
     const [maxHeight, setMaxHeight] = useState<number>(0);
+    const [singleLineHeight, setSingleLineHeight] = useState<number | null>(null);
+    const lastMultilineRef = useRef<boolean>(false);
 
     const config = useCopilotChatConfiguration();
     const labels = config?.labels ?? CopilotChatDefaultLabels;
@@ -469,6 +530,15 @@ export namespace CopilotChatInput {
       if (textarea && maxHeight > 0) {
         textarea.style.height = "auto";
         textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+
+        if (onMultilineChange) {
+          const baseline = singleLineHeight ?? textarea.scrollHeight;
+          const nextIsMultiline = textarea.scrollHeight > baseline + 1;
+          if (nextIsMultiline !== lastMultilineRef.current) {
+            lastMultilineRef.current = nextIsMultiline;
+            onMultilineChange(nextIsMultiline);
+          }
+        }
       }
     };
 
@@ -489,9 +559,11 @@ export namespace CopilotChatInput {
 
           // Calculate actual content height (without padding)
           const contentHeight = textarea.scrollHeight - paddingTop - paddingBottom;
+          const baselineHeight = contentHeight + paddingTop + paddingBottom;
 
           // Calculate max height: content height for maxRows + padding
           setMaxHeight(contentHeight * maxRows + paddingTop + paddingBottom);
+          setSingleLineHeight(baselineHeight);
 
           // Restore original value
           textarea.value = currentValue;
@@ -514,7 +586,7 @@ export namespace CopilotChatInput {
     // Adjust height when controlled value changes
     useEffect(() => {
       adjustHeight();
-    }, [props.value, maxHeight]);
+    }, [props.value, maxHeight, singleLineHeight]);
 
     // Handle input events for uncontrolled usage
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -564,8 +636,6 @@ CopilotChatInput.ToolbarButton.displayName = "CopilotChatInput.ToolbarButton";
 CopilotChatInput.StartTranscribeButton.displayName = "CopilotChatInput.StartTranscribeButton";
 CopilotChatInput.CancelTranscribeButton.displayName = "CopilotChatInput.CancelTranscribeButton";
 CopilotChatInput.FinishTranscribeButton.displayName = "CopilotChatInput.FinishTranscribeButton";
-CopilotChatInput.AddFileButton.displayName = "CopilotChatInput.AddButton";
-CopilotChatInput.ToolsButton.displayName = "CopilotChatInput.ToolsButton";
-CopilotChatInput.Toolbar.displayName = "CopilotChatInput.Toolbar";
+CopilotChatInput.AddMenuButton.displayName = "CopilotChatInput.AddMenuButton";
 
 export default CopilotChatInput;
