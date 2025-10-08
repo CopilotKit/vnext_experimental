@@ -151,7 +151,7 @@ export function CopilotChatView({
     keyboardHeight: isKeyboardOpen ? keyboardHeight : 0,
     children: (
       <>
-        <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 pointer-events-auto">
+        <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 [div[data-popup-chat]_&]:px-6 pointer-events-auto">
           {BoundInput}
         </div>
         {BoundDisclaimer}
@@ -196,7 +196,7 @@ export namespace CopilotChatView {
     return (
       <>
         <StickToBottom.Content className="overflow-y-scroll overflow-x-hidden">
-          <div className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8">{children}</div>
+        <div className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 [div[data-popup-chat]_&]:px-6">{children}</div>
         </StickToBottom.Content>
 
         {/* Scroll to bottom button - hidden during resize */}
@@ -268,7 +268,7 @@ export namespace CopilotChatView {
     if (!hasMounted) {
       return (
         <div className="h-full max-h-full flex flex-col min-h-0 overflow-y-scroll overflow-x-hidden">
-          <div className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8">{children}</div>
+          <div className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 [div[data-popup-chat]_&]:px-6">{children}</div>
         </div>
       );
     }
@@ -284,7 +284,7 @@ export namespace CopilotChatView {
           )}
           {...props}
         >
-          <div ref={contentRef} className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8">
+          <div ref={contentRef} className="px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 [div[data-popup-chat]_&]:px-6">
             {children}
           </div>
 

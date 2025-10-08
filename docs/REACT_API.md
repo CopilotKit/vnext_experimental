@@ -139,17 +139,16 @@ Shows user-authored messages aligned to the right with optional branch navigatio
 The default renderer formats messages with `whitespace-pre-wrap`. Toolbar actions surface localized tooltips via `CopilotChatConfigurationProvider`.
 
 ### `CopilotChatInput`
-Primary text input and action bar. Props:
-- `mode?: "input" | "transcribe" | "processing"` (default `"input"`). When set to `"transcribe"`, the audio recorder slot is rendered and started automatically; send/add-file/tools buttons are disabled appropriately.
-- `toolsMenu?: (ToolsMenuItem | "-")[]` – menu configuration where `"-"` inserts a separator, `items` defines nested groups, and `action` is invoked on click.
+Primary text input and control surface. Props:
+- `mode?: "input" | "transcribe" | "processing"` (default `"input"`). When set to `"transcribe"`, the audio recorder slot replaces the textarea and transcription controls become visible.
+- `toolsMenu?: (ToolsMenuItem | "-")[]` – declarative menu configuration rendered inside the persistent add (`+`) dropdown. Separators insert dividers and nested `items` build submenus.
 - `autoFocus?: boolean` (default `true`).
-- `additionalToolbarItems?: React.ReactNode` for extra controls on the right edge.
-- `onSubmitMessage?(value: string)` – invoked when submitting non-empty text (Enter or send button). Defaults to the configuration provider’s `onSubmitInput` when available.
-- `onStartTranscribe?`, `onCancelTranscribe?`, `onFinishTranscribe?`, `onAddFile?` – optional button handlers.
-- `value?: string` & `onChange?(value: string)` – controlled mode (defaults to provider values).
-- Slot overrides for the textarea, toolbar, buttons, and audio recorder. Override strings are merged as Tailwind class names via `twMerge`.
+- `onSubmitMessage?(value: string)` – invoked when submitting non-empty text (Enter or the send button). Defaults to the configuration provider’s `onSubmitInput` when available.
+- `onStartTranscribe?`, `onCancelTranscribe?`, `onFinishTranscribe?`, `onAddFile?` – optional handlers for the transcription controls and default add menu item.
+- `value?: string` & `onChange?(value: string)` – controlled mode (falls back to the configuration provider when omitted).
+- Slot overrides for the textarea, send button, add menu button, transcription controls, and audio recorder. Override strings are merged into the default class list via `twMerge`, or pass a custom component to replace the slot entirely.
 
-The default textarea auto-grows up to `maxRows` (default 5) and focuses itself when `autoFocus` is true. Submitting clears focus and re-focuses the textarea.
+The default textarea auto-grows up to `maxRows` (default 5). When the text spans multiple rows, the layout automatically stacks the textarea above the control row while keeping the add menu and buttons accessible. The children render prop receives an `isMultiline` flag so custom layouts can react to the same transition.
 
 ### `CopilotChatAudioRecorder`
 Visual audio waveform stub used during transcription mode. It exposes an imperative API via `ref` with signature `{ state, start(), stop(), dispose() }`:

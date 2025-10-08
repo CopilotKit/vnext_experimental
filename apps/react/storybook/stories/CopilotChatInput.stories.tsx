@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   CopilotChatInput,
@@ -35,16 +36,14 @@ const meta = {
     docs: {
       description: {
         component: `
-The CopilotChatInput component provides a feature-rich chat input interface for React applications.
+The CopilotChatInput component provides a streamlined chat entry experience with a persistent add menu trigger that sits beside the text area. When the message grows beyond a single row, the textarea automatically moves above the controls to preserve layout.
 
-## Features
-- 📝 Auto-resizing textarea with configurable max rows
-- 🎙️ Voice recording mode with visual feedback
-- 🛠️ Customizable tools dropdown menu
-- 📎 File attachment support
-- 🎨 Dark/light theme support
-- 🔧 Fully customizable via render props and custom components
-- ♿ Accessible with ARIA labels and keyboard navigation
+## Key Features
+- 📝 Auto-resizing textarea with configurable \`maxRows\`
+- ➕ Dedicated add menu button that opens attachments or custom actions
+- 🎤 Voice transcription mode with audio recorder
+- 🎨 Fully themable through class overrides or slot replacements
+- ♿ Keyboard accessible and screen-reader friendly
 
 ## Basic Usage
 
@@ -55,9 +54,8 @@ function ChatComponent() {
   return (
     <CopilotChatConfigurationProvider threadId="demo-thread">
       <CopilotChatInput
-        onSubmitMessage={(value) => {
-          console.log('Message:', value);
-        }}
+        onSubmitMessage={(value) => console.log('Message:', value)}
+        onAddFile={() => console.log('Add file')}
       />
     </CopilotChatConfigurationProvider>
   );
@@ -66,13 +64,11 @@ function ChatComponent() {
 
 ## Customization
 
-The component supports extensive customization through:
-- **Props**: Configure behavior and appearance
-- **Render Props**: Replace default UI elements with custom components
-- **Custom Components**: Pass custom components for buttons and toolbars
-- **Styling**: Apply custom CSS classes
-
-See individual stories below for detailed examples of each customization approach.
+The component supports deep customization via:
+- **Slots** for the textarea, send button, add menu button, and audio recorder
+- **Render props** to compose your own layout while reusing internal primitives
+- **Props** such as \`toolsMenu\` for declarative menu configuration
+- **Styling overrides** through Tailwind-compatible class names
         `,
       },
     },
@@ -81,7 +77,7 @@ See individual stories below for detailed examples of each customization approac
     mode: {
       control: { type: "radio" },
       options: ["input", "transcribe"],
-      description: "The input mode - text input or voice recording",
+      description: "Select between text entry and transcription modes",
       table: {
         type: { summary: "'input' | 'transcribe'" },
         defaultValue: { summary: "input" },
@@ -89,36 +85,36 @@ See individual stories below for detailed examples of each customization approac
       },
     },
     toolsMenu: {
-      description: "Array of menu items for the tools dropdown",
+      description: "Menu configuration rendered inside the add button dropdown",
       table: {
         type: { summary: "(ToolsMenuItem | '-')[]" },
         category: "Features",
       },
     },
-    sendButton: {
-      description: "Custom send button component",
+    addMenuButton: {
+      description: "Slot override or class override for the add menu trigger",
       table: {
-        type: { summary: "React.ComponentType<ButtonHTMLAttributes>" },
+        type: { summary: "SlotValue<typeof CopilotChatInput.AddMenuButton>" },
         category: "Customization",
       },
     },
-    additionalToolbarItems: {
-      description: "Additional toolbar items to display",
+    sendButton: {
+      description: "Slot override for the send button",
       table: {
-        type: { summary: "React.ReactNode" },
+        type: { summary: "SlotValue<typeof CopilotChatInput.SendButton>" },
         category: "Customization",
       },
     },
     textArea: {
-      description: "Textarea configuration",
+      description: "Props or overrides for the textarea slot",
       table: {
-        type: { summary: "{ maxRows?: number }" },
+        type: { summary: "SlotValue<typeof CopilotChatInput.TextArea>" },
         category: "Configuration",
       },
     },
     value: {
       control: { type: "text" },
-      description: "Current input value when using controlled mode",
+      description: "Controlled input value",
       table: {
         type: { summary: "string" },
         category: "Data",
@@ -126,7 +122,7 @@ See individual stories below for detailed examples of each customization approac
     },
     onStartTranscribe: {
       action: "startTranscribe",
-      description: "Callback when voice recording starts",
+      description: "Invoked when transcription mode starts",
       table: {
         type: { summary: "() => void" },
         category: "Events",
@@ -134,7 +130,7 @@ See individual stories below for detailed examples of each customization approac
     },
     onCancelTranscribe: {
       action: "cancelTranscribe",
-      description: "Callback when voice recording is cancelled",
+      description: "Invoked when transcription mode is cancelled",
       table: {
         type: { summary: "() => void" },
         category: "Events",
@@ -142,7 +138,7 @@ See individual stories below for detailed examples of each customization approac
     },
     onFinishTranscribe: {
       action: "finishTranscribe",
-      description: "Callback when voice recording completes",
+      description: "Invoked when transcription mode completes",
       table: {
         type: { summary: "() => void" },
         category: "Events",
@@ -150,7 +146,7 @@ See individual stories below for detailed examples of each customization approac
     },
     onAddFile: {
       action: "addFile",
-      description: "Callback when file attachment is clicked",
+      description: "Called when the default add menu item is selected",
       table: {
         type: { summary: "() => void" },
         category: "Events",
@@ -158,7 +154,7 @@ See individual stories below for detailed examples of each customization approac
     },
     onSubmitMessage: {
       action: "submit",
-      description: "Callback when message is submitted",
+      description: "Called when the send button or Enter submits a message",
       table: {
         type: { summary: "(value: string) => void" },
         category: "Events",
@@ -169,7 +165,7 @@ See individual stories below for detailed examples of each customization approac
     onStartTranscribe: () => console.log("Transcribe started"),
     onCancelTranscribe: () => console.log("Transcribe cancelled"),
     onFinishTranscribe: () => console.log("Transcribe completed"),
-    onAddFile: () => console.log("Add files clicked"),
+    onAddFile: () => console.log("Add file clicked"),
     onSubmitMessage: (value: string) => console.log(`Message sent: ${value}`),
   },
 } satisfies Meta<typeof CopilotChatInput>;
@@ -177,85 +173,48 @@ See individual stories below for detailed examples of each customization approac
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 1. Default story
 export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: "The default chat input with all standard features enabled.",
+        story: "Default configuration with the add menu enabled and empty input.",
       },
     },
   },
 };
 
-// 2. With Tools Menu
-export const WithToolsMenu: Story = {
+export const WithMenuItems: Story = {
   args: {
     toolsMenu: [
       {
-        label: "Do X",
-        action: () => {
-          console.log("Do X clicked");
-          alert("Action: Do X was clicked!");
-        },
-      },
-      {
-        label: "Do Y",
-        action: () => {
-          console.log("Do Y clicked");
-          alert("Action: Do Y was clicked!");
-        },
+        label: "Insert template",
+        action: () => alert("Template inserted"),
       },
       "-",
       {
         label: "Advanced",
         items: [
           {
-            label: "Do Advanced X",
-            action: () => {
-              console.log("Do Advanced X clicked");
-              alert("Advanced Action: Do Advanced X was clicked!");
-            },
+            label: "Summarize selection",
+            action: () => alert("Summarize action"),
           },
-          "-",
           {
-            label: "Do Advanced Y",
-            action: () => {
-              console.log("Do Advanced Y clicked");
-              alert("Advanced Action: Do Advanced Y was clicked!");
-            },
+            label: "Tag teammate",
+            action: () => alert("Tagging teammate"),
           },
         ],
       },
-    ],
+    ] as (ToolsMenuItem | "-")[],
   },
   parameters: {
     docs: {
       description: {
-        story: `
-Demonstrates a tools dropdown menu with nested items and separators.
-
-\`\`\`tsx
-const toolsMenu = [
-  { label: 'Action 1', action: () => {} },
-  '-', // Separator
-  { 
-    label: 'Submenu',
-    items: [
-      { label: 'Sub Action', action: () => {} }
-    ]
-  }
-];
-
-<CopilotChatInput toolsMenu={toolsMenu} />
-\`\`\`
-        `,
+        story: "Demonstrates configuring nested items inside the add menu dropdown.",
       },
     },
   },
 };
 
-// 3. Transcribe Mode
 export const TranscribeMode: Story = {
   args: {
     mode: "transcribe",
@@ -263,112 +222,36 @@ export const TranscribeMode: Story = {
   parameters: {
     docs: {
       description: {
-        story: `
-Voice recording mode with animated waveform visualization.
-
-\`\`\`tsx
-<CopilotChatInput mode="transcribe" />
-\`\`\`
-
-Callbacks:
-- \`onStartTranscribe\` - Recording started
-- \`onCancelTranscribe\` - Recording cancelled
-- \`onFinishTranscribe\` - Recording completed
-        `,
+        story: "Shows the audio recorder interface with cancel/finish controls in transcription mode.",
       },
     },
   },
 };
 
-// 4. Custom Send Button
-export const CustomSendButton: Story = {
+export const CustomButtons: Story = {
   args: {
-    textArea: {
-      maxRows: 10,
-    },
     sendButton: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
       <button
         {...props}
-        className="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="mr-2 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-white transition hover:bg-indigo-600 disabled:opacity-40"
         aria-label="Send message"
       >
         ✈️
       </button>
     ),
+    addMenuButton: {
+      className: "border border-indigo-200 bg-white text-indigo-500 hover:bg-indigo-50",
+    },
   },
   parameters: {
     docs: {
       description: {
-        story: `
-Replace the default send button with a custom component using render props.
-
-\`\`\`tsx
-<CopilotChatInput
-  sendButton={(props) => (
-    <button {...props} className="custom-send-btn">
-      ✈️
-    </button>
-  )}
-/>
-\`\`\`
-
-The component receives all necessary props including:
-- \`onClick\`: Handler for sending the message
-- \`disabled\`: Whether sending is currently allowed
-- Standard button HTML attributes
-        `,
+        story: "Overrides the send button with a custom component and tweaks the add menu button styling via slot props.",
       },
     },
   },
 };
 
-// 5. With Additional Toolbar Items
-export const WithAdditionalToolbarItems: Story = {
-  args: {
-    additionalToolbarItems: (
-      <>
-        <button
-          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-2"
-          onClick={() => alert("Custom action clicked!")}
-          title="Custom Action"
-        >
-          ⭐
-        </button>
-        <button
-          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-1"
-          onClick={() => alert("Another custom action clicked!")}
-          title="Another Custom Action"
-        >
-          🔖
-        </button>
-      </>
-    ),
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: `
-Add custom toolbar items alongside the default tools.
-
-\`\`\`tsx
-<CopilotChatInput
-  additionalToolbarItems={
-    <>
-      <button className="custom-toolbar-btn">⭐</button>
-      <button className="custom-toolbar-btn">🔖</button>
-    </>
-  }
-/>
-\`\`\`
-
-These items appear in the toolbar area next to the default buttons.
-        `,
-      },
-    },
-  },
-};
-
-// 6. Prefilled Text
 export const PrefilledText: Story = {
   args: {
     value: "Hello, this is a prefilled message!",
@@ -376,43 +259,16 @@ export const PrefilledText: Story = {
   parameters: {
     docs: {
       description: {
-        story: `
-Initialize the input with pre-populated text.
-
-\`\`\`tsx
-function PrefilledChatInput() {
-  const [value, setValue] = useState("Hello, this is a prefilled message!");
-
-  return (
-    <CopilotChatConfigurationProvider threadId="demo-thread">
-      <CopilotChatInput
-        value={value}
-        onChange={setValue}
-        onSubmitMessage={(submitted) => {
-          console.log(submitted);
-          setValue("");
-        }}
-      />
-    </CopilotChatConfigurationProvider>
-  );
-}
-\`\`\`
-
-Useful for:
-- Draft messages
-- Edit mode
-- Template messages
-        `,
+        story: "Illustrates controlled usage by supplying a preset value to the textarea.",
       },
     },
   },
 };
 
-// 7. Expanded Textarea
 export const ExpandedTextarea: Story = {
   args: {
     value:
-      "This is a longer message that will cause the textarea to expand.\n\nIt has multiple lines to demonstrate the auto-resize functionality.\n\nThe textarea will grow up to the maxRows limit.",
+      "This is a longer message that will cause the textarea to expand to multiple rows.\n\nThe textarea remains beside the add button until a wrap occurs, then moves above the controls.",
     textArea: {
       maxRows: 10,
     },
@@ -420,30 +276,12 @@ export const ExpandedTextarea: Story = {
   parameters: {
     docs: {
       description: {
-        story: `
-Demonstrates auto-expanding textarea behavior with multiline content.
-
-The textarea automatically resizes based on content, up to a configurable maximum height.
-
-\`\`\`tsx
-<CopilotChatInput
-  textArea={{
-    maxRows: 10
-  }}
-/>
-\`\`\`
-
-Features:
-- Smooth expansion animation
-- Maintains scroll position
-- Respects maxRows configuration
-        `,
+        story: "Demonstrates automatic multiline layout when the message spans multiple rows.",
       },
     },
   },
 };
 
-// 8. Custom Styling
 export const CustomStyling: Story = {
   decorators: [
     (Story) => (
@@ -451,24 +289,13 @@ export const CustomStyling: Story = {
         <style>{`
           .custom-chat-input {
             border: 2px solid #4f46e5 !important;
-            border-radius: 12px !important;
-            background: linear-gradient(to right, #f3f4f6, #ffffff) !important;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-            padding: 12px !important;
+            border-radius: 14px !important;
+            background: linear-gradient(to right, #eef2ff, #ffffff) !important;
+            box-shadow: 0 4px 10px rgb(79 70 229 / 0.15) !important;
           }
-          
           .custom-chat-input textarea {
-            font-family: 'Monaco', 'Consolas', monospace !important;
+            font-family: 'JetBrains Mono', monospace !important;
             font-size: 14px !important;
-            color: #1e293b !important;
-          }
-          
-          .custom-chat-input button {
-            transition: all 0.3s ease !important;
-          }
-          
-          .custom-chat-input button:hover {
-            transform: scale(1.05) !important;
           }
         `}</style>
         <Story />
@@ -477,98 +304,77 @@ export const CustomStyling: Story = {
   ],
   args: {
     className: "custom-chat-input",
+    addMenuButton: {
+      className: "border border-indigo-300 bg-white text-indigo-600",
+    },
+    sendButton: {
+      className: "bg-indigo-500 text-white hover:bg-indigo-600",
+    },
   },
   parameters: {
     docs: {
       description: {
-        story: `
-Apply custom CSS classes for unique styling. This example demonstrates inline styles that override default component styling.
-
-\`\`\`tsx
-// Add styles to your component or global CSS
-const styles = \`
-  .custom-chat-input {
-    border: 2px solid #4f46e5;
-    border-radius: 12px;
-    background: linear-gradient(to right, #f3f4f6, #ffffff);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  }
-\`;
-
-// Use the custom class
-<CopilotChatInput className="custom-chat-input" />
-\`\`\`
-
-This example shows:
-- Custom border and background styling
-- Modified typography for the textarea
-- Hover effects on buttons
-- Box shadow for depth
-        `,
+        story: "Applies custom classes to the container and key slots to achieve a distinct visual style.",
       },
     },
   },
 };
 
-// === ADDITIONAL CUSTOMIZATION EXAMPLE ===
-// This story demonstrates combining multiple customization approaches
-
-export const MultipleCustomizations: Story = {
-  name: "Multiple Customizations Combined",
-  args: {
-    sendButton: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-      <button
-        {...props}
-        className="rounded-full w-10 h-10 bg-blue-500 text-white hover:bg-blue-600 transition-colors mr-2"
-      >
-        ✈️
-      </button>
-    ),
-    additionalToolbarItems: (
-      <>
-        <button
-          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-1"
-          title="Attach file"
-        >
-          📎
-        </button>
-        <button
-          className="h-8 w-8 p-0 rounded-md bg-gray-100 hover:bg-gray-200 flex items-center justify-center ml-1"
-          title="Add emoji"
-        >
-          😊
-        </button>
-      </>
-    ),
-    toolsMenu: [
-      {
-        label: "Quick Actions",
-        items: [
-          { label: "Clear", action: () => console.log("Clear") },
-          { label: "Export", action: () => console.log("Export") },
-        ],
+export const CustomLayout: Story = {
+  render: (args) => (
+    <CopilotChatInput {...args}>
+      {(
+        {
+          textArea,
+          sendButton,
+          addMenuButton,
+          isMultiline,
+        },
+      ) => (
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-600">
+              {isMultiline ? "Multiline message" : "Single line message"}
+            </span>
+            {addMenuButton}
+          </div>
+          <div className="flex items-end gap-2">
+            <div className="flex-1">{textArea}</div>
+            {sendButton}
+          </div>
+        </div>
+      )}
+    </CopilotChatInput>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Uses the render prop API to compose a custom layout while still leveraging the provided slots.",
       },
-    ],
+    },
+  },
+};
+
+export const ControlledInputExample: Story = {
+  render: (args) => {
+    const [value, setValue] = useState("Draft message ready to send.");
+
+    return (
+      <CopilotChatInput
+        {...args}
+        value={value}
+        onChange={setValue}
+        onSubmitMessage={(submitted) => {
+          alert(`Submitted: ${submitted}`);
+          setValue("");
+        }}
+      />
+    );
   },
   parameters: {
     docs: {
       description: {
-        story: `
-Combine multiple customization approaches simultaneously.
-
-\`\`\`tsx
-<CopilotChatInput
-  sendButton={(props) => <CustomButton {...props} />}
-  additionalToolbarItems={<>
-    <button>📎</button>
-    <button>😊</button>
-  </>}
-  toolsMenu={toolsConfig}
-/>
-\`\`\`
-
-Each customization works independently, allowing for granular control over the entire component.
-        `,
+        story: "Showcases a controlled input pattern with external state management.",
       },
     },
   },
