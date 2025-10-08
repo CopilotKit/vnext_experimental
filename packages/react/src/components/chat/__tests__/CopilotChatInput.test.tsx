@@ -392,9 +392,11 @@ describe("CopilotChatInput", () => {
 
     const textarea = screen.getByRole("textbox");
     const layoutCell = textarea.parentElement as HTMLElement;
+    const gridContainer = layoutCell?.parentElement as HTMLElement;
 
     expect(layoutCell.className).toContain("col-start-2");
     expect(layoutCell.className).not.toContain("col-span-3");
+    expect(gridContainer.className).toContain("items-center");
   });
 
   it("moves the textarea above the add menu button when multiple lines", async () => {

@@ -205,6 +205,7 @@ export function CopilotChatInput({
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
     onMultilineChange: setIsMultiline,
+    isMultiline,
   });
 
   const BoundAudioRecorder = renderSlot(audioRecorder, CopilotChatAudioRecorder, {
@@ -286,10 +287,10 @@ export function CopilotChatInput({
     >
       <div
         className={twMerge(
-          "grid w-full gap-x-3 gap-y-3 px-3 pb-3 pt-2",
+          "grid w-full gap-x-3 gap-y-3 px-3 py-2",
           isMultiline
             ? "grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_auto]"
-            : "grid-cols-[auto_minmax(0,1fr)_auto] items-end",
+            : "grid-cols-[auto_minmax(0,1fr)_auto] items-center",
         )}
       >
         <div
@@ -509,10 +510,11 @@ export namespace CopilotChatInput {
   export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     maxRows?: number;
     onMultilineChange?: (isMultiline: boolean) => void;
+    isMultiline?: boolean;
   }
 
   export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
-    { maxRows = 5, style, className, onMultilineChange, ...props },
+    { maxRows = 5, style, className, onMultilineChange, isMultiline, ...props },
     ref,
   ) {
     const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -611,7 +613,8 @@ export namespace CopilotChatInput {
         placeholder={labels.chatInputPlaceholder}
         className={twMerge(
           // Layout and sizing
-          "w-full p-5 pb-0",
+          "w-full py-3",
+          isMultiline ? "px-5" : "pr-5",
           // Behavior
           "outline-none resize-none",
           // Background
