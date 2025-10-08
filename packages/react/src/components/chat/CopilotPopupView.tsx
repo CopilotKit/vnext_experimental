@@ -162,7 +162,7 @@ export function CopilotPopupView({
         }}
       >
         {headerElement}
-        <div className="flex-1 overflow-hidden px-4" data-popup-chat>
+        <div className="flex-1 overflow-hidden" data-popup-chat>
           <CopilotChatView {...restProps} className={cn("h-full", className)} />
         </div>
       </div>
