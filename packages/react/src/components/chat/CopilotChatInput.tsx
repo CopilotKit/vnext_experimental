@@ -84,6 +84,9 @@ export type CopilotChatInputProps = Omit<CopilotChatInputBaseProps, "children"> 
   children?: (props: CopilotChatInputChildrenArgs) => React.ReactNode;
 };
 
+const SLASH_MENU_MAX_VISIBLE_ITEMS = 5;
+const SLASH_MENU_ITEM_HEIGHT_PX = 40;
+
 export function CopilotChatInput({
   mode = "input",
   onSubmitMessage,
@@ -119,13 +122,17 @@ export function CopilotChatInput({
 
   const [layout, setLayout] = useState<"compact" | "expanded">("compact");
   const isExpanded = mode === "input" && layout === "expanded";
+  const [commandQuery, setCommandQuery] = useState<string | null>(null);
+  const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const addButtonContainerRef = useRef<HTMLDivElement>(null);
   const actionsContainerRef = useRef<HTMLDivElement>(null);
   const audioRecorderRef = useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
+  const slashMenuRef = useRef<HTMLDivElement>(null);
   const config = useCopilotChatConfiguration();
+  const labels = config?.labels ?? CopilotChatDefaultLabels;
 
   const previousModalStateRef = useRef<boolean | undefined>(undefined);
   const measurementCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -135,6 +142,72 @@ export function CopilotChatInput({
     paddingLeft: 0,
     paddingRight: 0,
   });
+
+  const commandItems = useMemo(() => {
+    const entries: ToolsMenuItem[] = [];
+    const seen = new Set<string>();
+
+    const pushItem = (item: ToolsMenuItem | "-") => {
+      if (item === "-") {
+        return;
+      }
+
+      if (item.items && item.items.length > 0) {
+        for (const nested of item.items) {
+          pushItem(nested);
+        }
+        return;
+      }
+
+      if (!seen.has(item.label)) {
+        seen.add(item.label);
+        entries.push(item);
+      }
+    };
+
+    if (onAddFile) {
+      pushItem({
+        label: labels.chatInputToolbarAddButtonLabel,
+        action: onAddFile,
+      });
+    }
+
+    if (toolsMenu && toolsMenu.length > 0) {
+      for (const item of toolsMenu) {
+        pushItem(item);
+      }
+    }
+
+    return entries;
+  }, [labels.chatInputToolbarAddButtonLabel, onAddFile, toolsMenu]);
+
+  const filteredCommands = useMemo(() => {
+    if (commandQuery === null) {
+      return [] as ToolsMenuItem[];
+    }
+
+    if (commandItems.length === 0) {
+      return [] as ToolsMenuItem[];
+    }
+
+    const query = commandQuery.trim().toLowerCase();
+    if (query.length === 0) {
+      return commandItems;
+    }
+
+    const startsWith: ToolsMenuItem[] = [];
+    const contains: ToolsMenuItem[] = [];
+    for (const item of commandItems) {
+      const label = item.label.toLowerCase();
+      if (label.startsWith(query)) {
+        startsWith.push(item);
+      } else if (label.includes(query)) {
+        contains.push(item);
+      }
+    }
+
+    return [...startsWith, ...contains];
+  }, [commandItems, commandQuery]);
 
   useEffect(() => {
     if (!autoFocus) {
@@ -148,6 +221,39 @@ export function CopilotChatInput({
 
     previousModalStateRef.current = config?.isModalOpen;
   }, [config?.isModalOpen, autoFocus]);
+
+  useEffect(() => {
+    if (commandItems.length === 0 && commandQuery !== null) {
+      setCommandQuery(null);
+    }
+  }, [commandItems.length, commandQuery]);
+
+  const previousCommandQueryRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      commandQuery !== null &&
+      commandQuery !== previousCommandQueryRef.current &&
+      filteredCommands.length > 0
+    ) {
+      setSlashHighlightIndex(0);
+    }
+
+    previousCommandQueryRef.current = commandQuery;
+  }, [commandQuery, filteredCommands.length]);
+
+  useEffect(() => {
+    if (commandQuery === null) {
+      setSlashHighlightIndex(0);
+      return;
+    }
+
+    if (filteredCommands.length === 0) {
+      setSlashHighlightIndex(-1);
+    } else if (slashHighlightIndex < 0 || slashHighlightIndex >= filteredCommands.length) {
+      setSlashHighlightIndex(0);
+    }
+  }, [commandQuery, filteredCommands, slashHighlightIndex]);
 
   // Handle recording based on mode changes
   useEffect(() => {
@@ -170,8 +276,31 @@ export function CopilotChatInput({
   useEffect(() => {
     if (mode !== "input") {
       setLayout("compact");
+      setCommandQuery(null);
     }
   }, [mode]);
+
+  const updateSlashState = useCallback(
+    (value: string) => {
+      if (commandItems.length === 0) {
+        setCommandQuery((prev) => (prev === null ? prev : null));
+        return;
+      }
+
+      if (value.startsWith("/")) {
+        const firstLine = value.split(/\r?\n/, 1)[0] ?? "";
+        const query = firstLine.slice(1);
+        setCommandQuery((prev) => (prev === query ? prev : query));
+      } else {
+        setCommandQuery((prev) => (prev === null ? prev : null));
+      }
+    },
+    [commandItems.length],
+  );
+
+  useEffect(() => {
+    updateSlashState(resolvedValue);
+  }, [resolvedValue, updateSlashState]);
 
   // Handlers
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -180,9 +309,83 @@ export function CopilotChatInput({
       setInternalValue(nextValue);
     }
     onChange?.(nextValue);
+    updateSlashState(nextValue);
   };
 
+  const clearInputValue = useCallback(() => {
+    if (!isControlled) {
+      setInternalValue("");
+    }
+
+    if (onChange) {
+      onChange("");
+    }
+  }, [isControlled, onChange]);
+
+  const runCommand = useCallback(
+    (item: ToolsMenuItem) => {
+      clearInputValue();
+
+      item.action?.();
+
+      setCommandQuery(null);
+      setSlashHighlightIndex(0);
+
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    },
+    [clearInputValue],
+  );
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (commandQuery !== null && mode === "input") {
+      if (e.key === "ArrowDown") {
+        if (filteredCommands.length > 0) {
+          e.preventDefault();
+          setSlashHighlightIndex((prev) => {
+            if (filteredCommands.length === 0) {
+              return prev;
+            }
+            const next = prev === -1 ? 0 : (prev + 1) % filteredCommands.length;
+            return next;
+          });
+        }
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        if (filteredCommands.length > 0) {
+          e.preventDefault();
+          setSlashHighlightIndex((prev) => {
+            if (filteredCommands.length === 0) {
+              return prev;
+            }
+            if (prev === -1) {
+              return filteredCommands.length - 1;
+            }
+            return prev <= 0 ? filteredCommands.length - 1 : prev - 1;
+          });
+        }
+        return;
+      }
+
+      if (e.key === "Enter") {
+        const selected = slashHighlightIndex >= 0 ? filteredCommands[slashHighlightIndex] : undefined;
+        if (selected) {
+          e.preventDefault();
+          runCommand(selected);
+          return;
+        }
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setCommandQuery(null);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
@@ -449,6 +652,60 @@ export function CopilotChatInput({
     return () => observer.disconnect();
   }, [evaluateLayout]);
 
+  const slashMenuVisible = commandQuery !== null && commandItems.length > 0;
+
+  useEffect(() => {
+    if (!slashMenuVisible || slashHighlightIndex < 0) {
+      return;
+    }
+
+    const active = slashMenuRef.current?.querySelector<HTMLElement>(
+      `[data-slash-index="${slashHighlightIndex}"]`,
+    );
+    active?.scrollIntoView({ block: "nearest" });
+  }, [slashMenuVisible, slashHighlightIndex]);
+
+  const slashMenu = slashMenuVisible ? (
+    <div
+      data-testid="copilot-slash-menu"
+      role="listbox"
+      aria-label="Slash commands"
+      ref={slashMenuRef}
+      className="absolute bottom-full left-0 right-0 z-30 mb-2 max-h-64 overflow-y-auto rounded-lg border border-border bg-white shadow-lg dark:border-[#3a3a3a] dark:bg-[#1f1f1f]"
+      style={{ maxHeight: `${SLASH_MENU_MAX_VISIBLE_ITEMS * SLASH_MENU_ITEM_HEIGHT_PX}px` }}
+    >
+      {filteredCommands.length === 0 ? (
+        <div className="px-3 py-2 text-sm text-muted-foreground">No commands found</div>
+      ) : (
+        filteredCommands.map((item, index) => {
+          const isActive = index === slashHighlightIndex;
+          return (
+            <button
+              key={`${item.label}-${index}`}
+              type="button"
+              role="option"
+              aria-selected={isActive}
+              data-active={isActive ? "true" : undefined}
+              data-slash-index={index}
+              className={twMerge(
+                "w-full px-3 py-2 text-left text-sm transition-colors",
+                "hover:bg-muted dark:hover:bg-[#2f2f2f]",
+                isActive ? "bg-muted dark:bg-[#2f2f2f]" : "bg-transparent",
+              )}
+              onMouseEnter={() => setSlashHighlightIndex(index)}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                runCommand(item);
+              }}
+            >
+              {item.label}
+            </button>
+          );
+        })
+      )}
+    </div>
+  ) : null;
+
   return (
     <div
       className={twMerge(
@@ -490,11 +747,18 @@ export function CopilotChatInput({
         </div>
         <div
           className={twMerge(
-            "flex min-w-0 flex-col",
+            "relative flex min-w-0 flex-col",
             isExpanded ? "col-span-3 row-start-1" : "col-start-2 row-start-1",
           )}
         >
-          {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
+          {mode === "transcribe" ? (
+            BoundAudioRecorder
+          ) : (
+            <>
+              {BoundTextArea}
+              {slashMenu}
+            </>
+          )}
         </div>
         <div
           ref={actionsContainerRef}

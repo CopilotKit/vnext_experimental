@@ -78,7 +78,7 @@ function Chat() {
   const toolsMenu = useMemo(
     () => [
       {
-        label: "Say hi to Copilot",
+        label: "Say hi to CopilotKit",
         action: () => {
           const textarea = document.querySelector<HTMLTextAreaElement>("textarea[placeholder='Type a message...']");
           if (!textarea) {

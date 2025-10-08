@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { CopilotChatInput } from "../CopilotChatInput";
@@ -344,6 +344,137 @@ describe("CopilotChatInput", () => {
 
     await waitFor(() => {
       expect(grid?.getAttribute("data-layout")).toBe("expanded");
+    });
+  });
+
+  it("executes slash commands via keyboard selection", async () => {
+    const handleFirst = vi.fn();
+    const handleSecond = vi.fn();
+
+    renderWithProvider(
+      <CopilotChatInput
+        onSubmitMessage={mockOnSubmitMessage}
+        toolsMenu={[
+          { label: "Say hi", action: handleFirst },
+          { label: "Open docs", action: handleSecond },
+        ]}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "/" } });
+
+    const menu = await screen.findByTestId("copilot-slash-menu");
+    expect(menu).not.toBeNull();
+    expect(screen.queryByText("Say hi")).not.toBeNull();
+    expect(screen.queryByText("Open docs")).not.toBeNull();
+
+    fireEvent.keyDown(textarea, { key: "ArrowDown", code: "ArrowDown", keyCode: 40 });
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(handleSecond).toHaveBeenCalledTimes(1);
+    expect(handleFirst).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("copilot-slash-menu")).toBeNull();
+    });
+
+    expect((textarea as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("prioritizes prefix matches when filtering slash commands", async () => {
+    renderWithProvider(
+      <CopilotChatInput
+        onSubmitMessage={mockOnSubmitMessage}
+        toolsMenu={[
+          { label: "Reopen previous chat", action: vi.fn() },
+          { label: "Open CopilotKit", action: vi.fn() },
+          { label: "Help me operate", action: vi.fn() },
+        ]}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "/op" } });
+
+    const menu = await screen.findByTestId("copilot-slash-menu");
+    const options = within(menu).getAllByRole("option");
+
+    expect(options[0]?.textContent?.includes("Open CopilotKit")).toBe(true);
+    expect(options[0]?.getAttribute("aria-selected")).toBe("true");
+
+    fireEvent.keyDown(textarea, { key: "ArrowDown", code: "ArrowDown", keyCode: 40 });
+    await waitFor(() => {
+      const updated = within(menu).getAllByRole("option");
+      expect(updated[1]?.getAttribute("aria-selected")).toBe("true");
+    });
+
+    fireEvent.change(textarea, { target: { value: "/ope" } });
+
+    await waitFor(() => {
+      const updatedOptions = within(menu).getAllByRole("option");
+      expect(updatedOptions[0]?.getAttribute("aria-selected")).toBe("true");
+      expect(updatedOptions[0]?.textContent?.startsWith("Open CopilotKit")).toBe(true);
+    });
+  });
+
+  it("limits slash menu height when commands exceed five items", async () => {
+    const tools = Array.from({ length: 6 }, (_, index) => ({
+      label: `Command ${index + 1}`,
+      action: vi.fn(),
+    }));
+
+    renderWithProvider(
+      <CopilotChatInput onSubmitMessage={mockOnSubmitMessage} toolsMenu={tools} />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "/" } });
+
+    const menu = await screen.findByTestId("copilot-slash-menu");
+
+    await waitFor(() => {
+      expect(menu.style.maxHeight).toBe("200px");
+    });
+
+    const options = within(menu).getAllByRole("option");
+    expect(options.length).toBe(6);
+  });
+
+  it("allows slash command actions to populate the input", async () => {
+    const greeting = "Hello Copilot! 👋 Could you help me with something?";
+    const label = "Say hi to CopilotKit";
+
+    renderWithProvider(
+      <CopilotChatInput
+        onSubmitMessage={mockOnSubmitMessage}
+        toolsMenu={[
+          {
+            label,
+            action: () => {
+              const textareaElement = document.querySelector<HTMLTextAreaElement>("textarea");
+              if (!textareaElement) {
+                return;
+              }
+
+              const nativeSetter =
+                Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+              nativeSetter?.call(textareaElement, greeting);
+              textareaElement.dispatchEvent(new Event("input", { bubbles: true }));
+            },
+          },
+        ]}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "/" } });
+
+    const option = await screen.findByRole("option", { name: label });
+    fireEvent.mouseDown(option);
+
+    await waitFor(() => {
+      expect((textarea as HTMLTextAreaElement).value).toBe(greeting);
     });
   });
 
