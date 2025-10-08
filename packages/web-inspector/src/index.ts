@@ -114,13 +114,13 @@ export class WebInspectorElement extends LitElement {
     button: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
       size: { ...DEFAULT_BUTTON_SIZE },
-      anchor: { horizontal: "right", vertical: "bottom" },
+      anchor: { horizontal: "right", vertical: "top" },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
     window: {
       position: { x: EDGE_MARGIN, y: EDGE_MARGIN },
       size: { ...DEFAULT_WINDOW_SIZE },
-      anchor: { horizontal: "right", vertical: "bottom" },
+      anchor: { horizontal: "right", vertical: "top" },
       anchorOffset: { x: EDGE_MARGIN, y: EDGE_MARGIN },
     },
   };
@@ -727,10 +727,10 @@ export class WebInspectorElement extends LitElement {
     this.measureContext("button");
     this.measureContext("window");
 
-    this.contextState.button.anchor = { horizontal: "right", vertical: "bottom" };
+    this.contextState.button.anchor = { horizontal: "right", vertical: "top" };
     this.contextState.button.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
 
-    this.contextState.window.anchor = { horizontal: "right", vertical: "bottom" };
+    this.contextState.window.anchor = { horizontal: "right", vertical: "top" };
     this.contextState.window.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
 
     this.hydrateStateFromCookie();

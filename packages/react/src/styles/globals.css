@@ -141,6 +141,37 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Mobile viewport support */
+  @supports (height: 100dvh) {
+    [data-copilot-sidebar] {
+      height: 100dvh;
+    }
+  }
+
+  /* Responsive sidebar width */
+  @media (min-width: 768px) {
+    [data-copilot-sidebar] {
+      width: var(--sidebar-width, 480px) !important;
+    }
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 767px) {
+    [data-copilot-sidebar] {
+      width: 100% !important;
+    }
+
+    /* Improve touch scrolling on iOS */
+    [data-copilot-sidebar] {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better scrolling performance */
+    [data-sidebar-chat] {
+      touch-action: pan-y;
+    }
+  }
 }
 
 div[data-streamdown="code-block"] > pre {

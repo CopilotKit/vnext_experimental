@@ -11,6 +11,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCopilotChatConfiguration, CopilotChatDefaultLabels } from "@/providers/CopilotChatConfigurationProvider";
+import { useKeyboardHeight } from "@/hooks/use-keyboard-height";
 
 export type CopilotChatViewProps = WithSlots<
   {
@@ -58,6 +59,9 @@ export function CopilotChatView({
   const [inputContainerHeight, setInputContainerHeight] = useState(0);
   const [isResizing, setIsResizing] = useState(false);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track keyboard state for mobile
+  const { isKeyboardOpen, keyboardHeight, availableHeight } = useKeyboardHeight();
 
   // Track input container height changes
   useEffect(() => {
@@ -132,7 +136,7 @@ export function CopilotChatView({
       <div style={{ paddingBottom: `${inputContainerHeight + (hasSuggestions ? 4 : 32)}px` }}>
         <div className="max-w-3xl mx-auto">
           {BoundMessageView}
-          {hasSuggestions ? <div className="px-4 sm:px-0 mt-4">{BoundSuggestionView}</div> : null}
+          {hasSuggestions ? <div className="pl-0 pr-4 sm:px-0 mt-4">{BoundSuggestionView}</div> : null}
         </div>
       </div>
     ),
@@ -144,6 +148,7 @@ export function CopilotChatView({
 
   const BoundInputContainer = renderSlot(inputContainer, CopilotChatView.InputContainer, {
     ref: inputContainerRef,
+    keyboardHeight: isKeyboardOpen ? keyboardHeight : 0,
     children: (
       <>
         <div className="max-w-3xl mx-auto py-0 px-4 sm:px-0 [div[data-sidebar-chat]_&]:px-8 pointer-events-auto">
@@ -354,9 +359,18 @@ export namespace CopilotChatView {
 
   export const InputContainer = React.forwardRef<
     HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }
-  >(({ children, className, ...props }, ref) => (
-    <div ref={ref} className={cn("absolute bottom-0 left-0 right-0 z-20 pointer-events-none", className)} {...props}>
+    React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode; keyboardHeight?: number }
+  >(({ children, className, keyboardHeight = 0, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("absolute bottom-0 left-0 right-0 z-20 pointer-events-none", className)}
+      style={{
+        // Adjust position when keyboard is open to keep input visible
+        transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : undefined,
+        transition: "transform 0.2s ease-out",
+      }}
+      {...props}
+    >
       {children}
     </div>
   ));

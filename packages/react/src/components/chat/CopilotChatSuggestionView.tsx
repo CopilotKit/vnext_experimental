@@ -14,7 +14,7 @@ const DefaultContainer = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex flex-wrap items-center gap-2 px-4 sm:px-0 pointer-events-none",
+        "flex flex-wrap items-center gap-1.5 sm:gap-2 pl-0 pr-4 sm:px-0 pointer-events-none",
         className,
       )}
       {...props}
