@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-
 import CopilotChatView, { CopilotChatViewProps } from "./CopilotChatView";
 import CopilotChatToggleButton from "./CopilotChatToggleButton";
 import { CopilotModalHeader } from "./CopilotModalHeader";
@@ -11,91 +9,33 @@ import {
   useCopilotChatConfiguration,
 } from "@/providers/CopilotChatConfigurationProvider";
 
-const DEFAULT_POPUP_WIDTH = 480;
-const DEFAULT_POPUP_HEIGHT = 720;
-const STYLE_CLONE_ATTRIBUTE = "data-copilot-popup-style";
+const DEFAULT_POPUP_WIDTH = 420;
+const DEFAULT_POPUP_HEIGHT = 560;
 
 export type CopilotPopupViewProps = CopilotChatViewProps & {
   header?: SlotValue<typeof CopilotModalHeader>;
   width?: number | string;
   height?: number | string;
-  windowFeatures?: string;
+  clickOutsideToClose?: boolean;
 };
 
-const parseDimension = (value: number | string | undefined, fallback: number): number => {
+const dimensionToCss = (value: number | string | undefined, fallback: number): string => {
   if (typeof value === "number" && Number.isFinite(value)) {
+    return `${value}px`;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
     return value;
   }
 
-  if (typeof value === "string") {
-    const parsed = parseInt(value, 10);
-    if (!Number.isNaN(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-};
-
-const buildWindowFeatures = (
-  width: number | string | undefined,
-  height: number | string | undefined,
-  extraFeatures?: string,
-) => {
-  const resolvedWidth = parseDimension(width, DEFAULT_POPUP_WIDTH);
-  const resolvedHeight = parseDimension(height, DEFAULT_POPUP_HEIGHT);
-
-  const features = [
-    "popup=yes",
-    "noopener=yes",
-    "resizable=yes",
-    "scrollbars=yes",
-    "toolbar=no",
-    "location=no",
-    "menubar=no",
-    "status=no",
-    `width=${resolvedWidth}`,
-    `height=${resolvedHeight}`,
-  ];
-
-  if (extraFeatures) {
-    features.push(extraFeatures);
-  }
-
-  return {
-    width: resolvedWidth,
-    height: resolvedHeight,
-    featureString: features.join(","),
-  };
-};
-
-const copyDocumentStyles = (source: Document, target: Document) => {
-  target.documentElement.className = source.documentElement.className;
-
-  const dataTheme = source.documentElement.getAttribute("data-theme");
-  if (dataTheme) {
-    target.documentElement.setAttribute("data-theme", dataTheme);
-  } else {
-    target.documentElement.removeAttribute("data-theme");
-  }
-
-  target
-    .querySelectorAll(`[${STYLE_CLONE_ATTRIBUTE}]`)
-    .forEach((node) => node.parentNode?.removeChild(node));
-
-  const styles = source.querySelectorAll<HTMLElement>("head style, head link[rel='stylesheet']");
-  styles.forEach((styleNode) => {
-    const clone = styleNode.cloneNode(true) as HTMLElement;
-    clone.setAttribute(STYLE_CLONE_ATTRIBUTE, "true");
-    target.head.appendChild(clone);
-  });
+  return `${fallback}px`;
 };
 
 export function CopilotPopupView({
   header,
   width,
   height,
-  windowFeatures,
+  clickOutsideToClose,
   className,
   ...restProps
 }: CopilotPopupViewProps) {
@@ -104,21 +44,32 @@ export function CopilotPopupView({
   const setModalOpen = configuration?.setModalOpen;
   const labels = configuration?.labels ?? CopilotChatDefaultLabels;
 
-  const popupWindowRef = useRef<Window | null>(null);
-  const [popupContainer, setPopupContainer] = useState<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isRendered, setIsRendered] = useState(isPopupOpen);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
-  const { featureString, width: resolvedWidth, height: resolvedHeight } = useMemo(
-    () => buildWindowFeatures(width, height, windowFeatures),
-    [width, height, windowFeatures],
-  );
+  useEffect(() => {
+    if (isPopupOpen) {
+      setIsRendered(true);
+      setIsAnimatingOut(false);
+      return;
+    }
+
+    if (!isRendered) {
+      return;
+    }
+
+    setIsAnimatingOut(true);
+    const timeout = setTimeout(() => {
+      setIsRendered(false);
+      setIsAnimatingOut(false);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [isPopupOpen, isRendered]);
 
   useEffect(() => {
     if (!isPopupOpen) {
-      if (popupWindowRef.current && !popupWindowRef.current.closed) {
-        popupWindowRef.current.close();
-      }
-      popupWindowRef.current = null;
-      setPopupContainer(null);
       return;
     }
 
@@ -126,147 +77,102 @@ export function CopilotPopupView({
       return;
     }
 
-    let popup = popupWindowRef.current;
-
-    if (!popup || popup.closed) {
-      popup = window.open("", "", featureString) ?? null;
-      if (!popup) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
         setModalOpen?.(false);
-        return;
       }
-
-      popupWindowRef.current = popup;
-
-      popup.document.title = labels.modalHeaderTitle;
-      popup.document.body.style.margin = "0";
-      popup.document.body.style.width = "100%";
-      popup.document.body.style.height = "100vh";
-      popup.document.body.style.display = "flex";
-
-      const container = popup.document.createElement("div");
-      container.setAttribute("data-copilot-popup-root", "true");
-      container.style.flex = "1";
-      container.style.display = "flex";
-      container.style.flexDirection = "column";
-      popup.document.body.appendChild(container);
-
-      setPopupContainer(container);
-
-      copyDocumentStyles(window.document, popup.document);
-    } else if (popupContainer == null) {
-      const container = popup.document.querySelector<HTMLDivElement>("div[data-copilot-popup-root]");
-      if (container) {
-        setPopupContainer(container);
-      }
-    } else {
-      popup.focus();
-    }
-
-    if (!popup) {
-      return;
-    }
-
-    const handleUnload = () => {
-      popupWindowRef.current = null;
-      setPopupContainer(null);
-      setModalOpen?.(false);
     };
 
-    popup.addEventListener("beforeunload", handleUnload);
-
-    return () => {
-      popup.removeEventListener("beforeunload", handleUnload);
-    };
-  }, [featureString, isPopupOpen, labels.modalHeaderTitle, popupContainer, setModalOpen]);
-
-  useEffect(() => {
-    const popup = popupWindowRef.current;
-    if (!isPopupOpen || !popup || popup.closed) {
-      return;
-    }
-
-    popup.resizeTo(resolvedWidth, resolvedHeight);
-  }, [isPopupOpen, resolvedHeight, resolvedWidth]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPopupOpen, setModalOpen]);
 
   useEffect(() => {
     if (!isPopupOpen) {
       return;
     }
 
-    const popupDoc = popupWindowRef.current?.document;
-    if (!popupDoc) {
-      return;
-    }
+    const focusTimer = setTimeout(() => {
+      containerRef.current?.focus({ preventScroll: true });
+    }, 200);
 
-    copyDocumentStyles(window.document, popupDoc);
-
-    const headObserver = new MutationObserver(() => {
-      if (popupDoc.defaultView?.closed) {
-        headObserver.disconnect();
-        return;
-      }
-      copyDocumentStyles(window.document, popupDoc);
-    });
-
-    headObserver.observe(window.document.head, { childList: true, subtree: true });
-
-    const htmlObserver = new MutationObserver(() => {
-      if (popupDoc.defaultView?.closed) {
-        htmlObserver.disconnect();
-        return;
-      }
-      popupDoc.documentElement.className = window.document.documentElement.className;
-      const theme = window.document.documentElement.getAttribute("data-theme");
-      if (theme) {
-        popupDoc.documentElement.setAttribute("data-theme", theme);
-      } else {
-        popupDoc.documentElement.removeAttribute("data-theme");
-      }
-    });
-
-    htmlObserver.observe(window.document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "data-theme"],
-    });
-
-    return () => {
-      headObserver.disconnect();
-      htmlObserver.disconnect();
-    };
+    return () => clearTimeout(focusTimer);
   }, [isPopupOpen]);
 
   useEffect(() => {
-    return () => {
-      if (popupWindowRef.current && !popupWindowRef.current.closed) {
-        popupWindowRef.current.close();
+    if (!isPopupOpen || !clickOutsideToClose) {
+      return;
+    }
+
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
       }
-      popupWindowRef.current = null;
-      setPopupContainer(null);
+
+      const container = containerRef.current;
+      if (container?.contains(target)) {
+        return;
+      }
+
+      const toggleButton = document.querySelector("[data-slot='chat-toggle-button']");
+      if (toggleButton && toggleButton.contains(target)) {
+        return;
+      }
+
+      setModalOpen?.(false);
     };
-  }, []);
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isPopupOpen, clickOutsideToClose, setModalOpen]);
 
   const headerElement = useMemo(() => renderSlot(header, CopilotModalHeader, {}), [header]);
 
-  const content = (
-    <div
-      data-copilot-popup
-      className="flex h-full flex-col bg-background text-foreground"
-      role="dialog"
-      aria-label={labels.modalHeaderTitle}
-    >
-      {headerElement}
-      <div className="flex-1 overflow-hidden" data-popup-chat>
-        <CopilotChatView {...restProps} className={cn("h-full", className)} />
+  const resolvedWidth = dimensionToCss(width, DEFAULT_POPUP_WIDTH);
+  const resolvedHeight = dimensionToCss(height, DEFAULT_POPUP_HEIGHT);
+
+  const popupContent = isRendered ? (
+    <div className="fixed bottom-24 right-6 z-[1200] flex max-w-full flex-col items-end gap-4">
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-label={labels.modalHeaderTitle}
+        data-copilot-popup
+        className={cn(
+          "relative flex max-w-lg flex-col overflow-hidden rounded-2xl border border-border",
+          "bg-background text-foreground shadow-xl ring-1 ring-border/40",
+          "focus:outline-none transition-all duration-200 ease-out",
+          isPopupOpen && !isAnimatingOut
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+            : "pointer-events-none translate-y-5 scale-[0.95] opacity-0",
+        )}
+        style={{
+          width: resolvedWidth,
+          maxWidth: "calc(100vw - 3rem)",
+          height: resolvedHeight,
+          maxHeight: "calc(100dvh - 7.5rem)",
+          transformOrigin: "bottom right",
+        }}
+      >
+        {headerElement}
+        <div className="flex-1 overflow-hidden px-4" data-popup-chat>
+          <CopilotChatView {...restProps} className={cn("h-full", className)} />
+        </div>
       </div>
     </div>
-  );
+  ) : null;
 
   return (
     <>
       <CopilotChatToggleButton />
-      {popupContainer && popupWindowRef.current && !popupWindowRef.current.closed
-        ? createPortal(content, popupContainer)
-        : null}
+      {popupContent}
     </>
   );
 }
