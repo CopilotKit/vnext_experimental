@@ -18,7 +18,7 @@ import { z } from "zod";
 import { FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 import { CopilotKitCoreReact } from "../lib/react-core";
-import { WebInspector } from "../components/WebInspector";
+import { CopilotKitInspector } from "../components/CopilotKitInspector";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
@@ -259,7 +259,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       }}
     >
       {children}
-      {shouldRenderInspector ? <WebInspector core={copilotkit} /> : null}
+      {shouldRenderInspector ? <CopilotKitInspector core={copilotkit} /> : null}
     </CopilotKitContext.Provider>
   );
 };
