@@ -4,6 +4,7 @@ import React, {
   KeyboardEvent,
   ChangeEvent,
   useEffect,
+  useLayoutEffect,
   forwardRef,
   useImperativeHandle,
   useCallback,
@@ -116,13 +117,24 @@ export function CopilotChatInput({
 
   const resolvedValue = isControlled ? (value ?? "") : internalValue;
 
-  const [isMultiline, setIsMultiline] = useState(false);
+  const [isContentMultiline, setIsContentMultiline] = useState(false);
+  const [isForcedMultiline, setIsForcedMultiline] = useState(false);
+  const isMultiline = mode === "input" && (isContentMultiline || isForcedMultiline);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const addButtonContainerRef = useRef<HTMLDivElement>(null);
+  const actionsContainerRef = useRef<HTMLDivElement>(null);
   const audioRecorderRef = useRef<React.ElementRef<typeof CopilotChatAudioRecorder>>(null);
   const config = useCopilotChatConfiguration();
 
   const previousModalStateRef = useRef<boolean | undefined>(undefined);
+
+  const paddingMeasurementsRef = useRef({
+    compactLeft: 0,
+    compactRight: 0,
+  });
+  const measurementCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!autoFocus) {
@@ -157,7 +169,8 @@ export function CopilotChatInput({
 
   useEffect(() => {
     if (mode !== "input") {
-      setIsMultiline(false);
+      setIsContentMultiline(false);
+      setIsForcedMultiline(false);
     }
   }, [mode]);
 
@@ -204,7 +217,7 @@ export function CopilotChatInput({
     onChange: handleChange,
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
-    onMultilineChange: setIsMultiline,
+    onMultilineChange: setIsContentMultiline,
     isMultiline,
   });
 
@@ -267,6 +280,128 @@ export function CopilotChatInput({
     }
   };
 
+  useLayoutEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    const styles = window.getComputedStyle(textarea);
+    const paddingLeft = parseFloat(styles.paddingLeft) || 0;
+    const paddingRight = parseFloat(styles.paddingRight) || 0;
+
+    if (!isMultiline) {
+      paddingMeasurementsRef.current = {
+        compactLeft: paddingLeft,
+        compactRight: paddingRight,
+      };
+    }
+  }, [isMultiline]);
+
+  const evaluateLayout = useCallback(() => {
+    if (mode !== "input") {
+      setIsForcedMultiline((prev) => (prev ? false : prev));
+      return;
+    }
+
+    const textarea = inputRef.current;
+    const grid = gridRef.current;
+    const addContainer = addButtonContainerRef.current;
+    const actionsContainer = actionsContainerRef.current;
+
+    if (!textarea || !grid || !addContainer || !actionsContainer) {
+      return;
+    }
+
+    const gridStyles = window.getComputedStyle(grid);
+    const paddingLeft = parseFloat(gridStyles.paddingLeft) || 0;
+    const paddingRight = parseFloat(gridStyles.paddingRight) || 0;
+    const columnGap = parseFloat(gridStyles.columnGap) || 0;
+    const gridAvailableWidth = grid.clientWidth - paddingLeft - paddingRight;
+
+    if (gridAvailableWidth <= 0) {
+      return;
+    }
+
+    const addWidth = addContainer.getBoundingClientRect().width;
+    const actionsWidth = actionsContainer.getBoundingClientRect().width;
+
+    const compactWidth = Math.max(gridAvailableWidth - addWidth - actionsWidth - columnGap * 2, 0);
+
+    const storedPadding = paddingMeasurementsRef.current;
+
+    let compactPaddingLeft = storedPadding.compactLeft;
+    let compactPaddingRight = storedPadding.compactRight;
+
+    if (compactPaddingLeft === 0 && compactPaddingRight === 0) {
+      const rootFontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+      compactPaddingLeft = 0;
+      compactPaddingRight = 1.25 * rootFontSize;
+    }
+
+    const compactInnerWidth = Math.max(compactWidth - compactPaddingLeft - compactPaddingRight, 0);
+
+    if (compactInnerWidth <= 0) {
+      setIsForcedMultiline((prev) => (prev ? prev : true));
+      return;
+    }
+
+    const textareaStyles = window.getComputedStyle(textarea);
+    const canvas = measurementCanvasRef.current ?? document.createElement("canvas");
+    if (!measurementCanvasRef.current) {
+      measurementCanvasRef.current = canvas;
+    }
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    const font = textareaStyles.font || `${textareaStyles.fontStyle} ${textareaStyles.fontVariant} ${textareaStyles.fontWeight} ${textareaStyles.fontSize}/${textareaStyles.lineHeight} ${textareaStyles.fontFamily}`;
+    context.font = font;
+
+    const lines = resolvedValue.length > 0 ? resolvedValue.split("\n") : [""];
+    let longestWidth = 0;
+
+    for (const line of lines) {
+      const metrics = context.measureText(line || " ");
+      if (metrics.width > longestWidth) {
+        longestWidth = metrics.width;
+      }
+    }
+
+    const shouldForceMultiline = longestWidth > compactInnerWidth;
+
+    setIsForcedMultiline((prev) => (prev === shouldForceMultiline ? prev : shouldForceMultiline));
+  }, [mode, resolvedValue]);
+
+  useLayoutEffect(() => {
+    evaluateLayout();
+  }, [evaluateLayout, isContentMultiline]);
+
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const grid = gridRef.current;
+    const addContainer = addButtonContainerRef.current;
+    const actionsContainer = actionsContainerRef.current;
+
+    if (!grid || !addContainer || !actionsContainer) {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      evaluateLayout();
+    });
+
+    observer.observe(grid);
+    observer.observe(addContainer);
+    observer.observe(actionsContainer);
+
+    return () => observer.disconnect();
+  }, [evaluateLayout]);
+
   return (
     <div
       className={twMerge(
@@ -286,6 +421,7 @@ export function CopilotChatInput({
       {...props}
     >
       <div
+        ref={gridRef}
         className={twMerge(
           "grid w-full gap-x-3 gap-y-3 px-3 py-2",
           isMultiline
@@ -294,6 +430,7 @@ export function CopilotChatInput({
         )}
       >
         <div
+          ref={addButtonContainerRef}
           className={twMerge(
             "flex items-center",
             isMultiline ? "row-start-2" : "row-start-1",
@@ -311,6 +448,7 @@ export function CopilotChatInput({
           {mode === "transcribe" ? BoundAudioRecorder : BoundTextArea}
         </div>
         <div
+          ref={actionsContainerRef}
           className={twMerge(
             "flex items-center justify-end gap-2",
             isMultiline ? "col-start-3 row-start-2" : "col-start-3 row-start-1",
@@ -519,7 +657,7 @@ export namespace CopilotChatInput {
   ) {
     const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
     const [maxHeight, setMaxHeight] = useState<number>(0);
-    const [singleLineHeight, setSingleLineHeight] = useState<number | null>(null);
+    const [singleLineHeight, setSingleLineHeight] = useState<number>(0);
     const lastMultilineRef = useRef<boolean>(false);
 
     const config = useCopilotChatConfiguration();
@@ -529,17 +667,25 @@ export namespace CopilotChatInput {
 
     const adjustHeight = () => {
       const textarea = internalTextareaRef.current;
-      if (textarea && maxHeight > 0) {
-        textarea.style.height = "auto";
-        textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+      if (!textarea || maxHeight <= 0 || singleLineHeight <= 0) {
+        return;
+      }
 
-        if (onMultilineChange) {
-          const baseline = singleLineHeight ?? textarea.scrollHeight;
-          const nextIsMultiline = textarea.scrollHeight > baseline + 1;
-          if (nextIsMultiline !== lastMultilineRef.current) {
-            lastMultilineRef.current = nextIsMultiline;
-            onMultilineChange(nextIsMultiline);
-          }
+      textarea.style.height = "auto";
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+
+      if (onMultilineChange) {
+        // Text is multiline if:
+        // 1. It contains explicit newlines, OR
+        // 2. The scrollHeight is significantly taller than single line height
+        const nextIsMultiline =
+          textarea.value.includes("\n") ||
+          scrollHeight > singleLineHeight + 2;
+
+        if (nextIsMultiline !== lastMultilineRef.current) {
+          lastMultilineRef.current = nextIsMultiline;
+          onMultilineChange(nextIsMultiline);
         }
       }
     };
@@ -548,33 +694,35 @@ export namespace CopilotChatInput {
       const calculateMaxHeight = () => {
         const textarea = internalTextareaRef.current;
         if (textarea) {
-          // Save current value
-          const currentValue = textarea.value;
-          // Clear content to measure single row height
+          const originalValue = textarea.value;
+
+          // Measure single line height
           textarea.value = "";
           textarea.style.height = "auto";
+          const singleLine = textarea.scrollHeight;
+          setSingleLineHeight(singleLine);
 
-          // Get computed styles to account for padding
+          // Calculate max height
           const computedStyle = window.getComputedStyle(textarea);
-          const paddingTop = parseFloat(computedStyle.paddingTop);
-          const paddingBottom = parseFloat(computedStyle.paddingBottom);
-
-          // Calculate actual content height (without padding)
-          const contentHeight = textarea.scrollHeight - paddingTop - paddingBottom;
-          const baselineHeight = contentHeight + paddingTop + paddingBottom;
-
-          // Calculate max height: content height for maxRows + padding
-          setMaxHeight(contentHeight * maxRows + paddingTop + paddingBottom);
-          setSingleLineHeight(baselineHeight);
+          const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+          const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
+          const contentHeight = singleLine - paddingTop - paddingBottom;
+          const computedMaxHeight = contentHeight * maxRows + paddingTop + paddingBottom;
+          setMaxHeight(computedMaxHeight);
 
           // Restore original value
-          textarea.value = currentValue;
+          textarea.value = originalValue;
 
-          // Adjust height after calculating maxHeight
-          if (currentValue) {
-            textarea.style.height = "auto";
-            textarea.style.height = `${Math.min(textarea.scrollHeight, contentHeight * maxRows + paddingTop + paddingBottom)}px`;
-          }
+          // Set initial height and multiline state
+          textarea.style.height = "auto";
+          const initialScrollHeight = textarea.scrollHeight;
+          const initialIsMultiline =
+            originalValue.includes("\n") || initialScrollHeight > singleLine + 2;
+
+          lastMultilineRef.current = initialIsMultiline;
+          onMultilineChange?.(initialIsMultiline);
+
+          textarea.style.height = `${Math.min(initialScrollHeight, computedMaxHeight)}px`;
 
           if (props.autoFocus) {
             textarea.focus();
@@ -588,7 +736,7 @@ export namespace CopilotChatInput {
     // Adjust height when controlled value changes
     useEffect(() => {
       adjustHeight();
-    }, [props.value, maxHeight, singleLineHeight]);
+    }, [props.value, maxHeight, singleLineHeight, isMultiline]);
 
     // Handle input events for uncontrolled usage
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {

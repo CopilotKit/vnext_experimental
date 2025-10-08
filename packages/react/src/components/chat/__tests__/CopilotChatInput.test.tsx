@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { CopilotChatInput } from "../CopilotChatInput";
 import { CopilotChatConfigurationProvider } from "../../../providers/CopilotChatConfigurationProvider";
@@ -23,6 +24,71 @@ const getSendButton = (container: HTMLElement) =>
 
 const getAddMenuButton = (container: HTMLElement) =>
   container.querySelector("svg.lucide-plus")?.closest("button") as HTMLButtonElement | null;
+
+const mockLayoutMetrics = (
+  container: HTMLElement,
+  options?: { gridWidth?: number; addWidth?: number; actionsWidth?: number }
+) => {
+  const grid = container.querySelector("div.grid") as HTMLElement | null;
+  if (!grid) {
+    throw new Error("Grid container not found in CopilotChatInput layout");
+  }
+
+  const { gridWidth = 640, addWidth = 48, actionsWidth = 96 } = options ?? {};
+
+  Object.defineProperty(grid, "clientWidth", {
+    value: gridWidth,
+    configurable: true,
+  });
+
+  const rectFactory = (width: number) =>
+    () => ({
+      width,
+      height: 40,
+      top: 0,
+      left: 0,
+      right: width,
+      bottom: 40,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+  const addContainer = grid.children[0] as HTMLElement;
+  const actionsContainer = grid.children[2] as HTMLElement;
+
+  Object.defineProperty(addContainer, "getBoundingClientRect", {
+    value: rectFactory(addWidth),
+    configurable: true,
+  });
+
+  Object.defineProperty(actionsContainer, "getBoundingClientRect", {
+    value: rectFactory(actionsWidth),
+    configurable: true,
+  });
+};
+
+// Mock scrollHeight for textareas since jsdom doesn't support it properly
+Object.defineProperty(HTMLTextAreaElement.prototype, "scrollHeight", {
+  configurable: true,
+  get: function (this: HTMLTextAreaElement) {
+    const text = this.value || "";
+
+    // Calculate lines based on explicit newlines
+    const explicitLines = text.split("\n").length;
+
+    // Simulate text wrapping for long lines (rough approximation)
+    // Assume ~50 characters per line as a rough width threshold
+    let wrappedLines = 0;
+    text.split("\n").forEach((line) => {
+      const lineWraps = Math.ceil(line.length / 50);
+      wrappedLines += Math.max(1, lineWraps);
+    });
+
+    const totalLines = Math.max(explicitLines, wrappedLines);
+    return totalLines * 24; // 24px per line
+  },
+});
 
 // Clear mocks before each test
 beforeEach(() => {
@@ -399,6 +465,50 @@ describe("CopilotChatInput", () => {
     expect(gridContainer.className).toContain("items-center");
   });
 
+  it("toggles textarea padding based on multiline state", async () => {
+    const { container } = renderWithProvider(<CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />);
+
+    mockLayoutMetrics(container);
+
+    const textarea = screen.getByRole("textbox");
+    expect(textarea.className).toContain("pr-5");
+    expect(textarea.className).not.toContain("px-5");
+
+    fireEvent.change(textarea, { target: { value: "a very long line that should wrap once it exceeds the width of the input" } });
+
+    await waitFor(() => {
+      expect(textarea.className).toContain("px-5");
+      expect(textarea.className).not.toContain("pr-5");
+    });
+  });
+
+  it("returns to the compact layout when text no longer needs extra space", async () => {
+    const { container } = renderWithProvider(<CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />);
+
+    mockLayoutMetrics(container);
+
+    const textarea = screen.getByRole("textbox");
+    const layoutCell = textarea.parentElement as HTMLElement;
+
+    fireEvent.change(textarea, {
+      target: {
+        value:
+          "this is a very long line that should expand the layout before it wraps so we can see the stacked arrangement",
+      },
+    });
+
+    await waitFor(() => {
+      expect(layoutCell.className).toContain("col-span-3");
+    });
+
+    fireEvent.change(textarea, { target: { value: "short" } });
+
+    await waitFor(() => {
+      expect(layoutCell.className).toContain("col-start-2");
+      expect(layoutCell.className).not.toContain("col-span-3");
+    });
+  });
+
   it("moves the textarea above the add menu button when multiple lines", async () => {
     renderWithProvider(<CopilotChatInput onSubmitMessage={mockOnSubmitMessage} />);
 
@@ -431,13 +541,20 @@ describe("CopilotChatInput", () => {
       <CopilotChatInput onAddFile={handleAddFile} onSubmitMessage={mockOnSubmitMessage} />
     );
 
+    mockLayoutMetrics(container);
+
     const addButton = getAddMenuButton(container);
     expect(addButton).not.toBeNull();
     expect(addButton?.disabled).toBe(false);
 
-    fireEvent.click(addButton!);
+    const user = userEvent.setup();
+    await user.click(addButton!);
 
-    const menuItem = await screen.findByText("Add photos or files");
+    await waitFor(() => {
+      expect(addButton?.getAttribute("data-state")).toBe("open");
+    });
+
+    const menuItem = await screen.findByRole("menuitem", { name: "Add photos or files" });
     fireEvent.click(menuItem);
 
     expect(handleAddFile).toHaveBeenCalledTimes(1);
@@ -455,11 +572,18 @@ describe("CopilotChatInput", () => {
       />
     );
 
+    mockLayoutMetrics(container);
+
     const addButton = getAddMenuButton(container);
     expect(addButton).not.toBeNull();
-    fireEvent.click(addButton!);
+    const user = userEvent.setup();
+    await user.click(addButton!);
 
-    const menuItem = await screen.findByText("Custom action");
+    await waitFor(() => {
+      expect(addButton?.getAttribute("data-state")).toBe("open");
+    });
+
+    const menuItem = await screen.findByRole("menuitem", { name: "Custom action" });
     fireEvent.click(menuItem);
 
     expect(handleCustom).toHaveBeenCalledTimes(1);
