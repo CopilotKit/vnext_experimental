@@ -681,7 +681,10 @@ export namespace CopilotChatInput {
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>{labels.chatInputToolbarAddButtonLabel}</p>
+            <p className="flex items-center gap-1 text-xs font-medium">
+              <span>Add files and more</span>
+              <code className="rounded bg-[#4a4a4a] px-1 py-[1px] font-mono text-[11px] text-white dark:bg-[#e0e0e0] dark:text-black">/</code>
+            </p>
           </TooltipContent>
         </Tooltip>
         {hasMenuItems && (

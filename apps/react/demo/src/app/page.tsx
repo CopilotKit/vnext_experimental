@@ -9,6 +9,7 @@ import {
   useConfigureSuggestions,
 } from "@copilotkitnext/react";
 import { z } from "zod";
+import { useMemo } from "react";
 
 // Disable static optimization for this page
 export const dynamic = "force-dynamic";
@@ -74,5 +75,34 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
-  return <CopilotChat />;
+  const toolsMenu = useMemo(
+    () => [
+      {
+        label: "Say hi to Copilot",
+        action: () => {
+          const textarea = document.querySelector<HTMLTextAreaElement>("textarea[placeholder='Type a message...']");
+          if (!textarea) {
+            return;
+          }
+
+          const greeting = "Hello Copilot! 👋 Could you help me with something?";
+
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+          nativeInputValueSetter?.call(textarea, greeting);
+          textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          textarea.focus();
+        },
+      },
+      "-",
+      {
+        label: "Open CopilotKit Docs",
+        action: () => {
+          window.open("https://docs.copilotkit.ai", "_blank", "noopener,noreferrer");
+        },
+      },
+    ],
+    [],
+  );
+
+  return <CopilotChat inputProps={{ toolsMenu }} />;
 }
