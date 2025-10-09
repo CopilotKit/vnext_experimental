@@ -172,7 +172,8 @@ export function CopilotPopupView({
         data-copilot-popup
         className={cn(
           "relative flex h-full w-full flex-col overflow-hidden bg-background text-foreground",
-          "origin-bottom focus:outline-none transition-transform transition-opacity duration-200 ease-out",
+          "origin-bottom focus:outline-none transform-gpu transition-transform transition-opacity duration-200 ease-out",
+          "md:transition-transform md:transition-opacity",
           "rounded-none border border-border/0 shadow-none ring-0",
           "md:h-[var(--copilot-popup-height)] md:w-[var(--copilot-popup-width)]",
           "md:max-h-[var(--copilot-popup-max-height)] md:max-w-[var(--copilot-popup-max-width)]",
