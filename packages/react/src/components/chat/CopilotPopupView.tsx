@@ -137,8 +137,33 @@ export function CopilotPopupView({
   const resolvedWidth = dimensionToCss(width, DEFAULT_POPUP_WIDTH);
   const resolvedHeight = dimensionToCss(height, DEFAULT_POPUP_HEIGHT);
 
+  const popupStyle = useMemo(
+    () =>
+      ({
+        "--copilot-popup-width": resolvedWidth,
+        "--copilot-popup-height": resolvedHeight,
+        "--copilot-popup-max-width": "calc(100vw - 3rem)",
+        "--copilot-popup-max-height": "calc(100dvh - 7.5rem)",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }) as React.CSSProperties,
+    [resolvedHeight, resolvedWidth],
+  );
+
+  const popupAnimationClass =
+    isPopupOpen && !isAnimatingOut
+      ? "pointer-events-auto translate-y-0 opacity-100 md:scale-100"
+      : "pointer-events-none translate-y-4 opacity-0 md:translate-y-5 md:scale-[0.95]";
+
   const popupContent = isRendered ? (
-    <div className="fixed bottom-24 right-6 z-[1200] flex max-w-full flex-col items-end gap-4">
+    <div
+      className={cn(
+        "fixed inset-0 z-[1200] flex max-w-full flex-col items-stretch",
+        "md:inset-auto md:bottom-24 md:right-6 md:items-end md:gap-4",
+      )}
+    >
       <div
         ref={containerRef}
         tabIndex={-1}
@@ -146,24 +171,22 @@ export function CopilotPopupView({
         aria-label={labels.modalHeaderTitle}
         data-copilot-popup
         className={cn(
-          "relative flex max-w-lg flex-col overflow-hidden rounded-2xl border border-border",
-          "bg-background text-foreground shadow-xl ring-1 ring-border/40",
-          "focus:outline-none transition-all duration-200 ease-out",
-          isPopupOpen && !isAnimatingOut
-            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-5 scale-[0.95] opacity-0",
+          "relative flex h-full w-full flex-col overflow-hidden bg-background text-foreground",
+          "origin-bottom focus:outline-none transition-all duration-200 ease-out",
+          "rounded-none border border-border/0 shadow-none ring-0",
+          "md:h-[var(--copilot-popup-height)] md:w-[var(--copilot-popup-width)]",
+          "md:max-h-[var(--copilot-popup-max-height)] md:max-w-[var(--copilot-popup-max-width)]",
+          "md:origin-bottom-right md:rounded-2xl md:border-border md:shadow-xl md:ring-1 md:ring-border/40",
+          popupAnimationClass,
         )}
-        style={{
-          width: resolvedWidth,
-          maxWidth: "calc(100vw - 3rem)",
-          height: resolvedHeight,
-          maxHeight: "calc(100dvh - 7.5rem)",
-          transformOrigin: "bottom right",
-        }}
+        style={popupStyle}
       >
         {headerElement}
         <div className="flex-1 overflow-hidden" data-popup-chat>
-          <CopilotChatView {...restProps} className={cn("h-full", className)} />
+          <CopilotChatView
+            {...restProps}
+            className={cn("h-full min-h-0", className)}
+          />
         </div>
       </div>
     </div>

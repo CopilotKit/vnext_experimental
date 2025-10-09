@@ -121,6 +121,8 @@ export function CopilotChatInput({
   const resolvedValue = isControlled ? (value ?? "") : internalValue;
 
   const [layout, setLayout] = useState<"compact" | "expanded">("compact");
+  const ignoreResizeRef = useRef(false);
+  const resizeEvaluationRafRef = useRef<number | null>(null);
   const isExpanded = mode === "input" && layout === "expanded";
   const [commandQuery, setCommandQuery] = useState<string | null>(null);
   const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
@@ -543,10 +545,30 @@ export function CopilotChatInput({
     return scrollHeight;
   }, [ensureMeasurements]);
 
+  const updateLayout = useCallback((nextLayout: "compact" | "expanded") => {
+    setLayout((prev) => {
+      if (prev === nextLayout) {
+        return prev;
+      }
+      ignoreResizeRef.current = true;
+      return nextLayout;
+    });
+  }, []);
+
   const evaluateLayout = useCallback(() => {
     if (mode !== "input") {
-      setLayout("compact");
+      updateLayout("compact");
       return;
+    }
+
+    if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+      const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+      if (isMobileViewport) {
+        ensureMeasurements();
+        adjustTextareaHeight();
+        updateLayout("expanded");
+        return;
+      }
     }
 
     const textarea = inputRef.current;
@@ -617,10 +639,8 @@ export function CopilotChatInput({
     }
 
     const nextLayout = shouldExpand ? "expanded" : "compact";
-    if (nextLayout !== layout) {
-      setLayout(nextLayout);
-    }
-  }, [adjustTextareaHeight, ensureMeasurements, layout, mode, resolvedValue]);
+    updateLayout(nextLayout);
+  }, [adjustTextareaHeight, ensureMeasurements, mode, resolvedValue, updateLayout]);
 
   useLayoutEffect(() => {
     evaluateLayout();
@@ -640,8 +660,29 @@ export function CopilotChatInput({
       return;
     }
 
+    const scheduleEvaluation = () => {
+      if (ignoreResizeRef.current) {
+        ignoreResizeRef.current = false;
+        return;
+      }
+
+      if (typeof window === "undefined") {
+        evaluateLayout();
+        return;
+      }
+
+      if (resizeEvaluationRafRef.current !== null) {
+        cancelAnimationFrame(resizeEvaluationRafRef.current);
+      }
+
+      resizeEvaluationRafRef.current = window.requestAnimationFrame(() => {
+        resizeEvaluationRafRef.current = null;
+        evaluateLayout();
+      });
+    };
+
     const observer = new ResizeObserver(() => {
-      evaluateLayout();
+      scheduleEvaluation();
     });
 
     observer.observe(grid);
@@ -649,7 +690,13 @@ export function CopilotChatInput({
     observer.observe(actionsContainer);
     observer.observe(textarea);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (typeof window !== "undefined" && resizeEvaluationRafRef.current !== null) {
+        cancelAnimationFrame(resizeEvaluationRafRef.current);
+        resizeEvaluationRafRef.current = null;
+      }
+    };
   }, [evaluateLayout]);
 
   const slashMenuVisible = commandQuery !== null && commandItems.length > 0;
