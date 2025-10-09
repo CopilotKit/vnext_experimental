@@ -78,10 +78,13 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
       {isSidebarOpen && (
         <style
           dangerouslySetInnerHTML={{
-            __html: `body {
-            margin-inline-end: ${widthToMargin(sidebarWidth)};
-            transition: margin-inline-end ${SIDEBAR_TRANSITION_MS}ms ease;
-          }`,
+            __html: `
+            @media (min-width: 768px) {
+              body {
+                margin-inline-end: ${widthToMargin(sidebarWidth)};
+                transition: margin-inline-end ${SIDEBAR_TRANSITION_MS}ms ease;
+              }
+            }`,
           }}
         />
       )}
@@ -90,12 +93,22 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
         ref={sidebarRef}
         data-copilot-sidebar
         className={cn(
-          "fixed right-0 top-0 z-[1200] flex h-dvh max-h-screen",
+          "fixed right-0 top-0 z-[1200] flex",
+          // Height with dvh fallback and safe area support
+          "h-[100vh] h-[100dvh] max-h-screen",
+          // Responsive width: full on mobile, custom on desktop
+          "w-full",
           "border-l border-border bg-background text-foreground shadow-xl",
           "transition-transform duration-300 ease-out",
           isSidebarOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
         )}
-        style={{ width: widthToCss(sidebarWidth) }}
+        style={{
+          // Use CSS custom property for responsive width
+          ["--sidebar-width" as string]: widthToCss(sidebarWidth),
+          // Safe area insets for iOS
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        } as React.CSSProperties}
         aria-hidden={!isSidebarOpen}
         aria-label="Copilot chat sidebar"
         role="complementary"
