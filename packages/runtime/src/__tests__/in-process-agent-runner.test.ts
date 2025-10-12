@@ -5,9 +5,7 @@ import { firstValueFrom } from "rxjs";
 import { toArray } from "rxjs/operators";
 
 const stripTerminalEvents = (events: BaseEvent[]) =>
-  events.filter(
-    (event) => event.type !== EventType.RUN_FINISHED && event.type !== EventType.RUN_ERROR,
-  );
+  events.filter((event) => event.type !== EventType.RUN_FINISHED && event.type !== EventType.RUN_ERROR);
 
 // Mock agent implementations for testing
 class MockAgent extends AbstractAgent {
@@ -20,10 +18,7 @@ class MockAgent extends AbstractAgent {
     this.delay = delay;
   }
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     for (const event of this.events) {
       if (this.delay > 0) {
         await new Promise((resolve) => setTimeout(resolve, this.delay));
@@ -49,10 +44,7 @@ class DelayedEventAgent extends AbstractAgent {
     this.prefix = prefix;
   }
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     for (let i = 0; i < this.eventCount; i++) {
       await new Promise((resolve) => setTimeout(resolve, this.eventDelay));
       options.onEvent({
@@ -60,8 +52,8 @@ class DelayedEventAgent extends AbstractAgent {
           type: "message",
           id: `${this.prefix}-${i}`,
           timestamp: new Date().toISOString(),
-          data: { index: i, prefix: this.prefix }
-        } as BaseEvent
+          data: { index: i, prefix: this.prefix },
+        } as BaseEvent,
       });
     }
   }
@@ -81,18 +73,15 @@ class ErrorThrowingAgent extends AbstractAgent {
     this.errorMessage = errorMessage;
   }
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     for (let i = 0; i < this.throwAfterEvents; i++) {
       options.onEvent({
         event: {
           type: "message",
           id: `error-agent-${i}`,
           timestamp: new Date().toISOString(),
-          data: { index: i }
-        } as BaseEvent
+          data: { index: i },
+        } as BaseEvent,
       });
     }
     throw new Error(this.errorMessage);
@@ -112,10 +101,7 @@ class StoppableAgent extends AbstractAgent {
     this.eventDelay = eventDelay;
   }
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     this.shouldStop = false;
     let counter = 0;
 
@@ -144,10 +130,7 @@ class StoppableAgent extends AbstractAgent {
 class OpenEventsAgent extends AbstractAgent {
   private shouldStop = false;
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     this.shouldStop = false;
     const messageId = "open-message";
     const toolCallId = "open-tool";
@@ -199,25 +182,22 @@ class MultiEventAgent extends AbstractAgent {
     this.runId = runId;
   }
 
-  async runAgent(
-    input: RunAgentInput,
-    options: { onEvent: (event: { event: BaseEvent }) => void }
-  ): Promise<void> {
+  async runAgent(input: RunAgentInput, options: { onEvent: (event: { event: BaseEvent }) => void }): Promise<void> {
     // Emit different types of events
     const eventTypes = ["start", "message", "tool_call", "tool_result", "end"];
-    
+
     for (const eventType of eventTypes) {
       options.onEvent({
         event: {
           type: eventType,
           id: `${this.runId}-${eventType}`,
           timestamp: new Date().toISOString(),
-          data: { 
+          data: {
             runId: this.runId,
             eventType,
-            metadata: { source: "MultiEventAgent" }
-          }
-        } as BaseEvent
+            metadata: { source: "MultiEventAgent" },
+          },
+        } as BaseEvent,
       });
     }
   }
@@ -289,7 +269,7 @@ describe("InMemoryAgentRunner", () => {
   describe("Multiple Runs", () => {
     it("should accumulate events from multiple sequential runs on same thread", async () => {
       const threadId = "test-thread-multi-1";
-      
+
       // First run
       const agent1 = new MultiEventAgent("run-1");
       const input1: RunAgentInput = {
@@ -351,7 +331,7 @@ describe("InMemoryAgentRunner", () => {
 
     it("should handle connect during multiple runs", async () => {
       const threadId = "test-thread-multi-2";
-      
+
       // Start first run
       const agent1 = new DelayedEventAgent(5, 20, "first");
       const input1: RunAgentInput = {
@@ -364,7 +344,7 @@ describe("InMemoryAgentRunner", () => {
       const run1Observable = runner.run({ threadId, agent: agent1, input: input1 });
 
       // Wait a bit to ensure first run is in progress
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Connect during first run
       const connectObservable = runner.connect({ threadId });
@@ -402,7 +382,7 @@ describe("InMemoryAgentRunner", () => {
 
     it("should preserve event order across different agent types", async () => {
       const threadId = "test-thread-multi-3";
-      
+
       // Run different types of agents
       const agents = [
         new MockAgent([
@@ -491,13 +471,13 @@ describe("InMemoryAgentRunner", () => {
       runner.run({ threadId, agent, input });
 
       // Connect at different times during the run
-      await new Promise(resolve => setTimeout(resolve, 50)); // After ~2 events
+      await new Promise((resolve) => setTimeout(resolve, 50)); // After ~2 events
       const connect1 = runner.connect({ threadId });
-      
-      await new Promise(resolve => setTimeout(resolve, 60)); // After ~5 events
+
+      await new Promise((resolve) => setTimeout(resolve, 60)); // After ~5 events
       const connect2 = runner.connect({ threadId });
 
-      await new Promise(resolve => setTimeout(resolve, 80)); // After ~9 events
+      await new Promise((resolve) => setTimeout(resolve, 80)); // After ~9 events
       const connect3 = runner.connect({ threadId });
 
       const [events1, events2, events3] = await Promise.all([
@@ -515,8 +495,8 @@ describe("InMemoryAgentRunner", () => {
       expect(agentEvents3).toHaveLength(10);
 
       // Verify they all have the same events
-      expect(events1.map(e => e.id)).toEqual(events2.map(e => e.id));
-      expect(events2.map(e => e.id)).toEqual(events3.map(e => e.id));
+      expect(events1.map((e) => e.id)).toEqual(events2.map((e) => e.id));
+      expect(events2.map((e) => e.id)).toEqual(events3.map((e) => e.id));
     });
   });
 
@@ -598,7 +578,7 @@ describe("InMemoryAgentRunner", () => {
       // Run and wait for completion (even with error)
       const runObservable = runner.run({ threadId, agent, input });
       await firstValueFrom(runObservable.pipe(toArray()));
-      
+
       // Verify thread is not running
       const isRunning = await runner.isRunning({ threadId });
       expect(isRunning).toBe(false);
@@ -624,18 +604,18 @@ describe("InMemoryAgentRunner", () => {
   describe("Edge Cases", () => {
     it("should return EMPTY observable when connecting to non-existent thread", async () => {
       const connectObservable = runner.connect({ threadId: "non-existent-thread" });
-      
+
       // EMPTY completes immediately with no values
       let completed = false;
       let eventCount = 0;
-      
+
       await new Promise<void>((resolve) => {
         connectObservable.subscribe({
           next: () => eventCount++,
           complete: () => {
             completed = true;
             resolve();
-          }
+          },
         });
       });
 
@@ -653,7 +633,7 @@ describe("InMemoryAgentRunner", () => {
           type: "bulk",
           id: `bulk-${i}`,
           timestamp: new Date().toISOString(),
-          data: { index: i, payload: "x".repeat(100) }
+          data: { index: i, payload: "x".repeat(100) },
         } as BaseEvent);
       }
 
@@ -766,6 +746,10 @@ describe("InMemoryAgentRunner", () => {
       ]);
     });
 
+    it("should resolve false when stopping a non-running thread", async () => {
+      await expect(runner.stop({ threadId: "any-thread" })).resolves.toBe(false);
+    });
+
     it("should handle thread isolation correctly", async () => {
       const thread1 = "test-thread-iso-1";
       const thread2 = "test-thread-iso-2";
@@ -781,18 +765,15 @@ describe("InMemoryAgentRunner", () => {
       const run1 = runner.run({
         threadId: thread1,
         agent: agent1,
-        input: { messages: [], state: {}, threadId: thread1, runId: "run-t1" }
+        input: { messages: [], state: {}, threadId: thread1, runId: "run-t1" },
       });
       const run2 = runner.run({
         threadId: thread2,
         agent: agent2,
-        input: { messages: [], state: {}, threadId: thread2, runId: "run-t2" }
+        input: { messages: [], state: {}, threadId: thread2, runId: "run-t2" },
       });
 
-      await Promise.all([
-        firstValueFrom(run1.pipe(toArray())),
-        firstValueFrom(run2.pipe(toArray()))
-      ]);
+      await Promise.all([firstValueFrom(run1.pipe(toArray())), firstValueFrom(run2.pipe(toArray()))]);
 
       // Connect to each thread
       const events1 = await firstValueFrom(runner.connect({ threadId: thread1 }).pipe(toArray()));
@@ -813,9 +794,19 @@ describe("InMemoryAgentRunner", () => {
     it("should handle rapid sequential runs with mixed event patterns", async () => {
       const threadId = "test-thread-complex-1";
       const runs = [
-        { agent: new MockAgent([{ type: "instant", id: "instant-1", timestamp: new Date().toISOString(), data: {} } as BaseEvent]), runId: "run-1" },
+        {
+          agent: new MockAgent([
+            { type: "instant", id: "instant-1", timestamp: new Date().toISOString(), data: {} } as BaseEvent,
+          ]),
+          runId: "run-1",
+        },
         { agent: new DelayedEventAgent(3, 5, "delayed"), runId: "run-2" },
-        { agent: new MockAgent([{ type: "instant", id: "instant-2", timestamp: new Date().toISOString(), data: {} } as BaseEvent]), runId: "run-3" },
+        {
+          agent: new MockAgent([
+            { type: "instant", id: "instant-2", timestamp: new Date().toISOString(), data: {} } as BaseEvent,
+          ]),
+          runId: "run-3",
+        },
         { agent: new MultiEventAgent("multi"), runId: "run-4" },
         { agent: new DelayedEventAgent(2, 10, "slow"), runId: "run-5" },
       ];
@@ -847,13 +838,13 @@ describe("InMemoryAgentRunner", () => {
 
     it("should handle subscriber that connects between runs", async () => {
       const threadId = "test-thread-complex-2";
-      
+
       // First run
       const agent1 = new MultiEventAgent("first");
       const run1 = runner.run({
         threadId,
         agent: agent1,
-        input: { messages: [], state: {}, threadId, runId: "run-1" }
+        input: { messages: [], state: {}, threadId, runId: "run-1" },
       });
       await firstValueFrom(run1.pipe(toArray()));
 
@@ -865,13 +856,13 @@ describe("InMemoryAgentRunner", () => {
       expect(midAgentEvents).toHaveLength(5); // Only events from first run
       const firstRunEvents = midAgentEvents.filter((e) => e.id?.includes("first"));
       expect(firstRunEvents).toHaveLength(5);
-      
+
       // Second run
       const agent2 = new MultiEventAgent("second");
       const run2 = runner.run({
         threadId,
         agent: agent2,
-        input: { messages: [], state: {}, threadId, runId: "run-2" }
+        input: { messages: [], state: {}, threadId, runId: "run-2" },
       });
       await firstValueFrom(run2.pipe(toArray()));
 

@@ -7,3 +7,7 @@ export { useAgent } from "./use-agent";
 export { useAgentContext } from "./use-agent-context";
 export { useSuggestions } from "./use-suggestions";
 export { useConfigureSuggestions } from "./use-configure-suggestions";
+export { useThreads } from "./use-threads";
+export type { UseThreadsOptions, UseThreadsResult } from "./use-threads";
+export type { ThreadMetadata } from "@copilotkitnext/shared";
+export { useThreadSwitch } from "./use-thread-switcher";

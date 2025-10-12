@@ -4,13 +4,8 @@ import { CopilotKitProvider } from "@/providers/CopilotKitProvider";
 import { CopilotChat } from "@/components/chat/CopilotChat";
 import { CopilotChatConfigurationProvider } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
-import {
-  AbstractAgent,
-  EventType,
-  type BaseEvent,
-  type RunAgentInput,
-} from "@ag-ui/client";
-import { Observable, Subject } from "rxjs";
+import { AbstractAgent, EventType, type BaseEvent, type RunAgentInput } from "@ag-ui/client";
+import { Observable, Subject, EMPTY } from "rxjs";
 import { ReactToolCallRenderer } from "@/types";
 import { ReactCustomMessageRenderer } from "@/types/react-custom-message-renderer";
 
@@ -27,10 +22,7 @@ export class MockStepwiseAgent extends AbstractAgent {
   emit(event: BaseEvent) {
     if (event.type === EventType.RUN_STARTED) {
       this.isRunning = true;
-    } else if (
-      event.type === EventType.RUN_FINISHED ||
-      event.type === EventType.RUN_ERROR
-    ) {
+    } else if (event.type === EventType.RUN_FINISHED || event.type === EventType.RUN_ERROR) {
       this.isRunning = false;
     }
     act(() => {
@@ -55,6 +47,17 @@ export class MockStepwiseAgent extends AbstractAgent {
 
   protected run(_input: RunAgentInput): Observable<BaseEvent> {
     return this.subject.asObservable();
+  }
+
+  protected connect(_input: RunAgentInput): Observable<BaseEvent> {
+    // Return EMPTY observable - tests will emit events manually via emit()
+    // This prevents the "Connect not implemented" error when switching threads
+    return EMPTY;
+  }
+
+  async connectAgent(): Promise<{ newMessages: any[]; result?: any }> {
+    // Return empty array - tests will emit events manually via emit()
+    return { newMessages: [], result: undefined };
   }
 }
 
@@ -94,17 +97,14 @@ export function renderWithCopilotKit({
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
     >
-      <CopilotChatConfigurationProvider
-        agentId={resolvedAgentId}
-        threadId={resolvedThreadId}
-      >
+      <CopilotChatConfigurationProvider agentId={resolvedAgentId} threadId={resolvedThreadId}>
         {children || (
           <div style={{ height: 400 }}>
             <CopilotChat />
           </div>
         )}
       </CopilotChatConfigurationProvider>
-    </CopilotKitProvider>
+    </CopilotKitProvider>,
   );
 }
 
@@ -241,28 +241,32 @@ export function emitSuggestionToolCall(
     toolCallId: string;
     parentMessageId: string;
     suggestions: Array<{ title: string; message: string }>;
-  }
+  },
 ) {
   // Convert suggestions to JSON string
   const suggestionsJson = JSON.stringify({ suggestions });
 
   // Emit the tool call name first
-  agent.emit(toolCallChunkEvent({
-    toolCallId,
-    toolCallName: "copilotkitSuggest",
-    parentMessageId,
-    delta: "",
-  }));
+  agent.emit(
+    toolCallChunkEvent({
+      toolCallId,
+      toolCallName: "copilotkitSuggest",
+      parentMessageId,
+      delta: "",
+    }),
+  );
 
   // Stream the JSON in chunks to simulate streaming
   const chunkSize = 10; // Characters per chunk
   for (let i = 0; i < suggestionsJson.length; i += chunkSize) {
     const chunk = suggestionsJson.substring(i, i + chunkSize);
-    agent.emit(toolCallChunkEvent({
-      toolCallId,
-      parentMessageId,
-      delta: chunk,
-    }));
+    agent.emit(
+      toolCallChunkEvent({
+        toolCallId,
+        parentMessageId,
+        delta: chunk,
+      }),
+    );
   }
 }
 

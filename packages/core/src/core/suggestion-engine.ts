@@ -136,7 +136,8 @@ export class SuggestionEngine {
       const clonedAgent: AbstractAgent = suggestionsProviderAgent.clone();
       agent = clonedAgent;
       agent.agentId = suggestionId;
-      agent.threadId = suggestionId;
+      // Suggestions shouldn't persist as threads; run threadless
+      agent.threadId = "";
       agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
       agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));
 

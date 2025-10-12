@@ -1,0 +1,320 @@
+---
+title: "CopilotThreadList"
+description: "Component for displaying and managing conversation threads"
+---
+
+# CopilotThreadList
+
+The `CopilotThreadList` component provides a ready-to-use thread management UI with thread selection, deletion, and automatic refresh support.
+
+## Basic Usage
+
+```tsx
+import { CopilotThreadList, CopilotKitProvider, CopilotChatConfigurationProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <CopilotChatConfigurationProvider>
+        <div className="flex h-screen">
+          <aside className="w-80 border-r">
+            <CopilotThreadList />
+          </aside>
+          <main className="flex-1">
+            <CopilotChat agentId="my-agent" />
+          </main>
+        </div>
+      </CopilotChatConfigurationProvider>
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Props
+
+### limit
+
+`number` **(optional, default: 50)**
+
+Maximum number of threads to load.
+
+```tsx
+<CopilotThreadList limit={20} />
+```
+
+### onThreadSelect
+
+`(threadId: string) => void` **(optional)**
+
+Callback fired when a thread is selected.
+
+```tsx
+<CopilotThreadList
+  onThreadSelect={(threadId) => {
+    console.log("Selected:", threadId);
+  }}
+/>
+```
+
+### className
+
+`string` **(optional)**
+
+CSS class name for the container element.
+
+```tsx
+<CopilotThreadList className="custom-thread-list" />
+```
+
+### refreshInterval
+
+`number` **(optional, default: 2000)**
+
+Interval in milliseconds for auto-refreshing threads when a thread is running or unnamed.
+
+```tsx
+<CopilotThreadList refreshInterval={5000} />
+```
+
+The component automatically refreshes when:
+- A thread has `isRunning: true`
+- A thread has `firstMessage: undefined`
+
+Stops automatically when all threads are idle and named.
+
+### disableAutoRefresh
+
+`boolean` **(optional, default: false)**
+
+Disable automatic polling. Use when implementing external state management.
+
+```tsx
+<CopilotThreadList disableAutoRefresh={true} />
+```
+
+Use this when:
+- Using React Query, SWR, or similar libraries
+- Implementing WebSocket-based updates
+- Using Server-Sent Events (SSE)
+- Implementing custom invalidation logic
+
+### threadItem
+
+`SlotValue<typeof ThreadListItem>` **(optional)**
+
+Custom renderer for thread items.
+
+```tsx
+<CopilotThreadList
+  threadItem={({ thread, isActive, onClick, onDelete }) => (
+    <div className={`thread ${isActive ? 'active' : ''}`}>
+      <button onClick={onClick}>
+        <h4>{thread.firstMessage || "Untitled"}</h4>
+        <p>{thread.messageCount} messages</p>
+      </button>
+      <button onClick={onDelete}>Delete</button>
+    </div>
+  )}
+/>
+```
+
+Props passed to custom renderer:
+
+```typescript
+interface ThreadListItemProps {
+  thread: ThreadMetadata;
+  isActive?: boolean;
+  onClick?: () => void;
+  onDelete?: () => void;
+}
+```
+
+### newThreadButton
+
+`SlotValue<typeof NewThreadButton>` **(optional)**
+
+Custom renderer for the new thread button.
+
+```tsx
+<CopilotThreadList
+  newThreadButton={({ onClick }) => (
+    <button onClick={onClick}>
+      Start New Conversation
+    </button>
+  )}
+/>
+```
+
+### container
+
+`SlotValue<typeof Container>` **(optional)**
+
+Custom renderer for the container element.
+
+```tsx
+<CopilotThreadList
+  container={({ className, children }) => (
+    <div className={`custom-container ${className}`}>
+      {children}
+    </div>
+  )}
+/>
+```
+
+## Examples
+
+### Custom Refresh Intervals
+
+```tsx
+// Fast refresh for real-time updates
+<CopilotThreadList refreshInterval={1000} />
+
+// Slow refresh to reduce server load
+<CopilotThreadList refreshInterval={10000} />
+```
+
+### Custom Thread Renderer
+
+```tsx
+<CopilotThreadList
+  threadItem={({ thread, isActive, onClick, onDelete }) => (
+    <div className={`p-3 border-b ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+      <button onClick={onClick} className="flex-1 text-left">
+        <h4>{thread.firstMessage || "New conversation"}</h4>
+        <p className="text-sm text-gray-600">
+          {thread.messageCount} messages
+          {thread.isRunning && <span className="ml-2 text-blue-600">Running...</span>}
+        </p>
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onDelete) onDelete();
+        }}
+        className="text-red-600"
+      >
+        Delete
+      </button>
+    </div>
+  )}
+/>
+```
+
+### Custom Empty State
+
+```tsx
+import { useThreads, useCopilotChatConfiguration } from "@copilotkitnext/react";
+import { randomUUID } from "@copilotkitnext/shared";
+
+function ThreadListWithEmptyState() {
+  const { threads, isLoading } = useThreads();
+  const config = useCopilotChatConfiguration();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  if (threads.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <h3>No conversations yet</h3>
+        <button onClick={() => config?.setThreadId(randomUUID())}>
+          Start First Conversation
+        </button>
+      </div>
+    );
+  }
+
+  return <CopilotThreadList />;
+}
+```
+
+### With React Query
+
+```tsx
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+function ThreadListWithReactQuery() {
+  const queryClient = useQueryClient();
+
+  useQuery({
+    queryKey: ['threads'],
+    queryFn: fetchThreads,
+    refetchInterval: 3000,
+  });
+
+  return (
+    <CopilotThreadList
+      disableAutoRefresh={true}
+      // React Query controls refresh timing
+    />
+  );
+}
+```
+
+### With WebSocket Updates
+
+```tsx
+import { useEffect } from 'react';
+import { useThreads } from "@copilotkitnext/react";
+
+function ThreadListWithWebSocket() {
+  const { refresh } = useThreads();
+
+  useEffect(() => {
+    const ws = new WebSocket('wss://api.example.com/threads');
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'thread_update') {
+        refresh();
+      }
+    };
+
+    return () => ws.close();
+  }, [refresh]);
+
+  return <CopilotThreadList disableAutoRefresh={true} />;
+}
+```
+
+### With Server-Sent Events
+
+```tsx
+import { useEffect } from 'react';
+import { useThreads } from "@copilotkitnext/react";
+
+function ThreadListWithSSE() {
+  const { refresh } = useThreads();
+
+  useEffect(() => {
+    const eventSource = new EventSource('/api/threads/events');
+    eventSource.addEventListener('thread-update', () => refresh());
+    return () => eventSource.close();
+  }, [refresh]);
+
+  return <CopilotThreadList disableAutoRefresh={true} />;
+}
+```
+
+## Refresh Behavior
+
+The component automatically refreshes under specific conditions:
+
+- Refreshes every 2 seconds by default (configurable via `refreshInterval`)
+- Only when threads have `isRunning: true` or `firstMessage: undefined`
+- Stops when all threads are idle and named
+
+To customize:
+
+```tsx
+// Custom interval
+<CopilotThreadList refreshInterval={5000} />
+
+// Disable auto-refresh
+<CopilotThreadList disableAutoRefresh={true} />
+```
+
+## Related
+
+- [Thread Management Guide](/guides/thread-management)
+- [useThreads Hook](/reference/use-threads)
+- [CopilotChatConfigurationProvider](/reference/copilot-chat-configuration-provider)

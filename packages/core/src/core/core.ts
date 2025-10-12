@@ -1,4 +1,4 @@
-import { AbstractAgent, Context, State } from "@ag-ui/client";
+import { AbstractAgent, Context, State, Message } from "@ag-ui/client";
 import { FrontendTool, SuggestionsConfig, Suggestion } from "../types";
 import { AgentRegistry, CopilotKitCoreAddAgentParams } from "./agent-registry";
 import { ContextStore } from "./context-store";
@@ -8,6 +8,7 @@ import {
   CopilotKitCoreRunAgentParams,
   CopilotKitCoreConnectAgentParams,
   CopilotKitCoreGetToolParams,
+  CopilotKitCoreDisconnectAgentParams,
 } from "./run-handler";
 import { StateManager } from "./state-manager";
 
@@ -21,6 +22,13 @@ export interface CopilotKitCoreConfig {
   headers?: Record<string, string>;
   /** Properties sent as `forwardedProps` to the AG-UI agent. */
   properties?: Record<string, unknown>;
+  /**
+   * Resource ID(s) for thread access control.
+   *
+   * This value is sent to the server as a hint for thread scoping.
+   * The server's `resolveThreadsScope` validates and enforces access control.
+   */
+  resourceId?: string | string[];
   /** Ordered collection of frontend tools available to the core. */
   tools?: FrontendTool<any>[];
   /** Suggestions config for the core. */
@@ -32,6 +40,7 @@ export type {
   CopilotKitCoreRunAgentParams,
   CopilotKitCoreConnectAgentParams,
   CopilotKitCoreGetToolParams,
+  CopilotKitCoreDisconnectAgentParams,
 };
 
 export interface CopilotKitCoreStopAgentParams {
@@ -100,6 +109,10 @@ export interface CopilotKitCoreSubscriber {
     copilotkit: CopilotKitCore;
     headers: Readonly<Record<string, string>>;
   }) => void | Promise<void>;
+  onResourceIdChanged?: (event: {
+    copilotkit: CopilotKitCore;
+    resourceId: string | string[] | undefined;
+  }) => void | Promise<void>;
   onError?: (event: {
     copilotkit: CopilotKitCore;
     error: Error;
@@ -126,11 +139,7 @@ export interface CopilotKitCoreFriendsAccess {
     errorMessage: string,
   ): Promise<void>;
 
-  emitError(params: {
-    error: Error;
-    code: CopilotKitCoreErrorCode;
-    context?: Record<string, any>;
-  }): Promise<void>;
+  emitError(params: { error: Error; code: CopilotKitCoreErrorCode; context?: Record<string, any> }): Promise<void>;
 
   // Getters for internal state
   readonly headers: Readonly<Record<string, string>>;
@@ -151,6 +160,7 @@ export interface CopilotKitCoreFriendsAccess {
 export class CopilotKitCore {
   private _headers: Record<string, string>;
   private _properties: Record<string, unknown>;
+  private _resourceId: string | string[] | undefined;
 
   private subscribers: Set<CopilotKitCoreSubscriber> = new Set();
 
@@ -165,12 +175,14 @@ export class CopilotKitCore {
     runtimeUrl,
     headers = {},
     properties = {},
+    resourceId,
     agents__unsafe_dev_only = {},
     tools = [],
     suggestionsConfig = [],
   }: CopilotKitCoreConfig) {
     this._headers = headers;
     this._properties = properties;
+    this._resourceId = resourceId;
 
     // Initialize delegate classes
     this.agentRegistry = new AgentRegistry(this);
@@ -276,6 +288,10 @@ export class CopilotKitCore {
     return this._properties;
   }
 
+  get resourceId(): string | string[] | undefined {
+    return this._resourceId;
+  }
+
   get runtimeConnectionStatus(): CopilotKitCoreRuntimeConnectionStatus {
     return this.agentRegistry.runtimeConnectionStatus;
   }
@@ -305,6 +321,18 @@ export class CopilotKitCore {
           properties: this.properties,
         }),
       "Subscriber onPropertiesChanged error:",
+    );
+  }
+
+  setResourceId(resourceId: string | string[] | undefined): void {
+    this._resourceId = resourceId;
+    void this.notifySubscribers(
+      (subscriber) =>
+        subscriber.onResourceIdChanged?.({
+          copilotkit: this,
+          resourceId: this.resourceId,
+        }),
+      "Subscriber onResourceIdChanged error:",
     );
   }
 
@@ -407,6 +435,10 @@ export class CopilotKitCore {
     params.agent.abortRun();
   }
 
+  async disconnectAgent(params: CopilotKitCoreDisconnectAgentParams): Promise<void> {
+    await this.runHandler.disconnectAgent(params);
+  }
+
   async runAgent(params: CopilotKitCoreRunAgentParams): Promise<import("@ag-ui/client").RunAgentResult> {
     return this.runHandler.runAgent(params);
   }
@@ -424,6 +456,146 @@ export class CopilotKitCore {
 
   getRunIdsForThread(agentId: string, threadId: string): string[] {
     return this.stateManager.getRunIdsForThread(agentId, threadId);
+  }
+
+  /**
+   * Helper to format resourceId for HTTP header transport.
+   * Encodes each value with encodeURIComponent and joins with comma.
+   */
+  private formatResourceIdHeader(): string | undefined {
+    if (!this._resourceId) {
+      return undefined;
+    }
+
+    const ids = Array.isArray(this._resourceId) ? this._resourceId : [this._resourceId];
+    return ids.map((id) => encodeURIComponent(id)).join(",");
+  }
+
+  /**
+   * Get headers with resourceId header included (if resourceId is set).
+   * Used internally by RunHandler for HttpAgent requests.
+   */
+  getHeadersWithResourceId(): Record<string, string> {
+    const resourceIdHeader = this.formatResourceIdHeader();
+    return {
+      ...this.headers,
+      ...(resourceIdHeader && { "X-CopilotKit-Resource-ID": resourceIdHeader }),
+    };
+  }
+
+  /**
+   * Thread management
+   */
+  async listThreads(params?: { limit?: number; offset?: number }): Promise<{
+    threads: Array<{
+      threadId: string;
+      createdAt: number;
+      lastActivityAt: number;
+      isRunning: boolean;
+      messageCount: number;
+      firstMessage?: string;
+    }>;
+    total: number;
+  }> {
+    const runtimeUrl = this.runtimeUrl;
+    if (!runtimeUrl) {
+      throw new Error("Runtime URL is required to list threads");
+    }
+
+    // Ensure URL is properly formatted
+    const baseUrl = runtimeUrl.endsWith("/") ? runtimeUrl.slice(0, -1) : runtimeUrl;
+    const urlString = `${baseUrl}/threads`;
+
+    // Build query params
+    const queryParams = new URLSearchParams();
+    if (params?.limit !== undefined) {
+      queryParams.set("limit", params.limit.toString());
+    }
+    if (params?.offset !== undefined) {
+      queryParams.set("offset", params.offset.toString());
+    }
+
+    const queryString = queryParams.toString();
+    const fullUrl = queryString ? `${urlString}?${queryString}` : urlString;
+
+    const resourceIdHeader = this.formatResourceIdHeader();
+    const response = await fetch(fullUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.headers,
+        ...(resourceIdHeader && { "X-CopilotKit-Resource-ID": resourceIdHeader }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to list threads: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  async getThreadMetadata(threadId: string): Promise<{
+    threadId: string;
+    createdAt: number;
+    lastActivityAt: number;
+    isRunning: boolean;
+    messageCount: number;
+    firstMessage?: string;
+  } | null> {
+    const runtimeUrl = this.runtimeUrl;
+    if (!runtimeUrl) {
+      throw new Error("Runtime URL is required to get thread metadata");
+    }
+
+    // Ensure URL is properly formatted
+    const baseUrl = runtimeUrl.endsWith("/") ? runtimeUrl.slice(0, -1) : runtimeUrl;
+    const fullUrl = `${baseUrl}/threads/${threadId}`;
+
+    const resourceIdHeader = this.formatResourceIdHeader();
+    const response = await fetch(fullUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.headers,
+        ...(resourceIdHeader && { "X-CopilotKit-Resource-ID": resourceIdHeader }),
+      },
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to get thread metadata: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  async deleteThread(threadId: string): Promise<void> {
+    const runtimeUrl = this.runtimeUrl;
+    if (!runtimeUrl) {
+      throw new Error("Runtime URL is required to delete a thread");
+    }
+
+    // Ensure URL is properly formatted
+    const baseUrl = runtimeUrl.endsWith("/") ? runtimeUrl.slice(0, -1) : runtimeUrl;
+    const fullUrl = `${baseUrl}/threads/${threadId}`;
+
+    const resourceIdHeader = this.formatResourceIdHeader();
+    const response = await fetch(fullUrl, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.headers,
+        ...(resourceIdHeader && { "X-CopilotKit-Resource-ID": resourceIdHeader }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete thread: ${response.statusText}`);
+    }
   }
 
   /**
