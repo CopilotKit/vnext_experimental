@@ -10,7 +10,7 @@ export enum ToolCallStatus {
   Complete = "complete",
 }
 
-export type FrontendTool<T extends Record<string, unknown> = Record<string, unknown>> = {
+export type FrontendTool<T extends object = Record<string, unknown>> = {
   name: string;
   description?: string;
   parameters?: z.ZodType<T>;
