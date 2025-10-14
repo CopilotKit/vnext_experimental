@@ -7,6 +7,7 @@ import {
   useFrontendTool,
   defineToolCallRenderer,
   useConfigureSuggestions,
+  type ToolsMenuItem,
 } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo } from "react";
@@ -75,7 +76,7 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
-  const toolsMenu = useMemo(
+  const toolsMenu = useMemo<("-" | ToolsMenuItem)[]>(
     () => [
       {
         label: "Say hi to CopilotKit",
