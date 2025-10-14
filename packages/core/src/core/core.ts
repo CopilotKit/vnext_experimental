@@ -356,7 +356,7 @@ export class CopilotKitCore {
   /**
    * Tool management (delegated to RunHandler)
    */
-  addTool<T extends Record<string, unknown> = Record<string, unknown>>(tool: FrontendTool<T>): void {
+  addTool<T extends object = Record<string, unknown>>(tool: FrontendTool<T>): void {
     this.runHandler.addTool(tool);
   }
 

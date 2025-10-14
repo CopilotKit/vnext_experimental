@@ -4,7 +4,7 @@ import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 
 export function useFrontendTool<
-  T extends Record<string, unknown> = Record<string, unknown>,
+  T extends object = Record<string, unknown>,
 >(tool: ReactFrontendTool<T>) {
   const { copilotkit } = useCopilotKit();
 

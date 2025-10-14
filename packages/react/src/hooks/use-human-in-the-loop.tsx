@@ -6,7 +6,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import React from "react";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
-export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
+export function useHumanInTheLoop<T extends object = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>
 ) {
   const { copilotkit } = useCopilotKit();

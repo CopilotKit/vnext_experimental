@@ -2,7 +2,7 @@ import { FrontendTool, ToolCallStatus } from "@copilotkitnext/core";
 import React from "react";
 
 export type ReactHumanInTheLoop<
-  T extends Record<string, unknown> = Record<string, unknown>,
+  T extends object = Record<string, unknown>,
 > = Omit<FrontendTool<T>, "handler"> & {
   render: React.ComponentType<
     | {

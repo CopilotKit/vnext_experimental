@@ -20,7 +20,7 @@ Frontend tools are framework-agnostic and work consistently across all framework
 ## Type Definition
 
 ```typescript
-type FrontendTool<T extends Record<string, unknown> = Record<string, unknown>> = {
+type FrontendTool<T extends object = Record<string, unknown>> = {
   name: string;
   description?: string;
   parameters?: z.ZodType<T>;

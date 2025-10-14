@@ -325,7 +325,7 @@ export type ClientToolCall<Args extends object = Record<string, unknown>> =
     };
 
 interface ClientToolRenderer<
-  Args extends Record<string, unknown> = Record<string, unknown>,
+  Args extends object = Record<string, unknown>,
 > {
   toolCall: Signal<ClientToolCall<Args>>;
 }
@@ -344,7 +344,7 @@ type ClientTool<Args extends Record<string, unknown>> = FrontendTool<Args> & {
 };
 
 interface ToolCallRendererConfig<
-  Args extends Record<string, unknown> = Record<string, unknown>,
+  Args extends object = Record<string, unknown>,
 > {
   name: string;
   args: z.ZodType<Args>;

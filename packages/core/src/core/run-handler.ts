@@ -46,7 +46,7 @@ export class RunHandler {
   /**
    * Add a tool to the registry
    */
-  addTool<T extends Record<string, unknown> = Record<string, unknown>>(tool: FrontendTool<T>): void {
+  addTool<T extends object = Record<string, unknown>>(tool: FrontendTool<T>): void {
     // Check if a tool with the same name and agentId already exists
     const existingToolIndex = this._tools.findIndex((t) => t.name === tool.name && t.agentId === tool.agentId);
 
