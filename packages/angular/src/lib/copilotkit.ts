@@ -61,24 +61,24 @@ export class CopilotKit {
     });
   }
 
-  #bindClientTool(
-    clientToolWithInjector: FrontendToolConfig & {
+  #bindClientTool<Args extends object>(
+    clientToolWithInjector: FrontendToolConfig<Args> & {
       injector: Injector;
     },
-  ): FrontendTool {
+  ): FrontendTool<Args> {
     const { injector, handler, args, description, name, agentId } = clientToolWithInjector;
 
     return {
       description,
       name,
       agentId,
-      handler: (args) => runInInjectionContext(injector, () => handler(args)),
+      handler: (args) => runInInjectionContext(injector, () => handler(args as Args)),
       parameters: args,
     };
   }
 
-  addFrontendTool(
-    clientToolWithInjector: FrontendToolConfig & {
+  addFrontendTool<Args extends object>(
+    clientToolWithInjector: FrontendToolConfig<Args> & {
       injector: Injector;
     },
   ): void {
@@ -86,14 +86,21 @@ export class CopilotKit {
 
     this.core.addTool(tool);
 
-    this.#clientToolCallRenderConfigs.update((current) => [...current, clientToolWithInjector]);
+    this.#clientToolCallRenderConfigs.update((current) => [
+      ...current,
+      // Erase generic parameter for storage without using `any`.
+      clientToolWithInjector as unknown as FrontendToolConfig,
+    ]);
   }
 
-  addRenderToolCall(renderConfig: RenderToolCallConfig): void {
-    this.#toolCallRenderConfigs.update((current) => [...current, renderConfig]);
+  addRenderToolCall<Args extends object>(renderConfig: RenderToolCallConfig<Args>): void {
+    this.#toolCallRenderConfigs.update((current) => [
+      ...current,
+      renderConfig as unknown as RenderToolCallConfig,
+    ]);
   }
 
-  #bindHumanInTheLoopTool(humanInTheLoopTool: HumanInTheLoopConfig): FrontendTool {
+  #bindHumanInTheLoopTool<Args extends object>(humanInTheLoopTool: HumanInTheLoopConfig<Args>): FrontendTool<Args> {
     return {
       ...humanInTheLoopTool,
       handler: (args, toolCall) => {
@@ -102,8 +109,11 @@ export class CopilotKit {
     };
   }
 
-  addHumanInTheLoop(humanInTheLoopTool: HumanInTheLoopConfig): void {
-    this.#humanInTheLoopToolRenderConfigs.update((current) => [...current, humanInTheLoopTool]);
+  addHumanInTheLoop<Args extends object>(humanInTheLoopTool: HumanInTheLoopConfig<Args>): void {
+    this.#humanInTheLoopToolRenderConfigs.update((current) => [
+      ...current,
+      humanInTheLoopTool as unknown as HumanInTheLoopConfig,
+    ]);
 
     const tool = this.#bindHumanInTheLoopTool(humanInTheLoopTool);
 
