@@ -87,7 +87,10 @@ function Chat() {
 
           const greeting = "Hello Copilot! 👋 Could you help me with something?";
 
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            "value",
+          )?.set;
           nativeInputValueSetter?.call(textarea, greeting);
           textarea.dispatchEvent(new Event("input", { bubbles: true }));
           textarea.focus();
