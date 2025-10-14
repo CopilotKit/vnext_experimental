@@ -53,6 +53,14 @@ HTMLCanvasElement.prototype.getContext = function(contextId: any) {
   return null;
 } as any;
 
+// Polyfill scrollIntoView for jsdom (not implemented natively)
+Object.defineProperty(Element.prototype, "scrollIntoView", {
+  // Use a stable no-op function to avoid act() noise
+  value: () => {},
+  writable: true,
+  configurable: true,
+});
+
 // Simplify Radix tooltip behavior to avoid act() noise in jsdom
 vi.mock("@radix-ui/react-tooltip", async () => {
   const forward = (
