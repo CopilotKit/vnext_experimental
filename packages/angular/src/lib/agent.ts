@@ -1,4 +1,11 @@
-import { DestroyRef, Injectable, inject, signal, computed, Signal } from "@angular/core";
+import {
+  DestroyRef,
+  Injectable,
+  inject,
+  signal,
+  computed,
+  Signal,
+} from "@angular/core";
 import { CopilotKit } from "./copilotkit";
 import type { AbstractAgent } from "@ag-ui/client";
 import type { Message } from "@ag-ui/client";
@@ -54,7 +61,10 @@ export class AgentStore {
 export class CopilotkitAgentFactory {
   readonly #copilotkit = inject(CopilotKit);
 
-  createAgentStoreSignal(agentId: Signal<string | undefined>, destroyRef: DestroyRef): Signal<AgentStore | undefined> {
+  createAgentStoreSignal(
+    agentId: Signal<string | undefined>,
+    destroyRef: DestroyRef
+  ): Signal<AgentStore | undefined> {
     let lastAgentStore: AgentStore | undefined;
 
     return computed(() => {
@@ -65,7 +75,9 @@ export class CopilotkitAgentFactory {
         lastAgentStore = undefined;
       }
 
-      const abstractAgent = this.#copilotkit.getAgent(agentId() || DEFAULT_AGENT_ID);
+      const abstractAgent = this.#copilotkit.getAgent(
+        agentId() || DEFAULT_AGENT_ID
+      );
       if (!abstractAgent) return undefined;
 
       lastAgentStore = new AgentStore(abstractAgent, destroyRef);
@@ -74,10 +86,13 @@ export class CopilotkitAgentFactory {
   }
 }
 
-export function injectAgentStore(agentId: string | Signal<string | undefined>): Signal<AgentStore | undefined> {
+export function injectAgentStore(
+  agentId: string | Signal<string | undefined>
+): Signal<AgentStore | undefined> {
   const agentFactory = inject(CopilotkitAgentFactory);
   const destroyRef = inject(DestroyRef);
-  const agentIdSignal = typeof agentId === "function" ? agentId : computed(() => agentId);
+  const agentIdSignal =
+    typeof agentId === "function" ? agentId : computed(() => agentId);
 
   return agentFactory.createAgentStoreSignal(agentIdSignal, destroyRef);
 }

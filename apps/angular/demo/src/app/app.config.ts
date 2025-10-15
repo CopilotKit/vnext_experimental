@@ -1,8 +1,10 @@
 import { ApplicationConfig, importProvidersFrom } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
-import { provideCopilotKit, provideCopilotChatLabels } from "@copilotkitnext/angular";
+import {
+  provideCopilotKit,
+  provideCopilotChatLabels,
+} from "@copilotkitnext/angular";
 import { WildcardToolRenderComponent } from "./components/wildcard-tool-render.component";
-import { helloWorldToolConfig } from "./tools/hello-world";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,12 +17,13 @@ export const appConfig: ApplicationConfig = {
           component: WildcardToolRenderComponent,
         } as any,
       ],
-      frontendTools: [helloWorldToolConfig],
+      frontendTools: [],
       humanInTheLoop: [],
     }),
     provideCopilotChatLabels({
       chatInputPlaceholder: "Ask me anything...",
-      chatDisclaimerText: "CopilotKit Angular Demo - AI responses may need verification.",
+      chatDisclaimerText:
+        "CopilotKit Angular Demo - AI responses may need verification.",
     }),
   ],
 };

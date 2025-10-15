@@ -1,7 +1,19 @@
 import { AbstractAgent } from "@ag-ui/client";
 import { FrontendTool, CopilotKitCore } from "@copilotkitnext/core";
-import { Injectable, Injector, Signal, WritableSignal, runInInjectionContext, signal, inject } from "@angular/core";
-import { FrontendToolConfig, HumanInTheLoopConfig, RenderToolCallConfig } from "./tools";
+import {
+  Injectable,
+  Injector,
+  Signal,
+  WritableSignal,
+  runInInjectionContext,
+  signal,
+  inject,
+} from "@angular/core";
+import {
+  FrontendToolConfig,
+  HumanInTheLoopConfig,
+  RenderToolCallConfig,
+} from "./tools";
 import { injectCopilotKitConfig } from "./config";
 import { HumanInTheLoop } from "./human-in-the-loop";
 
@@ -10,7 +22,9 @@ export class CopilotKit {
   readonly #config = injectCopilotKitConfig();
   readonly #hitl = inject(HumanInTheLoop);
   readonly #rootInjector = inject(Injector);
-  readonly #agents = signal<Record<string, AbstractAgent>>(this.#config.agents ?? {});
+  readonly #agents = signal<Record<string, AbstractAgent>>(
+    this.#config.agents ?? {}
+  );
   readonly agents = this.#agents.asReadonly();
 
   readonly core = new CopilotKitCore({
@@ -21,12 +35,18 @@ export class CopilotKit {
     tools: this.#config.tools,
   });
 
-  readonly #toolCallRenderConfigs: WritableSignal<RenderToolCallConfig[]> = signal([]);
-  readonly #clientToolCallRenderConfigs: WritableSignal<FrontendToolConfig[]> = signal([]);
-  readonly #humanInTheLoopToolRenderConfigs: WritableSignal<HumanInTheLoopConfig[]> = signal([]);
+  readonly #toolCallRenderConfigs: WritableSignal<RenderToolCallConfig[]> =
+    signal([]);
+  readonly #clientToolCallRenderConfigs: WritableSignal<FrontendToolConfig[]> =
+    signal([]);
+  readonly #humanInTheLoopToolRenderConfigs: WritableSignal<
+    HumanInTheLoopConfig[]
+  > = signal([]);
 
-  readonly toolCallRenderConfigs: Signal<RenderToolCallConfig[]> = this.#toolCallRenderConfigs.asReadonly();
-  readonly clientToolCallRenderConfigs: Signal<FrontendToolConfig[]> = this.#clientToolCallRenderConfigs.asReadonly();
+  readonly toolCallRenderConfigs: Signal<RenderToolCallConfig[]> =
+    this.#toolCallRenderConfigs.asReadonly();
+  readonly clientToolCallRenderConfigs: Signal<FrontendToolConfig[]> =
+    this.#clientToolCallRenderConfigs.asReadonly();
   readonly humanInTheLoopToolRenderConfigs: Signal<HumanInTheLoopConfig[]> =
     this.#humanInTheLoopToolRenderConfigs.asReadonly();
 
@@ -64,23 +84,20 @@ export class CopilotKit {
   #bindClientTool<Args extends object>(
     clientToolWithInjector: FrontendToolConfig<Args> & {
       injector: Injector;
-    },
+    }
   ): FrontendTool<Args> {
-    const { injector, handler, args, description, name, agentId } = clientToolWithInjector;
+    const { injector, handler, ...frontendCandidate } = clientToolWithInjector;
 
     return {
-      description,
-      name,
-      agentId,
+      ...frontendCandidate,
       handler: (args) => runInInjectionContext(injector, () => handler(args as Args)),
-      parameters: args,
     };
   }
 
   addFrontendTool<Args extends object>(
     clientToolWithInjector: FrontendToolConfig<Args> & {
       injector: Injector;
-    },
+    }
   ): void {
     const tool = this.#bindClientTool(clientToolWithInjector);
 
@@ -96,11 +113,14 @@ export class CopilotKit {
   addRenderToolCall<Args extends object>(renderConfig: RenderToolCallConfig<Args>): void {
     this.#toolCallRenderConfigs.update((current) => [
       ...current,
+      // Erase generic parameter for storage without using `any`.
       renderConfig as unknown as RenderToolCallConfig,
     ]);
   }
 
-  #bindHumanInTheLoopTool<Args extends object>(humanInTheLoopTool: HumanInTheLoopConfig<Args>): FrontendTool<Args> {
+  #bindHumanInTheLoopTool<Args extends object>(
+    humanInTheLoopTool: HumanInTheLoopConfig<Args>
+  ): FrontendTool<Args> {
     return {
       ...humanInTheLoopTool,
       handler: (args, toolCall) => {
@@ -112,6 +132,7 @@ export class CopilotKit {
   addHumanInTheLoop<Args extends object>(humanInTheLoopTool: HumanInTheLoopConfig<Args>): void {
     this.#humanInTheLoopToolRenderConfigs.update((current) => [
       ...current,
+      // Erase generic parameter for storage without using `any`.
       humanInTheLoopTool as unknown as HumanInTheLoopConfig,
     ]);
 
@@ -120,7 +141,10 @@ export class CopilotKit {
     this.core.addTool(tool);
   }
 
-  #isSameAgentId<T extends { agentId?: string }>(target: T, agentId?: string): boolean {
+  #isSameAgentId<T extends { agentId?: string }>(
+    target: T,
+    agentId?: string
+  ): boolean {
     if (agentId) {
       return target.agentId === agentId;
     }
@@ -131,13 +155,25 @@ export class CopilotKit {
   removeTool(toolName: string, agentId?: string): void {
     this.core.removeTool(toolName);
     this.#clientToolCallRenderConfigs.update((current) =>
-      current.filter((renderConfig) => renderConfig.name !== toolName && this.#isSameAgentId(renderConfig, agentId)),
+      current.filter(
+        (renderConfig) =>
+          renderConfig.name !== toolName &&
+          this.#isSameAgentId(renderConfig, agentId)
+      )
     );
     this.#humanInTheLoopToolRenderConfigs.update((current) =>
-      current.filter((renderConfig) => renderConfig.name !== toolName && this.#isSameAgentId(renderConfig, agentId)),
+      current.filter(
+        (renderConfig) =>
+          renderConfig.name !== toolName &&
+          this.#isSameAgentId(renderConfig, agentId)
+      )
     );
     this.#toolCallRenderConfigs.update((current) =>
-      current.filter((renderConfig) => renderConfig.name !== toolName && this.#isSameAgentId(renderConfig, agentId)),
+      current.filter(
+        (renderConfig) =>
+          renderConfig.name !== toolName &&
+          this.#isSameAgentId(renderConfig, agentId)
+      )
     );
   }
 
