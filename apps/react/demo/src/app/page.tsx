@@ -1,14 +1,13 @@
 "use client";
 
-import { HttpAgent } from "@ag-ui/client";
 import {
   CopilotChat,
   CopilotKitProvider,
   useFrontendTool,
   defineToolCallRenderer,
   useConfigureSuggestions,
-  type ToolsMenuItem,
 } from "@copilotkitnext/react";
+import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo } from "react";
 
@@ -76,7 +75,7 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
-  const toolsMenu = useMemo<("-" | ToolsMenuItem)[]>(
+  const toolsMenu = useMemo<(ToolsMenuItem | "-")[]>(
     () => [
       {
         label: "Say hi to CopilotKit",
@@ -108,5 +107,5 @@ function Chat() {
     [],
   );
 
-  return <CopilotChat inputProps={{ toolsMenu }} />;
+  return <CopilotChat inputProps={{ toolsMenu }} threadId="xyz" />;
 }

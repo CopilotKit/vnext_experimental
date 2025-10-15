@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { AbstractAgent, BaseEvent, HttpAgent } from "@ag-ui/client";
 import { handleRunAgent } from "../handlers/handle-run";
 import { CopilotRuntime } from "../runtime";
@@ -53,20 +53,26 @@ describe("handleRunAgent", () => {
     const request = createMockRequest();
     const agentId = "test-agent";
 
-    const response = await handleRunAgent({
-      runtime,
-      request,
-      agentId,
-    });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    expect(response.status).toBe(500);
-    expect(response.headers.get("Content-Type")).toBe("application/json");
+    try {
+      const response = await handleRunAgent({
+        runtime,
+        request,
+        agentId,
+      });
 
-    const body = await response.json();
-    expect(body).toEqual({
-      error: "Failed to run agent",
-      message: "Database connection failed",
-    });
+      expect(response.status).toBe(500);
+      expect(response.headers.get("Content-Type")).toBe("application/json");
+
+      const body = await response.json();
+      expect(body).toEqual({
+        error: "Failed to run agent",
+        message: "Database connection failed",
+      });
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it("forwards only authorization and custom x- headers to HttpAgent runs", async () => {

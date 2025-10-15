@@ -1,13 +1,20 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
-import { OpenAIAgent, SlowToolCallStreamingAgent } from "@copilotkitnext/demo-agents";
+import {
+  CopilotRuntime,
+  createCopilotEndpoint,
+  InMemoryAgentRunner,
+} from "@copilotkitnext/runtime";
+import {
+  OpenAIAgent,
+  SlowToolCallStreamingAgent,
+} from "@copilotkitnext/demo-agents";
 
 const runtime = new CopilotRuntime({
   agents: {
     // @ts-ignore
-    default: new OpenAIAgent(),
+    default: new SlowToolCallStreamingAgent(),
   },
   runner: new InMemoryAgentRunner(),
 });
@@ -25,7 +32,7 @@ app.use(
     exposeHeaders: ["Content-Type"],
     credentials: true,
     maxAge: 86400,
-  }),
+  })
 );
 
 // Create the CopilotKit endpoint
@@ -39,4 +46,6 @@ app.route("/", copilotApp);
 
 const port = Number(process.env.PORT || 3001);
 serve({ fetch: app.fetch, port });
-console.log(`CopilotKit runtime listening at http://localhost:${port}/api/copilotkit`);
+console.log(
+  `CopilotKit runtime listening at http://localhost:${port}/api/copilotkit`
+);

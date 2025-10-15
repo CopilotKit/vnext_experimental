@@ -1,25 +1,18 @@
 import {
   AgentRunner,
-  AgentRunnerConnectRequest,
-  AgentRunnerIsRunningRequest,
-  AgentRunnerRunRequest,
+  type AgentRunnerConnectRequest,
+  type AgentRunnerIsRunningRequest,
+  type AgentRunnerRunRequest,
   type AgentRunnerStopRequest,
-} from "./agent-runner";
+} from "@copilotkitnext/runtime";
 import { Observable, ReplaySubject } from "rxjs";
 import {
   BaseEvent,
   RunAgentInput,
-  Message,
   EventType,
-  TextMessageStartEvent,
-  TextMessageContentEvent,
-  TextMessageEndEvent,
-  ToolCallStartEvent,
-  ToolCallArgsEvent,
-  ToolCallEndEvent,
-  ToolCallResultEvent,
+  RunStartedEvent,
+  compactEvents,
 } from "@ag-ui/client";
-import { compactEvents } from "./event-compaction";
 import Database from "better-sqlite3";
 
 const SCHEMA_VERSION = 1;
@@ -65,76 +58,6 @@ export class SqliteAgentRunner extends AgentRunner {
     
     this.db = new Database(dbPath);
     this.initializeSchema();
-  }
-
-  private convertMessageToEvents(message: Message): BaseEvent[] {
-    const events: BaseEvent[] = [];
-
-    if (
-      (message.role === "assistant" ||
-        message.role === "user" ||
-        message.role === "developer" ||
-        message.role === "system") &&
-      message.content
-    ) {
-      const textStartEvent: TextMessageStartEvent = {
-        type: EventType.TEXT_MESSAGE_START,
-        messageId: message.id,
-        role: message.role,
-      };
-      events.push(textStartEvent);
-
-      const textContentEvent: TextMessageContentEvent = {
-        type: EventType.TEXT_MESSAGE_CONTENT,
-        messageId: message.id,
-        delta: message.content,
-      };
-      events.push(textContentEvent);
-
-      const textEndEvent: TextMessageEndEvent = {
-        type: EventType.TEXT_MESSAGE_END,
-        messageId: message.id,
-      };
-      events.push(textEndEvent);
-    }
-
-    if (message.role === "assistant" && message.toolCalls) {
-      for (const toolCall of message.toolCalls) {
-        const toolStartEvent: ToolCallStartEvent = {
-          type: EventType.TOOL_CALL_START,
-          toolCallId: toolCall.id,
-          toolCallName: toolCall.function.name,
-          parentMessageId: message.id,
-        };
-        events.push(toolStartEvent);
-
-        const toolArgsEvent: ToolCallArgsEvent = {
-          type: EventType.TOOL_CALL_ARGS,
-          toolCallId: toolCall.id,
-          delta: toolCall.function.arguments,
-        };
-        events.push(toolArgsEvent);
-
-        const toolEndEvent: ToolCallEndEvent = {
-          type: EventType.TOOL_CALL_END,
-          toolCallId: toolCall.id,
-        };
-        events.push(toolEndEvent);
-      }
-    }
-
-    if (message.role === "tool" && message.toolCallId) {
-      const toolResultEvent: ToolCallResultEvent = {
-        type: EventType.TOOL_CALL_RESULT,
-        messageId: message.id,
-        toolCallId: message.toolCallId,
-        content: message.content,
-        role: "tool",
-      };
-      events.push(toolResultEvent);
-    }
-
-    return events;
   }
 
   private initializeSchema(): void {
@@ -300,6 +223,13 @@ export class SqliteAgentRunner extends AgentRunner {
         if ('messageId' in event && typeof event.messageId === 'string') {
           historicMessageIds.add(event.messageId);
         }
+        if (event.type === EventType.RUN_STARTED) {
+          const runStarted = event as RunStartedEvent;
+          const messages = runStarted.input?.messages ?? [];
+          for (const message of messages) {
+            historicMessageIds.add(message.id);
+          }
+        }
       }
     }
 
@@ -321,9 +251,31 @@ export class SqliteAgentRunner extends AgentRunner {
       try {
         await request.agent.runAgent(request.input, {
           onEvent: ({ event }) => {
-            runSubject.next(event); // For run() return - only agent events
-            nextSubject.next(event); // For connect() / store - all events
-            currentRunEvents.push(event); // Accumulate for database storage
+            let processedEvent: BaseEvent = event;
+            if (event.type === EventType.RUN_STARTED) {
+              const runStartedEvent = event as RunStartedEvent;
+              if (!runStartedEvent.input) {
+                const sanitizedMessages = request.input.messages
+                  ? request.input.messages.filter(
+                      (message) => !historicMessageIds.has(message.id),
+                    )
+                  : undefined;
+                const updatedInput = {
+                  ...request.input,
+                  ...(sanitizedMessages !== undefined
+                    ? { messages: sanitizedMessages }
+                    : {}),
+                };
+                processedEvent = {
+                  ...runStartedEvent,
+                  input: updatedInput,
+                } as RunStartedEvent;
+              }
+            }
+
+            runSubject.next(processedEvent); // For run() return - only agent events
+            nextSubject.next(processedEvent); // For connect() / store - all events
+            currentRunEvents.push(processedEvent); // Accumulate for database storage
           },
           onNewMessage: ({ message }) => {
             // Called for each new message
@@ -332,25 +284,11 @@ export class SqliteAgentRunner extends AgentRunner {
             }
           },
           onRunStartedEvent: () => {
-            // Process input messages
+            // Mark input messages as seen without emitting duplicates
             if (request.input.messages) {
               for (const message of request.input.messages) {
                 if (!seenMessageIds.has(message.id)) {
                   seenMessageIds.add(message.id);
-                  const events = this.convertMessageToEvents(message);
-                  
-                  // Check if this message is NEW (not in historic runs)
-                  const isNewMessage = !historicMessageIds.has(message.id);
-                  
-                  for (const event of events) {
-                    // Always emit to stream for context
-                    nextSubject.next(event);
-                    
-                    // Store if this is a NEW message for this run
-                    if (isNewMessage) {
-                      currentRunEvents.push(event);
-                    }
-                  }
                 }
               }
             }

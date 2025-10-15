@@ -16,6 +16,9 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// Mock scrollIntoView which is not available in jsdom
+HTMLElement.prototype.scrollIntoView = vi.fn();
+
 // Ensure we cleanup between tests to avoid lingering handles
 afterEach(() => {
   cleanup();
