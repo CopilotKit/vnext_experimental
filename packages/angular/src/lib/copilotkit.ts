@@ -106,7 +106,7 @@ export class CopilotKit {
     this.#clientToolCallRenderConfigs.update((current) => [
       ...current,
       // Erase generic parameter for storage without using `any`.
-      clientToolWithInjector as unknown as FrontendToolConfig,
+      clientToolWithInjector as FrontendToolConfig,
     ]);
   }
 
@@ -114,7 +114,7 @@ export class CopilotKit {
     this.#toolCallRenderConfigs.update((current) => [
       ...current,
       // Erase generic parameter for storage without using `any`.
-      renderConfig as unknown as RenderToolCallConfig,
+      renderConfig as RenderToolCallConfig,
     ]);
   }
 
@@ -133,7 +133,7 @@ export class CopilotKit {
     this.#humanInTheLoopToolRenderConfigs.update((current) => [
       ...current,
       // Erase generic parameter for storage without using `any`.
-      humanInTheLoopTool as unknown as HumanInTheLoopConfig,
+      humanInTheLoopTool as HumanInTheLoopConfig,
     ]);
 
     const tool = this.#bindHumanInTheLoopTool(humanInTheLoopTool);
