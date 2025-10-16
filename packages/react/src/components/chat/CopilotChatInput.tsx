@@ -11,7 +11,7 @@ import React, {
   useMemo,
 } from "react";
 import { twMerge } from "tailwind-merge";
-import { Plus, Mic, ArrowUp, X, Check } from "lucide-react";
+import { Plus, Mic, ArrowUp, X, Check, Square } from "lucide-react";
 
 import {
   CopilotChatLabels,
@@ -64,6 +64,8 @@ type CopilotChatInputRestProps = {
   toolsMenu?: (ToolsMenuItem | "-")[];
   autoFocus?: boolean;
   onSubmitMessage?: (value: string) => void;
+  onStop?: () => void;
+  isRunning?: boolean;
   onStartTranscribe?: () => void;
   onCancelTranscribe?: () => void;
   onFinishTranscribe?: () => void;
@@ -90,6 +92,8 @@ const SLASH_MENU_ITEM_HEIGHT_PX = 40;
 export function CopilotChatInput({
   mode = "input",
   onSubmitMessage,
+  onStop,
+  isRunning = false,
   onStartTranscribe,
   onCancelTranscribe,
   onFinishTranscribe,
@@ -390,7 +394,11 @@ export function CopilotChatInput({
 
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      send();
+      if (isProcessing) {
+        onStop?.();
+      } else {
+        send();
+      }
     }
   };
 
@@ -427,13 +435,26 @@ export function CopilotChatInput({
     ),
   });
 
+  const isProcessing = mode !== "transcribe" && isRunning;
+  const canSend = resolvedValue.trim().length > 0 && !!onSubmitMessage;
+  const canStop = !!onStop;
+
+  const handleSendButtonClick = () => {
+    if (isProcessing) {
+      onStop?.();
+      return;
+    }
+    send();
+  };
+
   const BoundAudioRecorder = renderSlot(audioRecorder, CopilotChatAudioRecorder, {
     ref: audioRecorderRef,
   });
 
   const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
-    onClick: send,
-    disabled: !resolvedValue.trim() || !onSubmitMessage,
+    onClick: handleSendButtonClick,
+    disabled: isProcessing ? !canStop : !canSend,
+    children: isProcessing ? <Square className="size-[18px]" /> : undefined,
   });
 
   const BoundStartTranscribeButton = renderSlot(startTranscribeButton, CopilotChatInput.StartTranscribeButton, {
@@ -464,6 +485,8 @@ export function CopilotChatInput({
       finishTranscribeButton: BoundFinishTranscribeButton,
       addMenuButton: BoundAddMenuButton,
       onSubmitMessage,
+      onStop,
+      isRunning,
       onStartTranscribe,
       onCancelTranscribe,
       onFinishTranscribe,
@@ -833,7 +856,7 @@ export function CopilotChatInput({
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CopilotChatInput {
-  export const SendButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, ...props }) => (
+  export const SendButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ className, children, ...props }) => (
     <div className="mr-[10px]">
       <Button
         type="button"
@@ -842,7 +865,7 @@ export namespace CopilotChatInput {
         className={className}
         {...props}
       >
-        <ArrowUp className="size-[18px]" />
+        {children ?? <ArrowUp className="size-[18px]" />}
       </Button>
     </div>
   );

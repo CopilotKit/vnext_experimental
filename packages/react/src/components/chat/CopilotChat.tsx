@@ -104,6 +104,41 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     [agent, copilotkit],
   );
 
+  const stopCurrentRun = useCallback(async () => {
+    if (!agent) {
+      return;
+    }
+
+    try {
+      agent.abortRun();
+    } catch (error) {
+      console.error("CopilotChat: abortRun failed", error);
+    }
+
+    const runtimeUrl = copilotkit.runtimeUrl;
+    if (!runtimeUrl) {
+      return;
+    }
+
+    try {
+      const stopPath = `/agent/${encodeURIComponent(resolvedAgentId)}/stop/${encodeURIComponent(resolvedThreadId)}`;
+      const origin =
+        typeof window !== "undefined" && window.location ? window.location.origin : "http://localhost";
+      const base = new URL(runtimeUrl, origin);
+      const stopUrl = new URL(stopPath, base);
+
+      await fetch(stopUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...copilotkit.headers,
+        },
+      });
+    } catch (error) {
+      console.error("CopilotChat: stopAgent failed", error);
+    }
+  }, [agent, copilotkit, copilotkit.headers, resolvedAgentId, resolvedThreadId]);
+
   const mergedProps = merge(
     {
       isRunning: agent?.isRunning ?? false,
@@ -121,12 +156,18 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     },
   );
 
+  const finalInputProps = {
+    ...providedInputProps,
+    onSubmitMessage: onSubmitInput,
+    onStop: providedInputProps?.onStop ?? stopCurrentRun,
+    isRunning: agent?.isRunning ?? false,
+  } as Partial<CopilotChatInputProps> & { onSubmitMessage: (value: string) => void };
+
+  finalInputProps.mode = agent?.isRunning ? "processing" : finalInputProps.mode ?? "input";
+
   const finalProps = merge(mergedProps, {
     messages: agent?.messages ?? [],
-    inputProps: {
-      onSubmitMessage: onSubmitInput,
-      ...providedInputProps,
-    },
+    inputProps: finalInputProps,
   }) as CopilotChatViewProps;
 
   // Always create a provider with merged values
