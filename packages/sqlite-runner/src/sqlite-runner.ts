@@ -1,5 +1,6 @@
 import {
   AgentRunner,
+  finalizeRunEvents,
   type AgentRunnerConnectRequest,
   type AgentRunnerIsRunningRequest,
   type AgentRunnerRunRequest,
@@ -37,6 +38,8 @@ interface ActiveConnectionContext {
   subject: ReplaySubject<BaseEvent>;
   agent?: AbstractAgent;
   runSubject?: ReplaySubject<BaseEvent>;
+  currentEvents?: BaseEvent[];
+  stopRequested?: boolean;
 }
 
 // Active connections for streaming events and stop support
@@ -252,6 +255,8 @@ export class SqliteAgentRunner extends AgentRunner {
       subject: nextSubject,
       agent: request.agent,
       runSubject,
+      currentEvents: currentRunEvents,
+      stopRequested: false,
     });
 
     // Helper function to run the agent and handle errors
@@ -306,6 +311,15 @@ export class SqliteAgentRunner extends AgentRunner {
           },
         });
         
+        const connection = ACTIVE_CONNECTIONS.get(request.threadId);
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: connection?.stopRequested ?? false,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the run in database
         this.storeRun(
           request.threadId,
@@ -318,16 +332,28 @@ export class SqliteAgentRunner extends AgentRunner {
         // Mark run as complete in database
         this.setRunState(request.threadId, false);
 
-        const connection = ACTIVE_CONNECTIONS.get(request.threadId);
         if (connection) {
           connection.agent = undefined;
           connection.runSubject = undefined;
+          connection.currentEvents = undefined;
+          connection.stopRequested = false;
         }
 
         // Complete the subjects
         runSubject.complete();
         nextSubject.complete();
+
+        ACTIVE_CONNECTIONS.delete(request.threadId);
       } catch {
+        const connection = ACTIVE_CONNECTIONS.get(request.threadId);
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: connection?.stopRequested ?? false,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the run even if it failed (partial events)
         if (currentRunEvents.length > 0) {
           this.storeRun(
@@ -342,16 +368,19 @@ export class SqliteAgentRunner extends AgentRunner {
         // Mark run as complete in database
         this.setRunState(request.threadId, false);
 
-        const connection = ACTIVE_CONNECTIONS.get(request.threadId);
         if (connection) {
           connection.agent = undefined;
           connection.runSubject = undefined;
+          connection.currentEvents = undefined;
+          connection.stopRequested = false;
         }
 
         // Don't emit error to the subject, just complete it
         // This allows subscribers to get events emitted before the error
         runSubject.complete();
         nextSubject.complete();
+
+        ACTIVE_CONNECTIONS.delete(request.threadId);
       }
     };
 
@@ -401,7 +430,7 @@ export class SqliteAgentRunner extends AgentRunner {
     const activeConnection = ACTIVE_CONNECTIONS.get(request.threadId);
     const runState = this.getRunState(request.threadId);
 
-    if (activeConnection && runState.isRunning) {
+    if (activeConnection && (runState.isRunning || activeConnection.stopRequested)) {
       activeConnection.subject.subscribe({
         next: (event) => {
           // Skip message events that we've already emitted from historic
@@ -436,22 +465,23 @@ export class SqliteAgentRunner extends AgentRunner {
     const agent = connection?.agent;
 
     if (!connection || !agent) {
-      if (connection) {
-        connection.agent = undefined;
-        connection.runSubject = undefined;
-      }
-      this.setRunState(request.threadId, false);
       return Promise.resolve(false);
     }
 
+    if (connection.stopRequested) {
+      return Promise.resolve(false);
+    }
+
+    connection.stopRequested = true;
+    this.setRunState(request.threadId, false);
+
     try {
       agent.abortRun();
-      this.setRunState(request.threadId, false);
-      connection.agent = undefined;
-      connection.runSubject = undefined;
       return Promise.resolve(true);
     } catch (error) {
       console.error("Failed to abort sqlite agent run", error);
+      connection.stopRequested = false;
+      this.setRunState(request.threadId, true);
       return Promise.resolve(false);
     }
   }

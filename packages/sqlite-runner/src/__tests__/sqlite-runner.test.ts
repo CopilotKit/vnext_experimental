@@ -106,6 +106,56 @@ class StoppableAgent extends AbstractAgent {
   }
 }
 
+class OpenEventsAgent extends AbstractAgent {
+  private shouldStop = false;
+
+  async runAgent(
+    input: RunAgentInput,
+    callbacks: RunCallbacks,
+  ): Promise<void> {
+    this.shouldStop = false;
+    const messageId = "open-message";
+    const toolCallId = "open-tool";
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TEXT_MESSAGE_START,
+        messageId,
+        role: "assistant",
+      } as BaseEvent,
+    });
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId,
+        delta: "Partial content",
+      } as BaseEvent,
+    });
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TOOL_CALL_START,
+        toolCallId,
+        toolCallName: "testTool",
+        parentMessageId: messageId,
+      } as BaseEvent,
+    });
+
+    while (!this.shouldStop) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+
+  abortRun(): void {
+    this.shouldStop = true;
+  }
+
+  clone(): AbstractAgent {
+    return new OpenEventsAgent();
+  }
+}
+
 describe("SqliteAgentRunner", () => {
   let tempDir: string;
   let dbPath: string;
@@ -294,6 +344,33 @@ describe("SqliteAgentRunner", () => {
 
     const events = await collected;
     expect(events.length).toBeGreaterThan(0);
+    expect(events[events.length - 1].type).toBe(EventType.RUN_ERROR);
     expect(await runner.isRunning({ threadId })).toBe(false);
+  });
+
+  it("closes open text and tool events when stopping", async () => {
+    const threadId = "sqlite-open-events";
+    const agent = new OpenEventsAgent();
+    const input: RunAgentInput = {
+      threadId,
+      runId: "sqlite-open-run",
+      messages: [],
+      state: {},
+    };
+
+    const run$ = runner.run({ threadId, agent, input });
+    const collected = firstValueFrom(run$.pipe(toArray()));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await runner.stop({ threadId });
+
+    const events = await collected;
+    const endingTypes = events.slice(-4).map((event) => event.type);
+    expect(endingTypes).toEqual([
+      EventType.TEXT_MESSAGE_END,
+      EventType.TOOL_CALL_END,
+      EventType.TOOL_CALL_RESULT,
+      EventType.RUN_ERROR,
+    ]);
   });
 });

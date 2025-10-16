@@ -10,6 +10,7 @@ import {
   callAfterRequestMiddleware,
 } from "./middleware";
 import { handleConnectAgent } from "./handlers/handle-connect";
+import { handleStopAgent } from "./handlers/handle-stop";
 
 interface CopilotEndpointParams {
   runtime: CopilotRuntime;
@@ -110,6 +111,26 @@ export function createCopilotEndpoint({
           runtime,
           request,
           agentId,
+        });
+      } catch (error) {
+        logger.error(
+          { err: error, url: request.url, path: c.req.path },
+          "Error running request handler"
+        );
+        throw error;
+      }
+    })
+    .post("/agent/:agentId/stop/:threadId", async (c) => {
+      const agentId = c.req.param("agentId");
+      const threadId = c.req.param("threadId");
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleStopAgent({
+          runtime,
+          request,
+          agentId,
+          threadId,
         });
       } catch (error) {
         logger.error(

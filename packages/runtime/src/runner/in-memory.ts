@@ -14,6 +14,7 @@ import {
   RunStartedEvent,
   compactEvents,
 } from "@ag-ui/client";
+import { finalizeRunEvents } from "./finalize-events";
 
 interface HistoricRun {
   threadId: string;
@@ -32,9 +33,6 @@ class InMemoryEventStore {
   /** True while a run is actively producing events. */
   isRunning = false;
 
-  /** Lets stop() cancel the current producer. */
-  abortController = new AbortController();
-
   /** Current run ID */
   currentRunId: string | null = null;
 
@@ -46,6 +44,12 @@ class InMemoryEventStore {
 
   /** Subject returned from run() while the run is active. */
   runSubject: ReplaySubject<BaseEvent> | null = null;
+
+  /** True once stop() has been requested but the run has not yet finalized. */
+  stopRequested = false;
+
+  /** Reference to the events emitted in the current run. */
+  currentEvents: BaseEvent[] | null = null;
 }
 
 const GLOBAL_STORE = new Map<string, InMemoryEventStore>();
@@ -65,10 +69,12 @@ export class InMemoryAgentRunner extends AgentRunner {
     store.isRunning = true;
     store.currentRunId = request.input.runId;
     store.agent = request.agent;
+    store.stopRequested = false;
 
     // Track seen message IDs and current run events for this run
     const seenMessageIds = new Set<string>();
     const currentRunEvents: BaseEvent[] = [];
+    store.currentEvents = currentRunEvents;
 
     // Get all previously seen message IDs from historic runs
     const historicMessageIds = new Set<string>();
@@ -150,6 +156,14 @@ export class InMemoryAgentRunner extends AgentRunner {
           },
         });
 
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: store.stopRequested,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the completed run in memory with ONLY its events
         if (store.currentRunId) {
           // Compact the events before storing (like SQLite does)
@@ -165,13 +179,23 @@ export class InMemoryAgentRunner extends AgentRunner {
         }
 
         // Complete the run
-        store.isRunning = false;
+        store.currentEvents = null;
         store.currentRunId = null;
         store.agent = null;
         store.runSubject = null;
+        store.stopRequested = false;
+        store.isRunning = false;
         runSubject.complete();
         nextSubject.complete();
       } catch {
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: store.stopRequested,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the run even if it failed (partial events)
         if (store.currentRunId && currentRunEvents.length > 0) {
           // Compact the events before storing (like SQLite does)
@@ -186,10 +210,12 @@ export class InMemoryAgentRunner extends AgentRunner {
         }
 
         // Complete the run
-        store.isRunning = false;
+        store.currentEvents = null;
         store.currentRunId = null;
         store.agent = null;
         store.runSubject = null;
+        store.stopRequested = false;
+        store.isRunning = false;
         runSubject.complete();
         nextSubject.complete();
       }
@@ -242,7 +268,7 @@ export class InMemoryAgentRunner extends AgentRunner {
     }
 
     // Bridge active run to connection if exists
-    if (store.subject && store.isRunning) {
+    if (store.subject && (store.isRunning || store.stopRequested)) {
       store.subject.subscribe({
         next: (event) => {
           // Skip message events that we've already emitted from historic
@@ -276,19 +302,27 @@ export class InMemoryAgentRunner extends AgentRunner {
     if (!store || !store.isRunning) {
       return Promise.resolve(false);
     }
-
-    const agent = store.agent;
-    if (!agent) {
+    if (store.stopRequested) {
       return Promise.resolve(false);
     }
 
-    // Abort any work tied to this run; agents that support cancellation
-    // should stop themselves in response to abortRun().
+    store.stopRequested = true;
+    store.isRunning = false;
+
+    const agent = store.agent;
+    if (!agent) {
+      store.stopRequested = false;
+      store.isRunning = false;
+      return Promise.resolve(false);
+    }
+
     try {
       agent.abortRun();
       return Promise.resolve(true);
     } catch (error) {
       console.error("Failed to abort agent run", error);
+      store.stopRequested = false;
+      store.isRunning = true;
       return Promise.resolve(false);
     }
   }
