@@ -1,6 +1,7 @@
 import { useAgent } from "@/hooks/use-agent";
 import { useSuggestions } from "@/hooks/use-suggestions";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
+import CopilotChatInput, { CopilotChatInputProps } from "./CopilotChatInput";
 import {
   CopilotChatConfigurationProvider,
   CopilotChatLabels,
@@ -104,40 +105,22 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     [agent, copilotkit],
   );
 
-  const stopCurrentRun = useCallback(async () => {
+  const stopCurrentRun = useCallback(() => {
     if (!agent) {
       return;
     }
 
     try {
-      agent.abortRun();
-    } catch (error) {
-      console.error("CopilotChat: abortRun failed", error);
-    }
-
-    const runtimeUrl = copilotkit.runtimeUrl;
-    if (!runtimeUrl) {
-      return;
-    }
-
-    try {
-      const stopPath = `/agent/${encodeURIComponent(resolvedAgentId)}/stop/${encodeURIComponent(resolvedThreadId)}`;
-      const origin =
-        typeof window !== "undefined" && window.location ? window.location.origin : "http://localhost";
-      const base = new URL(runtimeUrl, origin);
-      const stopUrl = new URL(stopPath, base);
-
-      await fetch(stopUrl.toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...copilotkit.headers,
-        },
-      });
+      copilotkit.stopAgent({ agent });
     } catch (error) {
       console.error("CopilotChat: stopAgent failed", error);
+      try {
+        agent.abortRun();
+      } catch (abortError) {
+        console.error("CopilotChat: abortRun fallback failed", abortError);
+      }
     }
-  }, [agent, copilotkit, copilotkit.headers, resolvedAgentId, resolvedThreadId]);
+  }, [agent, copilotkit]);
 
   const mergedProps = merge(
     {
@@ -156,10 +139,15 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     },
   );
 
+  const providedStopHandler = providedInputProps?.onStop;
+  const hasMessages = (agent?.messages?.length ?? 0) > 0;
+  const shouldAllowStop = (agent?.isRunning ?? false) && hasMessages;
+  const effectiveStopHandler = shouldAllowStop ? providedStopHandler ?? stopCurrentRun : providedStopHandler;
+
   const finalInputProps = {
     ...providedInputProps,
     onSubmitMessage: onSubmitInput,
-    onStop: providedInputProps?.onStop ?? stopCurrentRun,
+    onStop: effectiveStopHandler,
     isRunning: agent?.isRunning ?? false,
   } as Partial<CopilotChatInputProps> & { onSubmitMessage: (value: string) => void };
 

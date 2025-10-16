@@ -454,7 +454,7 @@ export function CopilotChatInput({
   const BoundSendButton = renderSlot(sendButton, CopilotChatInput.SendButton, {
     onClick: handleSendButtonClick,
     disabled: isProcessing ? !canStop : !canSend,
-    children: isProcessing ? <Square className="size-[18px]" /> : undefined,
+    children: isProcessing && canStop ? <Square className="size-[18px] fill-current" /> : undefined,
   });
 
   const BoundStartTranscribeButton = renderSlot(startTranscribeButton, CopilotChatInput.StartTranscribeButton, {

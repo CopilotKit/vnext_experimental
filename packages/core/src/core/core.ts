@@ -28,7 +28,15 @@ export interface CopilotKitCoreConfig {
 }
 
 export type { CopilotKitCoreAddAgentParams };
-export type { CopilotKitCoreRunAgentParams, CopilotKitCoreConnectAgentParams, CopilotKitCoreGetToolParams };
+export type {
+  CopilotKitCoreRunAgentParams,
+  CopilotKitCoreConnectAgentParams,
+  CopilotKitCoreGetToolParams,
+};
+
+export interface CopilotKitCoreStopAgentParams {
+  agent: AbstractAgent;
+}
 
 export type CopilotKitCoreGetSuggestionsResult = {
   suggestions: Suggestion[];
@@ -393,6 +401,10 @@ export class CopilotKitCore {
    */
   async connectAgent(params: CopilotKitCoreConnectAgentParams): Promise<import("@ag-ui/client").RunAgentResult> {
     return this.runHandler.connectAgent(params);
+  }
+
+  stopAgent(params: CopilotKitCoreStopAgentParams): void {
+    params.agent.abortRun();
   }
 
   async runAgent(params: CopilotKitCoreRunAgentParams): Promise<import("@ag-ui/client").RunAgentResult> {

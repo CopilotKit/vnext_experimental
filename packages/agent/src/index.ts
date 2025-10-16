@@ -460,6 +460,8 @@ export interface BasicAgentConfiguration {
 }
 
 export class BasicAgent extends AbstractAgent {
+  private abortController?: AbortController;
+
   constructor(private config: BasicAgentConfiguration) {
     super();
   }
@@ -680,8 +682,10 @@ export class BasicAgent extends AbstractAgent {
             }
           }
 
+          this.abortController = new AbortController();
+
           // Call streamText and process the stream
-          const response = streamText(streamTextParams);
+          const response = streamText({ ...streamTextParams, abortSignal: this.abortController.signal });
 
           let messageId = randomUUID();
 
@@ -890,5 +894,9 @@ export class BasicAgent extends AbstractAgent {
 
   clone() {
     return new BasicAgent(this.config);
+  }
+
+  abortRun(): void {
+    this.abortController?.abort();
   }
 }
