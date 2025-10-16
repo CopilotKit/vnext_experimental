@@ -7,6 +7,7 @@ import {
 } from "./agent-runner";
 import { Observable, ReplaySubject } from "rxjs";
 import {
+  AbstractAgent,
   BaseEvent,
   EventType,
   MessagesSnapshotEvent,
@@ -39,6 +40,12 @@ class InMemoryEventStore {
 
   /** Historic completed runs */
   historicRuns: HistoricRun[] = [];
+
+  /** Currently running agent instance (if any). */
+  agent: AbstractAgent | null = null;
+
+  /** Subject returned from run() while the run is active. */
+  runSubject: ReplaySubject<BaseEvent> | null = null;
 }
 
 const GLOBAL_STORE = new Map<string, InMemoryEventStore>();
@@ -57,6 +64,7 @@ export class InMemoryAgentRunner extends AgentRunner {
     }
     store.isRunning = true;
     store.currentRunId = request.input.runId;
+    store.agent = request.agent;
 
     // Track seen message IDs and current run events for this run
     const seenMessageIds = new Set<string>();
@@ -84,10 +92,10 @@ export class InMemoryAgentRunner extends AgentRunner {
 
     // Update the store's subject immediately
     store.subject = nextSubject;
-    store.abortController = new AbortController();
 
     // Create a subject for run() return value
     const runSubject = new ReplaySubject<BaseEvent>(Infinity);
+    store.runSubject = runSubject;
 
     // Helper function to run the agent and handle errors
     const runAgent = async () => {
@@ -159,6 +167,8 @@ export class InMemoryAgentRunner extends AgentRunner {
         // Complete the run
         store.isRunning = false;
         store.currentRunId = null;
+        store.agent = null;
+        store.runSubject = null;
         runSubject.complete();
         nextSubject.complete();
       } catch {
@@ -178,6 +188,8 @@ export class InMemoryAgentRunner extends AgentRunner {
         // Complete the run
         store.isRunning = false;
         store.currentRunId = null;
+        store.agent = null;
+        store.runSubject = null;
         runSubject.complete();
         nextSubject.complete();
       }
@@ -259,8 +271,25 @@ export class InMemoryAgentRunner extends AgentRunner {
     return Promise.resolve(store?.isRunning ?? false);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  stop(_request: AgentRunnerStopRequest): Promise<boolean | undefined> {
-    throw new Error("Method not implemented.");
+  stop(request: AgentRunnerStopRequest): Promise<boolean | undefined> {
+    const store = GLOBAL_STORE.get(request.threadId);
+    if (!store || !store.isRunning) {
+      return Promise.resolve(false);
+    }
+
+    const agent = store.agent;
+    if (!agent) {
+      return Promise.resolve(false);
+    }
+
+    // Abort any work tied to this run; agents that support cancellation
+    // should stop themselves in response to abortRun().
+    try {
+      agent.abortRun();
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error("Failed to abort agent run", error);
+      return Promise.resolve(false);
+    }
   }
 }

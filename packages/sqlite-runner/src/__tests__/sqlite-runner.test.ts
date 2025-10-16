@@ -61,6 +61,51 @@ class MockAgent extends AbstractAgent {
   }
 }
 
+class StoppableAgent extends AbstractAgent {
+  private shouldStop = false;
+  private eventDelay: number;
+
+  constructor(eventDelay = 5) {
+    super();
+    this.eventDelay = eventDelay;
+  }
+
+  async runAgent(
+    input: RunAgentInput,
+    callbacks: RunCallbacks,
+  ): Promise<void> {
+    this.shouldStop = false;
+    let counter = 0;
+
+    const runStarted: RunStartedEvent = {
+      type: EventType.RUN_STARTED,
+      threadId: input.threadId,
+      runId: input.runId,
+    };
+    await callbacks.onEvent({ event: runStarted });
+    await callbacks.onRunStartedEvent?.();
+
+    while (!this.shouldStop && counter < 10_000) {
+      await new Promise((resolve) => setTimeout(resolve, this.eventDelay));
+      const event: BaseEvent = {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: `sqlite-stop-${counter}`,
+        delta: `chunk-${counter}`,
+      } as TextMessageContentEvent;
+      await callbacks.onEvent({ event });
+      counter += 1;
+    }
+  }
+
+  abortRun(): void {
+    this.shouldStop = true;
+  }
+
+  clone(): AbstractAgent {
+    return new StoppableAgent(this.eventDelay);
+  }
+}
+
 describe("SqliteAgentRunner", () => {
   let tempDir: string;
   let dbPath: string;
@@ -222,5 +267,33 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_CONTENT,
       EventType.TEXT_MESSAGE_END,
     ]);
+  });
+
+  it("returns false when stopping a thread that is not running", async () => {
+    await expect(runner.stop({ threadId: "sqlite-missing" })).resolves.toBe(false);
+  });
+
+  it("stops an active run and completes observables", async () => {
+    const threadId = "sqlite-stop";
+    const agent = new StoppableAgent(2);
+    const input: RunAgentInput = {
+      threadId,
+      runId: "sqlite-stop-run",
+      messages: [],
+      state: {},
+    };
+
+    const run$ = runner.run({ threadId, agent, input });
+    const collected = firstValueFrom(run$.pipe(toArray()));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await runner.isRunning({ threadId })).toBe(true);
+
+    const stopped = await runner.stop({ threadId });
+    expect(stopped).toBe(true);
+
+    const events = await collected;
+    expect(events.length).toBeGreaterThan(0);
+    expect(await runner.isRunning({ threadId })).toBe(false);
   });
 });

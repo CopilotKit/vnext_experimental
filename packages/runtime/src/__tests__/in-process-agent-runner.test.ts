@@ -98,6 +98,44 @@ class ErrorThrowingAgent extends AbstractAgent {
   }
 }
 
+class StoppableAgent extends AbstractAgent {
+  private shouldStop = false;
+  private eventDelay: number;
+
+  constructor(eventDelay = 5) {
+    super();
+    this.eventDelay = eventDelay;
+  }
+
+  async runAgent(
+    input: RunAgentInput,
+    options: { onEvent: (event: { event: BaseEvent }) => void }
+  ): Promise<void> {
+    this.shouldStop = false;
+    let counter = 0;
+
+    while (!this.shouldStop && counter < 10_000) {
+      await new Promise((resolve) => setTimeout(resolve, this.eventDelay));
+      const event: BaseEvent = {
+        type: "message",
+        id: `stoppable-${counter}`,
+        timestamp: new Date().toISOString(),
+        data: { counter },
+      } as BaseEvent;
+      options.onEvent({ event });
+      counter += 1;
+    }
+  }
+
+  abortRun(): void {
+    this.shouldStop = true;
+  }
+
+  clone(): AbstractAgent {
+    return new StoppableAgent(this.eventDelay);
+  }
+}
+
 class MultiEventAgent extends AbstractAgent {
   private runId: string;
 
@@ -602,10 +640,33 @@ describe("InMemoryAgentRunner", () => {
       expect(await runner.isRunning({ threadId })).toBe(false);
     });
 
-    it("should throw error for stop method (not implemented)", async () => {
-      expect(() => {
-        runner.stop({ threadId: "any-thread" });
-      }).toThrow("Method not implemented");
+    it("should return false when stopping a non-existent thread", async () => {
+      await expect(runner.stop({ threadId: "missing-thread" })).resolves.toBe(false);
+    });
+
+    it("should stop an active run and complete streams", async () => {
+      const threadId = "test-thread-stop";
+      const agent = new StoppableAgent(2);
+      const input: RunAgentInput = {
+        messages: [],
+        state: {},
+        threadId,
+        runId: "run-stop",
+      };
+
+      const run$ = runner.run({ threadId, agent, input });
+      const collected = firstValueFrom(run$.pipe(toArray()));
+
+      // Allow the run loop to start and emit a couple of events
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(await runner.isRunning({ threadId })).toBe(true);
+
+      const stopped = await runner.stop({ threadId });
+      expect(stopped).toBe(true);
+
+      const events = await collected;
+      expect(events.length).toBeGreaterThan(0);
+      expect(await runner.isRunning({ threadId })).toBe(false);
     });
 
     it("should handle thread isolation correctly", async () => {
