@@ -622,6 +622,10 @@ export class BasicAgent extends AbstractAgent {
       const mcpClients: Array<{ close: () => Promise<void> }> = [];
 
       (async () => {
+        const abortController = new AbortController();
+        this.abortController = abortController;
+        let terminalEventEmitted = false;
+
         try {
           // Add AG-UI state update tools
           streamTextParams.tools = {
@@ -682,10 +686,8 @@ export class BasicAgent extends AbstractAgent {
             }
           }
 
-          this.abortController = new AbortController();
-
           // Call streamText and process the stream
-          const response = streamText({ ...streamTextParams, abortSignal: this.abortController.signal });
+          const response = streamText({ ...streamTextParams, abortSignal: abortController.signal });
 
           let messageId = randomUUID();
 
@@ -852,6 +854,7 @@ export class BasicAgent extends AbstractAgent {
                   runId: input.runId,
                 };
                 subscriber.next(finishedEvent);
+                terminalEventEmitted = true;
 
                 // Complete the observable
                 subscriber.complete();
@@ -863,11 +866,33 @@ export class BasicAgent extends AbstractAgent {
                   message: part.error + "",
                 };
                 subscriber.next(runErrorEvent);
+                terminalEventEmitted = true;
 
                 // Handle error
                 subscriber.error(part.error);
                 break;
             }
+          }
+
+          if (!terminalEventEmitted) {
+            if (abortController.signal.aborted) {
+              const runErrorEvent: RunErrorEvent = {
+                type: EventType.RUN_ERROR,
+                message: "Run stopped by user",
+                code: "STOPPED",
+              };
+              subscriber.next(runErrorEvent);
+            } else {
+              const finishedEvent: RunFinishedEvent = {
+                type: EventType.RUN_FINISHED,
+                threadId: input.threadId,
+                runId: input.runId,
+              };
+              subscriber.next(finishedEvent);
+            }
+
+            terminalEventEmitted = true;
+            subscriber.complete();
           }
         } catch (error) {
           const runErrorEvent: RunErrorEvent = {
@@ -875,9 +900,10 @@ export class BasicAgent extends AbstractAgent {
             message: error + "",
           };
           subscriber.next(runErrorEvent);
-
+          terminalEventEmitted = true;
           subscriber.error(error);
         } finally {
+          this.abortController = undefined;
           await Promise.all(mcpClients.map((client) => client.close()));
         }
       })();
