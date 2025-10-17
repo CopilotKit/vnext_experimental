@@ -84,6 +84,56 @@ Application-specific data that gets forwarded to agents as additional context. A
 </CopilotKitProvider>
 ```
 
+### resourceId
+
+`string | string[]` **(optional, recommended for production)**
+
+Resource ID(s) for thread access control. This value is sent to the server as a hint for thread scoping. The server's `resolveThreadsScope` validates and enforces access control.
+
+<Info>
+  **Security**: Setting `resourceId` enables resource-based access control for threads. Users can only access threads that match their resource IDs. Learn more in the [Resource Scoping guide](/guides/resource-scoping).
+</Info>
+
+```tsx
+// Single resource - user can only access their own threads
+<CopilotKitProvider resourceId={userId}>{children}</CopilotKitProvider>
+
+// Multiple resources - threads accessible by any of these IDs
+<CopilotKitProvider resourceId={[userId, workspaceId]}>{children}</CopilotKitProvider>
+
+// Dynamic updates - change resource scope when user switches workspaces
+function App() {
+  const [workspaceId, setWorkspaceId] = useState("ws-1");
+
+  return (
+    <CopilotKitProvider resourceId={workspaceId}>
+      <WorkspaceSwitcher onChange={setWorkspaceId} />
+      {children}
+    </CopilotKitProvider>
+  );
+}
+```
+
+<Warning>
+  If `resourceId` is not set in production, all threads will be globally accessible. CopilotKit will log a security warning in the browser console.
+</Warning>
+
+You can also update the resourceId dynamically using the `setResourceId` method from `useCopilotKit`:
+
+```tsx
+import { useCopilotKit } from "@copilotkitnext/react";
+
+function WorkspaceSwitcher() {
+  const { setResourceId } = useCopilotKit();
+
+  const switchWorkspace = (newWorkspaceId: string) => {
+    setResourceId(newWorkspaceId);
+  };
+
+  return <button onClick={() => switchWorkspace("ws-2")}>Switch Workspace</button>;
+}
+```
+
 ### agents\_\_unsafe_dev_only
 
 `Record<string, AbstractAgent>` **(optional, development only)**
@@ -210,9 +260,7 @@ The provider makes a `CopilotKitContextValue` available to child components thro
 ```typescript
 interface CopilotKitContextValue {
   copilotkit: CopilotKitCore;
-  renderToolCalls: ReactToolCallRenderer<any>[];
-  currentRenderToolCalls: ReactToolCallRenderer<unknown>[];
-  setCurrentRenderToolCalls: React.Dispatch<React.SetStateAction<ReactToolCallRenderer<unknown>[]>>;
+  setResourceId: (resourceId: string | string[] | undefined) => void;
 }
 ```
 
@@ -222,10 +270,15 @@ Access this context using the `useCopilotKit` hook:
 import { useCopilotKit } from "@copilotkitnext/react";
 
 function MyComponent() {
-  const { copilotkit } = useCopilotKit();
+  const { copilotkit, setResourceId } = useCopilotKit();
 
   // Access CopilotKitCore instance
   const agent = copilotkit.getAgent("assistant");
+
+  // Dynamically update resource ID
+  const switchWorkspace = (workspaceId: string) => {
+    setResourceId(workspaceId);
+  };
 }
 ```
 

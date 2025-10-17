@@ -237,11 +237,7 @@ export function CopilotChatInput({
   const previousCommandQueryRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (
-      commandQuery !== null &&
-      commandQuery !== previousCommandQueryRef.current &&
-      filteredCommands.length > 0
-    ) {
+    if (commandQuery !== null && commandQuery !== previousCommandQueryRef.current && filteredCommands.length > 0) {
       setSlashHighlightIndex(0);
     }
 
@@ -429,10 +425,7 @@ export function CopilotChatInput({
     onChange: handleChange,
     onKeyDown: handleKeyDown,
     autoFocus: autoFocus,
-    className: twMerge(
-      "w-full py-3",
-      isExpanded ? "px-5" : "pr-5",
-    ),
+    className: twMerge("w-full py-3", isExpanded ? "px-5" : "pr-5"),
   });
 
   const isProcessing = mode !== "transcribe" && isRunning;
@@ -729,10 +722,10 @@ export function CopilotChatInput({
       return;
     }
 
-    const active = slashMenuRef.current?.querySelector<HTMLElement>(
-      `[data-slash-index="${slashHighlightIndex}"]`,
-    );
-    active?.scrollIntoView({ block: "nearest" });
+    const active = slashMenuRef.current?.querySelector<HTMLElement>(`[data-slash-index="${slashHighlightIndex}"]`);
+    if (active && typeof active.scrollIntoView === "function") {
+      active.scrollIntoView({ block: "nearest" });
+    }
   }, [slashMenuVisible, slashHighlightIndex]);
 
   const slashMenu = slashMenuVisible ? (
@@ -807,11 +800,7 @@ export function CopilotChatInput({
       >
         <div
           ref={addButtonContainerRef}
-          className={twMerge(
-            "flex items-center",
-            isExpanded ? "row-start-2" : "row-start-1",
-            "col-start-1",
-          )}
+          className={twMerge("flex items-center", isExpanded ? "row-start-2" : "row-start-1", "col-start-1")}
         >
           {BoundAddMenuButton}
         </div>
@@ -1017,7 +1006,9 @@ export namespace CopilotChatInput {
           <TooltipContent side="bottom">
             <p className="flex items-center gap-1 text-xs font-medium">
               <span>Add files and more</span>
-              <code className="rounded bg-[#4a4a4a] px-1 py-[1px] font-mono text-[11px] text-white dark:bg-[#e0e0e0] dark:text-black">/</code>
+              <code className="rounded bg-[#4a4a4a] px-1 py-[1px] font-mono text-[11px] text-white dark:bg-[#e0e0e0] dark:text-black">
+                /
+              </code>
             </p>
           </TooltipContent>
         </Tooltip>
@@ -1050,7 +1041,9 @@ export namespace CopilotChatInput {
       const handleFocus = () => {
         // Small delay to let the keyboard start appearing
         setTimeout(() => {
-          textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          if (typeof textarea.scrollIntoView === "function") {
+            textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
         }, 300);
       };
 

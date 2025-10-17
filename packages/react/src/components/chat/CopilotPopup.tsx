@@ -10,6 +10,8 @@ export type CopilotPopupProps = Omit<CopilotChatProps, "chatView"> & {
   width?: CopilotPopupViewProps["width"];
   height?: CopilotPopupViewProps["height"];
   clickOutsideToClose?: CopilotPopupViewProps["clickOutsideToClose"];
+  showThreadListButton?: boolean;
+  showNewThreadButton?: boolean;
 };
 
 export function CopilotPopup({
@@ -18,6 +20,8 @@ export function CopilotPopup({
   width,
   height,
   clickOutsideToClose,
+  showThreadListButton,
+  showNewThreadButton,
   ...chatProps
 }: CopilotPopupProps) {
   const PopupViewOverride = useMemo(() => {
@@ -27,6 +31,8 @@ export function CopilotPopup({
         width: viewWidth,
         height: viewHeight,
         clickOutsideToClose: viewClickOutsideToClose,
+        showThreadListButton: viewShowThreadList,
+        showNewThreadButton: viewShowNewThread,
         ...restProps
       } = viewProps as CopilotPopupViewProps;
 
@@ -37,12 +43,14 @@ export function CopilotPopup({
           width={width ?? viewWidth}
           height={height ?? viewHeight}
           clickOutsideToClose={clickOutsideToClose ?? viewClickOutsideToClose}
+          showThreadListButton={showThreadListButton ?? viewShowThreadList}
+          showNewThreadButton={showNewThreadButton ?? viewShowNewThread}
         />
       );
     };
 
     return Object.assign(Component, CopilotChatView);
-  }, [clickOutsideToClose, header, height, width]);
+  }, [clickOutsideToClose, header, height, width, showThreadListButton, showNewThreadButton]);
 
   return (
     <CopilotChat

@@ -1,0 +1,352 @@
+---
+title: "useThreads"
+description: "Hook for managing conversation threads"
+---
+
+# useThreads
+
+The `useThreads` hook provides access to conversation threads and methods for managing them, including fetching, refreshing, and deleting threads with built-in optimistic updates.
+
+## Basic Usage
+
+```tsx
+import { useThreads } from "@copilotkitnext/react";
+
+function ThreadList() {
+  const { threads, isLoading, error } = useThreads();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>
+          <h3>{thread.firstMessage || "New conversation"}</h3>
+          <p>{thread.messageCount} messages</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Options
+
+### limit
+
+`number` **(optional, default: 50)**
+
+Maximum number of threads to fetch per request.
+
+```tsx
+const { threads } = useThreads({ limit: 20 });
+```
+
+### autoFetch
+
+`boolean` **(optional, default: true)**
+
+Whether to automatically fetch threads when the component mounts.
+
+```tsx
+const { threads, fetchThreads } = useThreads({ autoFetch: false });
+```
+
+## Return Value
+
+### threads
+
+`ThreadMetadata[]`
+
+Array of thread metadata objects.
+
+```typescript
+interface ThreadMetadata {
+  threadId: string;
+  createdAt: number;
+  lastActivityAt: number;
+  isRunning: boolean;
+  messageCount: number;
+  firstMessage?: string;
+}
+```
+
+### total
+
+`number`
+
+Total number of threads available.
+
+### isLoading
+
+`boolean`
+
+Loading state for fetch operations.
+
+### error
+
+`Error | null`
+
+Error state if fetch operations fail.
+
+### fetchThreads
+
+`(offset?: number) => Promise<void>`
+
+Manually fetch threads with optional pagination offset.
+
+```tsx
+const { fetchThreads } = useThreads();
+
+// Fetch first page
+await fetchThreads(0);
+
+// Fetch second page
+await fetchThreads(50);
+```
+
+### getThreadMetadata
+
+`(threadId: string) => Promise<ThreadMetadata | null>`
+
+Get metadata for a specific thread.
+
+```tsx
+const { getThreadMetadata } = useThreads();
+
+const thread = await getThreadMetadata("thread-123");
+if (thread) {
+  console.log(`Thread has ${thread.messageCount} messages`);
+}
+```
+
+### refresh
+
+`() => Promise<void>`
+
+Refresh the thread list from the beginning (offset 0).
+
+```tsx
+const { refresh } = useThreads();
+await refresh();
+```
+
+### addOptimisticThread
+
+`(threadId: string) => void`
+
+Add a thread optimistically to the UI before it's created on the server.
+
+```tsx
+const { addOptimisticThread } = useThreads();
+
+const newThreadId = crypto.randomUUID();
+addOptimisticThread(newThreadId);
+```
+
+### deleteThread
+
+`(threadId: string) => Promise<void>`
+
+Delete a thread with optimistic updates and automatic rollback on error.
+
+```tsx
+const { deleteThread } = useThreads();
+
+try {
+  await deleteThread("thread-123");
+  // Thread removed and list refreshed
+} catch (error) {
+  // Thread restored to original position
+  console.error("Delete failed:", error);
+}
+```
+
+The delete operation:
+- Immediately removes the thread from the UI (optimistic update)
+- Sends the delete request to the server
+- Refreshes the list on success
+- Restores the thread on failure (automatic rollback)
+
+### currentThreadId
+
+`string | undefined`
+
+The currently active thread ID from the chat configuration.
+
+## Examples
+
+### Manual Fetching
+
+```tsx
+function ManualThreadFetch() {
+  const { threads, fetchThreads, isLoading } = useThreads({
+    autoFetch: false,
+  });
+
+  return (
+    <div>
+      <button onClick={() => fetchThreads()} disabled={isLoading}>
+        Load Threads
+      </button>
+      {threads.map(thread => (
+        <div key={thread.threadId}>{thread.firstMessage}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+### With Pagination
+
+```tsx
+import { useState } from "react";
+
+function PaginatedThreads() {
+  const [offset, setOffset] = useState(0);
+  const limit = 20;
+  const { threads, total, fetchThreads } = useThreads({ limit });
+
+  const nextPage = () => {
+    const newOffset = offset + limit;
+    setOffset(newOffset);
+    fetchThreads(newOffset);
+  };
+
+  const prevPage = () => {
+    const newOffset = Math.max(0, offset - limit);
+    setOffset(newOffset);
+    fetchThreads(newOffset);
+  };
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>{thread.firstMessage}</div>
+      ))}
+      <div>
+        <button onClick={prevPage} disabled={offset === 0}>
+          Previous
+        </button>
+        <span>
+          Showing {offset + 1}-{Math.min(offset + limit, total)} of {total}
+        </span>
+        <button onClick={nextPage} disabled={offset + limit >= total}>
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Delete with Confirmation
+
+```tsx
+function ThreadManager() {
+  const { threads, deleteThread } = useThreads();
+
+  const handleDelete = async (threadId: string, name: string) => {
+    if (!window.confirm(`Delete "${name}"?`)) return;
+
+    try {
+      await deleteThread(threadId);
+    } catch (error) {
+      alert("Failed to delete thread");
+    }
+  };
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>
+          <span>{thread.firstMessage || "Untitled"}</span>
+          <button
+            onClick={() => handleDelete(
+              thread.threadId,
+              thread.firstMessage || "Untitled"
+            )}
+          >
+            Delete
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Auto-Switch After Delete
+
+```tsx
+import { useCopilotChatConfiguration } from "@copilotkitnext/react";
+
+function ThreadManager() {
+  const config = useCopilotChatConfiguration();
+  const { threads, deleteThread } = useThreads();
+
+  const handleDelete = async (threadId: string) => {
+    await deleteThread(threadId);
+
+    // Switch to another thread if deleted the active one
+    if (threadId === config?.threadId && threads.length > 0) {
+      config?.setThreadId(threads[0].threadId);
+    }
+  };
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>
+          <span>{thread.firstMessage}</span>
+          <button onClick={() => handleDelete(thread.threadId)}>
+            Delete
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### With External State Management
+
+```tsx
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+function ThreadListWithReactQuery() {
+  const queryClient = useQueryClient();
+  const { threads, deleteThread } = useThreads();
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteThread,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['threads']);
+      queryClient.invalidateQueries(['messages']);
+    },
+  });
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>
+          <span>{thread.firstMessage}</span>
+          <button
+            onClick={() => deleteMutation.mutate(thread.threadId)}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Related
+
+- [Thread Management Guide](/guides/thread-management)
+- [CopilotThreadList Component](/reference/copilot-thread-list)
+- [CopilotChatConfigurationProvider](/reference/copilot-chat-configuration-provider)

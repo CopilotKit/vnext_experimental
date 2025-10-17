@@ -26,20 +26,12 @@ export function useAgent({ agentId, updates }: UseAgentProps = {}) {
   const { copilotkit } = useCopilotKit();
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
-  const updateFlags = useMemo(
-    () => updates ?? ALL_UPDATES,
-    [JSON.stringify(updates)]
-  );
+  const updateFlags = useMemo(() => updates ?? ALL_UPDATES, [JSON.stringify(updates)]);
 
   const agent: AbstractAgent | undefined = useMemo(() => {
     return copilotkit.getAgent(agentId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    agentId,
-    copilotkit.agents,
-    copilotkit.runtimeConnectionStatus,
-    copilotkit,
-  ]);
+  }, [agentId, copilotkit.agents, copilotkit.runtimeConnectionStatus, copilotkit]);
 
   useEffect(() => {
     if (!agent) {

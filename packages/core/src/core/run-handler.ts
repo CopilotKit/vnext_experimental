@@ -12,6 +12,11 @@ export interface CopilotKitCoreRunAgentParams {
 
 export interface CopilotKitCoreConnectAgentParams {
   agent: AbstractAgent;
+  threadId?: string;
+}
+
+export interface CopilotKitCoreDisconnectAgentParams {
+  agent: AbstractAgent;
 }
 
 export interface CopilotKitCoreGetToolParams {
@@ -102,10 +107,57 @@ export class RunHandler {
   /**
    * Connect an agent (establish initial connection)
    */
-  async connectAgent({ agent }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
+  async connectAgent({ agent, threadId }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
       if (agent instanceof HttpAgent) {
-        agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
+        agent.headers = this.core.getHeadersWithResourceId();
+      }
+
+      if (threadId) {
+        agent.threadId = threadId;
+      }
+
+      const expectedThreadIdKey = "__copilotkitExpectedThreadId";
+      const guardKey = "__copilotkitThreadGuard";
+
+      (agent as any)[expectedThreadIdKey] = agent.threadId ?? threadId ?? null;
+
+      if (!(agent as any)[guardKey]) {
+        const guardSubscription = agent.subscribe({
+          onEvent: ({ event, input }) => {
+            const expectedThreadId = (agent as any)[expectedThreadIdKey];
+            const eventThreadId = input?.threadId;
+
+            // If no expected thread (during disconnect), drop ALL events
+            if (!expectedThreadId) {
+              console.debug(
+                "CopilotKitCore: dropping event - no expected thread (disconnected state)",
+                "eventThread:",
+                eventThreadId,
+                "event:",
+                event.type,
+              );
+              return { stopPropagation: true };
+            }
+
+            // If event has a thread ID and it doesn't match expected, drop it
+            if (eventThreadId && eventThreadId !== expectedThreadId) {
+              console.debug(
+                "CopilotKitCore: dropping event from stale thread",
+                eventThreadId,
+                "expected",
+                expectedThreadId,
+                "event",
+                event.type,
+              );
+              return { stopPropagation: true };
+            }
+
+            return;
+          },
+        });
+
+        (agent as any)[guardKey] = guardSubscription;
       }
 
       const runAgentResult = await agent.connectAgent(
@@ -115,6 +167,8 @@ export class RunHandler {
         },
         this.createAgentErrorSubscriber(agent),
       );
+
+      (agent as any).__copilotkitExpectedThreadId = agent.threadId ?? threadId ?? null;
 
       return this.processAgentResult({ runAgentResult, agent });
     } catch (error) {
@@ -132,6 +186,32 @@ export class RunHandler {
     }
   }
 
+  async disconnectAgent({ agent }: CopilotKitCoreDisconnectAgentParams): Promise<void> {
+    const disconnectableAgent = agent as AbstractAgent & {
+      disconnectAgent?: () => Promise<void> | void;
+      stop?: () => Promise<void> | void;
+    };
+
+    // Clear the expected thread ID - this stops UI updates for this thread
+    // The agent continues running in background, we just stop listening to its events
+    (agent as any).__copilotkitExpectedThreadId = null;
+
+    // Note: We DO NOT abort or stop the agent here!
+    // Reason: The backend thread continues generating. When user returns to this thread,
+    // connectAgent() will sync all the new messages that were generated while they were away.
+    // This gives the ChatGPT-like behavior where you can switch tabs and come back to see
+    // the full conversation that continued in your absence.
+
+    // Optional: Call agent's disconnectAgent for cleanup (close streams, etc)
+    if (typeof disconnectableAgent.disconnectAgent === "function") {
+      try {
+        await disconnectableAgent.disconnectAgent();
+      } catch (error) {
+        console.debug("Error during agent disconnection (non-critical):", error);
+      }
+    }
+  }
+
   /**
    * Run an agent
    */
@@ -142,7 +222,7 @@ export class RunHandler {
     }
 
     if (agent instanceof HttpAgent) {
-      agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
+      agent.headers = this.core.getHeadersWithResourceId();
     }
 
     if (withMessages) {
@@ -540,6 +620,21 @@ export class RunHandler {
         });
       },
     };
+  }
+}
+
+async function waitForAgentToStop(agent: AbstractAgent, timeoutMs = 2000): Promise<void> {
+  if (!agent.isRunning) {
+    return;
+  }
+
+  const start = Date.now();
+  while (agent.isRunning && Date.now() - start < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  if (agent.isRunning) {
+    console.warn("Agent did not stop within timeout after abortRun.");
   }
 }
 

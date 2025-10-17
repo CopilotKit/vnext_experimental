@@ -1,17 +1,19 @@
 import * as React from "react";
 import { createComponent } from "@lit-labs/react";
-import {
-  WEB_INSPECTOR_TAG,
-  WebInspectorElement,
-  defineWebInspector,
-} from "@copilotkitnext/web-inspector";
+import * as WebInspectorModule from "@copilotkitnext/web-inspector";
 import type { CopilotKitCore } from "@copilotkitnext/core";
+
+const WEB_INSPECTOR_TAG = (WebInspectorModule as { WEB_INSPECTOR_TAG: string }).WEB_INSPECTOR_TAG;
+const defineWebInspector = (WebInspectorModule as { defineWebInspector: () => void }).defineWebInspector;
+const WebInspectorElementClass = (WebInspectorModule as { WebInspectorElement: typeof HTMLElement }).WebInspectorElement;
+
+type WebInspectorElementInstance = HTMLElement & { core: CopilotKitCore | null };
 
 defineWebInspector();
 
 const CopilotKitInspectorBase = createComponent({
   tagName: WEB_INSPECTOR_TAG,
-  elementClass: WebInspectorElement,
+  elementClass: WebInspectorElementClass,
   react: React,
 });
 
@@ -21,14 +23,11 @@ export interface CopilotKitInspectorProps extends Omit<CopilotKitInspectorBasePr
   core?: CopilotKitCore | null;
 }
 
-export const CopilotKitInspector = React.forwardRef<
-  WebInspectorElement,
-  CopilotKitInspectorProps
->(
+export const CopilotKitInspector = React.forwardRef<WebInspectorElementInstance, CopilotKitInspectorProps>(
   ({ core, ...rest }, ref) => {
-    const innerRef = React.useRef<WebInspectorElement>(null);
+    const innerRef = React.useRef<WebInspectorElementInstance>(null);
 
-    React.useImperativeHandle(ref, () => innerRef.current as WebInspectorElement, []);
+    React.useImperativeHandle(ref, () => innerRef.current as WebInspectorElementInstance, []);
 
     React.useEffect(() => {
       if (innerRef.current) {

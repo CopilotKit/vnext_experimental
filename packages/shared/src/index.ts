@@ -3,6 +3,7 @@ export {
   type NonEmptyRecord,
   type AgentDescription,
   type RuntimeInfo,
+  type ThreadMetadata,
 } from "./types";
 
 export * from "./utils";

@@ -16,14 +16,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "**/__tests__/**",
-        "**/*.test.*",
-        "**/*.spec.*"
-      ],
-      "outputs": ["coverage/**"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "**/__tests__/**", "**/*.test.*", "**/*.spec.*"],
       "env": ["LOG_LEVEL", "NODE_ENV"]
     },
     "test:watch": {
@@ -33,13 +26,7 @@
     },
     "test:coverage": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "**/__tests__/**",
-        "**/*.test.*",
-        "**/*.spec.*"
-      ],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "**/__tests__/**", "**/*.test.*", "**/*.spec.*"],
       "outputs": ["coverage/**"],
       "env": ["LOG_LEVEL", "NODE_ENV"]
     },
@@ -88,10 +75,7 @@
       "persistent": true
     },
     "storybook:build": {
-      "outputs": [
-        "apps/react/storybook/storybook-static/**",
-        "apps/angular/storybook/storybook-static/**"
-      ]
+      "outputs": ["apps/react/storybook/storybook-static/**", "apps/angular/storybook/storybook-static/**"]
     },
     "clean": {
       "cache": false,

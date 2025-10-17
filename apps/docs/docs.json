@@ -41,6 +41,10 @@
         "pages": ["introduction"]
       },
       {
+        "group": "Guides",
+        "pages": ["guides/resource-scoping", "guides/thread-management"]
+      },
+      {
         "group": "API Reference",
         "pages": [
           {
@@ -56,12 +60,13 @@
               },
               {
                 "group": "Components",
-                "pages": ["reference/copilot-chat"]
+                "pages": ["reference/copilot-chat", "reference/copilot-thread-list"]
               },
               {
                 "group": "Hooks",
                 "pages": [
                   "reference/use-copilotkit",
+                  "reference/use-threads",
                   "reference/use-agent",
                   "reference/use-agent-context",
                   "reference/use-frontend-tool",

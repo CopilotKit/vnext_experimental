@@ -8,6 +8,7 @@ import { logger } from "@copilotkitnext/shared";
 import { callBeforeRequestMiddleware, callAfterRequestMiddleware } from "./middleware";
 import { handleConnectAgent } from "./handlers/handle-connect";
 import { handleStopAgent } from "./handlers/handle-stop";
+import { handleListThreads, handleGetThread, handleDeleteThread } from "./handlers/handle-threads";
 
 interface CopilotEndpointParams {
   runtime: CopilotRuntime;
@@ -140,6 +141,49 @@ export function createCopilotEndpoint({ runtime, basePath }: CopilotEndpointPara
         return await handleTranscribe({
           runtime,
           request,
+        });
+      } catch (error) {
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
+        throw error;
+      }
+    })
+    .get("/threads", async (c) => {
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleListThreads({
+          runtime,
+          request,
+        });
+      } catch (error) {
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
+        throw error;
+      }
+    })
+    .get("/threads/:threadId", async (c) => {
+      const threadId = c.req.param("threadId");
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleGetThread({
+          runtime,
+          request,
+          threadId,
+        });
+      } catch (error) {
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
+        throw error;
+      }
+    })
+    .delete("/threads/:threadId", async (c) => {
+      const threadId = c.req.param("threadId");
+      const request = c.get("modifiedRequest") || c.req.raw;
+
+      try {
+        return await handleDeleteThread({
+          runtime,
+          request,
+          threadId,
         });
       } catch (error) {
         logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");

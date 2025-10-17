@@ -1,0 +1,417 @@
+---
+title: "Resource Scoping & Thread Security"
+description: "Learn how to secure threads with resource-based access control"
+---
+
+# Resource Scoping & Thread Security
+
+Resource scoping allows you to control which users have access to which threads. By associating threads with resource IDs (like user IDs or workspace IDs), you ensure that users can only access threads they're authorized to see.
+
+## Quick Start
+
+### 1. Client-Side: Declare Resource ID
+
+Set the `resourceId` prop on `CopilotKitProvider`:
+
+```tsx
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  const { userId } = useAuth();
+
+  return (
+    <CopilotKitProvider
+      runtimeUrl="/api/copilotkit"
+      resourceId={userId} // 👈 Declare which resource this client belongs to
+    >
+      <YourApp />
+    </CopilotKitProvider>
+  );
+}
+```
+
+### 2. Server-Side: Validate and Enforce
+
+Configure the `` in your runtime:
+
+```typescript
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+
+const runtime = new CopilotRuntime({
+  agents: { myAgent },
+  resolveThreadsScope: async ({ request, clientDeclared }) => {
+    // Authenticate the user
+    const user = await authenticate(request);
+
+    // Validate client-declared resourceId matches
+    if (clientDeclared && clientDeclared !== user.id) {
+      throw new Error("Unauthorized");
+    }
+
+    // Return the validated resourceId
+    return { resourceId: user.id };
+  },
+});
+```
+
+## How It Works
+
+### Client → Server Flow
+
+1. **Client declares intent**: `<CopilotKitProvider resourceId={userId}>`
+2. **Header transport**: Client sends `X-CopilotKit-Resource-ID: userId` header
+3. **Server validates**: `resolveThreadsScope` receives `{ request, clientDeclared: userId }`
+4. **Server enforces**: Only threads with matching `resourceId` are accessible
+
+<Frame>
+  <img src="/images/resource-scoping-flow.png" alt="Resource scoping flow diagram" />
+</Frame>
+
+<Info>
+  **Client-hint architecture**: The client declares its intended scope, but the server always has final authority. This is similar to CORS or OAuth scopes.
+</Info>
+
+## Common Patterns
+
+### Pattern 1: Single User Per Thread
+
+The simplest pattern - one user, one thread:
+
+```tsx
+// Client
+<CopilotKitProvider resourceId={user.id}>
+```
+
+```typescript
+// Server
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  if (clientDeclared && clientDeclared !== user.id) {
+    throw new Error("Unauthorized");
+  }
+  return { resourceId: user.id };
+}
+```
+
+### Pattern 2: Multi-Resource Threads
+
+Threads accessible by multiple resources (e.g., shared workspaces):
+
+```tsx
+// Client - Request threads from specific workspace
+<CopilotKitProvider resourceId={workspaceId}>
+```
+
+```typescript
+// Server - Filter to authorized workspaces only
+import { filterAuthorizedResourceIds } from "@copilotkitnext/runtime";
+
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  const userWorkspaces = await getUserWorkspaces(user);
+
+  // Filter client-declared IDs to only those user has access to
+  const resourceId = filterAuthorizedResourceIds(
+    clientDeclared,
+    userWorkspaces.map(w => w.id)
+  );
+
+  return { resourceId };
+}
+```
+
+### Pattern 3: Workspace Switcher
+
+Let users dynamically change scope:
+
+```tsx
+function WorkspaceSwitcher() {
+  const { setResourceId } = useCopilotKit();
+  const [currentWorkspace, setCurrentWorkspace] = useState("ws-1");
+
+  const switchWorkspace = (workspaceId: string) => {
+    setCurrentWorkspace(workspaceId);
+    setResourceId(workspaceId); // 👈 Update resource scope
+  };
+
+  return (
+    <select value={currentWorkspace} onChange={(e) => switchWorkspace(e.target.value)}>
+      <option value="ws-1">Workspace 1</option>
+      <option value="ws-2">Workspace 2</option>
+    </select>
+  );
+}
+```
+
+### Pattern 4: Shared Threads (Multi-User)
+
+Threads accessible by multiple users:
+
+```tsx
+// Client - Thread accessible by user AND team
+<CopilotKitProvider resourceId={[user.id, team.id]}>
+```
+
+```typescript
+// Server - Thread is accessible if ANY resourceId matches
+resolveThreadsScope: async ({ request }) => {
+  const user = await authenticate(request);
+  const team = await getUserTeam(user);
+
+  // Thread will be accessible by both user ID and team ID
+  return { resourceId: [user.id, team.id] };
+}
+```
+
+## Validation Helpers
+
+CopilotKit provides helper functions for common validation patterns:
+
+### `validateResourceIdMatch`
+
+Strict validation - throws if client-declared doesn't match server-authorized:
+
+```typescript
+import { validateResourceIdMatch } from "@copilotkitnext/runtime";
+
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  validateResourceIdMatch(clientDeclared, user.id); // Throws if mismatch
+  return { resourceId: user.id };
+}
+```
+
+### `filterAuthorizedResourceIds`
+
+Filtering validation - returns only authorized IDs:
+
+```typescript
+import { filterAuthorizedResourceIds } from "@copilotkitnext/runtime";
+
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  const userWorkspaces = await getUserWorkspaces(user);
+
+  const resourceId = filterAuthorizedResourceIds(
+    clientDeclared,
+    userWorkspaces.map(w => w.id)
+  );
+
+  return { resourceId };
+}
+```
+
+### `createStrictThreadScopeResolver`
+
+Factory for strict validation:
+
+```typescript
+import { createStrictThreadScopeResolver } from "@copilotkitnext/runtime";
+
+const runtime = new CopilotRuntime({
+  agents: { myAgent },
+  resolveThreadsScope: createStrictThreadScopeResolver(async (request) => {
+    const user = await authenticate(request);
+    return user.id;
+  }),
+});
+```
+
+### `createFilteringThreadScopeResolver`
+
+Factory for filtering validation:
+
+```typescript
+import { createFilteringThreadScopeResolver } from "@copilotkitnext/runtime";
+
+const runtime = new CopilotRuntime({
+  agents: { myAgent },
+  resolveThreadsScope: createFilteringThreadScopeResolver(async (request) => {
+    const user = await authenticate(request);
+    return await getUserAccessibleWorkspaces(user);
+  }),
+});
+```
+
+## Security Best Practices
+
+### 1. Always Validate on the Server
+
+<Warning>
+  **Never trust client input**. The client declares which resource it wants to access, but you must validate this against your authentication system. The security boundary is in your server-side validation logic - not in what the client sends.
+</Warning>
+
+```typescript
+// ❌ BAD - Trusts client without validation
+resolveThreadsScope: async ({ clientDeclared }) => {
+  return { resourceId: clientDeclared }; // Dangerous!
+}
+
+// ✅ GOOD - Server validates and enforces
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  if (clientDeclared && clientDeclared !== user.id) {
+    throw new Error("Unauthorized");
+  }
+  return { resourceId: user.id };
+}
+```
+
+### 2. Use Environment-Specific Warnings
+
+CopilotKit warns you when resourceId is missing:
+
+```tsx
+// Development - Warning in console
+<CopilotKitProvider runtimeUrl="/api/copilotkit">
+  {/* Console: "No resourceId set. All threads are globally accessible." */}
+</CopilotKitProvider>
+
+// Production - Error in console
+<CopilotKitProvider runtimeUrl="/api/copilotkit">
+  {/* Console: "Security Warning: No resourceId set in production!" */}
+</CopilotKitProvider>
+```
+
+### 3. Handle Admin Bypass Carefully
+
+Use `null` scope for admin access, but validate the user is actually an admin:
+
+```typescript
+resolveThreadsScope: async ({ request }) => {
+  const user = await authenticate(request);
+
+  if (user.isAdmin) {
+    return null; // Admin bypass - sees all threads
+  }
+
+  return { resourceId: user.id };
+}
+```
+
+### 4. Prevent Resource Enumeration
+
+Always return 404 (not 403) for unauthorized threads:
+
+```typescript
+// ✅ GOOD - Prevents resource enumeration
+const thread = await runtime.runner.getThreadMetadata(threadId, scope);
+if (!thread) {
+  return new Response("Thread not found", { status: 404 });
+}
+```
+
+## Advanced: Custom Request Handlers
+
+If you're building custom request handlers outside the standard CopilotKit flow, you may need to manually parse the `X-CopilotKit-Resource-ID` header.
+
+### `parseClientDeclaredResourceId`
+
+This static helper method extracts and parses the resource ID(s) from the request header:
+
+```typescript
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+
+// In your custom handler
+export async function customHandler(request: Request) {
+  // Parse the client-declared resource ID
+  const clientDeclared = CopilotRuntime.parseClientDeclaredResourceId(request);
+
+  // Validate and resolve scope
+  const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+
+  // Use scope for your custom operation
+  // ...
+}
+```
+
+**When to use this:**
+- Building custom API endpoints that need resource scoping
+- Extending the runtime with additional handlers
+- Debugging scope resolution issues
+
+**You don't need this for:**
+- Standard agent runs, connections, or thread operations (handled automatically)
+- Implementing `resolveThreadsScope` (it receives `clientDeclared` as a parameter)
+
+### Return Value
+
+The method returns:
+- `string` - Single resource ID (e.g., `"user-123"`)
+- `string[]` - Multiple comma-separated IDs (e.g., `["workspace-1", "workspace-2"]`)
+- `undefined` - Header not present
+
+### Example: Custom Thread Export
+
+```typescript
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+
+export async function handleExportThreads(runtime: CopilotRuntime, request: Request) {
+  // Parse client-declared resource ID
+  const clientDeclared = CopilotRuntime.parseClientDeclaredResourceId(request);
+
+  // Validate via resolveThreadsScope
+  const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+  if (!scope) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  // List threads with proper scoping
+  const { threads } = await runtime.runner.listThreads({ scope, limit: 100, offset: 0 });
+
+  // Export as CSV or other format
+  const csv = threadsToCSV(threads);
+  return new Response(csv, {
+    headers: { "Content-Type": "text/csv" }
+  });
+}
+```
+
+## Troubleshooting
+
+### "Unauthorized: Cannot access thread owned by different resource"
+
+The client is trying to access a thread that belongs to a different resourceId.
+
+**Fix**: Ensure the client's resourceId matches the thread's resourceId.
+
+### "No threads returned even though threads exist"
+
+The scope filtering is too restrictive.
+
+**Debug**:
+```typescript
+resolveThreadsScope: async ({ request, clientDeclared }) => {
+  const user = await authenticate(request);
+  console.log("User ID:", user.id);
+  console.log("Client declared:", clientDeclared);
+
+  return { resourceId: user.id };
+}
+```
+
+### "Empty array causes SQL error"
+
+If you're passing an empty array as resourceId, it will return no threads (as expected).
+
+```typescript
+// Returns no threads (empty array = no access)
+return { resourceId: [] };
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Thread Management" icon="list-check" href="/guides/thread-management">
+    Learn how to list, create, and delete threads
+  </Card>
+  <Card title="Runtime API" icon="server" href="/reference/copilot-runtime">
+    Full API reference for CopilotRuntime
+  </Card>
+  <Card title="Provider API" icon="react" href="/reference/copilotkit-provider">
+    Full API reference for CopilotKitProvider
+  </Card>
+  <Card title="Security" icon="shield" href="/security/overview">
+    Complete security best practices
+  </Card>
+</CardGroup>

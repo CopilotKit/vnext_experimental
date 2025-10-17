@@ -1,11 +1,7 @@
-import {
-  AbstractAgent,
-  HttpAgent,
-  RunAgentInput,
-  RunAgentInputSchema,
-} from "@ag-ui/client";
+import { AbstractAgent, HttpAgent, RunAgentInput, RunAgentInputSchema } from "@ag-ui/client";
 import { EventEncoder } from "@ag-ui/encoder";
 import { CopilotRuntime } from "../runtime";
+import { Subscription } from "rxjs";
 
 interface RunAgentParameters {
   request: Request;
@@ -13,11 +9,7 @@ interface RunAgentParameters {
   agentId: string;
 }
 
-export async function handleRunAgent({
-  runtime,
-  request,
-  agentId,
-}: RunAgentParameters) {
+export async function handleRunAgent({ runtime, request, agentId }: RunAgentParameters) {
   try {
     const agents = await runtime.agents;
 
@@ -31,7 +23,7 @@ export async function handleRunAgent({
         {
           status: 404,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -51,9 +43,9 @@ export async function handleRunAgent({
         }
       });
 
-      agent.headers = { 
-        ...agent.headers as Record<string, string>, 
-        ...forwardableHeaders 
+      agent.headers = {
+        ...(agent.headers as Record<string, string>),
+        ...forwardableHeaders,
       };
     }
 
@@ -61,6 +53,26 @@ export async function handleRunAgent({
     const writer = stream.writable.getWriter();
     const encoder = new EventEncoder();
     let streamClosed = false;
+    let subscription: Subscription | undefined;
+    let abortListener: (() => void) | undefined;
+
+    const cleanupAbortListener = () => {
+      if (abortListener) {
+        request.signal.removeEventListener("abort", abortListener);
+        abortListener = undefined;
+      }
+    };
+
+    const closeStream = async () => {
+      if (!streamClosed) {
+        try {
+          await writer.close();
+        } catch {
+          // Stream already closed
+        }
+        streamClosed = true;
+      }
+    };
 
     // Process the request in the background
     (async () => {
@@ -73,19 +85,37 @@ export async function handleRunAgent({
           JSON.stringify({
             error: "Invalid request body",
           }),
-          { status: 400 }
+          { status: 400 },
         );
+      }
+
+      // Parse client-declared resourceId from header
+      const clientDeclared = CopilotRuntime["parseClientDeclaredResourceId"](request);
+
+      // Resolve resource scope (null is valid for admin bypass)
+      const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+      if (scope === undefined) {
+        throw new Error("Unauthorized: No resource scope provided");
       }
 
       agent.setMessages(input.messages);
       agent.setState(input.state);
       agent.threadId = input.threadId;
 
-      runtime.runner
+      const stopRunner = async () => {
+        try {
+          await runtime.runner.stop({ threadId: input.threadId });
+        } catch (stopError) {
+          console.error("Error stopping runner:", stopError);
+        }
+      };
+
+      subscription = runtime.runner
         .run({
           threadId: input.threadId,
           agent,
           input,
+          scope,
         })
         .subscribe({
           next: async (event) => {
@@ -93,7 +123,7 @@ export async function handleRunAgent({
               try {
                 await writer.write(encoder.encode(event));
               } catch (error) {
-                if (error instanceof Error && error.name === 'AbortError') {
+                if (error instanceof Error && error.name === "AbortError") {
                   streamClosed = true;
                 }
               }
@@ -101,45 +131,41 @@ export async function handleRunAgent({
           },
           error: async (error) => {
             console.error("Error running agent:", error);
-            if (!streamClosed) {
-              try {
-                await writer.close();
-                streamClosed = true;
-              } catch {
-                // Stream already closed
-              }
-            }
+            cleanupAbortListener();
+            await closeStream();
           },
           complete: async () => {
-            if (!streamClosed) {
-              try {
-                await writer.close();
-                streamClosed = true;
-              } catch {
-                // Stream already closed
-              }
-            }
+            cleanupAbortListener();
+            await closeStream();
           },
         });
+
+      const handleAbort = () => {
+        subscription?.unsubscribe();
+        subscription = undefined;
+        cleanupAbortListener();
+        void stopRunner();
+        void closeStream();
+      };
+
+      if (request.signal.aborted) {
+        handleAbort();
+      } else {
+        abortListener = handleAbort;
+        request.signal.addEventListener("abort", abortListener);
+      }
     })().catch((error) => {
       console.error("Error running agent:", error);
-      console.error(
-        "Error stack:",
-        error instanceof Error ? error.stack : "No stack trace"
-      );
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
       console.error("Error details:", {
         name: error instanceof Error ? error.name : "Unknown",
         message: error instanceof Error ? error.message : String(error),
         cause: error instanceof Error ? error.cause : undefined,
       });
-      if (!streamClosed) {
-        try {
-          writer.close();
-          streamClosed = true;
-        } catch {
-          // Stream already closed
-        }
-      }
+      subscription?.unsubscribe();
+      subscription = undefined;
+      cleanupAbortListener();
+      void closeStream();
     });
 
     // Return the SSE response
@@ -153,10 +179,7 @@ export async function handleRunAgent({
     });
   } catch (error) {
     console.error("Error running agent:", error);
-    console.error(
-      "Error stack:",
-      error instanceof Error ? error.stack : "No stack trace"
-    );
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     console.error("Error details:", {
       name: error instanceof Error ? error.name : "Unknown",
       message: error instanceof Error ? error.message : String(error),
@@ -171,7 +194,7 @@ export async function handleRunAgent({
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 }

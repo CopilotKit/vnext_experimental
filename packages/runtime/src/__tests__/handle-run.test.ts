@@ -5,14 +5,13 @@ import { handleRunAgent } from "../handlers/handle-run";
 import { CopilotRuntime } from "../runtime";
 
 describe("handleRunAgent", () => {
-  const createMockRuntime = (
-    agents: Record<string, unknown> = {}
-  ): CopilotRuntime => {
+  const createMockRuntime = (agents: Record<string, unknown> = {}): CopilotRuntime => {
     return {
       agents: Promise.resolve(agents),
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
+      resolveThreadsScope: async () => ({ resourceId: "test-user" }),
     } as CopilotRuntime;
   };
 
@@ -49,6 +48,7 @@ describe("handleRunAgent", () => {
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
+      resolveThreadsScope: async () => ({ resourceId: "test-user" }),
     } as CopilotRuntime;
     const request = createMockRequest();
     const agentId = "test-agent";
@@ -104,6 +104,7 @@ describe("handleRunAgent", () => {
       transcriptionService: undefined,
       beforeRequestMiddleware: undefined,
       afterRequestMiddleware: undefined,
+      resolveThreadsScope: async () => ({ resourceId: "test-user" }),
       runner: {
         run: ({ agent }: { agent: AbstractAgent }) =>
           new Observable<BaseEvent>((subscriber) => {

@@ -19,13 +19,13 @@ export function CopilotChatToolCallsView({
 
   return (
     <>
-      {message.toolCalls.map((toolCall) => {
+      {message.toolCalls.map((toolCall, index) => {
         const toolMessage = messages.find(
           (m) => m.role === "tool" && m.toolCallId === toolCall.id
         ) as ToolMessage | undefined;
 
         return (
-          <React.Fragment key={toolCall.id}>
+          <React.Fragment key={`${message.id}-${toolCall.id ?? index}-${index}`}>
             {renderToolCall({
               toolCall,
               toolMessage,

@@ -9,6 +9,7 @@ import React, {
   useReducer,
   useRef,
   useState,
+  useCallback,
 } from "react";
 import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
@@ -23,11 +24,25 @@ import { CopilotKitInspector } from "../components/CopilotKitInspector";
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
   copilotkit: CopilotKitCoreReact;
+  /**
+   * Set the resource ID(s) dynamically.
+   * Use this to update resource scoping when the user switches context (e.g., workspace switcher).
+   *
+   * @example
+   * ```tsx
+   * const { setResourceId } = useCopilotKit();
+   * setResourceId(newWorkspaceId);
+   * ```
+   */
+  setResourceId: (resourceId: string | string[] | undefined) => void;
 }
 
 // Create the CopilotKit context
 const CopilotKitContext = createContext<CopilotKitContextValue>({
   copilotkit: null!,
+  setResourceId: () => {
+    throw new Error("useCopilotKit must be used within CopilotKitProvider");
+  },
 });
 
 // Provider props interface
@@ -36,6 +51,22 @@ export interface CopilotKitProviderProps {
   runtimeUrl?: string;
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
+  /**
+   * Resource ID(s) for thread access control.
+   *
+   * This value is sent to the server as a hint for thread scoping.
+   * The server's `resolveThreadsScope` validates and enforces access control.
+   *
+   * @example
+   * ```tsx
+   * // Single resource
+   * <CopilotKitProvider resourceId={userId}>
+   *
+   * // Multiple resources (thread accessible by any of these)
+   * <CopilotKitProvider resourceId={[userId, workspaceId]}>
+   * ```
+   */
+  resourceId?: string | string[];
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
   renderCustomMessages?: ReactCustomMessageRenderer[];
@@ -73,6 +104,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   runtimeUrl,
   headers = {},
   properties = {},
+  resourceId,
   agents__unsafe_dev_only: agents = {},
   renderToolCalls,
   renderCustomMessages,
@@ -220,6 +252,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       runtimeUrl,
       headers,
       properties,
+      resourceId,
       agents__unsafe_dev_only: agents,
       tools: allTools,
       renderToolCalls: allRenderToolCalls,
@@ -249,13 +282,46 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     copilotkit.setRuntimeUrl(runtimeUrl);
     copilotkit.setHeaders(headers);
     copilotkit.setProperties(properties);
+    copilotkit.setResourceId(resourceId);
     copilotkit.setAgents__unsafe_dev_only(agents);
-  }, [runtimeUrl, headers, properties, agents]);
+  }, [runtimeUrl, headers, properties, resourceId, agents]);
+
+  // Production safety: warn if resourceId not set
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const isProduction = process.env.NODE_ENV === "production";
+    if (isProduction && !resourceId) {
+      console.error(
+        "CopilotKit Security Warning: No resourceId set in production.\n" +
+          "All threads will be globally accessible. Set the resourceId prop:\n" +
+          "<CopilotKitProvider resourceId={userId}>\n" +
+          "Learn more: https://docs.copilotkit.ai/security/resource-scoping",
+      );
+    } else if (!isProduction && !resourceId) {
+      console.warn(
+        "CopilotKit: No resourceId set. All threads are globally accessible.\n" +
+          "This is fine for development, but add resourceId for production:\n" +
+          "<CopilotKitProvider resourceId={userId}>",
+      );
+    }
+  }, [resourceId]);
+
+  // Create stable setResourceId function
+  const setResourceId = useCallback(
+    (newResourceId: string | string[] | undefined) => {
+      copilotkit.setResourceId(newResourceId);
+    },
+    [copilotkit],
+  );
 
   return (
     <CopilotKitContext.Provider
       value={{
         copilotkit,
+        setResourceId,
       }}
     >
       {children}
@@ -275,6 +341,9 @@ export const useCopilotKit = (): CopilotKitContextValue => {
   useEffect(() => {
     const unsubscribe = context.copilotkit.subscribe({
       onRuntimeConnectionStatusChanged: () => {
+        forceUpdate();
+      },
+      onResourceIdChanged: () => {
         forceUpdate();
       },
     });
