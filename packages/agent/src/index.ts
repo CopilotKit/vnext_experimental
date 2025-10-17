@@ -860,7 +860,10 @@ export class BasicAgent extends AbstractAgent {
                 subscriber.complete();
                 break;
 
-              case "error":
+              case "error": {
+                if (abortController.signal.aborted) {
+                  break;
+                }
                 const runErrorEvent: RunErrorEvent = {
                   type: EventType.RUN_ERROR,
                   message: part.error + "",
@@ -871,17 +874,14 @@ export class BasicAgent extends AbstractAgent {
                 // Handle error
                 subscriber.error(part.error);
                 break;
+              }
             }
           }
 
           if (!terminalEventEmitted) {
             if (abortController.signal.aborted) {
-              const runErrorEvent: RunErrorEvent = {
-                type: EventType.RUN_ERROR,
-                message: "Run stopped by user",
-                code: "STOPPED",
-              };
-              subscriber.next(runErrorEvent);
+              // Let the runner finalize the stream on stop requests so it can
+              // inject consistent closing events and a RUN_FINISHED marker.
             } else {
               const finishedEvent: RunFinishedEvent = {
                 type: EventType.RUN_FINISHED,
@@ -895,13 +895,17 @@ export class BasicAgent extends AbstractAgent {
             subscriber.complete();
           }
         } catch (error) {
-          const runErrorEvent: RunErrorEvent = {
-            type: EventType.RUN_ERROR,
-            message: error + "",
-          };
-          subscriber.next(runErrorEvent);
-          terminalEventEmitted = true;
-          subscriber.error(error);
+          if (abortController.signal.aborted) {
+            subscriber.complete();
+          } else {
+            const runErrorEvent: RunErrorEvent = {
+              type: EventType.RUN_ERROR,
+              message: error + "",
+            };
+            subscriber.next(runErrorEvent);
+            terminalEventEmitted = true;
+            subscriber.error(error);
+          }
         } finally {
           this.abortController = undefined;
           await Promise.all(mcpClients.map((client) => client.close()));

@@ -6,6 +6,7 @@ import {
   EventType,
   Message,
   RunAgentInput,
+  RunFinishedEvent,
   RunStartedEvent,
   TextMessageContentEvent,
   TextMessageEndEvent,
@@ -45,6 +46,19 @@ class MockAgent extends AbstractAgent {
 
     for (const event of this.events) {
       await callbacks.onEvent({ event });
+    }
+
+    const hasTerminalEvent = this.events.some((event) =>
+      event.type === EventType.RUN_FINISHED || event.type === EventType.RUN_ERROR,
+    );
+
+    if (!hasTerminalEvent) {
+      const runFinished: RunFinishedEvent = {
+        type: EventType.RUN_FINISHED,
+        threadId: input.threadId,
+        runId: input.runId,
+      };
+      await callbacks.onEvent({ event: runFinished });
     }
   }
 
@@ -178,6 +192,7 @@ describe("SqliteAgentRunner", () => {
       { type: EventType.TEXT_MESSAGE_START, messageId: "msg-1", role: "assistant" } as TextMessageStartEvent,
       { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "msg-1", delta: "Hello" } as TextMessageContentEvent,
       { type: EventType.TEXT_MESSAGE_END, messageId: "msg-1" } as TextMessageEndEvent,
+      { type: EventType.RUN_FINISHED, threadId, runId: "run-1" } as RunFinishedEvent,
     ]);
 
     const events = await firstValueFrom(
@@ -195,6 +210,7 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_START,
       EventType.TEXT_MESSAGE_CONTENT,
       EventType.TEXT_MESSAGE_END,
+      EventType.RUN_FINISHED,
     ]);
   });
 
@@ -266,6 +282,11 @@ describe("SqliteAgentRunner", () => {
           runId: "run-keep",
           input: providedInput,
         } as RunStartedEvent,
+        {
+          type: EventType.RUN_FINISHED,
+          threadId,
+          runId: "run-keep",
+        } as RunFinishedEvent,
       ],
       false,
     );
@@ -285,7 +306,10 @@ describe("SqliteAgentRunner", () => {
         .pipe(toArray()),
     );
 
-    expect(events).toHaveLength(1);
+    expect(events.map((event) => event.type)).toEqual([
+      EventType.RUN_STARTED,
+      EventType.RUN_FINISHED,
+    ]);
     const runStarted = events[0] as RunStartedEvent;
     expect(runStarted.input).toBe(providedInput);
   });
@@ -296,6 +320,7 @@ describe("SqliteAgentRunner", () => {
       { type: EventType.TEXT_MESSAGE_START, messageId: "msg", role: "assistant" } as TextMessageStartEvent,
       { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "msg", delta: "hi" } as TextMessageContentEvent,
       { type: EventType.TEXT_MESSAGE_END, messageId: "msg" } as TextMessageEndEvent,
+      { type: EventType.RUN_FINISHED, threadId, runId: "run-1" } as RunFinishedEvent,
     ]);
 
     await firstValueFrom(
@@ -316,6 +341,7 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_START,
       EventType.TEXT_MESSAGE_CONTENT,
       EventType.TEXT_MESSAGE_END,
+      EventType.RUN_FINISHED,
     ]);
   });
 
@@ -344,7 +370,7 @@ describe("SqliteAgentRunner", () => {
 
     const events = await collected;
     expect(events.length).toBeGreaterThan(0);
-    expect(events[events.length - 1].type).toBe(EventType.RUN_ERROR);
+    expect(events[events.length - 1].type).toBe(EventType.RUN_FINISHED);
     expect(await runner.isRunning({ threadId })).toBe(false);
   });
 
@@ -370,7 +396,7 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_END,
       EventType.TOOL_CALL_END,
       EventType.TOOL_CALL_RESULT,
-      EventType.RUN_ERROR,
+      EventType.RUN_FINISHED,
     ]);
   });
 });
