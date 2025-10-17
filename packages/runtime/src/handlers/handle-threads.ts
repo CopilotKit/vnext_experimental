@@ -25,6 +25,20 @@ export async function handleListThreads({ runtime, request }: ListThreadsParamet
     // Resolve resource scope
     const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
 
+    // Guard against undefined scope (auth failure or missing return)
+    if (scope === undefined) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "No resource scope provided",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const url = new URL(request.url);
     const limitParam = url.searchParams.get("limit");
     const offsetParam = url.searchParams.get("offset");
@@ -65,6 +79,20 @@ export async function handleGetThread({ runtime, threadId, request }: GetThreadP
 
     // Resolve resource scope
     const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+
+    // Guard against undefined scope (auth failure or missing return)
+    if (scope === undefined) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "No resource scope provided",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
     const runner = await runtime.runner;
     const metadata = await runner.getThreadMetadata(threadId, scope);
@@ -117,6 +145,20 @@ export async function handleDeleteThread({ runtime, threadId, request }: DeleteT
 
     // Resolve resource scope
     const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+
+    // Guard against undefined scope (auth failure or missing return)
+    if (scope === undefined) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "No resource scope provided",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
     const runner = await runtime.runner;
     await runner.deleteThread(threadId, scope);

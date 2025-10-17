@@ -30,7 +30,45 @@ export async function handleStopAgent({
       );
     }
 
-    const stopped = await runtime.runner.stop({ threadId });
+    // Parse client-declared resourceId from header
+    const clientDeclared = CopilotRuntime["parseClientDeclaredResourceId"](request);
+
+    // Resolve resource scope
+    const scope = await runtime.resolveThreadsScope({ request, clientDeclared });
+
+    // Guard against undefined scope (auth failure or missing return)
+    if (scope === undefined) {
+      return new Response(
+        JSON.stringify({
+          error: "Unauthorized",
+          message: "No resource scope provided",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Verify the thread belongs to this scope before stopping
+    const runner = await runtime.runner;
+    const metadata = await runner.getThreadMetadata(threadId, scope);
+
+    if (!metadata) {
+      // Return 404 (not 403) to prevent resource enumeration
+      return new Response(
+        JSON.stringify({
+          error: "Thread not found",
+          message: `Thread '${threadId}' does not exist or you don't have access`,
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const stopped = await runner.stop({ threadId });
 
     if (!stopped) {
       return new Response(

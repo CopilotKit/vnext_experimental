@@ -64,6 +64,28 @@ describe("handleListThreads", () => {
 
     expect(listThreads).toHaveBeenCalledWith({ scope: { resourceId: "test-user" }, limit: 100, offset: 10 });
   });
+
+  it("returns 401 when resolveThreadsScope returns undefined (auth failure)", async () => {
+    const listThreads = vi.fn().mockResolvedValue({ threads: [], total: 0 });
+    const runtime = {
+      runner: Promise.resolve({
+        listThreads,
+      }),
+      resolveThreadsScope: async () => undefined, // Auth failure or missing return
+    } as unknown as CopilotRuntime;
+
+    const response = await handleListThreads({
+      runtime,
+      request: createRequest(""),
+    });
+
+    expect(response.status).toBe(401);
+    expect(listThreads).not.toHaveBeenCalled(); // Should not reach runner
+
+    const data = await response.json();
+    expect(data.error).toBe("Unauthorized");
+    expect(data.message).toBe("No resource scope provided");
+  });
 });
 
 describe("handleGetThread", () => {
@@ -189,6 +211,29 @@ describe("handleGetThread", () => {
     expect(response.status).toBe(200);
     expect(getThreadMetadata).toHaveBeenCalledWith("thread-123", null);
   });
+
+  it("returns 401 when resolveThreadsScope returns undefined (auth failure)", async () => {
+    const getThreadMetadata = vi.fn().mockResolvedValue({ threadId: "thread-123" });
+    const runtime = {
+      runner: Promise.resolve({
+        getThreadMetadata,
+      }),
+      resolveThreadsScope: async () => undefined, // Auth failure or missing return
+    } as unknown as CopilotRuntime;
+
+    const response = await handleGetThread({
+      runtime,
+      request: new Request("https://example.com/api/threads/thread-123"),
+      threadId: "thread-123",
+    });
+
+    expect(response.status).toBe(401);
+    expect(getThreadMetadata).not.toHaveBeenCalled(); // Should not reach runner
+
+    const data = await response.json();
+    expect(data.error).toBe("Unauthorized");
+    expect(data.message).toBe("No resource scope provided");
+  });
 });
 
 describe("handleDeleteThread", () => {
@@ -251,5 +296,28 @@ describe("handleDeleteThread", () => {
 
     expect(deleteThread).toHaveBeenCalledWith("thread-1", { resourceId: "test-user" });
     expect(response.status).toBe(500);
+  });
+
+  it("returns 401 when resolveThreadsScope returns undefined (auth failure)", async () => {
+    const deleteThread = vi.fn().mockResolvedValue(undefined);
+    const runtime = {
+      runner: Promise.resolve({
+        deleteThread,
+      }),
+      resolveThreadsScope: async () => undefined, // Auth failure or missing return
+    } as unknown as CopilotRuntime;
+
+    const response = await handleDeleteThread({
+      runtime,
+      request: createDeleteRequest(),
+      threadId: "thread-1",
+    });
+
+    expect(response.status).toBe(401);
+    expect(deleteThread).not.toHaveBeenCalled(); // Should not reach runner
+
+    const data = await response.json();
+    expect(data.error).toBe("Unauthorized");
+    expect(data.message).toBe("No resource scope provided");
   });
 });
