@@ -1,6 +1,7 @@
 import { useAgent } from "@/hooks/use-agent";
 import { useSuggestions } from "@/hooks/use-suggestions";
 import { CopilotChatView, CopilotChatViewProps } from "./CopilotChatView";
+import CopilotChatInput, { CopilotChatInputProps } from "./CopilotChatInput";
 import {
   CopilotChatConfigurationProvider,
   CopilotChatLabels,
@@ -104,6 +105,23 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     [agent, copilotkit],
   );
 
+  const stopCurrentRun = useCallback(() => {
+    if (!agent) {
+      return;
+    }
+
+    try {
+      copilotkit.stopAgent({ agent });
+    } catch (error) {
+      console.error("CopilotChat: stopAgent failed", error);
+      try {
+        agent.abortRun();
+      } catch (abortError) {
+        console.error("CopilotChat: abortRun fallback failed", abortError);
+      }
+    }
+  }, [agent, copilotkit]);
+
   const mergedProps = merge(
     {
       isRunning: agent?.isRunning ?? false,
@@ -121,12 +139,23 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     },
   );
 
+  const providedStopHandler = providedInputProps?.onStop;
+  const hasMessages = (agent?.messages?.length ?? 0) > 0;
+  const shouldAllowStop = (agent?.isRunning ?? false) && hasMessages;
+  const effectiveStopHandler = shouldAllowStop ? providedStopHandler ?? stopCurrentRun : providedStopHandler;
+
+  const finalInputProps = {
+    ...providedInputProps,
+    onSubmitMessage: onSubmitInput,
+    onStop: effectiveStopHandler,
+    isRunning: agent?.isRunning ?? false,
+  } as Partial<CopilotChatInputProps> & { onSubmitMessage: (value: string) => void };
+
+  finalInputProps.mode = agent?.isRunning ? "processing" : finalInputProps.mode ?? "input";
+
   const finalProps = merge(mergedProps, {
     messages: agent?.messages ?? [],
-    inputProps: {
-      onSubmitMessage: onSubmitInput,
-      ...providedInputProps,
-    },
+    inputProps: finalInputProps,
   }) as CopilotChatViewProps;
 
   // Always create a provider with merged values

@@ -7,12 +7,14 @@ import {
 } from "./agent-runner";
 import { Observable, ReplaySubject } from "rxjs";
 import {
+  AbstractAgent,
   BaseEvent,
   EventType,
   MessagesSnapshotEvent,
   RunStartedEvent,
   compactEvents,
 } from "@ag-ui/client";
+import { finalizeRunEvents } from "./finalize-events";
 
 interface HistoricRun {
   threadId: string;
@@ -31,14 +33,23 @@ class InMemoryEventStore {
   /** True while a run is actively producing events. */
   isRunning = false;
 
-  /** Lets stop() cancel the current producer. */
-  abortController = new AbortController();
-
   /** Current run ID */
   currentRunId: string | null = null;
 
   /** Historic completed runs */
   historicRuns: HistoricRun[] = [];
+
+  /** Currently running agent instance (if any). */
+  agent: AbstractAgent | null = null;
+
+  /** Subject returned from run() while the run is active. */
+  runSubject: ReplaySubject<BaseEvent> | null = null;
+
+  /** True once stop() has been requested but the run has not yet finalized. */
+  stopRequested = false;
+
+  /** Reference to the events emitted in the current run. */
+  currentEvents: BaseEvent[] | null = null;
 }
 
 const GLOBAL_STORE = new Map<string, InMemoryEventStore>();
@@ -57,10 +68,13 @@ export class InMemoryAgentRunner extends AgentRunner {
     }
     store.isRunning = true;
     store.currentRunId = request.input.runId;
+    store.agent = request.agent;
+    store.stopRequested = false;
 
     // Track seen message IDs and current run events for this run
     const seenMessageIds = new Set<string>();
     const currentRunEvents: BaseEvent[] = [];
+    store.currentEvents = currentRunEvents;
 
     // Get all previously seen message IDs from historic runs
     const historicMessageIds = new Set<string>();
@@ -84,10 +98,10 @@ export class InMemoryAgentRunner extends AgentRunner {
 
     // Update the store's subject immediately
     store.subject = nextSubject;
-    store.abortController = new AbortController();
 
     // Create a subject for run() return value
     const runSubject = new ReplaySubject<BaseEvent>(Infinity);
+    store.runSubject = runSubject;
 
     // Helper function to run the agent and handle errors
     const runAgent = async () => {
@@ -142,6 +156,14 @@ export class InMemoryAgentRunner extends AgentRunner {
           },
         });
 
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: store.stopRequested,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the completed run in memory with ONLY its events
         if (store.currentRunId) {
           // Compact the events before storing (like SQLite does)
@@ -157,11 +179,23 @@ export class InMemoryAgentRunner extends AgentRunner {
         }
 
         // Complete the run
-        store.isRunning = false;
+        store.currentEvents = null;
         store.currentRunId = null;
+        store.agent = null;
+        store.runSubject = null;
+        store.stopRequested = false;
+        store.isRunning = false;
         runSubject.complete();
         nextSubject.complete();
       } catch {
+        const appendedEvents = finalizeRunEvents(currentRunEvents, {
+          stopRequested: store.stopRequested,
+        });
+        for (const event of appendedEvents) {
+          runSubject.next(event);
+          nextSubject.next(event);
+        }
+
         // Store the run even if it failed (partial events)
         if (store.currentRunId && currentRunEvents.length > 0) {
           // Compact the events before storing (like SQLite does)
@@ -176,8 +210,12 @@ export class InMemoryAgentRunner extends AgentRunner {
         }
 
         // Complete the run
-        store.isRunning = false;
+        store.currentEvents = null;
         store.currentRunId = null;
+        store.agent = null;
+        store.runSubject = null;
+        store.stopRequested = false;
+        store.isRunning = false;
         runSubject.complete();
         nextSubject.complete();
       }
@@ -230,7 +268,7 @@ export class InMemoryAgentRunner extends AgentRunner {
     }
 
     // Bridge active run to connection if exists
-    if (store.subject && store.isRunning) {
+    if (store.subject && (store.isRunning || store.stopRequested)) {
       store.subject.subscribe({
         next: (event) => {
           // Skip message events that we've already emitted from historic
@@ -259,8 +297,33 @@ export class InMemoryAgentRunner extends AgentRunner {
     return Promise.resolve(store?.isRunning ?? false);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  stop(_request: AgentRunnerStopRequest): Promise<boolean | undefined> {
-    throw new Error("Method not implemented.");
+  stop(request: AgentRunnerStopRequest): Promise<boolean | undefined> {
+    const store = GLOBAL_STORE.get(request.threadId);
+    if (!store || !store.isRunning) {
+      return Promise.resolve(false);
+    }
+    if (store.stopRequested) {
+      return Promise.resolve(false);
+    }
+
+    store.stopRequested = true;
+    store.isRunning = false;
+
+    const agent = store.agent;
+    if (!agent) {
+      store.stopRequested = false;
+      store.isRunning = false;
+      return Promise.resolve(false);
+    }
+
+    try {
+      agent.abortRun();
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error("Failed to abort agent run", error);
+      store.stopRequested = false;
+      store.isRunning = true;
+      return Promise.resolve(false);
+    }
   }
 }

@@ -15,6 +15,11 @@ import {
 import { EMPTY, firstValueFrom } from "rxjs";
 import { toArray } from "rxjs/operators";
 
+const stripTerminalEvents = (events: BaseEvent[]) =>
+  events.filter(
+    (event) => event.type !== EventType.RUN_FINISHED && event.type !== EventType.RUN_ERROR,
+  );
+
 class TestAgent extends AbstractAgent {
   constructor(
     private readonly events: BaseEvent[] = [],
@@ -96,9 +101,10 @@ describe("InMemoryAgentRunner", () => {
           .pipe(toArray()),
       );
 
-      expect(events).toHaveLength(4);
-      expect(events[0].type).toBe(EventType.RUN_STARTED);
-      const compacted = events.slice(1);
+      const nonTerminalEvents = stripTerminalEvents(events);
+      expect(nonTerminalEvents).toHaveLength(4);
+      expect(nonTerminalEvents[0].type).toBe(EventType.RUN_STARTED);
+      const compacted = nonTerminalEvents.slice(1);
       expect(compacted[0].type).toBe(EventType.TEXT_MESSAGE_START);
       expect(compacted[1].type).toBe(EventType.TEXT_MESSAGE_CONTENT);
       expect((compacted[1] as TextMessageContentEvent).delta).toBe("Hello");
@@ -185,8 +191,9 @@ describe("InMemoryAgentRunner", () => {
           .pipe(toArray()),
       );
 
-      expect(events).toHaveLength(1);
-      const runStarted = events[0] as RunStartedEvent;
+      const nonTerminalEvents = stripTerminalEvents(events);
+      expect(nonTerminalEvents).toHaveLength(1);
+      const runStarted = nonTerminalEvents[0] as RunStartedEvent;
       expect(runStarted.input).toBe(providedInput);
     });
   });
@@ -225,9 +232,10 @@ describe("InMemoryAgentRunner", () => {
         runner.connect({ threadId }).pipe(toArray()),
       );
 
-      expect(connectEvents).toHaveLength(4);
-      expect(connectEvents[0].type).toBe(EventType.RUN_STARTED);
-      expect(connectEvents.slice(1).map((event) => event.type)).toEqual([
+      const nonTerminalEvents = stripTerminalEvents(connectEvents);
+      expect(nonTerminalEvents).toHaveLength(4);
+      expect(nonTerminalEvents[0].type).toBe(EventType.RUN_STARTED);
+      expect(nonTerminalEvents.slice(1).map((event) => event.type)).toEqual([
         EventType.TEXT_MESSAGE_START,
         EventType.TEXT_MESSAGE_CONTENT,
         EventType.TEXT_MESSAGE_END,
@@ -256,8 +264,9 @@ describe("InMemoryAgentRunner", () => {
           .pipe(toArray()),
       );
 
-      expect(events).toHaveLength(2);
-      const [, toolResult] = events;
+      const nonTerminalEvents = stripTerminalEvents(events);
+      expect(nonTerminalEvents).toHaveLength(2);
+      const [, toolResult] = nonTerminalEvents;
       expect(toolResult.type).toBe(EventType.TOOL_CALL_RESULT);
     });
   });

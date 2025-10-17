@@ -6,6 +6,7 @@ import {
   EventType,
   Message,
   RunAgentInput,
+  RunFinishedEvent,
   RunStartedEvent,
   TextMessageContentEvent,
   TextMessageEndEvent,
@@ -46,6 +47,19 @@ class MockAgent extends AbstractAgent {
     for (const event of this.events) {
       await callbacks.onEvent({ event });
     }
+
+    const hasTerminalEvent = this.events.some((event) =>
+      event.type === EventType.RUN_FINISHED || event.type === EventType.RUN_ERROR,
+    );
+
+    if (!hasTerminalEvent) {
+      const runFinished: RunFinishedEvent = {
+        type: EventType.RUN_FINISHED,
+        threadId: input.threadId,
+        runId: input.runId,
+      };
+      await callbacks.onEvent({ event: runFinished });
+    }
   }
 
   protected run(): ReturnType<AbstractAgent["run"]> {
@@ -58,6 +72,101 @@ class MockAgent extends AbstractAgent {
 
   clone(): AbstractAgent {
     return new MockAgent(this.events, this.emitDefaultRunStarted);
+  }
+}
+
+class StoppableAgent extends AbstractAgent {
+  private shouldStop = false;
+  private eventDelay: number;
+
+  constructor(eventDelay = 5) {
+    super();
+    this.eventDelay = eventDelay;
+  }
+
+  async runAgent(
+    input: RunAgentInput,
+    callbacks: RunCallbacks,
+  ): Promise<void> {
+    this.shouldStop = false;
+    let counter = 0;
+
+    const runStarted: RunStartedEvent = {
+      type: EventType.RUN_STARTED,
+      threadId: input.threadId,
+      runId: input.runId,
+    };
+    await callbacks.onEvent({ event: runStarted });
+    await callbacks.onRunStartedEvent?.();
+
+    while (!this.shouldStop && counter < 10_000) {
+      await new Promise((resolve) => setTimeout(resolve, this.eventDelay));
+      const event: BaseEvent = {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: `sqlite-stop-${counter}`,
+        delta: `chunk-${counter}`,
+      } as TextMessageContentEvent;
+      await callbacks.onEvent({ event });
+      counter += 1;
+    }
+  }
+
+  abortRun(): void {
+    this.shouldStop = true;
+  }
+
+  clone(): AbstractAgent {
+    return new StoppableAgent(this.eventDelay);
+  }
+}
+
+class OpenEventsAgent extends AbstractAgent {
+  private shouldStop = false;
+
+  async runAgent(
+    input: RunAgentInput,
+    callbacks: RunCallbacks,
+  ): Promise<void> {
+    this.shouldStop = false;
+    const messageId = "open-message";
+    const toolCallId = "open-tool";
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TEXT_MESSAGE_START,
+        messageId,
+        role: "assistant",
+      } as BaseEvent,
+    });
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId,
+        delta: "Partial content",
+      } as BaseEvent,
+    });
+
+    await callbacks.onEvent({
+      event: {
+        type: EventType.TOOL_CALL_START,
+        toolCallId,
+        toolCallName: "testTool",
+        parentMessageId: messageId,
+      } as BaseEvent,
+    });
+
+    while (!this.shouldStop) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+
+  abortRun(): void {
+    this.shouldStop = true;
+  }
+
+  clone(): AbstractAgent {
+    return new OpenEventsAgent();
   }
 }
 
@@ -83,6 +192,7 @@ describe("SqliteAgentRunner", () => {
       { type: EventType.TEXT_MESSAGE_START, messageId: "msg-1", role: "assistant" } as TextMessageStartEvent,
       { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "msg-1", delta: "Hello" } as TextMessageContentEvent,
       { type: EventType.TEXT_MESSAGE_END, messageId: "msg-1" } as TextMessageEndEvent,
+      { type: EventType.RUN_FINISHED, threadId, runId: "run-1" } as RunFinishedEvent,
     ]);
 
     const events = await firstValueFrom(
@@ -100,6 +210,7 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_START,
       EventType.TEXT_MESSAGE_CONTENT,
       EventType.TEXT_MESSAGE_END,
+      EventType.RUN_FINISHED,
     ]);
   });
 
@@ -171,6 +282,11 @@ describe("SqliteAgentRunner", () => {
           runId: "run-keep",
           input: providedInput,
         } as RunStartedEvent,
+        {
+          type: EventType.RUN_FINISHED,
+          threadId,
+          runId: "run-keep",
+        } as RunFinishedEvent,
       ],
       false,
     );
@@ -190,7 +306,10 @@ describe("SqliteAgentRunner", () => {
         .pipe(toArray()),
     );
 
-    expect(events).toHaveLength(1);
+    expect(events.map((event) => event.type)).toEqual([
+      EventType.RUN_STARTED,
+      EventType.RUN_FINISHED,
+    ]);
     const runStarted = events[0] as RunStartedEvent;
     expect(runStarted.input).toBe(providedInput);
   });
@@ -201,6 +320,7 @@ describe("SqliteAgentRunner", () => {
       { type: EventType.TEXT_MESSAGE_START, messageId: "msg", role: "assistant" } as TextMessageStartEvent,
       { type: EventType.TEXT_MESSAGE_CONTENT, messageId: "msg", delta: "hi" } as TextMessageContentEvent,
       { type: EventType.TEXT_MESSAGE_END, messageId: "msg" } as TextMessageEndEvent,
+      { type: EventType.RUN_FINISHED, threadId, runId: "run-1" } as RunFinishedEvent,
     ]);
 
     await firstValueFrom(
@@ -221,6 +341,62 @@ describe("SqliteAgentRunner", () => {
       EventType.TEXT_MESSAGE_START,
       EventType.TEXT_MESSAGE_CONTENT,
       EventType.TEXT_MESSAGE_END,
+      EventType.RUN_FINISHED,
+    ]);
+  });
+
+  it("returns false when stopping a thread that is not running", async () => {
+    await expect(runner.stop({ threadId: "sqlite-missing" })).resolves.toBe(false);
+  });
+
+  it("stops an active run and completes observables", async () => {
+    const threadId = "sqlite-stop";
+    const agent = new StoppableAgent(2);
+    const input: RunAgentInput = {
+      threadId,
+      runId: "sqlite-stop-run",
+      messages: [],
+      state: {},
+    };
+
+    const run$ = runner.run({ threadId, agent, input });
+    const collected = firstValueFrom(run$.pipe(toArray()));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await runner.isRunning({ threadId })).toBe(true);
+
+    const stopped = await runner.stop({ threadId });
+    expect(stopped).toBe(true);
+
+    const events = await collected;
+    expect(events.length).toBeGreaterThan(0);
+    expect(events[events.length - 1].type).toBe(EventType.RUN_FINISHED);
+    expect(await runner.isRunning({ threadId })).toBe(false);
+  });
+
+  it("closes open text and tool events when stopping", async () => {
+    const threadId = "sqlite-open-events";
+    const agent = new OpenEventsAgent();
+    const input: RunAgentInput = {
+      threadId,
+      runId: "sqlite-open-run",
+      messages: [],
+      state: {},
+    };
+
+    const run$ = runner.run({ threadId, agent, input });
+    const collected = firstValueFrom(run$.pipe(toArray()));
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await runner.stop({ threadId });
+
+    const events = await collected;
+    const endingTypes = events.slice(-4).map((event) => event.type);
+    expect(endingTypes).toEqual([
+      EventType.TEXT_MESSAGE_END,
+      EventType.TOOL_CALL_END,
+      EventType.TOOL_CALL_RESULT,
+      EventType.RUN_FINISHED,
     ]);
   });
 });

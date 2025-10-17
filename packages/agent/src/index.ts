@@ -460,6 +460,8 @@ export interface BasicAgentConfiguration {
 }
 
 export class BasicAgent extends AbstractAgent {
+  private abortController?: AbortController;
+
   constructor(private config: BasicAgentConfiguration) {
     super();
   }
@@ -620,6 +622,10 @@ export class BasicAgent extends AbstractAgent {
       const mcpClients: Array<{ close: () => Promise<void> }> = [];
 
       (async () => {
+        const abortController = new AbortController();
+        this.abortController = abortController;
+        let terminalEventEmitted = false;
+
         try {
           // Add AG-UI state update tools
           streamTextParams.tools = {
@@ -681,7 +687,7 @@ export class BasicAgent extends AbstractAgent {
           }
 
           // Call streamText and process the stream
-          const response = streamText(streamTextParams);
+          const response = streamText({ ...streamTextParams, abortSignal: abortController.signal });
 
           let messageId = randomUUID();
 
@@ -848,32 +854,60 @@ export class BasicAgent extends AbstractAgent {
                   runId: input.runId,
                 };
                 subscriber.next(finishedEvent);
+                terminalEventEmitted = true;
 
                 // Complete the observable
                 subscriber.complete();
                 break;
 
-              case "error":
+              case "error": {
+                if (abortController.signal.aborted) {
+                  break;
+                }
                 const runErrorEvent: RunErrorEvent = {
                   type: EventType.RUN_ERROR,
                   message: part.error + "",
                 };
                 subscriber.next(runErrorEvent);
+                terminalEventEmitted = true;
 
                 // Handle error
                 subscriber.error(part.error);
                 break;
+              }
             }
           }
-        } catch (error) {
-          const runErrorEvent: RunErrorEvent = {
-            type: EventType.RUN_ERROR,
-            message: error + "",
-          };
-          subscriber.next(runErrorEvent);
 
-          subscriber.error(error);
+          if (!terminalEventEmitted) {
+            if (abortController.signal.aborted) {
+              // Let the runner finalize the stream on stop requests so it can
+              // inject consistent closing events and a RUN_FINISHED marker.
+            } else {
+              const finishedEvent: RunFinishedEvent = {
+                type: EventType.RUN_FINISHED,
+                threadId: input.threadId,
+                runId: input.runId,
+              };
+              subscriber.next(finishedEvent);
+            }
+
+            terminalEventEmitted = true;
+            subscriber.complete();
+          }
+        } catch (error) {
+          if (abortController.signal.aborted) {
+            subscriber.complete();
+          } else {
+            const runErrorEvent: RunErrorEvent = {
+              type: EventType.RUN_ERROR,
+              message: error + "",
+            };
+            subscriber.next(runErrorEvent);
+            terminalEventEmitted = true;
+            subscriber.error(error);
+          }
         } finally {
+          this.abortController = undefined;
           await Promise.all(mcpClients.map((client) => client.close()));
         }
       })();
@@ -890,5 +924,9 @@ export class BasicAgent extends AbstractAgent {
 
   clone() {
     return new BasicAgent(this.config);
+  }
+
+  abortRun(): void {
+    this.abortController?.abort();
   }
 }
