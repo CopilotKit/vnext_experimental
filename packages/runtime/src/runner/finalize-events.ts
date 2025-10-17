@@ -10,13 +10,20 @@ interface FinalizeRunOptions {
   interruptionMessage?: string;
 }
 
-const defaultInterruptionMessage = "Run stopped by user";
+const defaultStopMessage = "Run stopped by user";
+const defaultAbruptEndMessage = "Run ended without emitting a terminal event";
 
 export function finalizeRunEvents(
   events: BaseEvent[],
   options: FinalizeRunOptions = {},
 ): BaseEvent[] {
-  const { stopRequested = false, interruptionMessage = defaultInterruptionMessage } = options;
+  const { stopRequested = false, interruptionMessage } = options;
+
+  const resolvedStopMessage = interruptionMessage ?? defaultStopMessage;
+  const resolvedAbruptMessage =
+    interruptionMessage && interruptionMessage !== defaultStopMessage
+      ? interruptionMessage
+      : defaultAbruptEndMessage;
 
   const appended: BaseEvent[] = [];
 
@@ -76,48 +83,67 @@ export function finalizeRunEvents(
     }
   }
 
-  if (stopRequested) {
-    for (const messageId of openMessageIds) {
+  const hasRunFinished = events.some((event) => event.type === EventType.RUN_FINISHED);
+  const hasRunError = events.some((event) => event.type === EventType.RUN_ERROR);
+  const hasTerminalEvent = hasRunFinished || hasRunError;
+  const terminalEventMissing = !hasTerminalEvent;
+
+  for (const messageId of openMessageIds) {
+    const endEvent = {
+      type: EventType.TEXT_MESSAGE_END,
+      messageId,
+    } as BaseEvent;
+    events.push(endEvent);
+    appended.push(endEvent);
+  }
+
+  for (const [toolCallId, info] of openToolCalls) {
+    if (!info.hasEnd) {
       const endEvent = {
-        type: EventType.TEXT_MESSAGE_END,
-        messageId,
+        type: EventType.TOOL_CALL_END,
+        toolCallId,
       } as BaseEvent;
       events.push(endEvent);
       appended.push(endEvent);
     }
 
-    for (const [toolCallId, info] of openToolCalls) {
-      if (!info.hasEnd) {
-        const endEvent = {
-          type: EventType.TOOL_CALL_END,
-          toolCallId,
-        } as BaseEvent;
-        events.push(endEvent);
-        appended.push(endEvent);
-      }
-
-      if (!info.hasResult) {
-        const resultEvent = {
-          type: EventType.TOOL_CALL_RESULT,
-          toolCallId,
-          messageId: `${toolCallId ?? randomUUID()}-result`,
-          role: "tool",
-          content: JSON.stringify({ status: "interrupted" }),
-        } as BaseEvent;
-        events.push(resultEvent);
-        appended.push(resultEvent);
-      }
+    if (terminalEventMissing && !info.hasResult) {
+      const resultEvent = {
+        type: EventType.TOOL_CALL_RESULT,
+        toolCallId,
+        messageId: `${toolCallId ?? randomUUID()}-result`,
+        role: "tool",
+        content: JSON.stringify(
+          stopRequested
+            ? {
+                status: "stopped",
+                reason: "stop_requested",
+                message: resolvedStopMessage,
+              }
+            : {
+                status: "error",
+                reason: "missing_terminal_event",
+                message: resolvedAbruptMessage,
+              },
+        ),
+      } as BaseEvent;
+      events.push(resultEvent);
+      appended.push(resultEvent);
     }
+  }
 
-    const hasTerminalEvent = events.some(
-      (event) => event.type === EventType.RUN_FINISHED || event.type === EventType.RUN_ERROR,
-    );
-
-    if (!hasTerminalEvent) {
+  if (terminalEventMissing) {
+    if (stopRequested) {
+      const finishedEvent = {
+        type: EventType.RUN_FINISHED,
+      } as BaseEvent;
+      events.push(finishedEvent);
+      appended.push(finishedEvent);
+    } else {
       const errorEvent: RunErrorEvent = {
         type: EventType.RUN_ERROR,
-        message: interruptionMessage,
-        code: "STOPPED",
+        message: resolvedAbruptMessage,
+        code: "INCOMPLETE_STREAM",
       };
       events.push(errorEvent);
       appended.push(errorEvent);
