@@ -5,10 +5,7 @@ import { handleRunAgent } from "./handlers/handle-run";
 import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
 import { handleTranscribe } from "./handlers/handle-transcribe";
 import { logger } from "@copilotkitnext/shared";
-import {
-  callBeforeRequestMiddleware,
-  callAfterRequestMiddleware,
-} from "./middleware";
+import { callBeforeRequestMiddleware, callAfterRequestMiddleware } from "./middleware";
 import { handleConnectAgent } from "./handlers/handle-connect";
 import { handleStopAgent } from "./handlers/handle-stop";
 
@@ -24,10 +21,7 @@ type CopilotEndpointContext = {
   };
 };
 
-export function createCopilotEndpoint({
-  runtime,
-  basePath,
-}: CopilotEndpointParams) {
+export function createCopilotEndpoint({ runtime, basePath }: CopilotEndpointParams) {
   const app = new Hono<CopilotEndpointContext>();
 
   return app
@@ -38,7 +32,7 @@ export function createCopilotEndpoint({
         origin: "*",
         allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"],
         allowHeaders: ["*"],
-      })
+      }),
     )
     .use("*", async (c, next) => {
       const request = c.req.raw;
@@ -54,10 +48,7 @@ export function createCopilotEndpoint({
           c.set("modifiedRequest", maybeModifiedRequest);
         }
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path },
-          "Error running before request middleware"
-        );
+        logger.error({ err: error, url: request.url, path }, "Error running before request middleware");
         if (error instanceof Response) {
           return error;
         }
@@ -78,10 +69,7 @@ export function createCopilotEndpoint({
         response,
         path,
       }).catch((error) => {
-        logger.error(
-          { err: error, url: c.req.url, path },
-          "Error running after request middleware"
-        );
+        logger.error({ err: error, url: c.req.url, path }, "Error running after request middleware");
       });
     })
     .post("/agent/:agentId/run", async (c) => {
@@ -95,10 +83,7 @@ export function createCopilotEndpoint({
           agentId,
         });
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path: c.req.path },
-          "Error running request handler"
-        );
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
         throw error;
       }
     })
@@ -113,13 +98,11 @@ export function createCopilotEndpoint({
           agentId,
         });
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path: c.req.path },
-          "Error running request handler"
-        );
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
         throw error;
       }
     })
+
     .post("/agent/:agentId/stop/:threadId", async (c) => {
       const agentId = c.req.param("agentId");
       const threadId = c.req.param("threadId");
@@ -133,10 +116,7 @@ export function createCopilotEndpoint({
           threadId,
         });
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path: c.req.path },
-          "Error running request handler"
-        );
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
         throw error;
       }
     })
@@ -149,10 +129,7 @@ export function createCopilotEndpoint({
           request,
         });
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path: c.req.path },
-          "Error running request handler"
-        );
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
         throw error;
       }
     })
@@ -165,10 +142,7 @@ export function createCopilotEndpoint({
           request,
         });
       } catch (error) {
-        logger.error(
-          { err: error, url: request.url, path: c.req.path },
-          "Error running request handler"
-        );
+        logger.error({ err: error, url: request.url, path: c.req.path }, "Error running request handler");
         throw error;
       }
     })
