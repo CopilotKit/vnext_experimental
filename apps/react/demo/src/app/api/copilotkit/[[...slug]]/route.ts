@@ -1,6 +1,7 @@
 import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { BasicAgent } from "@copilotkitnext/agent";
+import { HttpAgent } from "@ag-ui/client";
 
 // Determine which model to use based on available API keys
 const getModelConfig = () => {
@@ -21,9 +22,14 @@ const agent = new BasicAgent({
   temperature: 0.7,
 });
 
+const multimodalAgent = new HttpAgent({
+  url: "http://localhost:8000/agent/multimodal_messages",
+});
+
 const runtime = new CopilotRuntime({
   agents: {
     default: agent,
+    multimodal: multimodalAgent,
   },
   runner: new InMemoryAgentRunner(),
 });

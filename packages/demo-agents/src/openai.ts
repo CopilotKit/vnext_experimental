@@ -6,6 +6,7 @@ import {
 } from "@ag-ui/client";
 import { Observable } from "rxjs";
 import { OpenAI } from "openai";
+import { getUserMessageTextContent } from "@copilotkitnext/shared";
 
 export class OpenAIAgent extends AbstractAgent {
   private openai: OpenAI;
@@ -52,12 +53,20 @@ export class OpenAIAgent extends AbstractAgent {
                 content: message.content ?? "",
                 tool_calls: message.toolCalls,
               };
-            } else {
+            }
+
+            const role = message.role as "system" | "user" | "assistant";
+            if (role === "user") {
               return {
-                role: message.role as "system" | "user" | "assistant",
-                content: message.content ?? "",
+                role,
+                content: getUserMessageTextContent(message.content),
               };
             }
+
+            return {
+              role,
+              content: message.content ?? "",
+            };
           }),
         })
         .then(async (response) => {

@@ -90,6 +90,58 @@ describe("convertMessagesToVercelAISDKMessages", () => {
     ]);
   });
 
+  it("should convert user messages with binary content", () => {
+    const messages: Message[] = [
+      {
+        id: "1",
+        role: "user",
+        content: [
+          { type: "text", text: "Here is the design" },
+          {
+            type: "binary",
+            mimeType: "image/png",
+            url: "https://example.com/image.png",
+            filename: "image.png",
+          },
+        ],
+      },
+    ];
+
+    const result = convertMessagesToVercelAISDKMessages(messages);
+    const content = result[0].content;
+
+    expect(Array.isArray(content)).toBe(true);
+    if (Array.isArray(content)) {
+      expect(content[0]).toEqual({ type: "text", text: "Here is the design" });
+      expect(content[1]).toMatchObject({
+        type: "file",
+        mediaType: "image/png",
+        filename: "image.png",
+      });
+    }
+  });
+
+  it("should fall back to placeholders when binary content has no data", () => {
+    const messages: Message[] = [
+      {
+        id: "1",
+        role: "user",
+        content: [
+          {
+            type: "binary",
+            mimeType: "application/octet-stream",
+            id: "file-1",
+          },
+        ],
+      },
+    ];
+
+    const result = convertMessagesToVercelAISDKMessages(messages);
+    expect(result[0].content).toEqual([
+      { type: "text", text: "[Attachment: file-1]" },
+    ]);
+  });
+
   it("should convert assistant messages with text content", () => {
     const messages: Message[] = [
       {

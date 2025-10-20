@@ -1,6 +1,7 @@
 import {
   AbstractAgent,
   BaseEvent,
+  BinaryInputContent,
   RunAgentInput,
   EventType,
   Message,
@@ -22,9 +23,11 @@ import {
   AssistantModelMessage,
   UserModelMessage,
   ToolModelMessage,
+  FilePart,
   ToolCallPart,
   ToolResultPart,
   TextPart,
+  UserContent,
   tool as createVercelAISDKTool,
   ToolChoice,
   ToolSet,
@@ -232,6 +235,79 @@ export function defineTool<TParameters extends z.ZodTypeAny>(config: {
   };
 }
 
+function convertBinaryInputContentToFilePart(content: BinaryInputContent): FilePart | null {
+  if (content.url) {
+    try {
+      return {
+        type: "file",
+        data: new URL(content.url),
+        mediaType: content.mimeType,
+        filename: content.filename,
+      } satisfies FilePart;
+    } catch {
+      return {
+        type: "file",
+        data: content.url,
+        mediaType: content.mimeType,
+        filename: content.filename,
+      } satisfies FilePart;
+    }
+  }
+
+  if (content.data) {
+    return {
+      type: "file",
+      data: content.data,
+      mediaType: content.mimeType,
+      filename: content.filename,
+    } satisfies FilePart;
+  }
+
+  return null;
+}
+
+function convertUserMessageContent(content: Message["content"]): UserContent {
+  if (!content) {
+    return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (content.every((part) => part.type === "text")) {
+    return content.map((part) => part.text).join("\n\n");
+  }
+
+  const parts: Array<TextPart | FilePart> = [];
+
+  for (const part of content) {
+    if (part.type === "text") {
+      if (part.text.length > 0) {
+        parts.push({ type: "text", text: part.text });
+      }
+      continue;
+    }
+
+    const filePart = convertBinaryInputContentToFilePart(part);
+    if (filePart) {
+      parts.push(filePart);
+    } else {
+      const label = part.filename ?? part.id ?? part.mimeType;
+      parts.push({
+        type: "text",
+        text: `[Attachment: ${label}]`,
+      });
+    }
+  }
+
+  if (parts.length === 0) {
+    return "";
+  }
+
+  return parts;
+}
+
 /**
  * Converts AG-UI messages to Vercel AI SDK ModelMessage format
  */
@@ -260,7 +336,7 @@ export function convertMessagesToVercelAISDKMessages(messages: Message[]): Model
     } else if (message.role === "user") {
       const userMsg: UserModelMessage = {
         role: "user",
-        content: message.content || "",
+        content: convertUserMessageContent(message.content),
       };
       result.push(userMsg);
     } else if (message.role === "tool") {

@@ -1,7 +1,10 @@
 import { DestroyRef, Injector, Signal, Type, inject } from "@angular/core";
 import { FrontendTool } from "@copilotkitnext/core";
+import type { InputContent } from "@ag-ui/client";
 import { z } from "zod";
 import { CopilotKit } from "./copilotkit";
+
+type AngularToolResult = string | InputContent[];
 
 export type AngularToolCall<Args extends Record<string, unknown> = Record<string, unknown>> =
   | {
@@ -17,7 +20,7 @@ export type AngularToolCall<Args extends Record<string, unknown> = Record<string
   | {
       args: Args;
       status: "complete";
-      result: string;
+      result: AngularToolResult;
     };
 
 export type HumanInTheLoopToolCall<Args extends Record<string, unknown> = Record<string, unknown>> =
@@ -35,7 +38,7 @@ export type HumanInTheLoopToolCall<Args extends Record<string, unknown> = Record
   | {
       args: Args;
       status: "complete";
-      result: string;
+      result: AngularToolResult;
     };
 
 export interface ToolRenderer<Args extends Record<string, unknown> = Record<string, unknown>> {

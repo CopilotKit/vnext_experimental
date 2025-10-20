@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
+import type { BinaryInputContent, InputContent } from "@ag-ui/client";
+
 export interface UserMessage {
   id: string;
-  content?: string;
+  content?: string | InputContent[];
   role: "user";
   timestamp?: Date;
   [key: string]: any; // Allow additional properties
@@ -20,6 +22,8 @@ export interface CopilotChatUserMessageOnSwitchToBranchProps {
 // Context interfaces for slots
 export interface MessageRendererContext {
   content: string;
+  contents: InputContent[];
+  attachments: BinaryInputContent[];
 }
 
 export interface CopyButtonContext {

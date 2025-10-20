@@ -107,5 +107,5 @@ function Chat() {
     [],
   );
 
-  return <CopilotChat inputProps={{ toolsMenu }} threadId="xyz" />;
+  return <CopilotChat inputProps={{ toolsMenu }} threadId="xyz" agentId="multimodal" />;
 }

@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ["@ag-ui/client", "openai", "rxjs"],
+  external: ["@ag-ui/client", "openai", "rxjs", "@copilotkitnext/shared"],
 });

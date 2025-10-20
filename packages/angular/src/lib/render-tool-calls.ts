@@ -1,6 +1,6 @@
 import { NgComponentOutlet } from "@angular/common";
 import { Component, inject, input } from "@angular/core";
-import { AssistantMessage, Message, ToolCall } from "@ag-ui/client";
+import { AssistantMessage, Message, ToolCall, InputContent } from "@ag-ui/client";
 import { CopilotKit } from "./copilotkit";
 import {
   FrontendToolConfig,
@@ -87,11 +87,12 @@ export class RenderToolCalls {
     const args = partialJSONParse(toolCall.function.arguments);
     const message = this.#getToolMessage(toolCall.id);
 
-    if (message) {
+    if (message?.content !== undefined) {
+      const result = message.content as string | InputContent[];
       return {
         args,
         status: "complete",
-        result: message.content!,
+        result,
       };
     } else if (this.isLoading()) {
       return {
@@ -114,11 +115,12 @@ export class RenderToolCalls {
     const args = partialJSONParse(toolCall.function.arguments);
     const message = this.#getToolMessage(toolCall.id);
 
-    if (message) {
+    if (message?.content !== undefined) {
+      const result = message.content as string | InputContent[];
       return {
         args,
         status: "complete",
-        result: message.content!,
+        result,
       };
     } else if (this.isLoading()) {
       return {
