@@ -25,10 +25,7 @@ type HumanInTheLoopToolCallHandler = {
   config: HumanInTheLoopConfig;
 };
 
-type ToolCallHandler =
-  | RendererToolCallHandler
-  | ClientToolCallHandler
-  | HumanInTheLoopToolCallHandler;
+type ToolCallHandler = RendererToolCallHandler | ClientToolCallHandler | HumanInTheLoopToolCallHandler;
 
 @Component({
   selector: "copilot-render-tool-calls",
@@ -37,12 +34,9 @@ type ToolCallHandler =
   template: `
     @for (toolCall of message().toolCalls ?? []; track toolCall.id) {
       @let renderConfig = pickRenderer(toolCall.function.name);
-      @if (renderConfig && renderConfig.type !== "humanInTheLoopTool") {
+      @if (renderConfig && renderConfig.type !== "humanInTheLoopTool" && renderConfig.config.component) {
         <ng-container
-          *ngComponentOutlet="
-            renderConfig.config.component;
-            inputs: { toolCall: buildToolCall(toolCall) }
-          "
+          *ngComponentOutlet="renderConfig.config.component; inputs: { toolCall: buildToolCall(toolCall) }"
         />
       }
     }
@@ -59,38 +53,29 @@ export class RenderToolCalls {
     type AssistantMessageWithAgent = AssistantMessage & {
       agentId?: string;
     };
-    const messageAgentId = (this.message() as AssistantMessageWithAgent)
-      .agentId;
+    const messageAgentId = (this.message() as AssistantMessageWithAgent).agentId;
     const renderers = this.#copilotKit.toolCallRenderConfigs();
     const clientTools = this.#copilotKit.clientToolCallRenderConfigs();
-    const humanInTheLoopTools =
-      this.#copilotKit.humanInTheLoopToolRenderConfigs();
+    const humanInTheLoopTools = this.#copilotKit.humanInTheLoopToolRenderConfigs();
 
     const renderer = renderers.find(
       (candidate) =>
-        candidate.name === name &&
-        (candidate.agentId === undefined ||
-          candidate.agentId === messageAgentId)
+        candidate.name === name && (candidate.agentId === undefined || candidate.agentId === messageAgentId),
     );
 
     if (renderer) return { type: "renderer", config: renderer };
 
     const clientTool = clientTools.find(
       (candidate) =>
-        candidate.name === name &&
-        (candidate.agentId === undefined ||
-          candidate.agentId === messageAgentId)
+        candidate.name === name && (candidate.agentId === undefined || candidate.agentId === messageAgentId),
     );
     if (clientTool) return { type: "clientTool", config: clientTool };
 
     const humanInTheLoopTool = humanInTheLoopTools.find(
       (candidate) =>
-        candidate.name === name &&
-        (candidate.agentId === undefined ||
-          candidate.agentId === messageAgentId)
+        candidate.name === name && (candidate.agentId === undefined || candidate.agentId === messageAgentId),
     );
-    if (humanInTheLoopTool)
-      return { type: "humanInTheLoopTool", config: humanInTheLoopTool };
+    if (humanInTheLoopTool) return { type: "humanInTheLoopTool", config: humanInTheLoopTool };
 
     const starRenderer = renderers.find((candidate) => candidate.name === "*");
     if (starRenderer) return { type: "renderer", config: starRenderer };
@@ -98,9 +83,7 @@ export class RenderToolCalls {
     return undefined;
   }
 
-  protected buildToolCall<Args extends Record<string, unknown>>(
-    toolCall: ToolCall
-  ): AngularToolCall<Args> {
+  protected buildToolCall<Args extends Record<string, unknown>>(toolCall: ToolCall): AngularToolCall<Args> {
     const args = partialJSONParse(toolCall.function.arguments);
     const message = this.#getToolMessage(toolCall.id);
 
@@ -126,7 +109,7 @@ export class RenderToolCalls {
   }
 
   protected buildHumanInTheLoopToolCall<Args extends Record<string, unknown>>(
-    toolCall: ToolCall
+    toolCall: ToolCall,
   ): HumanInTheLoopToolCall<Args> {
     const args = partialJSONParse(toolCall.function.arguments);
     const message = this.#getToolMessage(toolCall.id);
@@ -156,8 +139,6 @@ export class RenderToolCalls {
   }
 
   #getToolMessage(toolCallId: string): Message | undefined {
-    return this.messages().find(
-      (m) => m.role === "tool" && m.toolCallId === toolCallId
-    );
+    return this.messages().find((m) => m.role === "tool" && m.toolCallId === toolCallId);
   }
 }
