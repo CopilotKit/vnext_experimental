@@ -1,0 +1,782 @@
+---
+title: "Thread Management"
+description: "Learn how to retrieve, list, switch, and delete conversation threads in CopilotKit"
+---
+
+# Thread Management
+
+CopilotKit provides comprehensive support for managing multiple conversation threads, allowing you to build chat applications with conversation history similar to ChatGPT.
+
+## Overview
+
+Threads are automatically created and stored when you use CopilotChat. Each thread maintains:
+- Complete conversation history
+- Message metadata
+- Running state
+- Creation and last activity timestamps
+
+**New Features:**
+- ✅ Simple thread deletion with automatic rollback
+- ✅ Configurable refresh intervals
+- ✅ Support for external state management (React Query, SWR, etc.)
+
+## Quick Start
+
+The easiest way to add thread management is using the `CopilotThreadList` component:
+
+```tsx
+import {
+  CopilotKitProvider,
+  CopilotThreadList,
+  CopilotChat,
+  CopilotChatConfigurationProvider,
+} from "@copilotkitnext/react";
+
+export function ChatApp() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <CopilotChatConfigurationProvider>
+        <div className="flex h-screen">
+          <aside className="w-80 border-r">
+            <CopilotThreadList />
+          </aside>
+          <main className="flex-1">
+            <CopilotChat agentId="my-agent" />
+          </main>
+        </div>
+      </CopilotChatConfigurationProvider>
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Using the Thread List Component
+
+### Basic Usage
+
+`CopilotThreadList` provides a complete thread management UI out of the box:
+
+```tsx
+import { CopilotThreadList } from "@copilotkitnext/react";
+
+<CopilotThreadList
+  limit={20}
+  onThreadSelect={(threadId) => console.log("Selected:", threadId)}
+/>
+```
+
+### Refresh Configuration
+
+Control how threads are refreshed automatically:
+
+#### Custom Refresh Interval
+
+```tsx
+// Refresh every 5 seconds (default is 2 seconds)
+<CopilotThreadList refreshInterval={5000} />
+
+// Fast refresh for real-time updates
+<CopilotThreadList refreshInterval={1000} />
+
+// Slow refresh to reduce server load
+<CopilotThreadList refreshInterval={10000} />
+```
+
+#### Disable Auto-Refresh
+
+Disable automatic polling when using external state management:
+
+```tsx
+// No automatic polling
+<CopilotThreadList disableAutoRefresh={true} />
+```
+
+**When to disable auto-refresh:**
+- Using React Query, SWR, or similar libraries
+- Implementing WebSocket-based updates
+- Using Server-Sent Events (SSE)
+- Custom invalidation logic
+- Reducing server load
+
+### Props Reference
+
+```typescript
+interface CopilotThreadListProps {
+  // Basic
+  limit?: number;                  // Max threads to load (default: 50)
+  onThreadSelect?: (threadId: string) => void;
+  className?: string;
+
+  // Refresh Configuration (NEW)
+  refreshInterval?: number;        // Milliseconds (default: 2000)
+  disableAutoRefresh?: boolean;    // Disable polling (default: false)
+
+  // Customization
+  threadItem?: SlotValue;          // Custom thread renderer
+  newThreadButton?: SlotValue;     // Custom new button
+  container?: SlotValue;           // Custom container
+}
+```
+
+## Using the useThreads Hook
+
+For more control over thread data, use the `useThreads` hook:
+
+```tsx
+import { useThreads } from "@copilotkitnext/react";
+
+function MyThreadManager() {
+  const {
+    threads,
+    total,
+    isLoading,
+    error,
+    fetchThreads,
+    deleteThread,    // NEW
+    refresh,
+  } = useThreads({
+    limit: 20,
+    autoFetch: true,
+  });
+
+  const handleDelete = async (threadId: string) => {
+    try {
+      await deleteThread(threadId);
+      // Success! Thread removed with automatic rollback on error
+    } catch (error) {
+      console.error("Failed to delete:", error);
+    }
+  };
+
+  if (isLoading) return <div>Loading threads...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h2>Your Conversations ({total})</h2>
+      {threads.map((thread) => (
+        <div key={thread.threadId}>
+          <h3>{thread.firstMessage || "New conversation"}</h3>
+          <p>{thread.messageCount} messages</p>
+          <button onClick={() => handleDelete(thread.threadId)}>
+            Delete
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Deleting Threads
+
+The `deleteThread` method provides optimistic updates with automatic rollback:
+
+```tsx
+const { deleteThread } = useThreads();
+
+// 1. Immediate UI update (thread removed from list)
+// 2. API request sent to server
+// 3. Success: List refreshed for consistency
+// 4. Failure: Thread restored to original position
+await deleteThread(threadId);
+```
+
+**Features:**
+- Instant UI feedback
+- Automatic rollback on error
+- No manual URL construction needed
+- Proper error handling
+
+## Core API
+
+### deleteThread
+
+Delete a thread using the core helper method:
+
+```tsx
+import { useCopilotKit } from "@copilotkitnext/react";
+
+function CustomThreadManager() {
+  const { copilotkit } = useCopilotKit();
+
+  const deleteThread = async (threadId: string) => {
+    try {
+      await copilotkit.deleteThread(threadId);
+      console.log("Thread deleted successfully");
+    } catch (error) {
+      if (error.message.includes("Not Found")) {
+        console.log("Thread doesn't exist");
+      } else if (error.message.includes("Forbidden")) {
+        console.log("No permission to delete");
+      } else {
+        console.error("Delete failed:", error);
+      }
+    }
+  };
+}
+```
+
+**Benefits:**
+- No manual URL construction
+- Automatic header and resource ID inclusion
+- Consistent error handling
+- Cleaner, more maintainable code
+
+## External State Management
+
+### React Query Integration
+
+```tsx
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CopilotThreadList, useThreads } from "@copilotkitnext/react";
+
+function ThreadListWithReactQuery() {
+  const queryClient = useQueryClient();
+  const { deleteThread } = useThreads();
+
+  // React Query handles fetching and caching
+  const { data, refetch } = useQuery({
+    queryKey: ['threads'],
+    queryFn: fetchThreads,
+    refetchInterval: 3000, // React Query controls refresh
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteThread,
+    onSuccess: () => {
+      // Invalidate to trigger refetch
+      queryClient.invalidateQueries(['threads']);
+    },
+  });
+
+  return (
+    <CopilotThreadList
+      disableAutoRefresh={true}
+      // React Query handles all refresh logic
+    />
+  );
+}
+```
+
+### WebSocket Integration
+
+```tsx
+import { useEffect } from 'react';
+import { CopilotThreadList, useThreads } from "@copilotkitnext/react";
+
+function ThreadListWithWebSocket() {
+  const { refresh } = useThreads();
+
+  useEffect(() => {
+    const ws = new WebSocket('wss://your-server.com/threads');
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'thread_created' ||
+          data.type === 'thread_updated' ||
+          data.type === 'thread_deleted') {
+        refresh(); // Only refresh when notified
+      }
+    };
+
+    return () => ws.close();
+  }, [refresh]);
+
+  return (
+    <CopilotThreadList
+      disableAutoRefresh={true}
+      // WebSocket pushes updates
+    />
+  );
+}
+```
+
+### Server-Sent Events (SSE)
+
+```tsx
+import { useEffect } from 'react';
+import { CopilotThreadList, useThreads } from "@copilotkitnext/react";
+
+function ThreadListWithSSE() {
+  const { refresh } = useThreads();
+
+  useEffect(() => {
+    const eventSource = new EventSource('/api/threads/events');
+
+    eventSource.addEventListener('thread-update', () => {
+      refresh();
+    });
+
+    return () => eventSource.close();
+  }, [refresh]);
+
+  return <CopilotThreadList disableAutoRefresh={true} />;
+}
+```
+
+## Thread Metadata
+
+Each thread includes the following metadata:
+
+```typescript
+interface ThreadMetadata {
+  threadId: string;         // Unique thread identifier
+  createdAt: number;        // Timestamp (ms)
+  lastActivityAt: number;   // Timestamp (ms)
+  isRunning: boolean;       // Is thread currently active?
+  messageCount: number;     // Total messages in thread
+  firstMessage?: string;    // Preview of first message
+}
+```
+
+## Creating New Threads
+
+To create a new thread, generate a new UUID and pass it to CopilotChat:
+
+```tsx
+import { CopilotChat } from "@copilotkitnext/react";
+import { randomUUID } from "@copilotkitnext/shared";
+import { useState } from "react";
+
+function ChatWithNewThread() {
+  const [threadId, setThreadId] = useState<string>(randomUUID());
+
+  const handleNewThread = () => {
+    setThreadId(randomUUID());
+  };
+
+  return (
+    <div>
+      <button onClick={handleNewThread}>New Conversation</button>
+      <CopilotChat agentId="my-agent" threadId={threadId} />
+    </div>
+  );
+}
+```
+
+## Switching Between Threads
+
+CopilotChat automatically handles thread switching when the `threadId` prop changes:
+
+```tsx
+function MultiThreadChat() {
+  const [currentThread, setCurrentThread] = useState("thread-1");
+  const { threads } = useThreads();
+
+  return (
+    <div>
+      {/* Thread selector */}
+      <select
+        value={currentThread}
+        onChange={(e) => setCurrentThread(e.target.value)}
+      >
+        {threads.map((thread) => (
+          <option key={thread.threadId} value={thread.threadId}>
+            {thread.firstMessage || thread.threadId}
+          </option>
+        ))}
+      </select>
+
+      {/* Chat will automatically load the selected thread */}
+      <CopilotChat agentId="my-agent" threadId={currentThread} />
+    </div>
+  );
+}
+```
+
+## Customizing the Thread List
+
+### Custom Thread Renderer
+
+```tsx
+<CopilotThreadList
+  threadItem={({ thread, isActive, onClick, onDelete }) => (
+    <div className={`thread-item ${isActive ? 'active' : ''}`}>
+      <button onClick={onClick} className="thread-content">
+        <h4>{thread.firstMessage || "Untitled conversation"}</h4>
+        <span>
+          {thread.messageCount} messages
+          {thread.isRunning && " • Running"}
+        </span>
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onDelete) onDelete();
+        }}
+        className="delete-btn"
+        aria-label="Delete thread"
+      >
+        🗑️
+      </button>
+    </div>
+  )}
+/>
+```
+
+### Custom Empty State
+
+```tsx
+import { randomUUID } from "@copilotkitnext/shared";
+import { CopilotThreadList, useThreads, useCopilotChatConfiguration } from "@copilotkitnext/react";
+
+function ThreadListWithEmptyState() {
+  const { threads, isLoading } = useThreads();
+  const config = useCopilotChatConfiguration();
+
+  if (isLoading) {
+    return <div>Loading threads…</div>;
+  }
+
+  if (threads.length === 0) {
+    return (
+      <div className="empty-state">
+        <p>No conversations yet</p>
+        <button onClick={() => config?.setThreadId(randomUUID())}>
+          Start chatting
+        </button>
+      </div>
+    );
+  }
+
+  return <CopilotThreadList />;
+}
+```
+
+### Delete with Confirmation
+
+```tsx
+import { useThreads } from "@copilotkitnext/react";
+
+function ThreadManager() {
+  const { threads, deleteThread } = useThreads();
+
+  const handleDelete = async (threadId: string, threadName: string) => {
+    const confirmed = window.confirm(
+      `Delete "${threadName}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteThread(threadId);
+      // Success - optimistic update with rollback on error
+    } catch (error) {
+      alert("Failed to delete thread. Please try again.");
+    }
+  };
+
+  return (
+    <div>
+      {threads.map(thread => (
+        <div key={thread.threadId}>
+          <span>{thread.firstMessage || "Untitled"}</span>
+          <button
+            onClick={() => handleDelete(
+              thread.threadId,
+              thread.firstMessage || "Untitled"
+            )}
+          >
+            Delete
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Pagination
+
+```tsx
+function PaginatedThreadList() {
+  const [offset, setOffset] = useState(0);
+  const limit = 20;
+  const { threads, total, fetchThreads } = useThreads({ limit });
+
+  const handleNextPage = () => {
+    const newOffset = offset + limit;
+    setOffset(newOffset);
+    fetchThreads(newOffset);
+  };
+
+  const handlePrevPage = () => {
+    const newOffset = Math.max(0, offset - limit);
+    setOffset(newOffset);
+    fetchThreads(newOffset);
+  };
+
+  return (
+    <div>
+      <CopilotThreadList limit={limit} />
+      <div className="pagination">
+        <button onClick={handlePrevPage} disabled={offset === 0}>
+          Previous
+        </button>
+        <span>
+          Showing {offset + 1}-{Math.min(offset + limit, total)} of {total}
+        </span>
+        <button onClick={handleNextPage} disabled={offset + limit >= total}>
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+## Backend Configuration
+
+Thread storage is handled automatically by the AgentRunner. Choose the appropriate runner for your deployment:
+
+### In-Memory (Development)
+
+```typescript
+import { CopilotRuntime, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+
+const runtime = new CopilotRuntime({
+  agents: myAgents,
+  runner: new InMemoryAgentRunner(), // Default
+});
+```
+
+### SQLite (Single Server)
+
+```typescript
+import { SqliteAgentRunner } from "@copilotkitnext/runtime";
+
+const runtime = new CopilotRuntime({
+  agents: myAgents,
+  runner: new SqliteAgentRunner({
+    dbPath: "./copilot.db", // Persistent storage
+  }),
+});
+```
+
+### Enterprise (Multi-Server with Redis)
+
+```typescript
+import { EnterpriseAgentRunner } from "@copilotkitnext/runtime";
+import { Kysely } from "kysely";
+import Redis from "ioredis";
+
+const runtime = new CopilotRuntime({
+  agents: myAgents,
+  runner: new EnterpriseAgentRunner({
+    kysely: new Kysely({
+      // Your database config
+    }),
+    redis: new Redis({
+      // Your Redis config
+    }),
+  }),
+});
+```
+
+## API Reference
+
+### CopilotThreadList Component
+
+```typescript
+interface CopilotThreadListProps {
+  limit?: number;                  // Default: 50
+  onThreadSelect?: (threadId: string) => void;
+  className?: string;
+  refreshInterval?: number;        // Default: 2000 (ms)
+  disableAutoRefresh?: boolean;    // Default: false
+  threadItem?: SlotValue;
+  newThreadButton?: SlotValue;
+  container?: SlotValue;
+}
+```
+
+### useThreads Hook
+
+```typescript
+interface UseThreadsOptions {
+  limit?: number;      // Default: 50
+  autoFetch?: boolean; // Default: true
+}
+
+interface UseThreadsResult {
+  threads: ThreadMetadata[];
+  total: number;
+  isLoading: boolean;
+  error: Error | null;
+  fetchThreads: (offset?: number) => Promise<void>;
+  getThreadMetadata: (threadId: string) => Promise<ThreadMetadata | null>;
+  refresh: () => Promise<void>;
+  addOptimisticThread: (threadId: string) => void;
+  deleteThread: (threadId: string) => Promise<void>;  // NEW
+  currentThreadId?: string;
+}
+```
+
+### Core Methods
+
+```typescript
+// List all threads
+core.listThreads(params?: { limit?: number; offset?: number }): Promise<{
+  threads: ThreadMetadata[];
+  total: number;
+}>
+
+// Get single thread metadata
+core.getThreadMetadata(threadId: string): Promise<ThreadMetadata | null>
+
+// Delete a thread (NEW)
+core.deleteThread(threadId: string): Promise<void>
+```
+
+## Best Practices
+
+### 1. Use Core Helper Methods
+
+❌ **Don't** manually construct URLs:
+```typescript
+// BAD
+const url = `${core.runtimeUrl}/threads/${threadId}`;
+const response = await fetch(url, { method: "DELETE" });
+```
+
+✅ **Do** use the core helper:
+```typescript
+// GOOD
+await core.deleteThread(threadId);
+```
+
+### 2. Choose the Right Refresh Strategy
+
+**For Normal Use:**
+```tsx
+// Use default 2-second interval
+<CopilotThreadList />
+```
+
+**For Real-Time Updates:**
+```tsx
+// Option A: Fast polling (simple but inefficient)
+<CopilotThreadList refreshInterval={1000} />
+
+// Option B: WebSockets (efficient, recommended)
+<CopilotThreadList disableAutoRefresh={true} />
+// + WebSocket integration
+```
+
+**For Reduced Server Load:**
+```tsx
+// Slow refresh or disable
+<CopilotThreadList refreshInterval={10000} />
+```
+
+### 3. Handle Errors Gracefully
+
+```typescript
+const { deleteThread } = useThreads();
+
+const handleDelete = async (threadId: string) => {
+  if (!window.confirm("Delete this thread?")) return;
+
+  try {
+    await deleteThread(threadId);
+    toast.success("Thread deleted");
+  } catch (error) {
+    toast.error("Failed to delete thread");
+    // Rollback happens automatically
+  }
+};
+```
+
+### 4. Always Use Stable Thread IDs
+
+Generate thread IDs once and persist them in your app state.
+
+### 5. Implement Loading States
+
+Thread fetching is async - always show loading indicators.
+
+### 6. Provide Visual Feedback
+
+Show active threads, running status, and delete confirmations.
+
+## Troubleshooting
+
+### Threads not showing up
+
+- Ensure `runtimeUrl` is set in CopilotKitProvider
+- Check that threads have been created (send at least one message)
+- Verify your backend is running and accessible
+
+### Thread deletion not working
+
+- Check runtime URL is set correctly
+- Verify authentication headers are included
+- Review resource ID permissions
+- Check server logs for errors
+
+### Auto-refresh not working
+
+- Ensure thread has `isRunning: true` or `firstMessage: undefined`
+- Check `disableAutoRefresh` is not set to `true`
+- Verify component is mounted
+
+### Performance issues
+
+- Increase `refreshInterval` (e.g., 5000ms)
+- Use `disableAutoRefresh={true}` with external state management
+- Implement WebSocket or SSE for real-time updates
+- Consider pagination for apps with many threads
+
+## Migration Guide
+
+### From Manual URL Construction
+
+**Before:**
+```typescript
+const url = `${core.runtimeUrl}/threads/${threadId}`;
+const response = await fetch(url, {
+  method: "DELETE",
+  headers: { ...core.headers },
+});
+if (!response.ok) throw new Error("Failed");
+```
+
+**After:**
+```typescript
+await core.deleteThread(threadId);
+```
+
+### Adding Refresh Control
+
+**Before:**
+```tsx
+<CopilotThreadList />
+// Always refreshes every 2 seconds
+```
+
+**After:**
+```tsx
+// Option 1: Custom interval
+<CopilotThreadList refreshInterval={5000} />
+
+// Option 2: Disable for external control
+<CopilotThreadList disableAutoRefresh={true} />
+```
+
+## Examples
+
+For more examples, check out our Storybook:
+```bash
+pnpm storybook:react
+```
+
+Interactive examples include:
+- Basic thread list
+- Custom refresh intervals
+- Disabled auto-refresh
+- External state management (React Query)
+- WebSocket integration
+- Custom thread renderers
+- Delete with confirmation

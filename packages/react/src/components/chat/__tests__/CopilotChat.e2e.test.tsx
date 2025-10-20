@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { z } from "zod";
 import { defineToolCallRenderer, ReactToolCallRenderer } from "@/types";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/__tests__/utils/test-helpers";
 import { useConfigureSuggestions } from "@/hooks/use-configure-suggestions";
 import { CopilotChat } from "../CopilotChat";
+import { EventType } from "@ag-ui/core";
 
 describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
   describe("Chat Basics: text input + run", () => {
@@ -65,26 +66,26 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
 
       const messageId = testId("msg");
       agent.emit(runStartedEvent());
-      
+
       // Stream text progressively
       agent.emit(textChunkEvent(messageId, "Once upon"));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Once upon/)).toBeDefined();
       });
-      
+
       agent.emit(textChunkEvent(messageId, " a time"));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Once upon a time/)).toBeDefined();
       });
-      
+
       agent.emit(textChunkEvent(messageId, " there was a robot."));
-      
+
       await waitFor(() => {
         expect(screen.getByText(/Once upon a time there was a robot\./)).toBeDefined();
       });
-      
+
       agent.emit(runFinishedEvent());
       agent.complete();
     });
@@ -102,7 +103,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
           }),
           render: ({ name, args, result, status }) => (
             <div data-testid="weather-tool">
-              Tool: {name} | Status: {status} | Location: {args.location} | 
+              Tool: {name} | Status: {status} | Location: {args.location} |
               {result && ` Result: ${JSON.stringify(result)}`}
             </div>
           ),
@@ -127,21 +128,25 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       // Stream: RUN_STARTED → TEXT_MESSAGE_CHUNK → TOOL_CALL_CHUNK → TOOL_CALL_RESULT → RUN_FINISHED
       agent.emit(runStartedEvent());
       agent.emit(textChunkEvent(messageId, "Let me check the weather for you."));
-      
+
       // Start tool call with partial args
-      agent.emit(toolCallChunkEvent({
-        toolCallId,
-        toolCallName: "getWeather",
-        parentMessageId: messageId,
-        delta: '{"location":"Paris"',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "getWeather",
+          parentMessageId: messageId,
+          delta: '{"location":"Paris"',
+        }),
+      );
 
       // Continue streaming args
-      agent.emit(toolCallChunkEvent({
-        toolCallId,
-        parentMessageId: messageId,
-        delta: ',"unit":"celsius"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          parentMessageId: messageId,
+          delta: ',"unit":"celsius"}',
+        }),
+      );
 
       // Wait for tool to render with complete args and verify name is provided
       await waitFor(() => {
@@ -151,11 +156,13 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       });
 
       // Send tool result
-      agent.emit(toolCallResultEvent({
-        toolCallId,
-        messageId: `${messageId}_result`,
-        content: JSON.stringify({ temperature: 22, condition: "Sunny" }),
-      }));
+      agent.emit(
+        toolCallResultEvent({
+          toolCallId,
+          messageId: `${messageId}_result`,
+          content: JSON.stringify({ temperature: 22, condition: "Sunny" }),
+        }),
+      );
 
       // Check result appears
       await waitFor(() => {
@@ -214,20 +221,24 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       agent.emit(textChunkEvent(messageId, "I'll check both for you."));
 
       // Start first tool call (weather) with complete JSON in one chunk
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId1,
-        toolCallName: "getWeather",
-        parentMessageId: messageId,
-        delta: '{"location":"London"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: toolCallId1,
+          toolCallName: "getWeather",
+          parentMessageId: messageId,
+          delta: '{"location":"London"}',
+        }),
+      );
 
-      // Start second tool call (time) with complete JSON in one chunk  
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId2,
-        toolCallName: "getTime",
-        parentMessageId: messageId,
-        delta: '{"timezone":"UTC"}',
-      }));
+      // Start second tool call (time) with complete JSON in one chunk
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: toolCallId2,
+          toolCallName: "getTime",
+          parentMessageId: messageId,
+          delta: '{"timezone":"UTC"}',
+        }),
+      );
 
       // Both tools should render with partial/complete args
       await waitFor(() => {
@@ -236,23 +247,27 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       });
 
       // Send results in different order
-      agent.emit(toolCallResultEvent({
-        toolCallId: toolCallId2,
-        messageId: `${messageId}_result2`,
-        content: JSON.stringify({ time: "12:00 PM" }),
-      }));
+      agent.emit(
+        toolCallResultEvent({
+          toolCallId: toolCallId2,
+          messageId: `${messageId}_result2`,
+          content: JSON.stringify({ time: "12:00 PM" }),
+        }),
+      );
 
-      agent.emit(toolCallResultEvent({
-        toolCallId: toolCallId1,
-        messageId: `${messageId}_result1`,
-        content: JSON.stringify({ temp: 18, condition: "Cloudy" }),
-      }));
+      agent.emit(
+        toolCallResultEvent({
+          toolCallId: toolCallId1,
+          messageId: `${messageId}_result1`,
+          content: JSON.stringify({ temp: 18, condition: "Cloudy" }),
+        }),
+      );
 
       // Both results should appear with correct names
       await waitFor(() => {
         const weatherTool = screen.getByTestId("weather-London");
         const timeTool = screen.getByTestId("time-UTC");
-        
+
         expect(weatherTool.textContent).toContain("[getWeather]");
         expect(weatherTool.textContent).toContain("18");
         expect(weatherTool.textContent).toContain("Cloudy");
@@ -296,14 +311,16 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       const toolCallId = testId("tc");
 
       agent.emit(runStartedEvent());
-      
+
       // Call an undefined tool
-      agent.emit(toolCallChunkEvent({
-        toolCallId,
-        toolCallName: "unknownTool",
-        parentMessageId: messageId,
-        delta: '{"param":"value"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "unknownTool",
+          parentMessageId: messageId,
+          delta: '{"param":"value"}',
+        }),
+      );
 
       // Wildcard renderer should handle it
       await waitFor(() => {
@@ -352,12 +369,14 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       agent.emit(runStartedEvent());
 
       // Call an undefined tool with a specific name
-      agent.emit(toolCallChunkEvent({
-        toolCallId,
-        toolCallName: "myCustomTool",
-        parentMessageId: messageId,
-        delta: '{"param":"test","value":123}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "myCustomTool",
+          parentMessageId: messageId,
+          delta: '{"param":"test","value":123}',
+        }),
+      );
 
       // Wildcard renderer should receive the actual tool name, not "*"
       await waitFor(() => {
@@ -386,9 +405,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         defineToolCallRenderer({
           name: "testTool",
           args: z.object({ value: z.string() }),
-          render: ({ args }) => (
-            <div data-testid="test-tool">Tool: {args.value}</div>
-          ),
+          render: ({ args }) => <div data-testid="test-tool">Tool: {args.value}</div>,
         }),
       ] as unknown as ReactToolCallRenderer<unknown>[];
 
@@ -410,12 +427,14 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       agent.emit(runStartedEvent());
 
       // Emit tool call WITHOUT any text content
-      agent.emit(toolCallChunkEvent({
-        toolCallId,
-        toolCallName: "testTool",
-        parentMessageId: messageId,
-        delta: '{"value":"test"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: "testTool",
+          parentMessageId: messageId,
+          delta: '{"value":"test"}',
+        }),
+      );
 
       // Tool call should be rendered
       await waitFor(() => {
@@ -431,7 +450,9 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
 
         if (assistantMessageDiv) {
           // Check that within the assistant message, there's no copy button
-          const copyButtonsInAssistant = assistantMessageDiv.querySelectorAll("button[aria-label*='Copy' i], button[aria-label*='copy' i]");
+          const copyButtonsInAssistant = assistantMessageDiv.querySelectorAll(
+            "button[aria-label*='Copy' i], button[aria-label*='copy' i]",
+          );
           expect(copyButtonsInAssistant.length).toBe(0);
         }
       });
@@ -447,9 +468,7 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
 
         // Should now have copy button
         const toolbarButtons = screen.getAllByRole("button");
-        const copyButton = toolbarButtons.find(btn =>
-          btn.getAttribute("aria-label")?.toLowerCase().includes("copy")
-        );
+        const copyButton = toolbarButtons.find((btn) => btn.getAttribute("aria-label")?.toLowerCase().includes("copy"));
         expect(copyButton).toBeDefined();
       });
 
@@ -463,20 +482,12 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
         defineToolCallRenderer({
           name: "specificTool",
           args: z.object({ value: z.string() }),
-          render: ({ args }) => (
-            <div data-testid="specific-renderer">
-              Specific: {args.value}
-            </div>
-          ),
+          render: ({ args }) => <div data-testid="specific-renderer">Specific: {args.value}</div>,
         }),
         defineToolCallRenderer({
           name: "*",
           args: z.any(),
-          render: ({ name }) => (
-            <div data-testid="wildcard-renderer">
-              Wildcard: {name}
-            </div>
-          ),
+          render: ({ name }) => <div data-testid="wildcard-renderer">Wildcard: {name}</div>,
         }),
       ] as unknown as ReactToolCallRenderer<unknown>[];
 
@@ -497,22 +508,26 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       const toolCallId2 = testId("tc2");
 
       agent.emit(runStartedEvent());
-      
+
       // Call the specific tool
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId1,
-        toolCallName: "specificTool",
-        parentMessageId: messageId,
-        delta: '{"value":"test123"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: toolCallId1,
+          toolCallName: "specificTool",
+          parentMessageId: messageId,
+          delta: '{"value":"test123"}',
+        }),
+      );
 
       // Call an unknown tool
-      agent.emit(toolCallChunkEvent({
-        toolCallId: toolCallId2,
-        toolCallName: "unknownTool",
-        parentMessageId: messageId,
-        delta: '{"data":"xyz"}',
-      }));
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: toolCallId2,
+          toolCallName: "unknownTool",
+          parentMessageId: messageId,
+          delta: '{"data":"xyz"}',
+        }),
+      );
 
       // Specific renderer should be used for specificTool
       await waitFor(() => {
@@ -619,10 +634,13 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       });
 
       // Verify suggestions appear (provider agent's run() method will be called automatically)
-      await waitFor(() => {
-        expect(screen.getByText("Option A")).toBeDefined();
-        expect(screen.getByText("Option B")).toBeDefined();
-      }, { timeout: 5000 });
+      await waitFor(
+        () => {
+          expect(screen.getByText("Option A")).toBeDefined();
+          expect(screen.getByText("Option B")).toBeDefined();
+        },
+        { timeout: 5000 },
+      );
 
       // Click on a suggestion
       const suggestionA = screen.getByText("Option A");
@@ -687,10 +705,13 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       consumerAgent.complete();
 
       // Verify both suggestions are visible after streaming completes
-      await waitFor(() => {
-        expect(screen.getByText("First Action")).toBeDefined();
-        expect(screen.getByText("Second Action")).toBeDefined();
-      }, { timeout: 5000 });
+      await waitFor(
+        () => {
+          expect(screen.getByText("First Action")).toBeDefined();
+          expect(screen.getByText("Second Action")).toBeDefined();
+        },
+        { timeout: 5000 },
+      );
     });
 
     it("should handle multiple suggestions streaming concurrently", async () => {
@@ -748,11 +769,151 @@ describe("CopilotChat E2E - Chat Basics and Streaming Patterns", () => {
       consumerAgent.complete();
 
       // Verify all suggestions appear
+      await waitFor(
+        () => {
+          expect(screen.getByText("Alpha")).toBeDefined();
+          expect(screen.getByText("Beta")).toBeDefined();
+          expect(screen.getByText("Gamma")).toBeDefined();
+        },
+        { timeout: 5000 },
+      );
+    });
+  });
+
+  describe("Thread Switching", () => {
+    it("should clear messages when switching threads", async () => {
+      const agent = new MockStepwiseAgent();
+      renderWithCopilotKit({ agent, threadId: "thread-A" });
+
+      // Wait for component to set agent threadId to thread-A
       await waitFor(() => {
-        expect(screen.getByText("Alpha")).toBeDefined();
-        expect(screen.getByText("Beta")).toBeDefined();
-        expect(screen.getByText("Gamma")).toBeDefined();
-      }, { timeout: 5000 });
+        expect(agent.threadId).toBe("thread-A");
+      });
+
+      // Manually add messages to simulate having messages on thread A
+      agent.messages.push({
+        id: testId("msg-1"),
+        role: "user",
+        content: "User message on A",
+      });
+      agent.messages.push({
+        id: testId("msg-2"),
+        role: "assistant",
+        content: "Assistant response on A",
+      });
+
+      // Verify messages exist in the agent
+      expect(agent.messages.length).toBe(2);
+
+      // Now switch to a different thread by creating a new render
+      const { unmount } = renderWithCopilotKit({ agent, threadId: "thread-B" });
+
+      // Wait for thread switch to complete
+      await waitFor(() => {
+        expect(agent.threadId).toBe("thread-B");
+      });
+
+      // Messages should be cleared, then connectAgent() would sync thread-B's messages from backend
+      // In this test with MockStepwiseAgent, there's no backend, so messages stay at 0
+      expect(agent.messages.length).toBe(0);
+
+      unmount();
+    });
+
+    it("should only show messages when agent threadId matches expected thread", async () => {
+      const agent = new MockStepwiseAgent();
+      renderWithCopilotKit({ agent, threadId: "thread-A" });
+
+      // Wait for initial thread setup
+      await waitFor(() => {
+        expect(agent.threadId).toBe("thread-A");
+      });
+
+      // Add a message when on correct thread
+      agent.messages.push({
+        id: testId("msg-a"),
+        role: "assistant",
+        content: "Message A",
+      });
+
+      // Simulate agent being on wrong thread (race condition scenario)
+      agent.threadId = "thread-B";
+
+      // Wait a bit
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // The component expects thread-A, but agent is on thread-B
+      // So filtering should prevent the message from being displayed
+      // (This tests the safeMessages filter logic)
+      const messageElements = screen.queryAllByText(/Message A/);
+
+      // Message should not be visible because threadIds don't match
+      expect(messageElements.length).toBe(0);
+    });
+
+    it("should allow reconnection to original thread after aborted switch", async () => {
+      // This test verifies the fix for P1 bug: switching from A -> B -> A rapidly
+      // would leave the chat permanently disconnected from A.
+      //
+      // Bug scenario:
+      // 1. Start on thread A (previousThreadIdRef = "thread-A")
+      // 2. Switch to B: disconnect from A succeeds, but before connect to B completes...
+      // 3. Switch back to A: the A->B switch is aborted
+      // 4. Without the fix: previousThreadIdRef is still "thread-A", so the guard at
+      //    line 66 (previousThreadIdRef.current === resolvedThreadId) returns early
+      //    and we never reconnect to A. Chat stays blank.
+      // 5. With the fix: previousThreadIdRef is reset to null on abort, so the guard
+      //    allows reconnection.
+      const agent = new MockStepwiseAgent();
+
+      // Create a wrapper component that controls threadId with state
+      function TestWrapper() {
+        const [currentThreadId, setCurrentThreadId] = React.useState("thread-A");
+
+        // Expose the setter for tests
+        React.useEffect(() => {
+          (window as any).setThreadId = setCurrentThreadId;
+        }, []);
+
+        return <CopilotChat agent={agent} threadId={currentThreadId} />;
+      }
+
+      // Start on thread A
+      renderWithCopilotKit({ agent, children: <TestWrapper /> });
+
+      // Wait for initial connection to thread A
+      await waitFor(() => {
+        expect(agent.threadId).toBe("thread-A");
+      });
+
+      // Trigger rapid thread switches: A -> B -> A
+      // This creates the race condition where B switch is aborted mid-flight
+      act(() => {
+        (window as any).setThreadId("thread-B");
+      });
+
+      // Don't wait for B to complete - immediately switch back to A
+      // This is the critical timing that triggers the bug
+      act(() => {
+        (window as any).setThreadId("thread-A");
+      });
+
+      // Wait for reconnection to thread A
+      // Without the fix, this would timeout because previousThreadIdRef would
+      // still be "thread-A" from the initial connection, causing the guard to
+      // short-circuit and never reconnect
+      await waitFor(
+        () => {
+          expect(agent.threadId).toBe("thread-A");
+        },
+        { timeout: 2000 },
+      );
+
+      // If we get here, the reconnection worked correctly
+      expect(agent.threadId).toBe("thread-A");
+
+      // Cleanup
+      delete (window as any).setThreadId;
     });
   });
 });

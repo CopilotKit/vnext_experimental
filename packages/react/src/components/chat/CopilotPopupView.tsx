@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CopilotChatView, { CopilotChatViewProps } from "./CopilotChatView";
 import CopilotChatToggleButton from "./CopilotChatToggleButton";
 import { CopilotModalHeader } from "./CopilotModalHeader";
@@ -8,6 +8,8 @@ import {
   CopilotChatDefaultLabels,
   useCopilotChatConfiguration,
 } from "@/providers/CopilotChatConfigurationProvider";
+import { CopilotThreadList } from "../threads/CopilotThreadList";
+import { randomUUID } from "@copilotkitnext/shared";
 
 const DEFAULT_POPUP_WIDTH = 420;
 const DEFAULT_POPUP_HEIGHT = 560;
@@ -17,6 +19,8 @@ export type CopilotPopupViewProps = CopilotChatViewProps & {
   width?: number | string;
   height?: number | string;
   clickOutsideToClose?: boolean;
+  showThreadListButton?: boolean;
+  showNewThreadButton?: boolean;
 };
 
 const dimensionToCss = (value: number | string | undefined, fallback: number): string => {
@@ -36,6 +40,8 @@ export function CopilotPopupView({
   width,
   height,
   clickOutsideToClose,
+  showThreadListButton = false,
+  showNewThreadButton = false,
   className,
   ...restProps
 }: CopilotPopupViewProps) {
@@ -47,6 +53,20 @@ export function CopilotPopupView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isRendered, setIsRendered] = useState(isPopupOpen);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isThreadListOpen, setIsThreadListOpen] = useState(false);
+
+  const handleThreadListToggle = useCallback(() => {
+    setIsThreadListOpen((prev) => !prev);
+  }, []);
+
+  const handleThreadSelect = useCallback(() => {
+    setIsThreadListOpen(false);
+  }, []);
+
+  const handleNewThread = useCallback(() => {
+    const newThreadId = randomUUID();
+    configuration?.setThreadId?.(newThreadId);
+  }, [configuration]);
 
   useEffect(() => {
     if (isPopupOpen) {
@@ -132,7 +152,12 @@ export function CopilotPopupView({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [isPopupOpen, clickOutsideToClose, setModalOpen]);
 
-  const headerElement = useMemo(() => renderSlot(header, CopilotModalHeader, {}), [header]);
+  const headerElement = useMemo(() => renderSlot(header, CopilotModalHeader, {
+    onThreadListClick: handleThreadListToggle,
+    showThreadListButton,
+    onNewThreadClick: handleNewThread,
+    showNewThreadButton,
+  }), [header, handleThreadListToggle, showThreadListButton, handleNewThread, showNewThreadButton]);
 
   const resolvedWidth = dimensionToCss(width, DEFAULT_POPUP_WIDTH);
   const resolvedHeight = dimensionToCss(height, DEFAULT_POPUP_HEIGHT);
@@ -171,17 +196,38 @@ export function CopilotPopupView({
         aria-label={labels.modalHeaderTitle}
         data-copilot-popup
         className={cn(
-          "relative flex h-full w-full flex-col overflow-hidden bg-background text-foreground",
+          "relative flex h-full w-full flex-col bg-background text-foreground",
           "origin-bottom focus:outline-none transform-gpu transition-transform transition-opacity duration-200 ease-out",
           "md:transition-transform md:transition-opacity",
           "rounded-none border border-border/0 shadow-none ring-0",
           "md:h-[var(--copilot-popup-height)] md:w-[var(--copilot-popup-width)]",
           "md:max-h-[var(--copilot-popup-max-height)] md:max-w-[var(--copilot-popup-max-width)]",
           "md:origin-bottom-right md:rounded-2xl md:border-border md:shadow-xl md:ring-1 md:ring-border/40",
+          "overflow-hidden", // Clip the sliding panel
           popupAnimationClass,
         )}
         style={popupStyle}
       >
+        {/* Overlay for click-outside-to-close */}
+        {isThreadListOpen && (
+          <div
+            className="absolute inset-0 z-50"
+            onClick={handleThreadListToggle}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Thread list sliding panel */}
+        <div
+          className={cn(
+            "absolute left-0 top-0 h-full w-80 bg-background border-r border-border z-[60]",
+            "transition-transform duration-300 ease-out",
+            isThreadListOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <CopilotThreadList onThreadSelect={handleThreadSelect} />
+        </div>
+
         {headerElement}
         <div className="flex-1 overflow-hidden" data-popup-chat>
           <CopilotChatView

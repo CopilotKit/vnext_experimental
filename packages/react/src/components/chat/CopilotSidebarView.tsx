@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 import CopilotChatView, { CopilotChatViewProps } from "./CopilotChatView";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
@@ -6,6 +6,8 @@ import CopilotChatToggleButton from "./CopilotChatToggleButton";
 import { cn } from "@/lib/utils";
 import { CopilotModalHeader } from "./CopilotModalHeader";
 import { renderSlot, SlotValue } from "@/lib/slots";
+import { CopilotThreadList } from "../threads/CopilotThreadList";
+import { randomUUID } from "@copilotkitnext/shared";
 
 const DEFAULT_SIDEBAR_WIDTH = 480;
 const SIDEBAR_TRANSITION_MS = 260;
@@ -13,15 +15,31 @@ const SIDEBAR_TRANSITION_MS = 260;
 export type CopilotSidebarViewProps = CopilotChatViewProps & {
   header?: SlotValue<typeof CopilotModalHeader>;
   width?: number | string;
+  showThreadListButton?: boolean;
+  showNewThreadButton?: boolean;
 };
 
-export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarViewProps) {
+export function CopilotSidebarView({ header, width, showThreadListButton = false, showNewThreadButton = false, ...props }: CopilotSidebarViewProps) {
   const configuration = useCopilotChatConfiguration();
 
   const isSidebarOpen = configuration?.isModalOpen ?? false;
+  const [isThreadListOpen, setIsThreadListOpen] = useState(false);
 
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number | string>(width ?? DEFAULT_SIDEBAR_WIDTH);
+
+  const handleThreadListToggle = useCallback(() => {
+    setIsThreadListOpen((prev) => !prev);
+  }, []);
+
+  const handleThreadSelect = useCallback(() => {
+    setIsThreadListOpen(false);
+  }, []);
+
+  const handleNewThread = useCallback(() => {
+    const newThreadId = randomUUID();
+    configuration?.setThreadId?.(newThreadId);
+  }, [configuration]);
 
   // Helper to convert width to CSS value
   const widthToCss = (w: number | string): string => {
@@ -71,7 +89,12 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
     return () => window.removeEventListener("resize", updateWidth);
   }, [width]);
 
-  const headerElement = renderSlot(header, CopilotModalHeader, {});
+  const headerElement = renderSlot(header, CopilotModalHeader, {
+    onThreadListClick: handleThreadListToggle,
+    showThreadListButton,
+    onNewThreadClick: handleNewThread,
+    showNewThreadButton,
+  });
 
   return (
     <>
@@ -100,6 +123,7 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
           "w-full",
           "border-l border-border bg-background text-foreground shadow-xl",
           "transition-transform duration-300 ease-out",
+          "overflow-hidden", // Clip the sliding panel
           isSidebarOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
         )}
         style={{
@@ -113,6 +137,26 @@ export function CopilotSidebarView({ header, width, ...props }: CopilotSidebarVi
         aria-label="Copilot chat sidebar"
         role="complementary"
       >
+        {/* Overlay for click-outside-to-close */}
+        {isThreadListOpen && (
+          <div
+            className="absolute inset-0 z-50"
+            onClick={handleThreadListToggle}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Thread list sliding panel */}
+        <div
+          className={cn(
+            "absolute left-0 top-0 h-full w-80 bg-background border-r border-border z-[60]",
+            "transition-transform duration-300 ease-out",
+            isThreadListOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <CopilotThreadList onThreadSelect={handleThreadSelect} />
+        </div>
+
         <div className="flex h-full w-full flex-col overflow-hidden">
           {headerElement}
           <div className="flex-1 overflow-hidden" data-sidebar-chat>

@@ -27,8 +27,16 @@ export type CopilotChatViewProps = WithSlots<
   {
     messages?: Message[];
     autoScroll?: boolean;
+    /**
+     * Controls scroll behavior:
+     * - "smooth": Always smooth scroll
+     * - "instant": Always instant scroll
+     * - "auto": Instant scroll on mount and thread switches, smooth scroll during generation (default)
+     */
+    scrollBehavior?: "smooth" | "instant" | "auto";
     inputProps?: Partial<Omit<CopilotChatInputProps, "children">>;
     isRunning?: boolean;
+    isSwitchingThread?: boolean;
     suggestions?: Suggestion[];
     suggestionLoadingIndexes?: ReadonlyArray<number>;
     onSelectSuggestion?: (suggestion: Suggestion, index: number) => void;
@@ -46,8 +54,10 @@ export function CopilotChatView({
   suggestionView,
   messages = [],
   autoScroll = true,
+  scrollBehavior = "auto",
   inputProps,
   isRunning = false,
+  isSwitchingThread = false,
   suggestions,
   suggestionLoadingIndexes,
   onSelectSuggestion,
@@ -129,6 +139,8 @@ export function CopilotChatView({
   const BoundFeather = renderSlot(feather, CopilotChatView.Feather, {});
   const BoundScrollView = renderSlot(scrollView, CopilotChatView.ScrollView, {
     autoScroll,
+    scrollBehavior,
+    isSwitchingThread,
     scrollToBottomButton,
     inputContainerHeight,
     isResizing,
@@ -219,6 +231,8 @@ export namespace CopilotChatView {
   export const ScrollView: React.FC<
     React.HTMLAttributes<HTMLDivElement> & {
       autoScroll?: boolean;
+      scrollBehavior?: "smooth" | "instant" | "auto";
+      isSwitchingThread?: boolean;
       scrollToBottomButton?: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>;
       inputContainerHeight?: number;
       isResizing?: boolean;
@@ -226,6 +240,8 @@ export namespace CopilotChatView {
   > = ({
     children,
     autoScroll = true,
+    scrollBehavior = "auto",
+    isSwitchingThread = false,
     scrollToBottomButton,
     inputContainerHeight = 0,
     isResizing = false,
@@ -305,11 +321,21 @@ export namespace CopilotChatView {
       );
     }
 
+    // Calculate initial and resize behavior based on scrollBehavior prop
+    // When switching threads in "auto" mode, force instant scroll
+    const initial = scrollBehavior === "auto" ? "instant" : scrollBehavior;
+    const resize =
+      scrollBehavior === "instant"
+        ? "instant"
+        : (scrollBehavior === "auto" && isSwitchingThread)
+          ? "instant"
+          : "smooth";
+
     return (
       <StickToBottom
         className={cn("h-full max-h-full flex flex-col min-h-0 relative", className)}
-        resize="smooth"
-        initial="smooth"
+        resize={resize}
+        initial={initial}
         {...props}
       >
         <ScrollContent

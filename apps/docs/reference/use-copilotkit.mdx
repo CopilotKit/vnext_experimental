@@ -45,26 +45,53 @@ The hook returns a `CopilotKitContextValue` object with the following properties
 The core CopilotKit instance that manages agents, tools, context, and runtime connections. This is the main interface
 for interacting with CopilotKit programmatically.
 
-### renderToolCalls
+### setResourceId
 
-`ReactToolCallRenderer<any>[]`
+`(resourceId: string | string[] | undefined) => void`
 
-An array of tool call render configurations defined at the provider level. These are used to render visual feedback when
-tools are executed.
+A function to dynamically update the resource ID for thread access control. Use this when users switch between contexts (e.g., workspace switcher) to update which threads they can access.
 
-### currentRenderToolCalls
+```tsx
+const { setResourceId } = useCopilotKit();
 
-`ReactToolCallRenderer<unknown>[]`
+// Switch to a different workspace
+setResourceId("workspace-2");
 
-The current list of render tool calls, including both static configurations and dynamically registered ones.
+// Switch to multiple resources
+setResourceId([userId, newWorkspaceId]);
 
-### setCurrentRenderToolCalls
+// Clear resource ID (global access - not recommended in production)
+setResourceId(undefined);
+```
 
-`React.Dispatch<React.SetStateAction<ReactToolCallRenderer<unknown>[]>>`
-
-A setter function to update the current render tool calls. Useful for dynamically adding or removing tool renderers.
+See the [Resource Scoping guide](/guides/resource-scoping) for more information on thread security.
 
 ## Examples
+
+### Workspace Switcher
+
+```tsx
+import { useCopilotKit } from "@copilotkitnext/react";
+import { useState } from "react";
+
+function WorkspaceSwitcher() {
+  const { setResourceId } = useCopilotKit();
+  const [workspaceId, setWorkspaceId] = useState("workspace-1");
+
+  const handleWorkspaceChange = (newWorkspaceId: string) => {
+    setWorkspaceId(newWorkspaceId);
+    setResourceId(newWorkspaceId); // Update thread access scope
+  };
+
+  return (
+    <select value={workspaceId} onChange={(e) => handleWorkspaceChange(e.target.value)}>
+      <option value="workspace-1">Personal Workspace</option>
+      <option value="workspace-2">Team Workspace</option>
+      <option value="workspace-3">Client Workspace</option>
+    </select>
+  );
+}
+```
 
 ### Running an Agent
 

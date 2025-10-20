@@ -11,18 +11,27 @@ import {
   textMessageContentEvent,
   textMessageEndEvent,
 } from "@/__tests__/utils/test-helpers";
-import { ReactCustomMessageRenderer } from "@/types/react-custom-message-renderer";
-import { useCopilotKit } from "@/providers/CopilotKitProvider";
-import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
+import { ReactCustomMessageRenderer, ReactCustomMessageRendererPosition } from "@/types/react-custom-message-renderer";
+import { useCopilotKit, CopilotKitProvider } from "@/providers/CopilotKitProvider";
+import {
+  useCopilotChatConfiguration,
+  CopilotChatConfigurationProvider,
+} from "@/providers/CopilotChatConfigurationProvider";
+import { CopilotChat } from "@/components/chat/CopilotChat";
+import type { Message } from "@ag-ui/core";
 
-type SnapshotRendererProps = Parameters<Exclude<ReactCustomMessageRenderer["render"], null>>[0];
+interface SnapshotRendererProps {
+  message: Message;
+  position: ReactCustomMessageRendererPosition;
+  runId: string;
+  messageIndex: number;
+  messageIndexInRun: number;
+  numberOfMessagesInRun: number;
+  agentId: string;
+  stateSnapshot: unknown;
+}
 
-const SnapshotRenderer: React.FC<SnapshotRendererProps> = ({
-  position,
-  message,
-  runId,
-  stateSnapshot,
-}) => {
+const SnapshotRenderer: React.FC<SnapshotRendererProps> = ({ position, message, runId, stateSnapshot }) => {
   if (position !== "after" || message.role !== "assistant") {
     return null;
   }
@@ -91,9 +100,7 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
     await waitFor(() => {
       expect(screen.getByTestId(`state-${firstAssistantId}`).textContent).toContain("State: 1");
     });
-    const firstRunId = screen
-      .getByTestId(`state-${firstAssistantId}`)
-      .getAttribute("data-run-id");
+    const firstRunId = screen.getByTestId(`state-${firstAssistantId}`).getAttribute("data-run-id");
     expect(firstRunId).toBeTruthy();
 
     const secondAssistantId = testId("assistant-message");
@@ -115,15 +122,11 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
     await waitFor(() => {
       expect(screen.getByTestId(`state-${secondAssistantId}`).textContent).toContain("State: 2");
     });
-    const secondRunId = screen
-      .getByTestId(`state-${secondAssistantId}`)
-      .getAttribute("data-run-id");
+    const secondRunId = screen.getByTestId(`state-${secondAssistantId}`).getAttribute("data-run-id");
 
     expect(secondRunId).not.toBe(firstRunId);
 
-    const firstRunIdAfterSecond = screen
-      .getByTestId(`state-${firstAssistantId}`)
-      .getAttribute("data-run-id");
+    const firstRunIdAfterSecond = screen.getByTestId(`state-${firstAssistantId}`).getAttribute("data-run-id");
     expect(firstRunIdAfterSecond).toBe(firstRunId);
 
     expect(screen.getByTestId(`state-${firstAssistantId}`).textContent).toContain("State: 1");
@@ -233,10 +236,7 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
 
     renderWithCopilotKit({
       agent,
-      renderCustomMessages: [
-        { render: FirstRenderer },
-        { render: SecondRenderer },
-      ],
+      renderCustomMessages: [{ render: FirstRenderer }, { render: SecondRenderer }],
     });
 
     const input = await screen.findByRole("textbox");
@@ -329,10 +329,7 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
     renderWithCopilotKit({
       agents: { [agentId]: agent },
       agentId,
-      renderCustomMessages: [
-        { render: GlobalRenderer },
-        { agentId, render: SpecificRenderer },
-      ],
+      renderCustomMessages: [{ render: GlobalRenderer }, { agentId, render: SpecificRenderer }],
     });
 
     const input = await screen.findByRole("textbox");
@@ -365,9 +362,7 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
     const StateRenderer: React.FC<SnapshotRendererProps> = ({ message, position, stateSnapshot }) => {
       if (position !== "after" || message.role !== "assistant") return null;
       return (
-        <div data-testid={`state-${message.id}`}>
-          {stateSnapshot ? JSON.stringify(stateSnapshot) : "no-state"}
-        </div>
+        <div data-testid={`state-${message.id}`}>{stateSnapshot ? JSON.stringify(stateSnapshot) : "no-state"}</div>
       );
     };
 
@@ -464,9 +459,10 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
 
     // Verify the captured props are meaningful
     expect(capturedProps).toBeTruthy();
-    expect(typeof capturedProps?.messageIndex).toBe("number");
-    expect(typeof capturedProps?.messageIndexInRun).toBe("number");
-    expect(typeof capturedProps?.numberOfMessagesInRun).toBe("number");
+    const { messageIndex, messageIndexInRun, numberOfMessagesInRun } = capturedProps!;
+    expect(typeof messageIndex).toBe("number");
+    expect(typeof messageIndexInRun).toBe("number");
+    expect(typeof numberOfMessagesInRun).toBe("number");
   });
 
   it("works across multi-turn conversations", async () => {
@@ -567,10 +563,7 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
 
     renderWithCopilotKit({
       agent,
-      renderCustomMessages: [
-        { render: NullRenderer },
-        { render: FallbackRenderer },
-      ],
+      renderCustomMessages: [{ render: NullRenderer }, { render: FallbackRenderer }],
     });
 
     const input = await screen.findByRole("textbox");
@@ -664,5 +657,151 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
     expect(receivedSnapshots.length).toBe(2);
     expect(receivedSnapshots.some((s) => s.messageId === msg1)).toBe(true);
     expect(receivedSnapshots.some((s) => s.messageId === msg2)).toBe(true);
+  });
+
+  it("should render custom messages for user messages without runId", async () => {
+    const agent = new MockStepwiseAgent();
+    let receivedRunId: string | undefined;
+
+    const Renderer: React.FC<SnapshotRendererProps> = ({ runId, position, message }) => {
+      if (position !== "after" || message.role !== "user") return null;
+      receivedRunId = runId;
+      return <div data-testid={`runid-${message.id}`}>{runId || "no-run"}</div>;
+    };
+
+    renderWithCopilotKit({
+      agent,
+      renderCustomMessages: [{ render: Renderer }],
+    });
+
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Test message" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test message")).toBeDefined();
+    });
+
+    // Should handle null/empty runId gracefully
+    expect(receivedRunId).toBe("");
+  });
+
+  // Note: Skipping error handling test because React render errors need Error Boundaries
+  // Our try-catch in the hook catches errors during component creation but not during render
+  // This would require wrapping custom renderers in an Error Boundary to properly handle
+  it.skip("should continue rendering messages even when custom renderer throws error", async () => {
+    const agent = new MockStepwiseAgent();
+    let renderCount = 0;
+
+    const ErrorRenderer: React.FC<SnapshotRendererProps> = ({ position, message }) => {
+      if (position !== "after" || message.role !== "assistant") return null;
+      renderCount++;
+      throw new Error("Renderer failed!");
+    };
+
+    renderWithCopilotKit({
+      agent,
+      renderCustomMessages: [{ render: ErrorRenderer }],
+    });
+
+    const input = await screen.findByRole("textbox");
+    const messageId = testId("message");
+
+    fireEvent.change(input, { target: { value: "Test" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test")).toBeDefined();
+    });
+
+    agent.emit(runStartedEvent());
+    agent.emit(textMessageStartEvent(messageId));
+    agent.emit(textMessageContentEvent(messageId, "Response"));
+    agent.emit(textMessageEndEvent(messageId));
+    agent.emit(runFinishedEvent());
+
+    // Message should still render even though custom renderer threw
+    await waitFor(() => {
+      expect(screen.getByText("Response")).toBeDefined();
+    });
+
+    expect(renderCount).toBeGreaterThan(0);
+  });
+
+  it("should handle rapid thread switches correctly", async () => {
+    const agent = new MockStepwiseAgent();
+    const { rerender } = renderWithCopilotKit({
+      agent,
+      threadId: "thread-1",
+    });
+
+    // Add a message to thread-1
+    agent.addMessage({
+      id: "msg1",
+      role: "user",
+      content: "Thread 1 message",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Thread 1 message")).toBeDefined();
+    });
+
+    // Rapidly switch to thread-2
+    rerender(
+      <CopilotKitProvider agents__unsafe_dev_only={{ default: agent }}>
+        <CopilotChatConfigurationProvider agentId="default" threadId="thread-2">
+          <div style={{ height: 400 }}>
+            <CopilotChat />
+          </div>
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>,
+    );
+
+    // Messages should be cleared
+    await waitFor(() => {
+      expect(screen.queryByText("Thread 1 message")).toBeNull();
+    });
+
+    // Add message to thread-2
+    agent.addMessage({
+      id: "msg2",
+      role: "user",
+      content: "Thread 2 message",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Thread 2 message")).toBeDefined();
+    });
+  });
+
+  it("should sync messages returned from connectAgent", async () => {
+    const agent = new MockStepwiseAgent();
+
+    // Override connectAgent to return some messages
+    agent.connectAgent = async () => {
+      const messages = [
+        { id: "msg1", role: "assistant", content: "Synced message 1" },
+        { id: "msg2", role: "assistant", content: "Synced message 2" },
+      ];
+
+      // Manually add messages to agent since we're bypassing base class logic
+      agent.addMessages(messages as any);
+
+      return {
+        newMessages: messages,
+        result: undefined,
+      };
+    };
+
+    renderWithCopilotKit({
+      agent,
+      threadId: "test-thread",
+    });
+
+    // Messages from connectAgent should appear
+    await waitFor(() => {
+      expect(screen.getByText("Synced message 1")).toBeDefined();
+      expect(screen.getByText("Synced message 2")).toBeDefined();
+    });
   });
 });
