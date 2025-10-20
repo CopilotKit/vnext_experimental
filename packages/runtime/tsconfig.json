@@ -6,6 +6,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@copilotkitnext/shared": [
+        "../shared/dist/index.d.ts",
+        "../shared/src/index.ts"
+      ]
+    },
     "types": ["vitest/globals"]
   },
   "include": ["src/**/*"],

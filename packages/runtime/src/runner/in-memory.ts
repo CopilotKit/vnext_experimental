@@ -14,7 +14,7 @@ import {
   RunStartedEvent,
   compactEvents,
 } from "@ag-ui/client";
-import { finalizeRunEvents } from "./finalize-events";
+import { finalizeRunEvents } from "@copilotkitnext/shared";
 
 interface HistoricRun {
   threadId: string;

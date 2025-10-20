@@ -5,7 +5,7 @@ import {
   ToolCallResultEvent,
   RunErrorEvent,
 } from "@ag-ui/client";
-import { finalizeRunEvents } from "../finalize-events";
+import { finalizeRunEvents } from "@copilotkitnext/shared";
 
 const createTextStart = (messageId: string): BaseEvent => ({
   type: EventType.TEXT_MESSAGE_START,

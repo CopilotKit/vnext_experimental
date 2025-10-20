@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
 import {
   BaseEvent,
   EventType,
   RunErrorEvent,
 } from "@ag-ui/client";
+import { randomUUID } from "./utils";
 
 interface FinalizeRunOptions {
   stopRequested?: boolean;

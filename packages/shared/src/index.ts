@@ -9,3 +9,4 @@ export * from "./utils";
 
 export { logger } from "./logger";
 export { DEFAULT_AGENT_ID } from "./constants";
+export { finalizeRunEvents } from "./finalize-events";
