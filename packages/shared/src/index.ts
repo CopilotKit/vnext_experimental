@@ -6,6 +6,7 @@ export {
 } from "./types";
 
 export * from "./utils";
+export * from "./messages";
 
 export { logger } from "./logger";
 export { DEFAULT_AGENT_ID } from "./constants";

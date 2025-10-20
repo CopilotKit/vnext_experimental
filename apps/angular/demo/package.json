@@ -20,6 +20,10 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@copilotkitnext/angular": "workspace:*",
+    "@copilotkitnext/shared": "workspace:*",
+    "uuid": "^11.1.0",
+    "@ag-ui/client": "0.0.40-alpha.7",
+    "partial-json": "^0.1.7",
     "rxjs": "^7.8.1",
     "tslib": "^2.8.1",
     "zone.js": "^0.14.0"

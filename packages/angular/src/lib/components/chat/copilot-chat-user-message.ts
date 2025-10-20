@@ -29,6 +29,11 @@ import {
 import { CopilotChatUserMessageToolbar } from "./copilot-chat-user-message-toolbar";
 import { CopilotChatUserMessageBranchNavigation } from "./copilot-chat-user-message-branch-navigation";
 import { cn } from "../../utils";
+import {
+  getUserMessageBinaryContents,
+  getUserMessageTextContent,
+  normalizeUserMessageContents,
+} from "@copilotkitnext/shared";
 
 @Component({
   standalone: true,
@@ -46,17 +51,20 @@ import { cn } from "../../utils";
   encapsulation: ViewEncapsulation.None,
   template: `
     <div [class]="computedClass()" [attr.data-message-id]="message()?.id">
+      @let messageCtx = messageRendererContext();
       <!-- Message Renderer -->
       @if (messageRendererTemplate || messageRendererComponent()) {
         <copilot-slot
           [slot]="messageRendererTemplate || messageRendererComponent()"
-          [context]="messageRendererContext()"
+          [context]="messageCtx"
           [defaultComponent]="CopilotChatUserMessageRenderer"
         >
         </copilot-slot>
       } @else {
         <copilot-chat-user-message-renderer
-          [content]="message()?.content || ''"
+          [content]="messageCtx.content"
+          [contents]="messageCtx.contents"
+          [attachments]="messageCtx.attachments"
           [inputClass]="messageRendererClass()"
         >
         </copilot-chat-user-message-renderer>
@@ -84,14 +92,14 @@ import { cn } from "../../utils";
             @if (copyButtonTemplate || copyButtonComponent()) {
               <copilot-slot
                 [slot]="copyButtonTemplate || copyButtonComponent()"
-                [context]="{ content: message()?.content || '' }"
+                [context]="{ content: messageCtx.content }"
                 [outputs]="copyButtonOutputs"
                 [defaultComponent]="CopilotChatUserMessageCopyButton"
               >
               </copilot-slot>
             } @else {
               <copilot-chat-user-message-copy-button
-                [content]="message()?.content"
+                [content]="messageCtx.content"
                 [inputClass]="copyButtonClass()"
                 (clicked)="handleCopy()"
               >
@@ -211,9 +219,15 @@ export class CopilotChatUserMessage {
   );
 
   // Context for slots (reactive via signals)
-  messageRendererContext = computed<MessageRendererContext>(() => ({
-    content: this.message()?.content || "",
-  }));
+  messageRendererContext = computed<MessageRendererContext>(() => {
+    const message = this.message();
+    const contents = normalizeUserMessageContents(message?.content);
+    return {
+      content: getUserMessageTextContent(contents),
+      contents,
+      attachments: getUserMessageBinaryContents(contents),
+    };
+  });
 
   // Output maps for slots
   copyButtonOutputs = { clicked: () => this.handleCopy() };

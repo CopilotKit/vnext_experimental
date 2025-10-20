@@ -6,13 +6,18 @@ import {
 } from "@/providers/CopilotChatConfigurationProvider";
 import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
-import { UserMessage } from "@ag-ui/core";
+import { BinaryInputContent, InputContent, UserMessage } from "@ag-ui/core";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { renderSlot, WithSlots } from "@/lib/slots";
+import {
+  getUserMessageBinaryContents,
+  getUserMessageTextContent,
+  normalizeUserMessageContents,
+} from "@copilotkitnext/shared";
 
 export interface CopilotChatUserMessageOnEditMessageProps {
   message: UserMessage;
@@ -64,7 +69,8 @@ export function CopilotChatUserMessage({
     messageRenderer,
     CopilotChatUserMessage.MessageRenderer,
     {
-      content: message.content || "",
+      content: getUserMessageTextContent(message.content),
+      contents: normalizeUserMessageContents(message.content),
     }
   );
 
@@ -73,9 +79,10 @@ export function CopilotChatUserMessage({
     CopilotChatUserMessage.CopyButton,
     {
       onClick: async () => {
-        if (message.content) {
+        const textContent = getUserMessageTextContent(message.content);
+        if (textContent.trim().length > 0) {
           try {
-            await navigator.clipboard.writeText(message.content);
+            await navigator.clipboard.writeText(textContent);
           } catch (err) {
             console.error("Failed to copy message:", err);
           }
@@ -160,19 +167,42 @@ export namespace CopilotChatUserMessage {
     </div>
   );
 
-  export const MessageRenderer: React.FC<{
+  type MessageRendererProps = {
     content: string;
+    contents?: InputContent[];
     className?: string;
-  }> = ({ content, className }) => (
-    <div
-      className={twMerge(
-        "prose dark:prose-invert bg-muted relative max-w-[80%] rounded-[18px] px-4 py-1.5 data-[multiline]:py-3 inline-block whitespace-pre-wrap",
-        className
-      )}
-    >
-      {content}
-    </div>
-  );
+  };
+
+  export const MessageRenderer: React.FC<MessageRendererProps> = ({
+    content,
+    contents = [],
+    className,
+  }) => {
+    const attachments = getUserMessageBinaryContents(contents);
+
+    const hasText = content.trim().length > 0;
+
+    return (
+      <div
+        className={twMerge(
+          "prose dark:prose-invert bg-muted relative max-w-[80%] rounded-[18px] px-4 py-1.5 data-[multiline]:py-3 inline-block whitespace-pre-wrap",
+          className,
+        )}
+      >
+        {hasText && <span>{content}</span>}
+        {attachments.length > 0 && (
+          <div className={twMerge(hasText ? "mt-3 flex flex-col gap-2" : "flex flex-col gap-2")}>
+            {attachments.map((attachment, index) => (
+              <AttachmentPreview
+                key={attachment.id ?? attachment.url ?? attachment.filename ?? index}
+                attachment={attachment}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   export const Toolbar: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     className,
@@ -323,6 +353,58 @@ export namespace CopilotChatUserMessage {
       </div>
     );
   };
+}
+
+const AttachmentPreview: React.FC<{ attachment: BinaryInputContent }> = ({ attachment }) => {
+  const source = resolveAttachmentSource(attachment);
+  const isImage = attachment.mimeType.startsWith("image/");
+  const label = attachment.filename ?? attachment.id ?? attachment.mimeType;
+
+  if (isImage && source) {
+    return (
+      <figure className="flex flex-col gap-1">
+        <img
+          src={source}
+          alt={label ?? "User provided image"}
+          className="max-h-64 rounded-lg border border-border object-contain"
+        />
+        <figcaption className="text-xs text-muted-foreground">
+          {label ?? "Image attachment"}
+        </figcaption>
+      </figure>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-dashed border-border bg-muted/70 px-3 py-2 text-xs text-muted-foreground">
+      {label ?? "Attachment"}
+      <span className="block text-[10px] uppercase tracking-wide text-muted-foreground/70">
+        {attachment.mimeType}
+      </span>
+      {source && !isImage ? (
+        <a
+          href={source}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block text-xs text-primary underline"
+        >
+          Open
+        </a>
+      ) : null}
+    </div>
+  );
+};
+
+function resolveAttachmentSource(attachment: BinaryInputContent): string | null {
+  if (attachment.url) {
+    return attachment.url;
+  }
+
+  if (attachment.data) {
+    return `data:${attachment.mimeType};base64,${attachment.data}`;
+  }
+
+  return null;
 }
 
 CopilotChatUserMessage.Container.displayName =

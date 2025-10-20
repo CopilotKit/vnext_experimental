@@ -9,7 +9,7 @@ export default defineConfig((options) => ({
   clean: false, // Don't clean to preserve CSS file
   target: 'es2022',
   outDir: 'dist',
-  external: ['react', 'react-dom'],
+  external: ['react', 'react-dom', '@copilotkitnext/shared'],
   esbuildOptions(opts) {
     // Resolve path aliases during build
     opts.alias = {
