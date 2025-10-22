@@ -11,7 +11,7 @@ import {
   type RunAgentInput,
 } from "@ag-ui/client";
 import { Observable, Subject } from "rxjs";
-import { ReactToolCallRenderer } from "@/types";
+import { ReactActivityMessageRenderer, ReactToolCallRenderer } from "@/types";
 import { ReactCustomMessageRenderer } from "@/types/react-custom-message-renderer";
 
 /**
@@ -66,6 +66,7 @@ export function renderWithCopilotKit({
   agents,
   renderToolCalls,
   renderCustomMessages,
+  renderActivityMessages,
   frontendTools,
   humanInTheLoop,
   agentId,
@@ -76,6 +77,7 @@ export function renderWithCopilotKit({
   agents?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
   renderCustomMessages?: ReactCustomMessageRenderer[];
+  renderActivityMessages?: ReactActivityMessageRenderer<any>[];
   frontendTools?: any[];
   humanInTheLoop?: any[];
   agentId?: string;
@@ -91,6 +93,7 @@ export function renderWithCopilotKit({
       agents__unsafe_dev_only={resolvedAgents}
       renderToolCalls={renderToolCalls}
       renderCustomMessages={renderCustomMessages}
+      renderActivityMessages={renderActivityMessages}
       frontendTools={frontendTools}
       humanInTheLoop={humanInTheLoop}
     >
@@ -129,6 +132,26 @@ export function stateSnapshotEvent(snapshot: unknown): BaseEvent {
   return {
     type: EventType.STATE_SNAPSHOT,
     snapshot,
+  } as BaseEvent;
+}
+
+/**
+ * Helper to create an ACTIVITY_SNAPSHOT event
+ */
+export function activitySnapshotEvent({
+  messageId,
+  activityType,
+  content,
+}: {
+  messageId: string;
+  activityType: string;
+  content: Record<string, unknown>;
+}): BaseEvent {
+  return {
+    type: EventType.ACTIVITY_SNAPSHOT,
+    messageId,
+    activityType,
+    content,
   } as BaseEvent;
 }
 
