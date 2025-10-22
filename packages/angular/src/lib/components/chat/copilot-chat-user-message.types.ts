@@ -1,11 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-export interface UserMessage {
-  id: string;
-  content?: string;
-  role: "user";
-  timestamp?: Date;
-  [key: string]: any; // Allow additional properties
-}
+import type { UserMessage } from "@ag-ui/core";
 
 export interface CopilotChatUserMessageOnEditMessageProps {
   message: UserMessage;
@@ -34,9 +27,7 @@ export interface EditButtonContext {
 export interface BranchNavigationContext {
   currentBranch: number;
   numberOfBranches: number;
-  onSwitchToBranch?: (
-    props: CopilotChatUserMessageOnSwitchToBranchProps
-  ) => void;
+  onSwitchToBranch?: (props: CopilotChatUserMessageOnSwitchToBranchProps) => void;
   message: UserMessage;
 }
 

@@ -1,18 +1,9 @@
-import {
-  Component,
-  input,
-  output,
-  ChangeDetectionStrategy,
-  ViewEncapsulation,
-  computed,
-} from "@angular/core";
+import { Component, input, output, ChangeDetectionStrategy, ViewEncapsulation, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { LucideAngularModule, ChevronLeft, ChevronRight } from "lucide-angular";
-import {
-  type UserMessage,
-  type CopilotChatUserMessageOnSwitchToBranchProps,
-} from "./copilot-chat-user-message.types";
+import { type CopilotChatUserMessageOnSwitchToBranchProps } from "./copilot-chat-user-message.types";
 import { cn } from "../../utils";
+import { UserMessage } from "@ag-ui/core";
 
 @Component({
   standalone: true,
@@ -23,23 +14,13 @@ import { cn } from "../../utils";
   template: `
     @if (showNavigation()) {
       <div [class]="computedClass()">
-        <button
-          type="button"
-          [class]="buttonClass"
-          [disabled]="!canGoPrev()"
-          (click)="handlePrevious()"
-        >
+        <button type="button" [class]="buttonClass" [disabled]="!canGoPrev()" (click)="handlePrevious()">
           <lucide-angular [img]="ChevronLeftIcon" [size]="20"></lucide-angular>
         </button>
         <span class="text-sm text-muted-foreground px-0 font-medium">
           {{ currentBranch() + 1 }}/{{ numberOfBranches() }}
         </span>
-        <button
-          type="button"
-          [class]="buttonClass"
-          [disabled]="!canGoNext()"
-          (click)="handleNext()"
-        >
+        <button type="button" [class]="buttonClass" [disabled]="!canGoNext()" (click)="handleNext()">
           <lucide-angular [img]="ChevronRightIcon" [size]="20"></lucide-angular>
         </button>
       </div>
@@ -70,16 +51,14 @@ export class CopilotChatUserMessageBranchNavigation {
     // Interactions
     "transition-colors",
     // Disabled state
-    "disabled:opacity-50 disabled:cursor-not-allowed"
+    "disabled:opacity-50 disabled:cursor-not-allowed",
   );
 
   showNavigation = computed(() => this.numberOfBranches() > 1);
 
   canGoPrev = computed(() => this.currentBranch() > 0);
 
-  canGoNext = computed(
-    () => this.currentBranch() < this.numberOfBranches() - 1
-  );
+  canGoNext = computed(() => this.currentBranch() < this.numberOfBranches() - 1);
 
   computedClass = computed(() => {
     return cn("flex items-center gap-1", this.inputClass());
