@@ -1,8 +1,34 @@
-import { Component, ChangeDetectionStrategy, computed, inject } from "@angular/core";
+import { Component, ChangeDetectionStrategy, computed, inject, input, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { CopilotKit, injectAgentStore } from "@copilotkitnext/angular";
+import {
+  connectAgentContext,
+  CopilotKit,
+  HumanInTheLoopToolCall,
+  HumanInTheLoopToolRenderer,
+  injectAgentStore,
+  registerHumanInTheLoop,
+} from "@copilotkitnext/angular";
 import { RenderToolCalls } from "@copilotkitnext/angular";
+import { z } from "zod";
+
+@Component({
+  selector: "require-approval",
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div>Require approval</div>
+    <button (click)="respond({ approved: true })">Approve</button>
+    <button (click)="respond({ approved: false })">Deny</button>
+  `,
+})
+export class RequireApprovalComponent implements HumanInTheLoopToolRenderer {
+  toolCall = input.required<HumanInTheLoopToolCall<{ action: string; reason: string }>>();
+
+  respond(result: { approved: boolean }) {
+    this.toolCall().respond(result);
+  }
+}
 
 @Component({
   selector: "headless-chat",
@@ -51,13 +77,32 @@ import { RenderToolCalls } from "@copilotkitnext/angular";
   `,
 })
 export class HeadlessChatComponent {
-  readonly agentStore = injectAgentStore("default");
+  readonly agentStore = injectAgentStore("openai");
   readonly agent = computed(() => this.agentStore()?.agent);
   readonly isRunning = computed(() => !!this.agentStore()?.isRunning());
   readonly messages = computed(() => this.agentStore()?.messages());
   readonly copilotkit = inject(CopilotKit);
 
   inputValue = "";
+
+  constructor() {
+    registerHumanInTheLoop({
+      name: "requireApproval",
+      description: "Requires human approval before proceeding",
+      parameters: z.object({
+        action: z.string(),
+        reason: z.string(),
+      }),
+      component: RequireApprovalComponent,
+    });
+
+    connectAgentContext(
+      signal({
+        value: "voice-mode",
+        description: "active",
+      }),
+    );
+  }
 
   async send() {
     const content = this.inputValue.trim();
