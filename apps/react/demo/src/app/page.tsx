@@ -39,7 +39,20 @@ export default function Home() {
   });
 
   return (
-    <CopilotKitProvider runtimeUrl="/api/copilotkit" renderToolCalls={[wildcardRenderer]} showDevConsole="auto">
+    <CopilotKitProvider
+      runtimeUrl="/api/copilotkit"
+      renderToolCalls={[wildcardRenderer]}
+      showDevConsole="auto"
+      renderActivityMessages={[
+        {
+          activityType: "a2ui-surface",
+          content: z.any(),
+          render: ({ content }) => {
+            return <pre>{JSON.stringify(content, null, 2)}</pre>;
+          },
+        },
+      ]}
+    >
       <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
         <Chat />
       </div>
@@ -48,9 +61,9 @@ export default function Home() {
 }
 
 function Chat() {
-  useConfigureSuggestions({
-    instructions: "Suggest helpful next actions",
-  });
+  //useConfigureSuggestions({
+  //  instructions: "Suggest helpful next actions",
+  //});
 
   // useConfigureSuggestions({
   //   suggestions: [

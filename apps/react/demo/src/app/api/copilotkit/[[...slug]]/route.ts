@@ -1,6 +1,8 @@
 import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { BasicAgent } from "@copilotkitnext/agent";
+import { A2AAgent } from "@ag-ui/a2a";
+import { A2AClient } from "@a2a-js/sdk/client";
 
 // Determine which model to use based on available API keys
 const getModelConfig = () => {
@@ -15,11 +17,14 @@ const getModelConfig = () => {
   return "openai/gpt-4o";
 };
 
-const agent = new BasicAgent({
-  model: getModelConfig(),
-  prompt: "You are a helpful AI assistant.",
-  temperature: 0.7,
-});
+// const agent = new BasicAgent({
+//   model: getModelConfig(),
+//   prompt: "You are a helpful AI assistant.",
+//   temperature: 0.7,
+// });
+//
+const a2aClient = new A2AClient("http://localhost:10002");
+const agent = new A2AAgent({ a2aClient, debug: true });
 
 const runtime = new CopilotRuntime({
   agents: {

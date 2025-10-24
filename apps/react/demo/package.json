@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ag-ui/client": "0.0.40-alpha.9",
+    "@ag-ui/client": "0.0.40-alpha.10",
+    "@ag-ui/a2a": "0.0.5",
+    "@a2a-js/sdk": "^0.2.2",
     "@copilotkitnext/agent": "workspace:*",
     "@copilotkitnext/core": "workspace:*",
     "@copilotkitnext/react": "workspace:*",

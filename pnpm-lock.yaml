@@ -91,8 +91,8 @@ importers:
   apps/angular/demo-server:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ag-ui/langgraph':
         specifier: ^0.0.11
         version: 0.0.11(@opentelemetry/api@1.9.0)(openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.75))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -128,8 +128,8 @@ importers:
   apps/angular/storybook:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@angular/animations':
         specifier: ^18.2.0
         version: 18.2.13(@angular/core@18.2.13(rxjs@7.8.1)(zone.js@0.14.10))
@@ -265,9 +265,15 @@ importers:
 
   apps/react/demo:
     dependencies:
+      '@a2a-js/sdk':
+        specifier: ^0.2.2
+        version: 0.2.5
+      '@ag-ui/a2a':
+        specifier: 0.0.5
+        version: 0.0.5(@ag-ui/client@0.0.40-alpha.10)(@ag-ui/core@0.0.40-alpha.10)
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/agent':
         specifier: workspace:*
         version: link:../../../packages/agent
@@ -403,8 +409,8 @@ importers:
   packages/agent:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ai-sdk/anthropic':
         specifier: ^2.0.22
         version: 2.0.23(zod@3.25.75)
@@ -455,11 +461,11 @@ importers:
   packages/angular:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -597,8 +603,8 @@ importers:
   packages/core:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/shared':
         specifier: workspace:*
         version: link:../shared
@@ -710,11 +716,11 @@ importers:
   packages/react:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -840,14 +846,14 @@ importers:
   packages/runtime:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@ag-ui/encoder':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/shared':
         specifier: workspace:*
         version: link:../shared
@@ -886,8 +892,8 @@ importers:
   packages/shared:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       partial-json:
         specifier: ^0.1.7
         version: 0.1.7
@@ -917,8 +923,8 @@ importers:
   packages/sqlite-runner:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/runtime':
         specifier: workspace:*
         version: link:../runtime
@@ -959,8 +965,8 @@ importers:
   packages/web-inspector:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.8
-        version: 0.0.40-alpha.8
+        specifier: 0.0.40-alpha.10
+        version: 0.0.40-alpha.10
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -1001,26 +1007,36 @@ importers:
 
 packages:
 
+  '@a2a-js/sdk@0.2.5':
+    resolution: {integrity: sha512-VTDuRS5V0ATbJ/LkaQlisMnTAeYKXAK6scMguVBstf+KIBQ7HIuKhiXLv+G/hvejkV+THoXzoNifInAkU81P1g==}
+    engines: {node: '>=18'}
+
   '@adobe/css-tools@4.4.3':
     resolution: {integrity: sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA==}
+
+  '@ag-ui/a2a@0.0.5':
+    resolution: {integrity: sha512-ixCLWjsi89+HJ4sDgjX+27dDoHBfd3TKTlFc1yG8A7B8BqVVGhssECOlXEX89NRNyyGfWw68w2E3ncnmkdxbfg==}
+    peerDependencies:
+      '@ag-ui/client': '>=0.0.40'
+      '@ag-ui/core': '>=0.0.40'
 
   '@ag-ui/client@0.0.36':
     resolution: {integrity: sha512-1Ey2KqK9KQpRJcnJvKPfVyLiTK4+CLBQZ085oJvr6T1nznw224j0KyzXNJ7cRjXeEGnuafmXTgpU+xEbN3xuYQ==}
 
-  '@ag-ui/client@0.0.40-alpha.8':
-    resolution: {integrity: sha512-N/fbHL5WLIfLafEF5qHmAeefFsYGFw2tLoHBWsbRbchN/glej82aFND/E+yz2dVyG+46SWhl8xopiUHyHiAAgw==}
+  '@ag-ui/client@0.0.40-alpha.10':
+    resolution: {integrity: sha512-b1hcS1+nMzsNSSt4E3tryFD4Bd9DQqcqYg0R1CeD9dx4bbDg2cF0sjtUBDpbAQ6N3l4438VranGE9Sj+UozUBg==}
 
   '@ag-ui/core@0.0.36':
     resolution: {integrity: sha512-uYUrzw6uxuw4qVQ61mdSeiG0mFh2n/VAWmWsWzwETDuhqJZT7rFmd07IajcFWcyItMr1wjqxFDdlklucAyEYNA==}
 
-  '@ag-ui/core@0.0.40-alpha.8':
-    resolution: {integrity: sha512-p4S3WBUL6kqSQYfzvKjtLDSeE4z0Unqy0073Uet1gb6IR6KzwtQ5Pv4TvZ+lKb7x8ABdIZNFBYm1CUxyKOWEAQ==}
+  '@ag-ui/core@0.0.40-alpha.10':
+    resolution: {integrity: sha512-VczUym5UTwVdvJPD95z4cqSEnrygjINqrqZX4ru1gnNlf8PPmhElNPdE/ZiFEgmZAXaxzK6rI+LB6iDx5NltQA==}
 
   '@ag-ui/encoder@0.0.36':
     resolution: {integrity: sha512-p8UNh6a77G/oe/4EZmwkTeYCN/5SnqSY2Cz8f8psZpk4LKzzrPkRNykrUAIBsi1wMp50/VQiM27oTRaade/Qkw==}
 
-  '@ag-ui/encoder@0.0.40-alpha.8':
-    resolution: {integrity: sha512-wbZfn+cB5qzbbl/5OvfTv0bFn/KV+4iDRxUF1a3plygNbTFpvrA7qe61BnFU52uDGMEU7nBtChRo/d3Y/JSPDw==}
+  '@ag-ui/encoder@0.0.40-alpha.10':
+    resolution: {integrity: sha512-aoBhFIcX+SGWzvw/FAK4+mHY6NIz5YA7DchjRCBWAyAGWrdSEObKRgPRifahOrl3hhKgSZo0MYwOin9Q33B+rg==}
 
   '@ag-ui/langgraph@0.0.11':
     resolution: {integrity: sha512-3xUkaOelnpQ5tbsbuoOTin71tTgWEN0GDZBjGs/7xAwly2Dn4fahbBAoscXullO/pH9kTGGgbuJ0rWDUgo6fKQ==}
@@ -1028,8 +1044,8 @@ packages:
   '@ag-ui/proto@0.0.36':
     resolution: {integrity: sha512-yaWLwJQmBaCtFstSoZEALztVckCYv+RD8guU91kL5AvywRXvZPP5mjiN+bEwvtw8VU3idXoee1ZbJGpSlSAQ8A==}
 
-  '@ag-ui/proto@0.0.40-alpha.8':
-    resolution: {integrity: sha512-JuChCwxUkFSdOVm61wWH00shG3LSToieGuWzLCLXwUsnvkOk1mvA1em6PbMBVyt6YMhWCttHo8PyVTNmoqCTLg==}
+  '@ag-ui/proto@0.0.40-alpha.10':
+    resolution: {integrity: sha512-d7FzAIjWyQzaMEZyMkTMgIyW+qK7LUg2T/MpjAGqWjjcrWGk2Zh6DU/rNMwMbYnK/YlXS3Ljo5a5gI95SrLS+Q==}
 
   '@ai-sdk/anthropic@2.0.23':
     resolution: {integrity: sha512-ZEBiiv1UhjGjBwUU63pFhLK5LCSlNDb1idY9K1oZHm5/Fda1cuTojf32tOp0opH0RPbPAN/F8fyyNjbU33n9Kw==}
@@ -12492,7 +12508,27 @@ packages:
 
 snapshots:
 
+  '@a2a-js/sdk@0.2.5':
+    dependencies:
+      '@types/cors': 2.8.19
+      '@types/express': 4.17.23
+      body-parser: 2.2.0
+      cors: 2.8.5
+      express: 4.21.2
+      uuid: 11.1.0
+    transitivePeerDependencies:
+      - supports-color
+
   '@adobe/css-tools@4.4.3': {}
+
+  '@ag-ui/a2a@0.0.5(@ag-ui/client@0.0.40-alpha.10)(@ag-ui/core@0.0.40-alpha.10)':
+    dependencies:
+      '@a2a-js/sdk': 0.2.5
+      '@ag-ui/client': 0.0.40-alpha.10
+      '@ag-ui/core': 0.0.40-alpha.10
+      rxjs: 7.8.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@ag-ui/client@0.0.36':
     dependencies:
@@ -12506,11 +12542,11 @@ snapshots:
       uuid: 11.1.0
       zod: 3.25.75
 
-  '@ag-ui/client@0.0.40-alpha.8':
+  '@ag-ui/client@0.0.40-alpha.10':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.8
-      '@ag-ui/encoder': 0.0.40-alpha.8
-      '@ag-ui/proto': 0.0.40-alpha.8
+      '@ag-ui/core': 0.0.40-alpha.10
+      '@ag-ui/encoder': 0.0.40-alpha.10
+      '@ag-ui/proto': 0.0.40-alpha.10
       '@types/uuid': 10.0.0
       fast-json-patch: 3.1.1
       rxjs: 7.8.1
@@ -12523,7 +12559,7 @@ snapshots:
       rxjs: 7.8.1
       zod: 3.25.75
 
-  '@ag-ui/core@0.0.40-alpha.8':
+  '@ag-ui/core@0.0.40-alpha.10':
     dependencies:
       rxjs: 7.8.1
       zod: 3.25.75
@@ -12533,10 +12569,10 @@ snapshots:
       '@ag-ui/core': 0.0.36
       '@ag-ui/proto': 0.0.36
 
-  '@ag-ui/encoder@0.0.40-alpha.8':
+  '@ag-ui/encoder@0.0.40-alpha.10':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.8
-      '@ag-ui/proto': 0.0.40-alpha.8
+      '@ag-ui/core': 0.0.40-alpha.10
+      '@ag-ui/proto': 0.0.40-alpha.10
 
   '@ag-ui/langgraph@0.0.11(@opentelemetry/api@1.9.0)(openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.75))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -12559,9 +12595,9 @@ snapshots:
       '@bufbuild/protobuf': 2.6.0
       '@protobuf-ts/protoc': 2.11.1
 
-  '@ag-ui/proto@0.0.40-alpha.8':
+  '@ag-ui/proto@0.0.40-alpha.10':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.8
+      '@ag-ui/core': 0.0.40-alpha.10
       '@bufbuild/protobuf': 2.6.0
       '@protobuf-ts/protoc': 2.11.1
 
