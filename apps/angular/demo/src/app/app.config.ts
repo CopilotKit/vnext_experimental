@@ -19,11 +19,16 @@ export const appConfig: ApplicationConfig = {
       ],
       frontendTools: [],
       humanInTheLoop: [],
+      headers: {
+        'authorization': 'MAX SANDWICH',
+        'x-Max-wuzhear': "CHEEZBORGER",
+      },
     }),
     provideCopilotChatLabels({
       chatInputPlaceholder: "Ask me anything...",
       chatDisclaimerText:
         "CopilotKit Angular Demo - AI responses may need verification.",
     }),
+
   ],
 };
