@@ -41,15 +41,18 @@ export function useRenderActivityMessage() {
 
       const Component = renderer.render;
 
+      const agent = copilotkit.getAgent(agentId);
+
       return (
         <Component
           key={message.id}
           activityType={message.activityType}
           content={parseResult.data}
           message={message}
+          agent={agent}
         />
       );
     },
-    [agentId, renderers]
+    [agentId, copilotkit, renderers]
   );
 }

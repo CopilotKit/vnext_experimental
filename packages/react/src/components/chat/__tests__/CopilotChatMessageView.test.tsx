@@ -37,11 +37,11 @@ describe("CopilotChatMessageView activity rendering", () => {
       } as ActivityMessage,
     ];
 
-    const renderers = [
+    const renderers: ReactActivityMessageRenderer<{ percent: number }>[] = [
       {
         activityType: "search-progress",
         content: z.object({ percent: z.number() }),
-        render: ({ content }: { content: { percent: number } }) => (
+        render: ({ content }) => (
           <div data-testid="activity-renderer">Progress: {content.percent}%</div>
         ),
       },

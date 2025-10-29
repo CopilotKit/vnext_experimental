@@ -9,22 +9,27 @@ import {
   runStartedEvent,
   testId,
 } from "@/__tests__/utils/test-helpers";
+import { ReactActivityMessageRenderer } from "@/types";
 
 describe("CopilotChat activity message rendering", () => {
   it("renders custom components for activity snapshots", async () => {
     const agent = new MockStepwiseAgent();
-    const activityRenderer = {
+    const agentId = "search-agent";
+    agent.agentId = agentId;
+
+    const activityRenderer: ReactActivityMessageRenderer<{ status: string; percent: number }> = {
       activityType: "search-progress",
       content: z.object({ status: z.string(), percent: z.number() }),
-      render: ({ content }: { content: { status: string; percent: number } }) => (
+      render: ({ content, agent }) => (
         <div data-testid="activity-card">
-          {content.status} · {content.percent}%
+          {content.status} · {content.percent}% · {agent?.agentId}
         </div>
       ),
     };
 
     renderWithCopilotKit({
-      agent,
+      agents: { [agentId]: agent },
+      agentId,
       renderActivityMessages: [activityRenderer],
     });
 
@@ -48,7 +53,9 @@ describe("CopilotChat activity message rendering", () => {
     agent.emit(runFinishedEvent());
 
     await waitFor(() => {
-      expect(screen.getByTestId("activity-card").textContent).toContain("Fetching");
+      const textContent = screen.getByTestId("activity-card").textContent ?? "";
+      expect(textContent).toContain("Fetching");
+      expect(textContent).toContain(agentId);
     });
   });
 

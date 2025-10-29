@@ -1,4 +1,5 @@
 import { ActivityMessage } from "@ag-ui/core";
+import type { AbstractAgent } from "@ag-ui/client";
 import { z } from "zod";
 
 export interface ReactActivityMessageRenderer<TActivityContent> {
@@ -21,5 +22,6 @@ export interface ReactActivityMessageRenderer<TActivityContent> {
     activityType: string;
     content: TActivityContent;
     message: ActivityMessage;
+    agent: AbstractAgent | undefined;
   }>;
 }
