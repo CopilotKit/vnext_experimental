@@ -6,6 +6,7 @@ import {
   useFrontendTool,
   defineToolCallRenderer,
   useConfigureSuggestions,
+  useHumanInTheLoop,
 } from "@copilotkitnext/react";
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
@@ -67,6 +68,7 @@ function Chat() {
 
   useFrontendTool({
     name: "sayHello",
+    description: "Say hello to the user, always require approval first",
     parameters: z.object({
       name: z.string(),
     }),
@@ -75,6 +77,30 @@ function Chat() {
       return `Hello ${name}`;
     },
   });
+
+  useHumanInTheLoop({
+    name: "requireApproval",
+    description: "Requires human approval before proceeding",
+    parameters: z.object({
+      name: z.string(),
+    }),
+    render: ({ status, args, respond }) => {
+      if (status === "executing") {
+        return (
+          <>
+            <div>Requires human approval before proceeding {args.name}</div>
+            <button onClick={() => respond({ name: "John" })}>Approve</button>
+          </>
+        );
+      }
+      return (
+        <div>
+          Status: {status} {args.name}
+        </div>
+      );
+    },
+  });
+
   const toolsMenu = useMemo<(ToolsMenuItem | "-")[]>(
     () => [
       {
