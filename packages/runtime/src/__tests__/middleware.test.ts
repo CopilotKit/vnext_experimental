@@ -1,5 +1,5 @@
 import { vi, type MockedFunction } from "vitest";
-import { createCopilotEndpoint } from "../endpoint";
+import { createCopilotEndpoint } from "../endpoints";
 import { CopilotRuntime } from "../runtime";
 import { logger } from "@copilotkitnext/shared";
 import type { AbstractAgent } from "@ag-ui/client";
