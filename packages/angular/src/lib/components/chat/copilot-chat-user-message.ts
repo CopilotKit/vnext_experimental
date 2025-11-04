@@ -12,7 +12,6 @@ import {
 import { CommonModule } from "@angular/common";
 import { CopilotSlot } from "../../slots/copilot-slot";
 import {
-  type UserMessage,
   type CopilotChatUserMessageOnEditMessageProps,
   type CopilotChatUserMessageOnSwitchToBranchProps,
   type MessageRendererContext,
@@ -29,6 +28,33 @@ import {
 import { CopilotChatUserMessageToolbar } from "./copilot-chat-user-message-toolbar";
 import { CopilotChatUserMessageBranchNavigation } from "./copilot-chat-user-message-branch-navigation";
 import { cn } from "../../utils";
+import { UserMessage } from "@ag-ui/core";
+
+function flattenUserMessageContent(content?: UserMessage["content"]): string {
+  if (!content) {
+    return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
+  }
+
+  return content
+    .map((part) => {
+      if (
+        part &&
+        typeof part === "object" &&
+        "type" in part &&
+        (part as { type?: unknown }).type === "text" &&
+        typeof (part as { text?: unknown }).text === "string"
+      ) {
+        return (part as { text: string }).text;
+      }
+      return "";
+    })
+    .filter((text) => text.length > 0)
+    .join("\n");
+}
 
 @Component({
   standalone: true,
@@ -55,10 +81,7 @@ import { cn } from "../../utils";
         >
         </copilot-slot>
       } @else {
-        <copilot-chat-user-message-renderer
-          [content]="message()?.content || ''"
-          [inputClass]="messageRendererClass()"
-        >
+        <copilot-chat-user-message-renderer [content]="flattenedContent()" [inputClass]="messageRendererClass()">
         </copilot-chat-user-message-renderer>
       }
 
@@ -75,23 +98,21 @@ import { cn } from "../../utils";
           <div class="flex items-center gap-1 justify-end">
             <!-- Additional toolbar items -->
             @if (additionalToolbarItems()) {
-              <ng-container
-                [ngTemplateOutlet]="additionalToolbarItems() || null"
-              ></ng-container>
+              <ng-container [ngTemplateOutlet]="additionalToolbarItems() || null"></ng-container>
             }
 
             <!-- Copy button -->
             @if (copyButtonTemplate || copyButtonComponent()) {
               <copilot-slot
                 [slot]="copyButtonTemplate || copyButtonComponent()"
-                [context]="{ content: message()?.content || '' }"
+                [context]="{ content: flattenedContent() }"
                 [outputs]="copyButtonOutputs"
                 [defaultComponent]="CopilotChatUserMessageCopyButton"
               >
               </copilot-slot>
             } @else {
               <copilot-chat-user-message-copy-button
-                [content]="message()?.content"
+                [content]="flattenedContent()"
                 [inputClass]="copyButtonClass()"
                 (clicked)="handleCopy()"
               >
@@ -109,10 +130,7 @@ import { cn } from "../../utils";
                 >
                 </copilot-slot>
               } @else {
-                <copilot-chat-user-message-edit-button
-                  [inputClass]="editButtonClass()"
-                  (clicked)="handleEdit()"
-                >
+                <copilot-chat-user-message-edit-button [inputClass]="editButtonClass()" (clicked)="handleEdit()">
                 </copilot-chat-user-message-edit-button>
               }
             }
@@ -121,9 +139,7 @@ import { cn } from "../../utils";
             @if (showBranchNavigation()) {
               @if (branchNavigationTemplate || branchNavigationComponent()) {
                 <copilot-slot
-                  [slot]="
-                    branchNavigationTemplate || branchNavigationComponent()
-                  "
+                  [slot]="branchNavigationTemplate || branchNavigationComponent()"
                   [context]="branchNavigationContext()"
                   [defaultComponent]="CopilotChatUserMessageBranchNavigation"
                 >
@@ -200,19 +216,18 @@ export class CopilotChatUserMessage {
   CopilotChatUserMessageToolbar = CopilotChatUserMessageToolbar;
   CopilotChatUserMessageCopyButton = CopilotChatUserMessageCopyButton;
   CopilotChatUserMessageEditButton = CopilotChatUserMessageEditButton;
-  CopilotChatUserMessageBranchNavigation =
-    CopilotChatUserMessageBranchNavigation;
+  CopilotChatUserMessageBranchNavigation = CopilotChatUserMessageBranchNavigation;
 
   // Computed values
   showBranchNavigation = computed(() => (this.numberOfBranches() ?? 1) > 1);
 
-  computedClass = computed(() =>
-    cn("flex flex-col items-end group pt-10", this.inputClass())
-  );
+  computedClass = computed(() => cn("flex flex-col items-end group pt-10", this.inputClass()));
 
   // Context for slots (reactive via signals)
+  flattenedContent = computed(() => flattenUserMessageContent(this.message()?.content));
+
   messageRendererContext = computed<MessageRendererContext>(() => ({
-    content: this.message()?.content || "",
+    content: this.flattenedContent(),
   }));
 
   // Output maps for slots
@@ -239,9 +254,7 @@ export class CopilotChatUserMessage {
     this.editMessage.emit({ message: this.message()! });
   }
 
-  handleSwitchToBranch(
-    props: CopilotChatUserMessageOnSwitchToBranchProps
-  ): void {
+  handleSwitchToBranch(props: CopilotChatUserMessageOnSwitchToBranchProps): void {
     this.switchToBranch.emit(props);
   }
   constructor() {}

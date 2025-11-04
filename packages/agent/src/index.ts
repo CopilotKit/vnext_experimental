@@ -232,6 +232,34 @@ export function defineTool<TParameters extends z.ZodTypeAny>(config: {
   };
 }
 
+type AGUIUserMessage = Extract<Message, { role: "user" }>;
+
+function flattenUserMessageContent(content?: AGUIUserMessage["content"]): string {
+  if (!content) {
+    return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
+  }
+
+  return content
+    .map((part) => {
+      if (
+        part &&
+        typeof part === "object" &&
+        "type" in part &&
+        (part as { type?: unknown }).type === "text" &&
+        typeof (part as { text?: unknown }).text === "string"
+      ) {
+        return (part as { text: string }).text;
+      }
+      return "";
+    })
+    .filter((text) => text.length > 0)
+    .join("\n");
+}
+
 /**
  * Converts AG-UI messages to Vercel AI SDK ModelMessage format
  */
@@ -260,7 +288,7 @@ export function convertMessagesToVercelAISDKMessages(messages: Message[]): Model
     } else if (message.role === "user") {
       const userMsg: UserModelMessage = {
         role: "user",
-        content: message.content || "",
+        content: flattenUserMessageContent(message.content),
       };
       result.push(userMsg);
     } else if (message.role === "tool") {

@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
+import { ReactActivityMessageRenderer, ReactToolCallRenderer } from "../types";
 import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactHumanInTheLoop } from "../types/human-in-the-loop";
@@ -38,6 +38,7 @@ export interface CopilotKitProviderProps {
   properties?: Record<string, unknown>;
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
+  renderActivityMessages?: ReactActivityMessageRenderer<any>[];
   renderCustomMessages?: ReactCustomMessageRenderer[];
   frontendTools?: ReactFrontendTool[];
   humanInTheLoop?: ReactHumanInTheLoop[];
@@ -75,6 +76,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   properties = {},
   agents__unsafe_dev_only: agents = {},
   renderToolCalls,
+  renderActivityMessages,
   renderCustomMessages,
   frontendTools,
   humanInTheLoop,
@@ -124,6 +126,11 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   const renderCustomMessagesList = useStableArrayProp<ReactCustomMessageRenderer>(
     renderCustomMessages,
     "renderCustomMessages must be a stable array.",
+  );
+
+  const renderActivityMessagesList = useStableArrayProp<ReactActivityMessageRenderer<any>>(
+    renderActivityMessages,
+    "renderActivityMessages must be a stable array.",
   );
 
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
@@ -223,12 +230,13 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       agents__unsafe_dev_only: agents,
       tools: allTools,
       renderToolCalls: allRenderToolCalls,
+      renderActivityMessages: renderActivityMessagesList,
       renderCustomMessages: renderCustomMessagesList,
     });
 
     return copilotkit;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTools, allRenderToolCalls, renderCustomMessagesList]);
+  }, [allTools, allRenderToolCalls, renderActivityMessagesList, renderCustomMessagesList]);
 
   // Subscribe to render tool calls changes to force re-renders
   const [, forceUpdate] = useReducer((x) => x + 1, 0);

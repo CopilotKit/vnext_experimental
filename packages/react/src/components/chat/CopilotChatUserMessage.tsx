@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Copy, Check, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useCopilotChatConfiguration,
@@ -13,6 +13,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { renderSlot, WithSlots } from "@/lib/slots";
+
+function flattenUserMessageContent(content?: UserMessage["content"]): string {
+  if (!content) {
+    return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
+  }
+
+  return content
+    .map((part) => {
+      if (
+        part &&
+        typeof part === "object" &&
+        "type" in part &&
+        (part as { type?: unknown }).type === "text" &&
+        typeof (part as { text?: unknown }).text === "string"
+      ) {
+        return (part as { text: string }).text;
+      }
+      return "";
+    })
+    .filter((text) => text.length > 0)
+    .join("\n");
+}
 
 export interface CopilotChatUserMessageOnEditMessageProps {
   message: UserMessage;
@@ -60,11 +86,16 @@ export function CopilotChatUserMessage({
   className,
   ...props
 }: CopilotChatUserMessageProps) {
+  const flattenedContent = useMemo(
+    () => flattenUserMessageContent(message.content),
+    [message.content]
+  );
+
   const BoundMessageRenderer = renderSlot(
     messageRenderer,
     CopilotChatUserMessage.MessageRenderer,
     {
-      content: message.content || "",
+      content: flattenedContent,
     }
   );
 
@@ -73,9 +104,9 @@ export function CopilotChatUserMessage({
     CopilotChatUserMessage.CopyButton,
     {
       onClick: async () => {
-        if (message.content) {
+        if (flattenedContent) {
           try {
-            await navigator.clipboard.writeText(message.content);
+            await navigator.clipboard.writeText(flattenedContent);
           } catch (err) {
             console.error("Failed to copy message:", err);
           }

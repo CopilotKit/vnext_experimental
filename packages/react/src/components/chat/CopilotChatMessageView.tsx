@@ -3,7 +3,7 @@ import CopilotChatAssistantMessage from "./CopilotChatAssistantMessage";
 import CopilotChatUserMessage from "./CopilotChatUserMessage";
 import { Message } from "@ag-ui/core";
 import { twMerge } from "tailwind-merge";
-import { useRenderCustomMessages } from "@/hooks";
+import { useRenderActivityMessage, useRenderCustomMessages } from "@/hooks";
 
 export type CopilotChatMessageViewProps = Omit<
   WithSlots<
@@ -37,6 +37,7 @@ export function CopilotChatMessageView({
   ...props
 }: CopilotChatMessageViewProps) {
   const renderCustomMessage = useRenderCustomMessages();
+  const renderActivityMessage = useRenderActivityMessage();
 
   const messageElements: React.ReactElement[] = messages
     .flatMap((message) => {
@@ -69,6 +70,12 @@ export function CopilotChatMessageView({
             message,
           }),
         );
+      } else if (message.role === "activity") {
+        const renderedActivity = renderActivityMessage(message);
+
+        if (renderedActivity) {
+          elements.push(renderedActivity);
+        }
       }
 
       // Render custom message after

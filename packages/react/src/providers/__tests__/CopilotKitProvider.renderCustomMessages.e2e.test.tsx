@@ -14,8 +14,18 @@ import {
 import { ReactCustomMessageRenderer } from "@/types/react-custom-message-renderer";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
+import { Message } from "@ag-ui/core";
 
-type SnapshotRendererProps = Parameters<Exclude<ReactCustomMessageRenderer["render"], null>>[0];
+type SnapshotRendererProps = {
+  message: Message;
+  position: "before" | "after";
+  runId: string;
+  messageIndex: number;
+  messageIndexInRun: number;
+  numberOfMessagesInRun: number;
+  agentId: string;
+  stateSnapshot: any;
+};
 
 const SnapshotRenderer: React.FC<SnapshotRendererProps> = ({
   position,
@@ -402,7 +412,11 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
 
   it("provides correct message index properties", async () => {
     const agent = new MockStepwiseAgent();
-    let capturedProps: Partial<SnapshotRendererProps> | null = null;
+    let capturedProps: {
+      messageIndex?: number;
+      messageIndexInRun?: number;
+      numberOfMessagesInRun?: number;
+    } | null = null;
 
     const IndexRenderer: React.FC<SnapshotRendererProps> = (props) => {
       const { message, position, messageIndex, messageIndexInRun, numberOfMessagesInRun } = props;
@@ -464,9 +478,17 @@ describe("CopilotKitProvider custom message renderers E2E", () => {
 
     // Verify the captured props are meaningful
     expect(capturedProps).toBeTruthy();
-    expect(typeof capturedProps?.messageIndex).toBe("number");
-    expect(typeof capturedProps?.messageIndexInRun).toBe("number");
-    expect(typeof capturedProps?.numberOfMessagesInRun).toBe("number");
+    if (!capturedProps) {
+      throw new Error("Expected capturedProps to be set");
+    }
+    const props = capturedProps as {
+      messageIndex: number;
+      messageIndexInRun: number;
+      numberOfMessagesInRun: number;
+    };
+    expect(typeof props.messageIndex).toBe("number");
+    expect(typeof props.messageIndexInRun).toBe("number");
+    expect(typeof props.numberOfMessagesInRun).toBe("number");
   });
 
   it("works across multi-turn conversations", async () => {
