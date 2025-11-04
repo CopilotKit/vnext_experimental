@@ -153,6 +153,7 @@ export class RunHandler {
         {
           forwardedProps: (this.core as unknown as CopilotKitCoreFriendsAccess).properties,
           tools: this.buildFrontendTools(agent.agentId),
+          context: Object.values((this.core as unknown as CopilotKitCoreFriendsAccess).context),
         },
         this.createAgentErrorSubscriber(agent),
       );

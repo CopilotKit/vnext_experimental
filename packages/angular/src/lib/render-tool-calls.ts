@@ -39,6 +39,14 @@ type ToolCallHandler = RendererToolCallHandler | ClientToolCallHandler | HumanIn
           *ngComponentOutlet="renderConfig.config.component; inputs: { toolCall: buildToolCall(toolCall) }"
         />
       }
+      @if (renderConfig && renderConfig.type === "humanInTheLoopTool" && renderConfig.config.component) {
+        <ng-container
+          *ngComponentOutlet="
+            renderConfig.config.component;
+            inputs: { toolCall: buildHumanInTheLoopToolCall(toolCall) }
+          "
+        />
+      }
     }
   `,
 })
@@ -113,27 +121,30 @@ export class RenderToolCalls {
   ): HumanInTheLoopToolCall<Args> {
     const args = partialJSONParse(toolCall.function.arguments);
     const message = this.#getToolMessage(toolCall.id);
+    const respond = (result: unknown) => {
+      this.#hitl.addResult(toolCall.id, toolCall.function.name, result);
+    };
 
     if (message) {
       return {
         args,
         status: "complete",
-        result: message.content,
+        result: message.content!,
+        respond,
       };
     } else if (this.isLoading()) {
       return {
         args,
         status: "in-progress",
         result: undefined,
+        respond,
       };
     } else {
       return {
         args,
         status: "executing",
         result: undefined,
-        respond: (result) => {
-          this.#hitl.addResult(toolCall.id, toolCall.function.name, result);
-        },
+        respond,
       };
     }
   }

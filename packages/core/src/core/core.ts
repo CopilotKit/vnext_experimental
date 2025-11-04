@@ -28,11 +28,7 @@ export interface CopilotKitCoreConfig {
 }
 
 export type { CopilotKitCoreAddAgentParams };
-export type {
-  CopilotKitCoreRunAgentParams,
-  CopilotKitCoreConnectAgentParams,
-  CopilotKitCoreGetToolParams,
-};
+export type { CopilotKitCoreRunAgentParams, CopilotKitCoreConnectAgentParams, CopilotKitCoreGetToolParams };
 
 export interface CopilotKitCoreStopAgentParams {
   agent: AbstractAgent;
@@ -126,11 +122,7 @@ export interface CopilotKitCoreFriendsAccess {
     errorMessage: string,
   ): Promise<void>;
 
-  emitError(params: {
-    error: Error;
-    code: CopilotKitCoreErrorCode;
-    context?: Record<string, any>;
-  }): Promise<void>;
+  emitError(params: { error: Error; code: CopilotKitCoreErrorCode; context?: Record<string, any> }): Promise<void>;
 
   // Getters for internal state
   readonly headers: Readonly<Record<string, string>>;

@@ -25,6 +25,7 @@ export type HumanInTheLoopToolCall<Args extends Record<string, unknown> = Record
       args: Partial<Args>;
       status: "in-progress";
       result: undefined;
+      respond: (result: unknown) => void;
     }
   | {
       args: Args;
@@ -36,6 +37,7 @@ export type HumanInTheLoopToolCall<Args extends Record<string, unknown> = Record
       args: Args;
       status: "complete";
       result: string;
+      respond: (result: unknown) => void;
     };
 
 export interface ToolRenderer<Args extends Record<string, unknown> = Record<string, unknown>> {
@@ -63,7 +65,7 @@ export interface RenderToolCallConfig<Args extends Record<string, unknown> = Rec
 export interface FrontendToolConfig<Args extends Record<string, unknown> = Record<string, unknown>> {
   name: string;
   description: string;
-  args: z.ZodType<Args>;
+  parameters: z.ZodType<Args>;
   component?: Type<ToolRenderer<Args>>;
   handler: (args: Args) => Promise<unknown>;
   agentId?: string;
@@ -71,9 +73,9 @@ export interface FrontendToolConfig<Args extends Record<string, unknown> = Recor
 
 export interface HumanInTheLoopConfig<Args extends Record<string, unknown> = Record<string, unknown>> {
   name: string;
-  args: z.ZodType<Args>;
+  description: string;
+  parameters: z.ZodType<Args>;
   component: Type<HumanInTheLoopToolRenderer<Args>>;
-  toolCall: Signal<HumanInTheLoopToolCall<Args>>;
   agentId?: string;
 }
 
