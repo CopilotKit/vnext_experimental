@@ -1,35 +1,121 @@
 ---
-title: CopilotKit VNext Documentation
-description: "CopilotKit VNext Documentation"
+title: Introduction to CopilotKit
+description: "The next generation framework for building AI-powered applications with React and Angular"
+icon: "sparkles"
 ---
+
+## What is CopilotKit?
+
+CopilotKit is a powerful, framework-agnostic toolkit for building AI-powered applications. It provides a seamless way to integrate intelligent AI agents into your React and Angular applications, enabling you to create context-aware, interactive AI experiences.
+
+CopilotKit connects your application's logic, state, and user context to AI agents, giving you the tools to build, deploy, and monitor AI-assisted features that feel intuitive, helpful, and deeply integrated into your user experience.
+
+## Why CopilotKit?
+
+<CardGroup cols={2}>
+  <Card title="Framework Agnostic" icon="layer-group">
+    Works seamlessly with React and Angular, with consistent APIs across both frameworks
+  </Card>
+  <Card title="Agent-First Design" icon="robot">
+    Built from the ground up to support agent-driven user experiences and real-time interactions
+  </Card>
+  <Card title="Type-Safe" icon="shield-check">
+    Full TypeScript support with comprehensive type definitions for all APIs
+  </Card>
+  <Card title="Flexible Architecture" icon="puzzle-piece">
+    Bring your own LLMs, tools, and agents - no vendor lock-in
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### Agentic Chat UI
+Create intelligent chat interfaces powered by AI agents that can execute tools, maintain context, and provide interactive experiences.
+
+<Card title="Learn about Agentic Chat UI" icon="message-square" href="/guides/agentic-chat-ui">
+  Build conversational interfaces that go beyond simple text exchange
+</Card>
+
+### Frontend Actions
+Enable AI agents to directly interact with and update your application's user interface through declarative frontend tools.
+
+<Card title="Learn about Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+  Connect your agent's decision-making to your frontend's interactive elements
+</Card>
+
+### Shared State
+Create a two-way connection between your UI and agent state, enabling real-time synchronization and collaborative experiences.
+
+<Card title="Learn about Shared State" icon="repeat" href="/guides/shared-state">
+  Synchronize application state between your UI and AI agents
+</Card>
+
+### Human in the Loop
+Allow agents to request human input or approval during execution, making AI systems more reliable and trustworthy.
+
+<Card title="Learn about Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+  Build AI systems that combine automation with human judgment
+</Card>
+
+### Generative UI
+Create dynamic, AI-driven user interfaces that adapt and respond to user interactions and agent state in real-time.
+
+<Card title="Learn about Generative UI" icon="sparkles" href="/guides/generative-ui">
+  Build adaptive interfaces that evolve with user needs
+</Card>
+
+## Get Started
+
+<CardGroup cols={2}>
+  <Card title="React Quickstart" icon="react" href="/quickstart/react">
+    Get started with CopilotKit in your React application
+  </Card>
+  <Card title="Angular Quickstart" icon="angular" href="/quickstart/angular">
+    Get started with CopilotKit in your Angular application
+  </Card>
+</CardGroup>
+
+## Architecture
+
+CopilotKit is thoughtfully architected to scale with you, your teams, and your product. The framework consists of several key components:
+
+- **Core**: Framework-agnostic core functionality for managing agents, tools, and state
+- **React Package**: React-specific components, hooks, and providers
+- **Angular Package**: Angular-specific components, services, and directives
+- **Runtime**: Server-side runtime for handling agent execution and tool calls
+
+<Card title="Learn about Architecture" icon="sitemap" href="/concepts/architecture">
+  Understand how CopilotKit works under the hood
+</Card>
 
 ## API Reference
 
 ### Core
 
-<Card title="CopilotKitCore" icon="code" href="/reference/copilotkit-core">
-  Core CopilotKit class
-</Card>
-
-<Card title="ProxiedCopilotRuntimeAgent" icon="server" href="/reference/proxied-copilot-runtime-agent">
-  Proxied runtime agent for CopilotKit
-</Card>
-
-<Card title="FrontendTool" icon="wrench" href="/reference/frontend-tool">
-  Frontend tool utilities
-</Card>
+<CardGroup cols={3}>
+  <Card title="CopilotKitCore" icon="code" href="/reference/copilotkit-core">
+    Core CopilotKit class
+  </Card>
+  <Card title="ProxiedCopilotRuntimeAgent" icon="server" href="/reference/proxied-copilot-runtime-agent">
+    Proxied runtime agent
+  </Card>
+  <Card title="FrontendTool" icon="wrench" href="/reference/frontend-tool">
+    Frontend tool utilities
+  </Card>
+</CardGroup>
 
 ### React
 
 #### Providers
 
-<Card title="CopilotKitProvider" icon="layer-group" href="/reference/copilotkit-provider">
-  Main provider for CopilotKit React integration
-</Card>
-
-<Card title="CopilotChatConfigurationProvider" icon="cog" href="/reference/copilot-chat-configuration-provider">
-  Configuration provider for CopilotChat
-</Card>
+<CardGroup cols={2}>
+  <Card title="CopilotKitProvider" icon="layer-group" href="/reference/copilotkit-provider">
+    Main provider for React integration
+  </Card>
+  <Card title="CopilotChatConfigurationProvider" icon="cog" href="/reference/copilot-chat-configuration-provider">
+    Configuration provider for CopilotChat
+  </Card>
+</CardGroup>
 
 #### Components
 
@@ -39,26 +125,34 @@ description: "CopilotKit VNext Documentation"
 
 #### Hooks
 
-<Card title="useCopilotKit" icon="link" href="/reference/use-copilotkit">
-  Main hook for CopilotKit functionality
-</Card>
+<CardGroup cols={3}>
+  <Card title="useCopilotKit" icon="link" href="/reference/use-copilotkit">
+    Main hook for CopilotKit functionality
+  </Card>
+  <Card title="useAgent" icon="robot" href="/reference/use-agent">
+    Hook for agent interactions
+  </Card>
+  <Card title="useAgentContext" icon="square-check" href="/reference/use-agent-context">
+    Hook for agent context management
+  </Card>
+  <Card title="useFrontendTool" icon="hammer" href="/reference/use-frontend-tool">
+    Hook for frontend tools
+  </Card>
+  <Card title="useHumanInTheLoop" icon="user-check" href="/reference/use-human-in-the-loop">
+    Hook for human-in-the-loop functionality
+  </Card>
+  <Card title="useRenderToolCall" icon="paintbrush" href="/reference/use-render-tool-call">
+    Hook for rendering tool calls
+  </Card>
+</CardGroup>
 
-<Card title="useAgent" icon="robot" href="/reference/use-agent">
-  Hook for agent interactions
-</Card>
+## Community & Support
 
-<Card title="useAgentContext" icon="square-check" href="/reference/use-agent-context">
-  Hook for agent context management
-</Card>
-
-<Card title="useFrontendTool" icon="hammer" href="/reference/use-frontend-tool">
-  Hook for frontend tools
-</Card>
-
-<Card title="useHumanInTheLoop" icon="user-check" href="/reference/use-human-in-the-loop">
-  Hook for human-in-the-loop functionality
-</Card>
-
-<Card title="useRenderToolCall" icon="paintbrush" href="/reference/use-render-tool-call">
-  Hook for rendering tool calls
-</Card>
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Join our Discord community for help and discussions
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/copilotkit/copilotkit">
+    View the source code and contribute
+  </Card>
+</CardGroup>

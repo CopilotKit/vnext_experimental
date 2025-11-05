@@ -1,0 +1,60 @@
+---
+title: CopilotChatView
+description: Layout component that composes messages, suggestions, and the chat input
+---
+
+`CopilotChatView` arranges the standard Copilot chat UI: the scrollable message list, optional suggestion pills, and the
+chat input/footer. `CopilotChat` uses it internally, but you can render it directly for custom shells.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatView } from "@copilotkitnext/react";
+
+<CopilotChatView
+  messages={agent.messages}
+  isRunning={agent.isRunning}
+  inputProps={{ onSubmitMessage: sendMessage }}
+  suggestions={suggestions}
+  onSelectSuggestion={(suggestion) => sendMessage(suggestion.message)}
+/>
+```
+
+## Slots
+
+`CopilotChatView` is fully slot-driven via `WithSlots`. Each entry below lists the default component and suggested use:
+
+| Slot                     | Default Component                     | Purpose |
+| ------------------------ | ------------------------------------- | ------- |
+| `messageView`            | `CopilotChatMessageView`              | Renders the transcript (assistant/user/activity messages). |
+| `scrollView`             | `CopilotChatView.ScrollView`          | Scroll container that manages stick-to-bottom behavior. |
+| `scrollToBottomButton`   | `CopilotChatView.ScrollToBottomButton`| Floating button shown when the user scrolls up. |
+| `input`                  | `CopilotChatInput`                    | Composer UI with text field, tools, transcription controls. |
+| `inputContainer`         | `CopilotChatView.InputContainer`      | Wrapper that positions the input and disclaimer. |
+| `feather`                | `CopilotChatView.Feather`             | Decorative element rendered behind the chat (optional). |
+| `disclaimer`             | `CopilotChatView.Disclaimer`          | Footer disclaimer text. |
+| `suggestionView`         | `CopilotChatSuggestionView`           | Suggestion pill tray displayed above the input. |
+
+Override a slot to customize layout while reusing the rest of the view.
+
+## Key Props
+
+| Prop                     | Type                          | Description                                                        |
+| ------------------------ | ----------------------------- | ------------------------------------------------------------------ |
+| `messages`               | `Message[]`                   | Conversation history.                                              |
+| `autoScroll`             | `boolean`                     | Auto-stick to bottom (default `true`).                             |
+| `inputProps`             | `Partial<CopilotChatInputProps>` | Configure the embedded input.                                   |
+| `isRunning`              | `boolean`                     | Indicates whether the agent is processing.                        |
+| `suggestions`            | `Suggestion[]`                | Suggestions to show beneath the message list.                     |
+| `suggestionLoadingIndexes` | `ReadonlyArray<number>`     | Indexes to display loading state for suggestions.                 |
+| `onSelectSuggestion`     | `(suggestion, index) => void` | Called when a suggestion is picked.                               |
+
+## Scroll Handling
+
+- Uses `use-stick-to-bottom` to maintain scroll position while messages stream in.
+- Exposes `scrollToBottomButton` slot to customize the floating “Scroll to bottom” control.
+
+## Mobile Optimizations
+
+- The input container listens to keyboard height to avoid being obscured on mobile.
+- Suggestion pills and footer spacing adjust automatically based on input height.

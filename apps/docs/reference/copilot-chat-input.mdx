@@ -1,0 +1,72 @@
+---
+title: CopilotChatInput
+description: Composable chat input used by CopilotChat
+---
+
+`CopilotChatInput` powers the message composer in `CopilotChat`. It supports text entry, slash commands, optional tool
+menus, transcription controls, and slot overrides for each UI element.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatInput } from "@copilotkitnext/react";
+
+function Composer({ onSend }: { onSend: (value: string) => void }) {
+  return (
+    <CopilotChatInput onSubmitMessage={onSend} toolsMenu={[{ label: "Attach file", action: () => {} }]} />
+  );
+}
+```
+
+## Props
+
+| Prop                    | Type                       | Description                                                        |
+| ----------------------- | -------------------------- | ------------------------------------------------------------------ |
+| `mode`                  | `"input" | "transcribe" | "processing"` | Controls UI state (text entry, recording, or loading).            |
+| `toolsMenu`             | `(ToolsMenuItem | "-")[]` | Menu entries shown via slash commands and the “+” button.         |
+| `onSubmitMessage`       | `(value: string) => void`  | Called when the user sends a message (Enter or send button).      |
+| `onStop`                | `() => void`               | Handler for stopping an in-flight run (only shown while running). |
+| `isRunning`             | `boolean`                  | Indicates whether the agent is processing.                        |
+| `onStartTranscribe`     | `() => void`               | Callback when switching to transcription mode.                    |
+| `onCancelTranscribe`    | `() => void`               | Callback when cancelling transcription.                           |
+| `onFinishTranscribe`    | `() => void`               | Callback when finishing transcription.                            |
+| `onAddFile`             | `() => void`               | Handler for the “Attach” button / slash command.                  |
+| `value`, `onChange`     | Controlled input support.  | Provide to manage the text manually.                              |
+| `autoFocus`             | `boolean`                  | Focuses the input when the surrounding modal opens (default `true`).|
+
+The component also exposes slot overrides (e.g., `textArea`, `sendButton`, `audioRecorder`). Pass a render function via
+`children` to customize layout while re-using built-in slots.
+
+## Slots
+
+| Slot                     | Default Component                           | Purpose |
+| ------------------------ | ------------------------------------------- | ------- |
+| `textArea`               | `CopilotChatInput.TextArea`                 | Text input element (auto-expanding textarea). |
+| `sendButton`             | `CopilotChatInput.SendButton`               | Primary send/stop button. |
+| `startTranscribeButton`  | `CopilotChatInput.StartTranscribeButton`    | Action to enter transcription mode. |
+| `cancelTranscribeButton` | `CopilotChatInput.CancelTranscribeButton`   | Cancels transcription capture. |
+| `finishTranscribeButton` | `CopilotChatInput.FinishTranscribeButton`   | Finalizes transcription result. |
+| `addMenuButton`          | `CopilotChatInput.AddMenuButton`            | “+” button exposing slash menu / attachments. |
+| `audioRecorder`          | `CopilotChatInput.AudioRecorder`            | Waveform recorder shown during transcription. |
+
+Override a slot by passing a component in props:
+
+```tsx
+<CopilotChatInput
+  sendButton={({ onClick, disabled }) => (
+    <button onClick={onClick} disabled={disabled} className="rounded bg-purple-600 px-3 py-2 text-white">
+      Send
+    </button>
+  )}
+/>
+```
+
+## Slash Commands
+
+Provide a `toolsMenu` array to enable slash commands. Items can be nested by supplying `items` arrays; use `"-"` as a
+divider placeholder. The input filters commands as the user types `/`.
+
+## Transcription Mode
+
+- Set `mode="transcribe"` to show recording controls.
+- The built-in audio recorder starts/stops automatically via `onStartTranscribe`/`onCancelTranscribe`/`onFinishTranscribe`.

@@ -1,0 +1,31 @@
+---
+title: WildcardToolCallRender
+description: Default renderer for tool calls without a custom component
+---
+
+`WildcardToolCallRender` is a ready-to-use component that displays any tool call in CopilotChat. It is registered as a
+catch‑all (`name: "*"`) renderer and shows the tool name, execution status, arguments, and optional result in an
+expandable card.
+
+## Basic Usage
+
+```tsx
+import { WildcardToolCallRender } from "@copilotkitnext/react";
+
+copilotkit.addToolCallRenderer(WildcardToolCallRender);
+```
+
+Once registered, any tool call without a more specific renderer appears in the chat with expandable “Arguments” and
+“Result” sections—perfect for debugging or exposing raw tool output.
+
+## Features
+
+- Works for **any** tool (`name: "*"`).
+- Indicates status (`inProgress`, `executing`, `complete`) with color-coded badges.
+- Displays tool arguments and serialized results inside scrollable code blocks.
+- Allows users to collapse/expand the details.
+
+## Customization
+
+Use it as-is for a quick inspector, or copy the component from the source to create your own variant (e.g., styling,
+filters). Because it’s built with `defineToolCallRenderer`, it benefits from strong typing over the renderer props.

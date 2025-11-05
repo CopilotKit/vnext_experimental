@@ -1,0 +1,258 @@
+---
+title: Human in the Loop
+description: Request human approval for agent actions
+icon: "user"
+---
+
+## Overview
+
+Human-in-the-Loop (HITL) allows agents to pause and request human approval before executing critical actions. Essential for building trustworthy AI systems.
+
+## Quick Start
+
+<Tabs>
+  <Tab title="React">
+Use the `useHumanInTheLoop` hook:
+
+```tsx
+import { useHumanInTheLoop } from "@copilotkitnext/react";
+import { z } from "zod";
+
+function MyComponent() {
+  useHumanInTheLoop({
+    name: "confirmDeletion",
+    description: "Request confirmation before deleting",
+    parameters: z.object({
+      itemName: z.string(),
+      itemId: z.string(),
+    }),
+    render: ({ args, status, respond }) => {
+      if (status === "executing") {
+        return (
+          <div>
+            <p>Delete "{args.itemName}"?</p>
+            <button onClick={() => respond({ confirmed: true })}>
+              Confirm
+            </button>
+            <button onClick={() => respond({ confirmed: false })}>
+              Cancel
+            </button>
+          </div>
+        );
+      }
+      return null;
+    },
+  });
+
+  return <div>{/* Your UI */}</div>;
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+Use `registerHumanInTheLoop`:
+
+```typescript
+import { Component } from "@angular/core";
+import { registerHumanInTheLoop, HumanInTheLoopToolRenderer } from "@copilotkitnext/angular";
+import { z } from "zod";
+
+@Component({
+  selector: "app-confirm-delete",
+  standalone: true,
+  template: `
+    <div *ngIf="toolCall().status === 'executing'">
+      <p>Delete "{{ toolCall().args.itemName }}"?</p>
+      <button (click)="confirm()">Confirm</button>
+      <button (click)="cancel()">Cancel</button>
+    </div>
+  `,
+})
+class ConfirmDeleteComponent implements HumanInTheLoopToolRenderer {
+  toolCall = input.required();
+
+  confirm() {
+    this.toolCall().respond({ confirmed: true });
+  }
+
+  cancel() {
+    this.toolCall().respond({ confirmed: false });
+  }
+}
+
+@Component({
+  selector: "app-my-component",
+  template: `<div><!-- Your UI --></div>`,
+})
+export class MyComponent {
+  constructor() {
+    registerHumanInTheLoop({
+      name: "confirmDeletion",
+      description: "Request confirmation before deleting",
+      parameters: z.object({
+        itemName: z.string(),
+        itemId: z.string(),
+      }),
+      component: ConfirmDeleteComponent,
+    });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### Approval Workflow
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useHumanInTheLoop({
+  name: "approveTransaction",
+  description: "Approve financial transaction",
+  parameters: z.object({
+    amount: z.number(),
+    recipient: z.string(),
+  }),
+  render: ({ args, status, respond }) => {
+    if (status !== "executing") return null;
+    
+    return (
+      <div>
+        <h3>Approve Transaction</h3>
+        <p>Amount: ${args.amount}</p>
+        <p>To: {args.recipient}</p>
+        <button onClick={() => respond({ approved: true })}>
+          Approve
+        </button>
+        <button onClick={() => respond({ approved: false })}>
+          Deny
+        </button>
+      </div>
+    );
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-approve-transaction",
+  template: `
+    <div *ngIf="toolCall().status === 'executing'">
+      <h3>Approve Transaction</h3>
+      <p>Amount: ${{ toolCall().args.amount }}</p>
+      <p>To: {{ toolCall().args.recipient }}</p>
+      <button (click)="approve()">Approve</button>
+      <button (click)="deny()">Deny</button>
+    </div>
+  `,
+})
+class ApproveTransactionComponent implements HumanInTheLoopToolRenderer {
+  toolCall = input.required();
+
+  approve() {
+    this.toolCall().respond({ approved: true });
+  }
+
+  deny() {
+    this.toolCall().respond({ approved: false });
+  }
+}
+
+// Register in constructor
+registerHumanInTheLoop({
+  name: "approveTransaction",
+  description: "Approve financial transaction",
+  parameters: z.object({
+    amount: z.number(),
+    recipient: z.string(),
+  }),
+  component: ApproveTransactionComponent,
+});
+```
+  </Tab>
+</Tabs>
+
+### Data Review
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useHumanInTheLoop({
+  name: "reviewData",
+  description: "Review data before processing",
+  parameters: z.object({
+    data: z.array(z.record(z.any())),
+  }),
+  render: ({ args, status, respond }) => {
+    if (status !== "executing") return null;
+    
+    return (
+      <div>
+        <h3>Review Data</h3>
+        <pre>{JSON.stringify(args.data, null, 2)}</pre>
+        <button onClick={() => respond({ approved: true })}>
+          Looks Good
+        </button>
+        <button onClick={() => respond({ approved: false })}>
+          Reject
+        </button>
+      </div>
+    );
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-review-data",
+  template: `
+    <div *ngIf="toolCall().status === 'executing'">
+      <h3>Review Data</h3>
+      <pre>{{ toolCall().args.data | json }}</pre>
+      <button (click)="approve()">Looks Good</button>
+      <button (click)="reject()">Reject</button>
+    </div>
+  `,
+})
+class ReviewDataComponent implements HumanInTheLoopToolRenderer {
+  toolCall = input.required();
+
+  approve() {
+    this.toolCall().respond({ approved: true });
+  }
+
+  reject() {
+    this.toolCall().respond({ approved: false });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Tool Call Status
+
+The `status` prop indicates the tool call's state:
+
+- `"in-progress"` - Agent is building arguments (args may be partial)
+- `"executing"` - Waiting for human response (show UI)
+- `"complete"` - Human has responded (show result)
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Let agents update UI
+  </Card>
+  <Card title="Generative UI" icon="sparkles" href="/guides/generative-ui">
+    Render dynamic UI
+  </Card>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Share context with agents
+  </Card>
+</CardGroup>

@@ -1,0 +1,48 @@
+---
+title: <copilot-chat>
+description: Angular component that renders the Copilot chat interface
+---
+
+`<copilot-chat>` is the primary Angular component for embedding CopilotKit. It mirrors the React `CopilotChat`
+component—connecting to an agent, streaming messages, displaying suggestions, and exposing slots for customization.
+
+## Basic Usage
+
+```html
+<copilot-chat
+  agentId="assistant"
+  [threadId]="threadId"
+  [labels]="{ chatInputPlaceholder: 'Ask anything…' }"
+></copilot-chat>
+```
+
+## Inputs
+
+| Input         | Type                                | Description                                         |
+| ------------- | ----------------------------------- | --------------------------------------------------- |
+| `agentId`     | `string`                            | Target agent (defaults to the value from provider). |
+| `threadId`    | `string`                            | Conversation thread ID (auto-generated if omitted). |
+| `labels`      | `Partial<CopilotChatLabels>`         | Customize UI strings (placeholders, buttons).       |
+| `chatView`    | `SlotValue<CopilotChatView>`         | Override the entire chat view implementation.       |
+| `isModalDefaultOpen` | `boolean`                     | Whether popup/sidebar surfaces start open.          |
+
+All additional attributes/inputs are forwarded to the underlying `CopilotChatView`.
+
+## Events
+
+- `copilotMessageSent` – Fires after a user message is submitted.
+- `copilotSuggestionSelected` – Fires when the user clicks a suggestion.
+
+## Customization
+
+Override slots to tailor layout:
+
+```html
+<copilot-chat
+  [chatView]="(props) => customViewFactory(props)"
+  [labels]="{ chatDisclaimerText: 'AI answers may be imperfect.' }"
+></copilot-chat>
+```
+
+You can also combine `<copilot-chat>` with `registerFrontendTool`, `registerRenderToolCall`, and Angular directives to
+deliver a fully customized experience.

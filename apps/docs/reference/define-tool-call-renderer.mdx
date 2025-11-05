@@ -1,0 +1,67 @@
+---
+title: defineToolCallRenderer
+description: Helper for declaring type-safe tool call renderers in React
+---
+
+`defineToolCallRenderer` creates a `ReactToolCallRenderer` entry with strong typing for tool arguments and render props.
+Use it to register custom UI for specific tools (or wildcard renderers) within CopilotChat.
+
+## Basic Example
+
+```tsx
+import { defineToolCallRenderer } from "@copilotkitnext/react";
+import { z } from "zod";
+
+const WeatherToolRenderer = defineToolCallRenderer({
+  name: "get_weather",
+  args: z.object({ location: z.string() }),
+  render: ({ args, status, result }) => (
+    <div className="weather-card">
+      <strong>{args.location}</strong>
+      <span>Status: {status}</span>
+      {result && <pre>{result}</pre>}
+    </div>
+  ),
+});
+
+copilotkit.addToolCallRenderer(WeatherToolRenderer);
+```
+
+## Wildcard Renderer
+
+When `name: "*"`, the helper defaults the argument schema to `z.any()` and accepts any tool call.
+
+```tsx
+const Wildcard = defineToolCallRenderer({
+  name: "*",
+  render: ({ name, args }) => (
+    <details>
+      <summary>{name}</summary>
+      <pre>{JSON.stringify(args, null, 2)}</pre>
+    </details>
+  ),
+});
+```
+
+## Why Use the Helper?
+
+- Infers the render prop types (`args`, `status`, `result`) from the supplied Zod schema.
+- Ensures tool names and agent scoping are passed through correctly.
+- Avoids manual casting when registering renderers with CopilotKit.
+
+## Agent-Specific Renderers
+
+Optionally scope a renderer to a particular agent by supplying `agentId`:
+
+```tsx
+const SupportRenderer = defineToolCallRenderer({
+  name: "create_ticket",
+  agentId: "support",
+  args: z.object({ subject: z.string(), priority: z.enum(["low", "high"]) }),
+  render: ({ args, status }) => (
+    <div className={`ticket ticket-${status}`}>
+      {args.subject} ({args.priority})
+    </div>
+  ),
+});
+```

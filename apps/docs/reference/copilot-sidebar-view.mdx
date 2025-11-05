@@ -1,0 +1,47 @@
+---
+title: CopilotSidebarView
+description: Sidebar chat layout component used by CopilotSidebar
+---
+
+`CopilotSidebarView` is a `CopilotChatView` implementation that renders the chat interface inside a slide-in sidebar.
+You rarely use it directly; `CopilotSidebar` wires it up automatically. Use it when you need full control over the chat
+view slot.
+
+## Basic Usage
+
+```tsx
+import { CopilotSidebarView } from "@copilotkitnext/react";
+import { CopilotChat } from "@copilotkitnext/react";
+
+function CustomSidebar(props: CopilotChatProps) {
+  return (
+    <CopilotChat
+      {...props}
+      chatView={(viewProps) => (
+        <CopilotSidebarView
+          {...viewProps}
+          header={<h2 className="px-4 py-3 text-lg font-semibold">Support Copilot</h2>}
+          width={360}
+        />
+      )}
+    />
+  );
+}
+```
+
+## Props
+
+`CopilotSidebarViewProps` extends `CopilotChatViewProps` with:
+
+| Prop    | Type                              | Description                                      |
+| ------- | --------------------------------- | ------------------------------------------------ |
+| `header`| `SlotValue<typeof CopilotModalHeader>` | Optional header slot for the sidebar chrome.     |
+| `width` | `number | string`                 | Sidebar width (defaults to 480px).                |
+
+The component also consumes `CopilotChatConfigurationProvider` state to determine whether the sidebar should be open.
+
+## Behavior
+
+- Handles responsive layout, safe-area insets, and body margin adjustments when opened.
+- Renders `CopilotChatToggleButton` automatically.
+- Uses `CopilotModalHeader` by default if no custom header is supplied.

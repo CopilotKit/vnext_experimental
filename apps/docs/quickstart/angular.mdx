@@ -1,0 +1,398 @@
+---
+title: Angular Quickstart
+description: Get started with CopilotKit in your Angular application
+icon: "angular"
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- Node.js 18+ installed
+- Angular 16+ application (or create one with Angular CLI)
+- An OpenAI API key (or another LLM provider)
+
+## Installation
+
+Install CopilotKit packages using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install @copilotkitnext/core @copilotkitnext/angular @copilotkitnext/runtime
+```
+
+```bash pnpm
+pnpm add @copilotkitnext/core @copilotkitnext/angular @copilotkitnext/runtime
+```
+
+```bash yarn
+yarn add @copilotkitnext/core @copilotkitnext/angular @copilotkitnext/runtime
+```
+</CodeGroup>
+
+You'll also need to install Zod for schema validation:
+
+<CodeGroup>
+```bash npm
+npm install zod
+```
+
+```bash pnpm
+pnpm add zod
+```
+
+```bash yarn
+yarn add zod
+```
+</CodeGroup>
+
+## Step 1: Set Up the Runtime
+
+First, create a runtime endpoint in your backend. This example uses Express:
+
+```typescript
+// server/index.ts
+import express from 'express';
+import { createCopilotRuntimeHandler } from '@copilotkitnext/runtime';
+import { OpenAI } from 'openai';
+
+const app = express();
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+app.use(express.json());
+
+app.post('/api/copilotkit', createCopilotRuntimeHandler({
+  agents: {
+    assistant: {
+      model: 'gpt-4',
+      async *run({ messages, tools }) {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages,
+          tools,
+          stream: true,
+        });
+
+        for await (const chunk of response) {
+          yield chunk;
+        }
+      },
+    },
+  },
+}));
+
+app.listen(3000, () => {
+  console.log('Runtime server running on http://localhost:3000');
+});
+```
+
+<Note>
+For other frameworks or deployment options, check out our [Runtime Setup Guide](/concepts/runtime-setup).
+</Note>
+
+## Step 2: Import the Module
+
+Import the `CopilotKitModule` in your Angular application:
+
+```typescript
+// app.module.ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { CopilotKitModule } from '@copilotkitnext/angular';
+
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [
+    BrowserModule,
+    CopilotKitModule.forRoot({
+      runtimeUrl: 'http://localhost:3000/api/copilotkit',
+    }),
+  ],
+  providers: [],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+For standalone components (Angular 14+):
+
+```typescript
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideCopilotKit } from '@copilotkitnext/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideCopilotKit({
+      runtimeUrl: 'http://localhost:3000/api/copilotkit',
+    }),
+  ],
+};
+```
+
+## Step 3: Add the Chat Component
+
+Add the `copilot-chat` component to your template:
+
+```typescript
+// app.component.ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <div class="container">
+      <h1>My AI-Powered App</h1>
+      
+      <!-- Your app content -->
+      <div class="content">
+        <!-- ... -->
+      </div>
+
+      <!-- CopilotKit Chat -->
+      <copilot-chat></copilot-chat>
+    </div>
+  `,
+  styles: [`
+    .container {
+      padding: 2rem;
+    }
+  `],
+})
+export class AppComponent {}
+```
+
+## Step 4: Add Frontend Tools
+
+Create frontend tools that your agent can use to interact with your UI:
+
+```typescript
+// todo-list.component.ts
+import { Component, OnInit } from '@angular/core';
+import { FrontendToolService } from '@copilotkitnext/angular';
+import { z } from 'zod';
+
+@Component({
+  selector: 'app-todo-list',
+  template: `
+    <div>
+      <h2>Todo List</h2>
+      <ul>
+        <li *ngFor="let todo of todos; let i = index">
+          {{ todo }}
+          <button (click)="removeTodo(i)">Remove</button>
+        </li>
+      </ul>
+      <copilot-chat></copilot-chat>
+    </div>
+  `,
+})
+export class TodoListComponent implements OnInit {
+  todos: string[] = [];
+
+  constructor(private frontendToolService: FrontendToolService) {}
+
+  ngOnInit() {
+    // Register tool for adding todos
+    this.frontendToolService.registerTool({
+      name: 'addTodo',
+      description: 'Add a new todo item to the list',
+      parameters: z.object({
+        task: z.string().describe('The task to add'),
+      }),
+      handler: async ({ task }) => {
+        this.todos.push(task);
+        return `Added "${task}" to the todo list`;
+      },
+    });
+
+    // Register tool for removing todos
+    this.frontendToolService.registerTool({
+      name: 'removeTodo',
+      description: 'Remove a todo item from the list',
+      parameters: z.object({
+        index: z.number().describe('The index of the todo to remove'),
+      }),
+      handler: async ({ index }) => {
+        const task = this.todos[index];
+        this.todos.splice(index, 1);
+        return `Removed "${task}" from the todo list`;
+      },
+    });
+  }
+
+  removeTodo(index: number) {
+    this.todos.splice(index, 1);
+  }
+}
+```
+
+Now you can ask the agent to "Add a todo: Buy groceries" and it will use the `addTodo` tool!
+
+## Step 5: Configure the Chat (Optional)
+
+Customize the chat interface using the configuration service:
+
+```typescript
+// app.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CopilotChatConfigService } from '@copilotkitnext/angular';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <div class="container">
+      <app-todo-list></app-todo-list>
+    </div>
+  `,
+})
+export class AppComponent implements OnInit {
+  constructor(private chatConfig: CopilotChatConfigService) {}
+
+  ngOnInit() {
+    this.chatConfig.setConfig({
+      title: 'AI Assistant',
+      placeholder: 'Ask me anything...',
+      showWelcomeMessage: true,
+      welcomeMessage: 'Hello! I can help you manage your todos. Try asking me to add or remove tasks!',
+    });
+  }
+}
+```
+
+## Step 6: Use Shared State (Optional)
+
+Access and modify agent state from your components:
+
+```typescript
+// task-progress.component.ts
+import { Component, OnInit } from '@angular/core';
+import { AgentContextService } from '@copilotkitnext/angular';
+
+@Component({
+  selector: 'app-task-progress',
+  template: `
+    <div *ngIf="state">
+      <h3>Current Task: {{ state.currentTask }}</h3>
+      <progress [value]="state.progress" max="100"></progress>
+      <p>Status: {{ state.status }}</p>
+      
+      <button (click)="markHighPriority()">
+        Mark as High Priority
+      </button>
+    </div>
+  `,
+})
+export class TaskProgressComponent implements OnInit {
+  state: any;
+
+  constructor(private agentContext: AgentContextService) {}
+
+  ngOnInit() {
+    this.agentContext.getState('taskAgent').subscribe((state) => {
+      this.state = state;
+    });
+  }
+
+  markHighPriority() {
+    this.agentContext.setState('taskAgent', { priority: 'high' });
+  }
+}
+```
+
+## Next Steps
+
+Congratulations! You've set up CopilotKit in your Angular application. Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card title="Agentic Chat UI" icon="message-square" href="/guides/agentic-chat-ui">
+    Learn more about building conversational interfaces
+  </Card>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Explore advanced frontend tool patterns
+  </Card>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Synchronize state between UI and agents
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Add approval workflows to your agents
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+### Module Not Found
+
+If you see module import errors, make sure:
+
+1. You've installed all required packages
+2. Your `tsconfig.json` has the correct module resolution settings
+3. You've imported `CopilotKitModule` or used `provideCopilotKit`
+
+### Runtime Connection Failed
+
+If you see connection errors, make sure:
+
+1. Your runtime endpoint is running and accessible
+2. The `runtimeUrl` matches your endpoint URL
+3. CORS is properly configured for cross-origin requests
+
+### Tools Not Being Called
+
+If your agent isn't using your frontend tools:
+
+1. Ensure tool descriptions are clear and specific
+2. Check that parameter schemas are well-defined
+3. Verify the agent has the right context to know when to use the tool
+4. Make sure tools are registered in `ngOnInit` or constructor
+
+### Change Detection Issues
+
+If UI updates aren't reflected:
+
+1. Use `ChangeDetectorRef` to manually trigger change detection
+2. Consider using `NgZone` for async operations
+3. Ensure you're updating component properties correctly
+
+```typescript
+import { ChangeDetectorRef } from '@angular/core';
+
+constructor(
+  private frontendToolService: FrontendToolService,
+  private cdr: ChangeDetectorRef
+) {}
+
+handler: async ({ task }) => {
+  this.todos.push(task);
+  this.cdr.detectChanges(); // Trigger change detection
+  return `Added "${task}"`;
+}
+```
+
+## Example Projects
+
+<CardGroup cols={2}>
+  <Card title="Todo List" icon="list-check" href="/examples#todo-list-angular">
+    Simple todo list with AI assistance
+  </Card>
+  <Card title="Dashboard" icon="chart-line" href="/examples#dashboard-angular">
+    Interactive dashboard with data visualization
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Join our Discord for help and discussions
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/copilotkit/copilotkit/issues">
+    Report bugs or request features
+  </Card>
+</CardGroup>
+
+

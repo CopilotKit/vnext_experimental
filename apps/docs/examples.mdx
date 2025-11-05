@@ -1,0 +1,79 @@
+---
+title: CopilotKit Examples
+description: Explore example applications built with CopilotKit
+icon: "code"
+---
+
+## Example Applications
+
+Need some inspiration? These examples live inside this repository and are ready to explore.
+
+<CardGroup cols={2}>
+  <Card title="React Demo App" icon="react" href="https://github.com/copilotkit/copilotkit/tree/main/apps/react/demo">
+    Next.js application showcasing CopilotKit’s React components, shared state, frontend actions, and the in-app demo chat experience.
+  </Card>
+
+  <Card title="Angular Demo App" icon="angular" href="https://github.com/copilotkit/copilotkit/tree/main/apps/angular/demo">
+    Angular application featuring the CopilotKit chat component, frontend tooling, and Angular-specific patterns.
+  </Card>
+
+  <Card title="Angular Demo Server" icon="server" href="https://github.com/copilotkit/copilotkit/tree/main/apps/angular/demo-server">
+    Node runtime for the Angular demo app showing how to wire CopilotKit to backend agents and expose the AG-UI endpoint.
+  </Card>
+
+  <Card title="Node Runtime Example" icon="code" href="https://github.com/copilotkit/copilotkit/tree/main/apps/node">
+    Minimal Node.js runtime highlighting how to run CopilotKit agents outside of a web framework.
+  </Card>
+</CardGroup>
+
+## Running Examples Locally
+
+To run any example locally:
+
+1. Clone the repository:
+```bash
+git clone https://github.com/copilotkit/copilotkit.git
+cd copilotkit/examples/[example-name]
+```
+
+2. Install dependencies:
+```bash
+pnpm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+4. Run the development server:
+```bash
+pnpm dev
+```
+
+## Contributing Examples
+
+We welcome community contributions! If you've built something cool with CopilotKit:
+
+1. Fork the repository
+2. Create your example in the `examples/` directory
+3. Add a README with setup instructions
+4. Submit a pull request
+
+<Card title="Contributing Guide" icon="github" href="https://github.com/copilotkit/copilotkit/blob/main/CONTRIBUTING.md">
+  Learn how to contribute to CopilotKit
+</Card>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Join our Discord for help and discussions
+  </Card>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/copilotkit/copilotkit/discussions">
+    Ask questions and share ideas
+  </Card>
+</CardGroup>
+
+

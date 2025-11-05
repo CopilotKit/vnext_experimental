@@ -1,0 +1,284 @@
+---
+title: React Quickstart
+description: Get started with CopilotKit in your React application
+icon: "react"
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- Node.js 18+ installed
+- A React application (or create one with Vite, Next.js, or Create React App)
+- An OpenAI API key (or another LLM provider)
+
+## Installation
+
+Install CopilotKit packages using your preferred package manager:
+
+<CodeGroup>
+```bash npm
+npm install @copilotkitnext/core @copilotkitnext/react @copilotkitnext/runtime
+```
+
+```bash pnpm
+pnpm add @copilotkitnext/core @copilotkitnext/react @copilotkitnext/runtime
+```
+
+```bash yarn
+yarn add @copilotkitnext/core @copilotkitnext/react @copilotkitnext/runtime
+```
+</CodeGroup>
+
+You'll also need to install Zod for schema validation:
+
+<CodeGroup>
+```bash npm
+npm install zod
+```
+
+```bash pnpm
+pnpm add zod
+```
+
+```bash yarn
+yarn add zod
+```
+</CodeGroup>
+
+## Step 1: Set Up the Runtime
+
+First, create a runtime endpoint in your backend. This example uses Next.js App Router:
+
+```typescript
+// app/api/copilotkit/route.ts
+import { createCopilotRuntimeHandler } from "@copilotkitnext/runtime";
+import { OpenAI } from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export const POST = createCopilotRuntimeHandler({
+  agents: {
+    assistant: {
+      model: "gpt-4",
+      async *run({ messages, tools }) {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages,
+          tools,
+          stream: true,
+        });
+
+        for await (const chunk of response) {
+          yield chunk;
+        }
+      },
+    },
+  },
+});
+```
+
+<Note>
+For other frameworks like Express or Fastify, check out our [Runtime Setup Guide](/concepts/runtime-setup).
+</Note>
+
+## Step 2: Add the Provider
+
+Wrap your application with the `CopilotKitProvider`:
+
+```tsx
+// app/layout.tsx or src/App.tsx
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <CopilotKitProvider runtimeUrl="/api/copilotkit">
+          {children}
+        </CopilotKitProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Step 3: Add the Chat Component
+
+Add the `CopilotChat` component to your page:
+
+```tsx
+// app/page.tsx or src/App.tsx
+"use client"; // For Next.js App Router
+
+import { CopilotChat } from "@copilotkitnext/react";
+
+export default function Home() {
+  return (
+    <div className="container">
+      <h1>My AI-Powered App</h1>
+      
+      {/* Your app content */}
+      <div className="content">
+        {/* ... */}
+      </div>
+
+      {/* CopilotKit Chat */}
+      <CopilotChat />
+    </div>
+  );
+}
+```
+
+## Step 4: Add Frontend Tools
+
+Create frontend tools that your agent can use to interact with your UI:
+
+```tsx
+"use client";
+
+import { useFrontendTool } from "@copilotkitnext/react";
+import { z } from "zod";
+import { useState } from "react";
+
+export default function TodoList() {
+  const [todos, setTodos] = useState<string[]>([]);
+
+  // Define a frontend tool for adding todos
+  useFrontendTool({
+    name: "addTodo",
+    description: "Add a new todo item to the list",
+    parameters: z.object({
+      task: z.string().describe("The task to add"),
+    }),
+    handler: async ({ task }) => {
+      setTodos((prev) => [...prev, task]);
+      return `Added "${task}" to the todo list`;
+    },
+  });
+
+  // Define a frontend tool for removing todos
+  useFrontendTool({
+    name: "removeTodo",
+    description: "Remove a todo item from the list",
+    parameters: z.object({
+      index: z.number().describe("The index of the todo to remove"),
+    }),
+    handler: async ({ index }) => {
+      const task = todos[index];
+      setTodos((prev) => prev.filter((_, i) => i !== index));
+      return `Removed "${task}" from the todo list`;
+    },
+  });
+
+  return (
+    <div>
+      <h2>Todo List</h2>
+      <ul>
+        {todos.map((todo, index) => (
+          <li key={index}>{todo}</li>
+        ))}
+      </ul>
+      <CopilotChat />
+    </div>
+  );
+}
+```
+
+Now you can ask the agent to "Add a todo: Buy groceries" and it will use the `addTodo` tool!
+
+## Step 5: Configure the Chat (Optional)
+
+Customize the chat interface using `CopilotChatConfigurationProvider`:
+
+```tsx
+import { CopilotChatConfigurationProvider } from "@copilotkitnext/react";
+
+export default function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <CopilotChatConfigurationProvider
+        config={{
+          title: "AI Assistant",
+          placeholder: "Ask me anything...",
+          showWelcomeMessage: true,
+          welcomeMessage: "Hello! I can help you manage your todos. Try asking me to add or remove tasks!",
+        }}
+      >
+        <TodoList />
+      </CopilotChatConfigurationProvider>
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Next Steps
+
+Congratulations! You've set up CopilotKit in your React application. Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card title="Agentic Chat UI" icon="message-square" href="/guides/agentic-chat-ui">
+    Learn more about building conversational interfaces
+  </Card>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Explore advanced frontend tool patterns
+  </Card>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Synchronize state between UI and agents
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Add approval workflows to your agents
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+### Runtime Connection Failed
+
+If you see connection errors, make sure:
+
+1. Your runtime endpoint is running and accessible
+2. The `runtimeUrl` prop matches your endpoint URL
+3. CORS is properly configured if running on different domains
+
+### Tools Not Being Called
+
+If your agent isn't using your frontend tools:
+
+1. Ensure tool descriptions are clear and specific
+2. Check that parameter schemas are well-defined
+3. Verify the agent has the right context to know when to use the tool
+
+### TypeScript Errors
+
+Make sure you have the latest type definitions:
+
+```bash
+npm install --save-dev @types/react @types/node
+```
+
+## Example Projects
+
+<CardGroup cols={2}>
+  <Card title="Todo List" icon="list-check" href="/examples#todo-list">
+    Simple todo list with AI assistance
+  </Card>
+  <Card title="Dashboard" icon="chart-line" href="/examples#dashboard">
+    Interactive dashboard with data visualization
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Join our Discord for help and discussions
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/copilotkit/copilotkit/issues">
+    Report bugs or request features
+  </Card>
+</CardGroup>
+
+

@@ -1,0 +1,248 @@
+---
+title: Agentic Chat UI
+description: Add a chat interface powered by AI agents
+icon: "message-square"
+---
+
+## Overview
+
+The Agentic Chat UI provides a complete chat interface that connects to your AI agents. It handles messages, tool execution, and real-time updates automatically.
+
+## Quick Start
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { CopilotKitProvider, CopilotChat } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      <div className="app">
+        <YourContent />
+        <CopilotChat />
+      </div>
+    </CopilotKitProvider>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+```html
+<!-- app.component.html -->
+<div class="app">
+  <your-content></your-content>
+  <copilot-chat></copilot-chat>
+</div>
+```
+
+```typescript
+// app.config.ts
+import { provideCopilotKit } from "@copilotkitnext/angular";
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideCopilotKit({
+      runtimeUrl: "/api/copilotkit",
+    }),
+  ],
+};
+```
+  </Tab>
+</Tabs>
+
+## Customization
+
+### Custom Labels
+
+<Tabs>
+  <Tab title="React">
+```tsx
+<CopilotChat
+  labels={{
+    chatInputPlaceholder: "Ask me anything...",
+    chatDisclaimerText: "AI responses may need verification.",
+  }}
+/>
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+// app.config.ts
+import { provideCopilotChatLabels } from "@copilotkitnext/angular";
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideCopilotChatLabels({
+      chatInputPlaceholder: "Ask me anything...",
+      chatDisclaimerText: "AI responses may need verification.",
+    }),
+  ],
+};
+```
+  </Tab>
+</Tabs>
+
+### Specific Agent
+
+<Tabs>
+  <Tab title="React">
+```tsx
+<CopilotChat agentId="sales" />
+```
+  </Tab>
+
+  <Tab title="Angular">
+```html
+<copilot-chat [agentId]="'sales'"></copilot-chat>
+```
+  </Tab>
+</Tabs>
+
+### Thread Management
+
+<Tabs>
+  <Tab title="React">
+```tsx
+const [threadId] = useState(() => generateThreadId());
+
+<CopilotChat threadId={threadId} />
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+threadId = signal(generateThreadId());
+```
+
+```html
+<copilot-chat [threadId]="threadId()"></copilot-chat>
+```
+  </Tab>
+</Tabs>
+
+## Layout Options
+
+### Sidebar
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { CopilotSidebar } from "@copilotkitnext/react";
+
+<div className="app">
+  <main>{/* Your content */}</main>
+  <CopilotSidebar />
+</div>
+```
+  </Tab>
+
+  <Tab title="Angular">
+```html
+<div class="app">
+  <main><!-- Your content --></main>
+  <copilot-sidebar></copilot-sidebar>
+</div>
+```
+  </Tab>
+</Tabs>
+
+### Popup
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { CopilotPopup } from "@copilotkitnext/react";
+
+<div className="app">
+  <YourContent />
+  <CopilotPopup />
+</div>
+```
+  </Tab>
+
+  <Tab title="Angular">
+```html
+<div class="app">
+  <your-content></your-content>
+  <copilot-popup></copilot-popup>
+</div>
+```
+  </Tab>
+</Tabs>
+
+## Custom Input
+
+<Tabs>
+  <Tab title="React">
+```tsx
+function CustomInput({ onSubmit, isDisabled }) {
+  const [value, setValue] = useState("");
+
+  return (
+    <div>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={isDisabled}
+      />
+      <button
+        onClick={() => {
+          onSubmit(value);
+          setValue("");
+        }}
+      >
+        Send
+      </button>
+    </div>
+  );
+}
+
+<CopilotChat inputComponent={CustomInput} />
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-custom-input",
+  template: `
+    <div>
+      <input [(ngModel)]="value" [disabled]="isDisabled()" />
+      <button (click)="send()">Send</button>
+    </div>
+  `,
+})
+class CustomInputComponent {
+  value = "";
+  isDisabled = input<boolean>();
+  chatState = inject(ChatState);
+
+  async send() {
+    await this.chatState.submitMessage(this.value);
+    this.value = "";
+  }
+}
+```
+
+```html
+<copilot-chat [inputComponent]="CustomInputComponent"></copilot-chat>
+```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Add interactive tools
+  </Card>
+  <Card title="Generative UI" icon="sparkles" href="/guides/generative-ui">
+    Render custom UI
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Request user input
+  </Card>
+</CardGroup>

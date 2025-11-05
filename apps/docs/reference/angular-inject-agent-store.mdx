@@ -1,0 +1,50 @@
+---
+title: injectAgentStore
+description: Angular signal that tracks agent state, messages, and run status
+---
+
+`injectAgentStore(agentId)` returns a reactive `Signal<AgentStore | undefined>` that stays in sync with a CopilotKit
+agent. It automatically subscribes to agent updates and tears down the subscription when the host injector is
+destroyed.
+
+## Basic Usage
+
+```ts
+import { Component, computed, inject } from "@angular/core";
+import { injectAgentStore } from "@copilotkitnext/angular";
+
+@Component({
+  standalone: true,
+  template: `
+    <div *ngIf="store()?.agent as agent">
+      <p>Messages: {{ agent.messages.length }}</p>
+      <p>Running: {{ store()?.isRunning() }}</p>
+    </div>
+  `,
+})
+export class AgentStateComponent {
+  readonly store = injectAgentStore("assistant");
+}
+```
+
+## AgentStore
+
+`AgentStore` exposes three read-only signals plus the underlying `AbstractAgent`:
+
+| Property     | Type                     | Description                             |
+| ------------ | ------------------------ | --------------------------------------- |
+| `agent`      | `AbstractAgent`          | The underlying agent instance.          |
+| `messages()` | `Message[]`              | Reactive list of messages.              |
+| `state()`    | `unknown`                | Shared state snapshot.                  |
+| `isRunning()`| `boolean`                | Whether the agent is currently running. |
+
+## Dynamic Agent IDs
+
+Pass a computed signal when the agent ID changes:
+
+```ts
+const activeAgentId = computed(() => uiStore.selectedAgentId());
+const store = injectAgentStore(activeAgentId);
+```
+
+Each time the ID changes, `injectAgentStore` cleans up the previous subscription and wires the new agent.

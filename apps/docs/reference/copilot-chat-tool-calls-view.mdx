@@ -1,0 +1,33 @@
+---
+title: CopilotChatToolCallsView
+description: Renders the output of tool calls within assistant messages
+---
+
+`CopilotChatToolCallsView` renders tool call results associated with an assistant message. It delegates the actual UI to
+`useRenderToolCall`, so any registered tool call renderers are applied automatically.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatToolCallsView } from "@copilotkitnext/react";
+
+function ToolCallSection({ message, messages }) {
+  return <CopilotChatToolCallsView message={message} messages={messages} />;
+}
+```
+
+This component is typically embedded inside `CopilotChatMessageView`, but you can use it in custom layouts if you need
+to separate messages and tool output.
+
+## Props
+
+| Prop      | Type             | Description                                     |
+| --------- | ---------------- | ----------------------------------------------- |
+| `message` | `AssistantMessage`| Assistant message containing `toolCalls`.     |
+| `messages`| `Message[]`      | Optional list of all messages to resolve tool results. |
+
+## Behavior
+
+- Iterates through `message.toolCalls` and finds matching `ToolMessage` entries to supply to the renderer.
+- Uses `useRenderToolCall()` to pick the appropriate renderer for each tool.
+- Returns `null` if there are no tool calls.

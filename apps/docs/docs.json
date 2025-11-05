@@ -1,21 +1,21 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "CopilotKit vnext_experimental",
+  "name": "CopilotKit",
   "theme": "mint",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg"
+    "dark": "https://cdn.copilotkit.ai/docs/copilotkit/copilotkit-logo-dark.png",
+    "light": "https://cdn.copilotkit.ai/docs/copilotkit/copilotkit-logo-light.png"
   },
   "favicon": "/favicon.ico",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373"
+    "primary": "#7C4DFF",
+    "light": "#B388FF",
+    "dark": "#5E35B1"
   },
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:hi@copilotkitnext.ai"
+      "url": "mailto:hi@copilotkit.ai"
     }
   ],
   "topbarCtaButton": {
@@ -26,37 +26,115 @@
     "anchors": [
       {
         "name": "Community",
-        "icon": "slack",
+        "icon": "discord",
         "url": "https://discord.gg/6dffbvGU3D"
       },
       {
         "name": "Blog",
         "icon": "newspaper",
         "url": "https://copilotkit.ai/blog"
+      },
+      {
+        "name": "GitHub",
+        "icon": "github",
+        "url": "https://github.com/copilotkit/copilotkit"
       }
     ],
     "groups": [
       {
-        "group": "Get Started",
-        "pages": ["introduction"]
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart/react",
+          "quickstart/angular"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/architecture"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/agentic-chat-ui",
+          "guides/frontend-actions",
+          "guides/shared-state",
+          "guides/human-in-the-loop",
+          "guides/generative-ui"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "pages": [
+          "integrations/overview",
+          {
+            "group": "Basic Agent",
+            "icon": "robot",
+            "pages": [
+              "integrations/basicagent",
+              "integrations/basicagent/openai",
+              "integrations/basicagent/anthropic",
+              "integrations/basicagent/gemini",
+              "integrations/basicagent/others"
+            ]
+          },
+          "integrations/langgraph",
+          "integrations/mastra",
+          "integrations/crewai",
+          "integrations/custom"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": ["examples"]
       },
       {
         "group": "API Reference",
         "pages": [
           {
             "group": "Core",
-            "pages": ["reference/copilotkit-core", "reference/proxied-copilot-runtime-agent", "reference/frontend-tool"]
+            "icon": "code",
+            "pages": [
+              "reference/copilotkit-core",
+              "reference/proxied-copilot-runtime-agent",
+              "reference/frontend-tool",
+              "reference/basic-agent",
+              "reference/copilot-runtime"
+            ]
           },
           {
             "group": "React",
+            "icon": "react",
             "pages": [
               {
                 "group": "Providers",
-                "pages": ["reference/copilotkit-provider", "reference/copilot-chat-configuration-provider"]
+                "pages": [
+                  "reference/copilotkit-provider",
+                  "reference/copilot-chat-configuration-provider"
+                ]
               },
               {
                 "group": "Components",
-                "pages": ["reference/copilot-chat"]
+                "pages": [
+                  "reference/copilot-chat",
+                  "reference/copilot-sidebar",
+                  "reference/copilot-sidebar-view",
+                  "reference/copilot-popup",
+                  "reference/copilot-popup-view",
+                  "reference/copilot-chat-view",
+                  "reference/copilot-chat-message-view",
+                  "reference/copilot-chat-input",
+                  "reference/copilot-chat-suggestion-view",
+                  "reference/copilot-chat-suggestion-pill",
+                  "reference/copilot-chat-tool-calls-view",
+                  "reference/copilot-chat-toggle-button",
+                  "reference/copilot-chat-audio-recorder",
+                  "reference/copilot-chat-assistant-message",
+                  "reference/copilot-chat-user-message",
+                  "reference/copilot-modal-header"
+                ]
               },
               {
                 "group": "Hooks",
@@ -66,11 +144,44 @@
                   "reference/use-agent-context",
                   "reference/use-frontend-tool",
                   "reference/use-human-in-the-loop",
-                  "reference/use-render-tool-call"
+                  "reference/use-render-tool-call",
+                  "reference/use-suggestions",
+                  "reference/use-configure-suggestions",
+                  "reference/use-render-custom-messages",
+                  "reference/use-render-activity-message"
+                ]
+              },
+              {
+                "group": "Utilities",
+                "pages": [
+                  "reference/copilotkit-inspector",
+                  "reference/wildcard-tool-call-render",
+                  "reference/define-tool-call-renderer",
+                  "reference/copilotkit-core-react"
                 ]
               }
             ]
+          },
+          {
+            "group": "Angular",
+            "icon": "angular",
+            "pages": [
+              "reference/angular-provide-copilotkit",
+              "reference/angular-copilotkit-service",
+              "reference/angular-register-tools",
+              "reference/angular-agent-context",
+              "reference/angular-inject-agent-store",
+              "reference/angular-directives",
+              "reference/angular-copilot-chat"
+            ]
           }
+        ]
+      },
+      {
+        "group": "Troubleshooting",
+        "pages": [
+          "troubleshooting/common-issues",
+          "troubleshooting/debugging"
         ]
       }
     ]
@@ -78,6 +189,7 @@
   "footerSocials": {
     "x": "https://x.com/copilotkit",
     "github": "https://github.com/copilotkit/copilotkit",
-    "linkedin": "https://www.linkedin.com/company/copilotkit"
+    "linkedin": "https://www.linkedin.com/company/copilotkit",
+    "discord": "https://discord.gg/6dffbvGU3D"
   }
 }

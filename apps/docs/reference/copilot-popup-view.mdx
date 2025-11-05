@@ -1,0 +1,38 @@
+---
+title: CopilotPopupView
+description: Modal chat view implementation used by CopilotPopup
+---
+
+`CopilotPopupView` is a modal-flavored `CopilotChatView`. It positions the chat window above a dimmed backdrop and
+manages focus/escape handling. Use it when composing custom pop-up layouts.
+
+## Basic Usage
+
+```tsx
+import { CopilotPopupView } from "@copilotkitnext/react";
+
+function CustomPopupView(props: CopilotChatViewProps) {
+  return (
+    <CopilotPopupView
+      {...props}
+      header={<h2 className="px-4 py-3 font-semibold">Copilot</h2>}
+      width={400}
+      height={540}
+      clickOutsideToClose
+    />
+  );
+}
+```
+
+## Props
+
+`CopilotPopupViewProps` extends `CopilotChatViewProps` with:
+
+| Prop                  | Type       | Description                                                  |
+| --------------------- | ---------- | ------------------------------------------------------------ |
+| `header`              | `ReactNode`| Optional header slot rendered at the top of the modal.       |
+| `width`               | `number | string` | Modal width.                                               |
+| `height`              | `number | string` | Modal height.                                              |
+| `clickOutsideToClose` | `boolean` | Whether clicking the backdrop closes the popup. Defaults true.|
+
+The component also consumes `CopilotChatConfigurationProvider` to read modal open state.

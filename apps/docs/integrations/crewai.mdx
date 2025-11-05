@@ -1,0 +1,124 @@
+---
+title: CrewAI Integration
+description: Integrate CopilotKit with CrewAI agents
+icon: "users"
+---
+
+## Overview
+
+CrewAI is a framework for orchestrating role-playing, autonomous AI agents. CopilotKit integrates with CrewAI **Enterprise** agents (Crews and Flows) through Copilot Cloud or by using the `@ag-ui/crewai` package for TypeScript/JavaScript projects.
+
+This guide shows you how to connect your CrewAI agents to CopilotKit.
+
+## Prerequisites
+
+- Node.js 18+
+- CrewAI Enterprise account (for Python Crews/Flows) OR a TypeScript/JavaScript project
+- OpenAI API key
+
+## Option 1: Using Copilot Cloud (Python Crews/Flows)
+
+If you're using CrewAI Enterprise with Python Crews or Flows, the easiest way to integrate with CopilotKit is through Copilot Cloud.
+
+### 1. Set Up Copilot Cloud
+
+1. Go to [Copilot Cloud](https://cloud.copilotkit.ai) and sign in
+2. Add your OpenAI API key to the "Provide OpenAI API Key" section
+3. Click "Add Remote Endpoint" and fill in the details of your CrewAI Crew or Flow
+   - **Note:** If your Agent Name contains multiple words, use underscores (`_`) as separators
+4. Click "Save Endpoint"
+5. Copy your Copilot Cloud Public API Key
+
+### 2. Connect to the Frontend
+
+In your React or Angular application, connect using `CopilotKitProvider` with your Cloud API key:
+
+```typescript
+// React example
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider 
+      publicApiKey="your-copilot-cloud-api-key"
+      agent="your_crew_name" // Use underscores for multi-word names
+    >
+      {/* Your app components */}
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Option 2: Self-Hosted with TypeScript/JavaScript
+
+If you're building CrewAI-style multi-agent systems in TypeScript/JavaScript, you can use the `@ag-ui/crewai` package.
+
+### 1. Install Dependencies
+
+```bash
+pnpm add @copilotkitnext/runtime @ag-ui/crewai ai
+```
+
+### 2. Configure Your Runtime Endpoint
+
+Create a runtime endpoint that registers your CrewAI agents:
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { CrewAIAgent } from "@ag-ui/crewai";
+import { handle } from "hono/vercel";
+
+// Define your CrewAI agent
+const agent = new CrewAIAgent({
+  // Your CrewAI configuration here
+  // This will depend on your specific CrewAI setup
+});
+
+const runtime = new CopilotRuntime({
+  agents: {
+    default: agent,
+  },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+### 3. Connect to the Frontend
+
+```typescript
+// React example
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      {/* Your app components */}
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Python Integration with ag-ui-crewai
+
+For Python-based CrewAI projects, you can use the `ag-ui-crewai` package to handle AG-UI event streaming:
+
+```bash
+pip install ag-ui-crewai
+```
+
+This package provides helpers to wrap your CrewAI Crews and Flows so they emit AG-UI events automatically.
+
+## Next Steps
+
+- Learn about [Frontend Actions](/guides/frontend-actions)
+- Explore [Shared State](/guides/shared-state)
+- Implement [Human-in-the-Loop](/guides/human-in-the-loop)
+- Check out the [CrewAI Enterprise documentation](https://docs.crewai.com/enterprise/introduction)

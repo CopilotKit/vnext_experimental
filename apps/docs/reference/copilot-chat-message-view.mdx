@@ -1,0 +1,55 @@
+---
+title: CopilotChatMessageView
+description: Message list component used inside CopilotChatView
+---
+
+`CopilotChatMessageView` renders the scrollable conversation history: user messages, assistant replies, tool calls, and
+activity messages. It is the default message renderer used by `CopilotChatView`.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatMessageView } from "@copilotkitnext/react";
+
+<CopilotChatMessageView
+  messages={agent.messages}
+  runState={{ isRunning: agent.isRunning }}
+/>;
+```
+
+Typically you don’t call it directly—`CopilotChatView` wires it up for you—but supplying it manually allows for custom
+layouts.
+
+## Props
+
+`CopilotChatMessageViewProps` includes:
+
+| Prop            | Type              | Description                                                |
+| --------------- | ----------------- | ---------------------------------------------------------- |
+| `messages`      | `Message[]`       | Conversation history to display.                           |
+| `assistantMessage` | Slot override  | Replace the assistant message renderer (`CopilotChatAssistantMessage`). |
+| `userMessage`   | Slot override     | Replace the user message renderer (`CopilotChatUserMessage`). |
+| `cursor`        | Slot override     | Customize the animated typing cursor.                      |
+| `className`     | `string`          | Additional CSS class.                                      |
+| `children`      | Render prop       | Optional render prop returning custom markup (receives `{ messageElements, messages, isRunning }`). |
+
+It also accepts props forwarded from `CopilotChatViewProps`, such as `labels`, `runState`, `suggestionView`, etc.
+
+## Customizing Messages
+
+Override slots to control how each message renders:
+
+```tsx
+<CopilotChatMessageView
+  messages={messages}
+  assistantMessage={({ message, ...props }) => (
+    <MyAssistantMessage message={message} {...props} />
+  )}
+  userMessage={({ message }) => <MyUserBubble message={message} />}
+/>;
+```
+
+## Scroll Behavior
+
+- Maintains scroll position when new messages stream in.
+- Exposes `onScrollTop` so you can load historical messages on demand.

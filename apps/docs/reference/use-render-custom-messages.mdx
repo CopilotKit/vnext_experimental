@@ -1,0 +1,109 @@
+---
+title: useRenderCustomMessages
+description: Render custom React components alongside chat messages
+---
+
+`useRenderCustomMessages` returns a renderer function that lets you inject custom React components before or after any
+chat message. The hook pulls the registered renderers from the current CopilotKit instance and scopes them to the active
+agent/thread.
+
+## Basic Usage
+
+```tsx
+import { useRenderCustomMessages } from "@copilotkitnext/react";
+import type { Message } from "@ag-ui/core";
+
+function CustomMessageWrapper({ message }: { message: Message }) {
+  const renderCustomMessage = useRenderCustomMessages();
+
+  if (!renderCustomMessage) {
+    return null;
+  }
+
+  return (
+    <div className="message">
+      {/* Render before the message */}
+      {renderCustomMessage({ message, position: "before" })}
+
+      <p>{message.content}</p>
+
+      {/* Render after the message */}
+      {renderCustomMessage({ message, position: "after" })}
+    </div>
+  );
+}
+```
+
+## Return Value
+
+- Returns a function `(params) => ReactNode | null` that accepts `{ message, position }`.
+- Returns `null` if no custom message renderers are registered or if the current chat configuration is unavailable.
+
+### `position`
+
+`"before" | "after"`
+
+Indicates whether you’re rendering content before or after the message bubble. Custom renderers can choose to render on
+one or both positions.
+
+## Renderer Selection
+
+The hook filters the registered custom message renderers by:
+
+1. Agent ID – renderers tied to the active agent take priority.
+2. Global renderers – renderers without an `agentId` act as fallbacks.
+
+The first renderer that returns a truthy React element wins.
+
+## Additional Data Provided to Renderers
+
+When you register a custom message renderer (via `copilotkit.addCustomMessageRenderer`) the render component receives a
+rich set of props, including:
+
+- `runId` and run-scoped `stateSnapshot`
+- `messageIndex` and `messageIndexInRun`
+- `numberOfMessagesInRun`
+- `agentId`
+
+`useRenderCustomMessages` passes these values through so your renderer can understand the surrounding context.
+
+## Example: Inline Tool Output
+
+```tsx
+function ToolCallInspector({ message }: { message: Message }) {
+  const render = useRenderCustomMessages();
+  if (!render) return null;
+
+  return (
+    <div className="tool-output">
+      {render({ message, position: "after" })}
+    </div>
+  );
+}
+```
+
+With a matching renderer registration:
+
+```tsx
+copilotkit.addCustomMessageRenderer({
+  name: "tool-debug",
+  agentId: "assistant",
+  render: ({ message, stateSnapshot }) => {
+    if (!message.toolCalls?.length) return null;
+    return (
+      <details>
+        <summary>Tool call details</summary>
+        <pre>{JSON.stringify({ message, stateSnapshot }, null, 2)}</pre>
+      </details>
+    );
+  },
+});
+```
+
+## Tips
+
+- Call the hook inside components rendered within `CopilotChat` (or any component that has access to the
+  `CopilotChatConfigurationProvider`).
+- The hook throws if it cannot find the agent referenced by the chat configuration. Ensure your provider and runtime are
+  configured before rendering custom content.
+- Combine with the `WildcardToolCallRender` component to render arbitrary tool output when no specific renderer matches.

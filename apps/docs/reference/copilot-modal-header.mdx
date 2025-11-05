@@ -1,0 +1,44 @@
+---
+title: CopilotModalHeader
+description: Header component used by popup and sidebar chat layouts
+---
+
+`CopilotModalHeader` renders the header bar for the popup/sidebar chat surfaces. It includes the title and close button
+and integrates with `CopilotChatConfigurationProvider` to toggle modal state.
+
+## Basic Usage
+
+```tsx
+import { CopilotModalHeader } from "@copilotkitnext/react";
+
+<CopilotModalHeader title="My Copilot" />;
+```
+
+## Props
+
+| Prop   | Type      | Description                                                               |
+| ------ | --------- | ------------------------------------------------------------------------- |
+| `title`| `string`  | Optional title text. Defaults to labels from `CopilotChatConfigurationProvider`. |
+
+All other props are forwarded to the underlying `<header>` element.
+
+## Slots
+
+| Slot           | Default Component                         | Purpose |
+| -------------- | ----------------------------------------- | ------- |
+| `titleContent` | `CopilotModalHeader.Title`                | Renders the centered header title. |
+| `closeButton`  | `CopilotModalHeader.CloseButton`          | Closes the modal/sidebar via configuration context. |
+
+```tsx
+<CopilotModalHeader
+  titleContent={({ children }) => <h2 className="text-lg font-semibold">{children}</h2>}
+  closeButton={(props) => <button {...props}>×</button>}
+/>
+```
+
+When used as a render prop, `children` receives `{ titleContent, closeButton, title }` so you can lay out the header yourself.
+
+## Close Behavior
+
+Clicking the close button calls `setModalOpen(false)` on the surrounding configuration provider. If no provider is present,
+the button simply toggles internal state (useful for isolated demos).

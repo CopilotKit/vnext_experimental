@@ -1,0 +1,104 @@
+---
+title: BasicAgent (Node runtime)
+description: Configuration, methods, and helpers for the BasicAgent class
+---
+
+`BasicAgent` (from `@copilotkitnext/agent`) connects directly to hosted model providers such as OpenAI, Anthropic, and
+Google Gemini. It implements the AG-UI `AbstractAgent` interface, streaming AG-UI events to clients while handling tool
+execution and shared state.
+
+```ts
+import { BasicAgent } from "@copilotkitnext/agent";
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  prompt: "You are a helpful assistant.",
+  maxOutputTokens: 2048,
+  temperature: 0.7,
+});
+
+runtime.registerAgent("assistant", agent);
+```
+
+## Configuration (`BasicAgentConfiguration`)
+
+| Option                | Type                               | Description                                                        |
+| --------------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| `model`               | `BasicAgentModel | LanguageModel`  | Target model (string identifier or preconfigured language model).  |
+| `prompt`              | `string`                           | System prompt prepended to conversations.                          |
+| `maxSteps`            | `number`                           | Max tool-calling iterations (default `1`).                         |
+| `toolChoice`          | `ToolChoice`                       | Force/allow tool usage.                                            |
+| `maxOutputTokens`     | `number`                           | Token limit for responses.                                         |
+| `temperature`, `topP`, `topK` | `number`                  | Sampling controls (forwarded to provider).                         |
+| `presencePenalty`, `frequencyPenalty` | `number`          | OpenAI-compatible penalties.                                       |
+| `stopSequences`       | `string[]`                         | Stop sequences.                                                    |
+| `seed`                | `number`                           | Deterministic seed (provider permitting).                          |
+| `maxRetries`          | `number`                           | Provider retry limit.                                              |
+| `overridableProperties` | `OverridableProperty[]`          | Allow properties to be overridden via `forwardedProps`.            |
+| `mcpServers`          | `MCPClientConfig[]`                | Model Context Protocol servers to proxy.                           |
+| `tools`               | `ToolDefinition[]`                 | Server-side tools available to the model.                          |
+
+### Overridable Properties
+
+Set `overridableProperties` to allow frontend code to modify certain fields via `forwardedProps` (e.g., adjust
+temperature per request).
+
+```ts
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  temperature: 0.7,
+  overridableProperties: ["temperature", "maxOutputTokens"],
+});
+```
+
+## Methods
+
+| Method             | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `canOverride(property)` | Returns `true` if a property can be overridden.      |
+| `abortRun()`       | Cancels the in-flight run (inherited from `AbstractAgent`). |
+| `addMessage`, `setState`, `run` | Inherited methods for manipulating the agent. |
+
+Internally, `BasicAgent` uses Vercel’s `ai` SDK (`streamText`) to handle streaming completions/tool calls.
+
+## Model Helpers
+
+### `resolveModel(specifier)`
+
+Converts strings like `"openai/gpt-4o"`, `"anthropic/claude-3.5-haiku"`, or `"google/gemini-2.5-pro"` into
+`LanguageModel` instances. Also accepts a preconstructed model and returns it untouched.
+
+```ts
+const model = resolveModel("openai/gpt-4o");
+const agent = new BasicAgent({ model, maxOutputTokens: 1024 });
+```
+
+Throws if the provider prefix is unknown or if required API keys are missing.
+
+## Tool Helpers
+
+### `defineTool`
+
+Creates a type-safe server-side tool definition.
+
+```ts
+import { defineTool } from "@copilotkitnext/agent";
+import { z } from "zod";
+
+const weatherTool = defineTool({
+  name: "get_weather",
+  description: "Returns the current weather by location",
+  parameters: z.object({ location: z.string() }),
+});
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  tools: [weatherTool],
+});
+```
+
+### Conversion Helpers
+
+`convertMessagesToVercelAISDKMessages`, `convertToolsToVercelAITools`, and
+`convertToolDefinitionsToVercelAITools` are provided for advanced integrations where you need direct access to the
+Vercel AI SDK representations. They are generally used internally but are exported for convenience.

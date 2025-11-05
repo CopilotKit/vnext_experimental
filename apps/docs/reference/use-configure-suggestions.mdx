@@ -1,0 +1,88 @@
+---
+title: useConfigureSuggestions
+description: Register static or dynamic chat suggestions for an agent
+---
+
+`useConfigureSuggestions` wires CopilotKit suggestion definitions into the runtime. You can provide static button
+suggestions, fetch dynamic suggestions from your own API, or disable suggestions entirely—all scoped to a specific
+agent if needed.
+
+## Basic Usage (Static Suggestions)
+
+```tsx
+import { useConfigureSuggestions } from "@copilotkitnext/react";
+
+function StaticSuggestions() {
+  useConfigureSuggestions({
+    type: "static",
+    suggestions: [
+      { id: "summarize", message: "Summarize the conversation" },
+      { id: "next-steps", message: "Propose next steps" },
+    ],
+  });
+
+  return null;
+}
+```
+
+## Dynamic Suggestions
+
+Dynamic configs let CopilotKit call back into your code whenever suggestions are needed.
+
+```tsx
+useConfigureSuggestions({
+  type: "dynamic",
+  instructions: "Suggest follow-up actions for the conversation",
+  providerAgentId: "assistant", // optional, defaults to the chat agent
+});
+```
+
+The runtime will ask your agent to generate suggestions using the provided instructions. Use
+`copilotkit.reloadSuggestions()` (e.g., via `useSuggestions`) whenever the context changes.
+
+## Parameters
+
+### config
+
+`DynamicSuggestionsConfig | StaticSuggestionsConfig | null`
+
+- `type: "static"` – Provide an array of suggestion objects `{ id, message, title?, isLoading? }`.
+- `type: "dynamic"` – Provide `instructions`, optional `consumerAgentId`, and optional `providerAgentId`. The agent
+  referenced by `providerAgentId` generates suggestions.
+- `available: "disabled"` – Pass `null` or set `available` to disable suggestions.
+
+### options.deps
+
+`ReadonlyArray<unknown>` **optional**
+
+An array of dependencies that should trigger a reload when they change. Equivalent to a dependency list passed to
+`useEffect`.
+
+```tsx
+useConfigureSuggestions(config, { deps: [customerId, ticketId] });
+```
+
+## Behavior
+
+- Registers the suggestions config with CopilotKit and automatically tears it down when the hook unmounts.
+- Automatically reloads suggestions when the configuration changes (deep comparison) or when dependencies change.
+- If `consumerAgentId` is omitted or `"*"`, the configuration applies to whatever agent is active in the surrounding
+  `CopilotChatConfigurationProvider`.
+- When the configuration targets a single agent, only that agent’s suggestions are reloaded.
+
+## Disabling Suggestions
+
+```tsx
+useConfigureSuggestions({ available: "disabled", type: "static", suggestions: [] });
+```
+
+This clears existing suggestions and prevents the runtime from generating new ones.
+
+## Tips
+
+- Pair `useConfigureSuggestions` with `useSuggestions` inside the same component tree to both register and consume
+  suggestions.
+- Use the `deps` option when your config depends on user input (e.g., ticket ID). CopilotKit will reload suggestions
+  whenever those values change.
+- Dynamic configs run on the agent; static configs are great for deterministic helper buttons such as “Summarize,”
+  “Create follow-up email,” etc.

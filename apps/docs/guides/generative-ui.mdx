@@ -1,0 +1,266 @@
+---
+title: Generative UI
+description: Render dynamic UI components from agent tool calls
+icon: "sparkles"
+---
+
+## Overview
+
+Generative UI allows agents to render custom UI components when executing tools. Instead of just showing text, agents can display charts, forms, interactive elements, and more.
+
+## Quick Start
+
+<Tabs>
+  <Tab title="React">
+Use `useRenderToolCall` to define custom rendering:
+
+```tsx
+import { useRenderToolCall } from "@copilotkitnext/react";
+import { z } from "zod";
+
+function MyComponent() {
+  useRenderToolCall({
+    name: "showChart",
+    args: z.object({
+      data: z.array(z.number()),
+      labels: z.array(z.string()),
+    }),
+    render: ({ args, status }) => {
+      if (status === "complete") {
+        return <ChartComponent data={args.data} labels={args.labels} />;
+      }
+      return <div>Loading chart...</div>;
+    },
+  });
+
+  return <div>{/* Your UI */}</div>;
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+Create a component and register it:
+
+```typescript
+import { Component, input } from "@angular/core";
+import { registerRenderToolCall, ToolRenderer } from "@copilotkitnext/angular";
+import { z } from "zod";
+
+@Component({
+  selector: "app-chart-render",
+  standalone: true,
+  template: `
+    <div *ngIf="status() === 'complete'">
+      <app-chart [data]="args().data" [labels]="args().labels"></app-chart>
+    </div>
+    <div *ngIf="status() !== 'complete'">Loading chart...</div>
+  `,
+})
+class ChartRenderComponent implements ToolRenderer {
+  args = input.required();
+  status = input.required();
+}
+
+@Component({
+  selector: "app-my-component",
+  template: `<div><!-- Your UI --></div>`,
+})
+export class MyComponent {
+  constructor() {
+    registerRenderToolCall({
+      name: "showChart",
+      args: z.object({
+        data: z.array(z.number()),
+        labels: z.array(z.string()),
+      }),
+      component: ChartRenderComponent,
+    });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### Data Visualization
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useRenderToolCall({
+  name: "displayData",
+  args: z.object({
+    items: z.array(z.record(z.any())),
+    view: z.enum(["table", "grid", "list"]),
+  }),
+  render: ({ args }) => {
+    if (args.view === "table") {
+      return <DataTable data={args.items} />;
+    }
+    return <DataGrid data={args.items} />;
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-data-display",
+  template: `
+    <app-data-table *ngIf="args().view === 'table'" [data]="args().items"></app-data-table>
+    <app-data-grid *ngIf="args().view !== 'table'" [data]="args().items"></app-data-grid>
+  `,
+})
+class DataDisplayComponent implements ToolRenderer {
+  args = input.required();
+}
+```
+  </Tab>
+</Tabs>
+
+### Progress Indicators
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useRenderToolCall({
+  name: "processData",
+  args: z.object({
+    taskName: z.string(),
+    progress: z.number(),
+  }),
+  render: ({ args, status }) => (
+    <div>
+      <p>{args.taskName}</p>
+      <progress value={args.progress} max={100} />
+      {status === "complete" && <span>✓ Complete</span>}
+    </div>
+  ),
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-progress",
+  template: `
+    <div>
+      <p>{{ args().taskName }}</p>
+      <progress [value]="args().progress" max="100"></progress>
+      <span *ngIf="status() === 'complete'">✓ Complete</span>
+    </div>
+  `,
+})
+class ProgressComponent implements ToolRenderer {
+  args = input.required();
+  status = input.required();
+}
+```
+  </Tab>
+</Tabs>
+
+### Interactive Forms
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useRenderToolCall({
+  name: "collectFeedback",
+  args: z.object({
+    question: z.string(),
+  }),
+  render: ({ args, status, result }) => {
+    if (status === "complete") {
+      return <div>Thanks for your feedback: {result}</div>;
+    }
+    return (
+      <div>
+        <p>{args.question}</p>
+        <textarea placeholder="Your feedback..." />
+      </div>
+    );
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-feedback-form",
+  template: `
+    <div *ngIf="status() !== 'complete'">
+      <p>{{ args().question }}</p>
+      <textarea placeholder="Your feedback..."></textarea>
+    </div>
+    <div *ngIf="status() === 'complete'">
+      Thanks for your feedback: {{ result() }}
+    </div>
+  `,
+})
+class FeedbackFormComponent implements ToolRenderer {
+  args = input.required();
+  status = input.required();
+  result = input();
+}
+```
+  </Tab>
+</Tabs>
+
+## Static Registration
+
+Register render components in the provider:
+
+<Tabs>
+  <Tab title="React">
+```tsx
+const renderToolCalls = [
+  {
+    name: "showChart",
+    args: z.object({ data: z.array(z.number()) }),
+    render: ({ args }) => <Chart data={args.data} />,
+  },
+];
+
+<CopilotKitProvider
+  runtimeUrl="/api/copilotkit"
+  renderToolCalls={renderToolCalls}
+>
+  {children}
+</CopilotKitProvider>
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+// app.config.ts
+provideCopilotKit({
+  runtimeUrl: "/api/copilotkit",
+  renderToolCalls: [
+    {
+      name: "showChart",
+      args: z.object({ data: z.array(z.number()) }),
+      component: ChartRenderComponent,
+    },
+  ],
+})
+```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Execute actions from tools
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Request human input
+  </Card>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Share context with agents
+  </Card>
+</CardGroup>

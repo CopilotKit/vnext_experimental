@@ -1,0 +1,33 @@
+---
+title: CopilotChatToggleButton
+description: Floating button that toggles the Copilot chat surface
+---
+
+`CopilotChatToggleButton` is the floating action button that opens/closes Copilot chat in sidebar or popup layouts. It
+works with `CopilotChatConfigurationProvider` to track modal state, but also falls back to internal state when no
+provider is present.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatToggleButton } from "@copilotkitnext/react";
+
+<CopilotChatToggleButton className="bottom-8 right-8" />;
+```
+
+## Props
+
+Extends `React.ButtonHTMLAttributes<HTMLButtonElement>` with two optional slot overrides:
+
+| Prop       | Type                  | Description                                              |
+| ---------- | --------------------- | -------------------------------------------------------- |
+| `openIcon` | `SlotValue<SVGElement>` | Icon to show when the chat is closed. Defaults to bubble.|
+| `closeIcon`| `SlotValue<SVGElement>` | Icon to show when the chat is open. Defaults to “X”.     |
+
+The component automatically sets `aria-label` using the chat labels from `CopilotChatConfigurationProvider`.
+
+## Behavior
+
+- Toggles `isModalOpen` via the configuration provider if available; otherwise manages its own boolean state.
+- Renders both icons and cross-fades/rotates them for smooth transitions.
+- Applies Tailwind-based styling for hover, focus, and disabled states (customize via `className`).

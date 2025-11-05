@@ -1,0 +1,59 @@
+---
+title: CopilotChatUserMessage
+description: Renders user-authored messages inside the chat transcript
+---
+
+`CopilotChatUserMessage` displays the user’s message bubble along with a toolbar for actions like copy, edit, and branch
+navigation. As with other chat components, it supports slot overrides for granular customization.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatUserMessage } from "@copilotkitnext/react";
+
+<CopilotChatUserMessage
+  message={userMessage}
+  onEditMessage={({ message }) => reopenComposer(message)}
+  onSwitchToBranch={({ branchIndex }) => loadBranch(branchIndex)}
+  branchIndex={currentBranch}
+  numberOfBranches={branchCount}
+/>
+```
+
+## Props
+
+| Prop                   | Description                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| `message`              | `UserMessage` to render (string or structured content).           |
+| `onEditMessage`        | Called when the user clicks “Edit”.                               |
+| `branchIndex`          | Current branch index (optional).                                  |
+| `numberOfBranches`     | Total branches available (optional).                              |
+| `onSwitchToBranch`     | Callback for branch navigation arrow buttons.                     |
+| `additionalToolbarItems` | Extra React nodes appended to the toolbar.                    |
+
+## Slots
+
+| Slot               | Default Component                               | Purpose |
+| ------------------ | ----------------------------------------------- | ------- |
+| `messageRenderer`  | `CopilotChatUserMessage.MessageRenderer`        | Renders the user bubble (rich text / structured content). |
+| `toolbar`          | `CopilotChatUserMessage.Toolbar`                | Container for action buttons under the message. |
+| `copyButton`       | `CopilotChatUserMessage.CopyButton`             | Copies the message content. |
+| `editButton`       | `CopilotChatUserMessage.EditButton`             | Invokes `onEditMessage`. |
+| `branchNavigation` | `CopilotChatUserMessage.BranchNavigation`       | UI for cycling through alternate branches. |
+
+Override slots via props to control presentation:
+
+```tsx
+<CopilotChatUserMessage
+  message={message}
+  messageRenderer={({ content }) => <Markdown>{content}</Markdown>}
+  copyButton={({ onClick }) => <button onClick={onClick}>Copy</button>}
+/>
+```
+
+If you provide `children`, the render prop receives `{ messageRenderer, toolbar, copyButton, editButton, branchNavigation, message, branchIndex, numberOfBranches, additionalToolbarItems }` so you can compose your own layout.
+
+## Branch Navigation
+
+If you supply `numberOfBranches > 1` and `onSwitchToBranch`, the component renders branch navigation arrows. This is
+useful for multi-branch conversations where the user can switch between retries or alternative responses.

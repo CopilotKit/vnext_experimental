@@ -1,0 +1,29 @@
+---
+title: CopilotChatSuggestionPill
+description: Button component used for chat suggestions
+---
+
+`CopilotChatSuggestionPill` renders an individual suggestion button. It’s the default `suggestion` slot for
+`CopilotChatSuggestionView`, but you can also use it directly when building custom suggestion UIs.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatSuggestionPill } from "@copilotkitnext/react";
+
+<CopilotChatSuggestionPill onClick={() => send("Summarize the conversation")}>Summarize</CopilotChatSuggestionPill>;
+```
+
+## Props
+
+Extends `React.ButtonHTMLAttributes<HTMLButtonElement>` with:
+
+| Prop       | Type          | Description                                     |
+| ---------- | ------------- | ----------------------------------------------- |
+| `icon`     | `ReactNode`   | Optional leading icon displayed when not loading. |
+| `isLoading`| `boolean`     | Shows a spinner and disables the button.        |
+
+## Styling
+
+- Includes focus states, hover styles, and disabled styling via Tailwind classes.
+- Add your own styles via the `className` prop or slot overrides.

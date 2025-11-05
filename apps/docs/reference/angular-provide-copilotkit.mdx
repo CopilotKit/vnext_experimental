@@ -1,0 +1,60 @@
+---
+title: provideCopilotKit
+description: Angular provider for configuring CopilotKit runtime options
+---
+
+`provideCopilotKit` registers CopilotKit configuration at the Angular DI level. It’s the first step when wiring
+CopilotKit into an Angular app.
+
+## Basic Usage (Stand-alone Config)
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from "@angular/core";
+import { provideCopilotKit } from "@copilotkitnext/angular";
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideCopilotKit({
+      runtimeUrl: "http://localhost:3000/api/copilotkit",
+      headers: { Authorization: `Bearer ${import.meta.env.NG_APP_API_KEY}` },
+    }),
+  ],
+};
+```
+
+## Options
+
+| Option           | Type                               | Description                                     |
+| ---------------- | ---------------------------------- | ----------------------------------------------- |
+| `runtimeUrl`     | `string`                           | Copilot runtime endpoint.                       |
+| `headers`        | `Record<string, string>`           | Default headers for runtime requests.           |
+| `properties`     | `Record<string, unknown>`          | Arbitrary properties forwarded to agents.       |
+| `agents`         | `Record<string, AbstractAgent>`    | Pre-seeded agents (useful for SSR/demos).       |
+| `tools`          | `ClientTool[]`                     | Frontend tools registered on startup.           |
+| `renderToolCalls`| `RenderToolCallConfig[]`           | Tool call renderers registered on startup.      |
+| `frontendTools`  | `FrontendToolConfig[]`             | Client tools registered on startup.             |
+| `humanInTheLoop` | `HumanInTheLoopConfig[]`           | HITL tools registered on startup.               |
+
+## Accessing the Config
+
+Use `injectCopilotKitConfig()` inside injectors to read the config:
+
+```ts
+import { injectCopilotKitConfig } from "@copilotkitnext/angular";
+
+const config = injectCopilotKitConfig();
+console.log(config.runtimeUrl);
+```
+
+## Updating the Runtime at Runtime
+
+The `CopilotKit` service exposes `updateRuntime`:
+
+```ts
+import { inject } from "@angular/core";
+import { CopilotKit } from "@copilotkitnext/angular";
+
+const copilotKit = inject(CopilotKit);
+copilotKit.updateRuntime({ runtimeUrl: newUrl });
+```

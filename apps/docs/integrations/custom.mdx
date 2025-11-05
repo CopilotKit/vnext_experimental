@@ -1,0 +1,517 @@
+---
+title: Custom Integration
+description: Build your own custom agent integration with CopilotKit
+icon: "code"
+---
+
+## Overview
+
+CopilotKit is designed to work with any agent framework or custom agent implementation. This guide shows you how to integrate your own custom agents, whether you're building from scratch or using a framework not yet covered in our integrations.
+
+## Agent Interface
+
+Every agent in CopilotKit implements a simple async generator interface:
+
+```typescript
+interface AgentConfig {
+  model: string;
+  async *run(context: AgentContext): AsyncGenerator<MessageChunk>;
+}
+
+interface AgentContext {
+  messages: Message[];
+  tools: Tool[];
+  state?: any;
+  setState?: (state: any) => void;
+  executeTools: (toolName: string, args: any) => Promise<any>;
+  forwardedProps?: Record<string, unknown>;
+}
+
+interface MessageChunk {
+  role: "user" | "assistant" | "system" | "tool";
+  content: string;
+  name?: string;
+}
+```
+
+## Basic Custom Agent
+
+Here's a minimal custom agent:
+
+```typescript
+// app/api/copilotkit/route.ts
+import { createCopilotRuntimeHandler } from "@copilotkitnext/runtime";
+
+export const POST = createCopilotRuntimeHandler({
+  agents: {
+    custom: {
+      model: "custom-agent-v1",
+      async *run({ messages, tools, executeTools }) {
+        // Your custom agent logic here
+        
+        // 1. Process the messages
+        const latestMessage = messages[messages.length - 1];
+        
+        // 2. Generate a response
+        const response = await yourCustomAILogic(latestMessage.content);
+        
+        // 3. Check if tools need to be called
+        if (shouldCallTool(response)) {
+          const toolResult = await executeTools("toolName", { 
+            /* args */ 
+          });
+          
+          // Process tool result and continue
+          const finalResponse = await processToolResult(toolResult);
+          
+          yield {
+            role: "assistant",
+            content: finalResponse,
+          };
+        } else {
+          // 4. Yield the response
+          yield {
+            role: "assistant",
+            content: response,
+          };
+        }
+      },
+    },
+  },
+});
+```
+
+## Streaming Custom Agent
+
+Implement streaming for better UX:
+
+```typescript
+async *run({ messages, tools }) {
+  const stream = await yourStreamingAPI({
+    messages,
+    tools,
+  });
+
+  for await (const chunk of stream) {
+    yield {
+      role: "assistant",
+      content: chunk.text,
+    };
+  }
+}
+```
+
+## Custom Agent with External API
+
+Integrate with an external API:
+
+```typescript
+async *run({ messages, tools, executeTools }) {
+  const apiUrl = process.env.CUSTOM_AGENT_URL;
+  const apiKey = process.env.CUSTOM_AGENT_KEY;
+
+  const response = await fetch(`${apiUrl}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      messages,
+      tools: tools.map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      })),
+    }),
+  });
+
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+
+  if (!reader) throw new Error('No response body');
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const text = decoder.decode(value);
+    yield {
+      role: 'assistant',
+      content: text,
+    };
+  }
+}
+```
+
+## Tool Calling
+
+Implement tool calling in your custom agent:
+
+```typescript
+async *run({ messages, tools, executeTools }) {
+  // Your agent decides which tool to call
+  const toolDecision = await yourAgentDecision(messages, tools);
+
+  if (toolDecision.shouldCallTool) {
+    // Execute the tool
+    const result = await executeTools(
+      toolDecision.toolName,
+      toolDecision.arguments
+    );
+
+    // Add tool result to conversation
+    yield {
+      role: "tool",
+      name: toolDecision.toolName,
+      content: JSON.stringify(result),
+    };
+
+    // Continue conversation with tool result
+    const followUp = await yourAgentContinue(messages, result);
+    
+    yield {
+      role: "assistant",
+      content: followUp,
+    };
+  } else {
+    // Regular response
+    const response = await yourAgentResponse(messages);
+    yield {
+      role: "assistant",
+      content: response,
+    };
+  }
+}
+```
+
+## State Management
+
+Integrate with CopilotKit's shared state:
+
+```typescript
+async *run({ messages, tools, state, setState }) {
+  // Read current state
+  const currentData = state?.data || {};
+
+  // Your agent logic
+  const response = await processWithState(messages, currentData);
+
+  // Update state
+  setState({
+    data: {
+      ...currentData,
+      lastUpdate: new Date().toISOString(),
+      processedCount: (currentData.processedCount || 0) + 1,
+    },
+  });
+
+  yield {
+    role: "assistant",
+    content: response,
+  };
+}
+```
+
+## Error Handling
+
+Implement robust error handling:
+
+```typescript
+async *run({ messages, tools, executeTools }) {
+  try {
+    const response = await yourAgentLogic(messages, tools);
+
+    yield {
+      role: "assistant",
+      content: response,
+    };
+  } catch (error) {
+    console.error('Agent error:', error);
+
+    // Return a user-friendly error message
+    yield {
+      role: "assistant",
+      content: "I encountered an error processing your request. Please try again.",
+    };
+
+    // Optionally, log to your error tracking service
+    if (process.env.NODE_ENV === 'production') {
+      await logError(error);
+    }
+  }
+}
+```
+
+## Advanced Examples
+
+### Multi-Step Reasoning Agent
+
+```typescript
+async *run({ messages, tools, executeTools }) {
+  // Step 1: Analyze the request
+  yield {
+    role: "assistant",
+    content: "Let me think about this...",
+  };
+
+  const analysis = await analyzeRequest(messages);
+
+  // Step 2: Gather information
+  if (analysis.needsToolUse) {
+    yield {
+      role: "assistant",
+      content: `I'll need to ${analysis.toolDescription}`,
+    };
+
+    const toolResult = await executeTools(
+      analysis.toolName,
+      analysis.toolArgs
+    );
+
+    // Step 3: Synthesize response
+    yield {
+      role: "assistant",
+      content: "Based on what I found...",
+    };
+
+    const finalResponse = await synthesize(analysis, toolResult);
+
+    yield {
+      role: "assistant",
+      content: finalResponse,
+    };
+  } else {
+    const directResponse = await respond(analysis);
+    yield {
+      role: "assistant",
+      content: directResponse,
+    };
+  }
+}
+```
+
+### Agent with Memory
+
+```typescript
+import { Redis } from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+async *run({ messages, tools, forwardedProps }) {
+  const userId = forwardedProps?.userId as string;
+  
+  // Load conversation history from memory
+  const history = await redis.get(`conversation:${userId}`);
+  const pastMessages = history ? JSON.parse(history) : [];
+
+  // Include history in processing
+  const allMessages = [...pastMessages, ...messages];
+  const response = await yourAgentLogic(allMessages, tools);
+
+  // Save to memory
+  await redis.set(
+    `conversation:${userId}`,
+    JSON.stringify([...allMessages, { role: 'assistant', content: response }])
+  );
+
+  yield {
+    role: "assistant",
+    content: response,
+  };
+}
+```
+
+### Agent with Rate Limiting
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_URL!,
+  token: process.env.UPSTASH_REDIS_TOKEN!,
+});
+
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 requests per minute
+});
+
+async *run({ messages, forwardedProps }) {
+  const userId = forwardedProps?.userId as string || 'anonymous';
+  
+  // Check rate limit
+  const { success } = await ratelimit.limit(userId);
+
+  if (!success) {
+    yield {
+      role: "assistant",
+      content: "You've reached the rate limit. Please wait a moment before trying again.",
+    };
+    return;
+  }
+
+  // Normal agent logic
+  const response = await yourAgentLogic(messages);
+
+  yield {
+    role: "assistant",
+    content: response,
+  };
+}
+```
+
+## Testing Your Custom Agent
+
+Create tests for your custom agent:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('Custom Agent', () => {
+  it('should respond to messages', async () => {
+    const agent = createCustomAgent();
+    
+    const results = [];
+    for await (const chunk of agent.run({
+      messages: [{ role: 'user', content: 'Hello' }],
+      tools: [],
+      executeTools: async () => ({}),
+    })) {
+      results.push(chunk);
+    }
+
+    expect(results).toHaveLength(1);
+    expect(results[0].role).toBe('assistant');
+    expect(results[0].content).toBeTruthy();
+  });
+
+  it('should execute tools', async () => {
+    const agent = createCustomAgent();
+    const mockExecuteTools = vi.fn().mockResolvedValue({ result: 'success' });
+
+    const results = [];
+    for await (const chunk of agent.run({
+      messages: [{ role: 'user', content: 'Use the tool' }],
+      tools: [{ name: 'testTool', description: 'Test', parameters: {} }],
+      executeTools: mockExecuteTools,
+    })) {
+      results.push(chunk);
+    }
+
+    expect(mockExecuteTools).toHaveBeenCalled();
+  });
+});
+```
+
+## Best Practices
+
+### 1. Always Stream Responses
+
+Provide immediate feedback:
+
+```typescript
+async *run({ messages }) {
+  // Bad: Wait for full response
+  const response = await getLongResponse(messages);
+  yield { role: 'assistant', content: response };
+
+  // Good: Stream chunks
+  for await (const chunk of getStreamingResponse(messages)) {
+    yield { role: 'assistant', content: chunk };
+  }
+}
+```
+
+### 2. Handle Context Window Limits
+
+Manage message history:
+
+```typescript
+async *run({ messages }) {
+  // Keep only last N messages
+  const recentMessages = messages.slice(-10);
+  
+  const response = await yourAgentLogic(recentMessages);
+  yield { role: 'assistant', content: response };
+}
+```
+
+### 3. Validate Tool Parameters
+
+Ensure tool calls are valid:
+
+```typescript
+async *run({ messages, tools, executeTools }) {
+  const toolCall = extractToolCall(messages);
+
+  if (toolCall) {
+    // Validate parameters
+    const tool = tools.find(t => t.name === toolCall.name);
+    if (!tool) {
+      yield {
+        role: 'assistant',
+        content: `Tool "${toolCall.name}" not found.`,
+      };
+      return;
+    }
+
+    // Execute with validated parameters
+    const result = await executeTools(toolCall.name, toolCall.args);
+    // Continue...
+  }
+}
+```
+
+### 4. Log for Debugging
+
+Add comprehensive logging:
+
+```typescript
+async *run({ messages, tools }) {
+  console.log('[Agent] Starting with', messages.length, 'messages');
+  
+  try {
+    const response = await yourAgentLogic(messages, tools);
+    console.log('[Agent] Generated response:', response.substring(0, 100));
+    
+    yield { role: 'assistant', content: response };
+  } catch (error) {
+    console.error('[Agent] Error:', error);
+    throw error;
+  }
+}
+```
+
+## Examples
+
+<CardGroup cols={2}>
+  <Card title="Simple Custom Agent" icon="robot" href="/examples#custom-simple">
+    Basic custom agent implementation
+  </Card>
+  <Card title="API Integration" icon="plug" href="/examples#custom-api">
+    Integrate external AI API
+  </Card>
+  <Card title="With Memory" icon="database" href="/examples#custom-memory">
+    Agent with persistent memory
+  </Card>
+  <Card title="Multi-Step Agent" icon="list-ol" href="/examples#custom-multistep">
+    Complex reasoning agent
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Frontend Tools" icon="wrench" href="/guides/frontend-actions">
+    Add interactive tools
+  </Card>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Sync state with agents
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/concepts/architecture">
+    Understand the architecture
+  </Card>
+</CardGroup>
+

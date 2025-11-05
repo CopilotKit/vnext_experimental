@@ -1,0 +1,43 @@
+---
+title: CopilotKitInspector
+description: React wrapper around the CopilotKit Web Inspector
+---
+
+`CopilotKitInspector` renders the Web Inspector custom element provided by `@copilotkitnext/web-inspector`. Drop it into
+your app (typically behind a dev-only flag) to inspect conversations, state snapshots, and tool calls in real time.
+
+## Basic Usage
+
+```tsx
+import { CopilotKitInspector } from "@copilotkitnext/react";
+import { useCopilotKit } from "@copilotkitnext/react";
+
+function InspectorPanel() {
+  const { copilotkit } = useCopilotKit();
+
+  return (
+    <aside className="inspector">
+      <CopilotKitInspector core={copilotkit} class="ck-inspector" />
+    </aside>
+  );
+}
+```
+
+## Props
+
+All props other than `core` are forwarded to the underlying Web Component (`<copilotkit-web-inspector>`). Commonly used
+attributes include `class`, `style`, and the element’s own configuration options.
+
+### core
+
+`CopilotKitCore | null`
+
+The CopilotKit core instance to visualize. Pass `null` (default) to allow the inspector to attach to the global
+singleton.
+
+## Notes
+
+- The component automatically defines the Web Component (`defineWebInspector()`) on import, so you only need to render
+  it once.
+- Use `React.forwardRef` to access the underlying `WebInspectorElement` if you need to call imperative APIs.
+- The inspector is framework-agnostic—this wrapper simply makes it easy to integrate with React apps.

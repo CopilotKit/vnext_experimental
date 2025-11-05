@@ -1,0 +1,103 @@
+---
+title: Any Model
+description: Connect BasicAgent to Groq, Mistral, Perplexity, or any custom provider
+icon: "sparkles"
+---
+
+## Overview
+
+BasicAgent can talk to *any* model provider that exposes a chat-completion style API. Beyond OpenAI, Anthropic, and Gemini, teams commonly wire up Groq (for ultra-fast inference on open models), Mistral, Perplexity, or even internal gateways. All of these follow the same configuration pattern—set the `model` identifier, supply credentials through environment variables, and pass provider-specific settings through the agent options.
+
+## Groq Example
+
+Groq offers blazing-fast inference for Llama, Mixtral, and Gemma models. Here’s how you can configure BasicAgent to use Groq’s API:
+
+```bash
+# .env
+GROQ_API_KEY=... # Get one at https://console.groq.com/
+```
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+import { handle } from "hono/vercel";
+
+const agent = new BasicAgent({
+  model: "groq/llama-3.3-70b",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+  maxOutputTokens: 8192,
+});
+
+const runtime = new CopilotRuntime({
+  agents: { default: agent },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+### Groq Model Identifiers
+
+```typescript
+// Llama models
+model: "groq/llama-3.3-70b"
+model: "groq/llama-3.1-70b"
+model: "groq/llama-3.1-8b"
+
+// Mixtral
+model: "groq/mixtral-8x7b"
+
+// Gemma
+model: "groq/gemma-2-9b"
+```
+
+## Mistral Example
+
+Mistral’s platform exposes multiple models and supports function calling. Supply the Mistral key and set the model string:
+
+```bash
+MISTRAL_API_KEY=...
+```
+
+```typescript
+const agent = new BasicAgent({
+  model: "mistral/mistral-large-latest",
+  temperature: 0.5,
+  maxOutputTokens: 2048,
+});
+```
+
+## Perplexity or Custom Gateways
+
+Any other provider can be configured similarly. Set `model` to the identifier expected by your gateway and expose the API key via environment variables.
+
+```typescript
+const agent = new BasicAgent({
+  model: "perplexity/sonar-medium-online",
+  temperature: 0.4,
+  tools: [...],
+});
+```
+
+If your provider requires custom headers or query parameters, use an SDK or wrap the service in your own endpoint, then point BasicAgent at that adapter.
+
+## Tips
+
+- **Model Strings**: BasicAgent accepts any string identifier (the type is `string & {}` under the hood), so you can point it at internal gateways or self-hosted adapters without adding new TypeScript definitions.
+- **Environment Variables**: Keep provider keys in `.env` files and reference them in your runtime code. BasicAgent does not manage secrets for you.
+- **Retries & Timeouts**: Use the `maxRetries`, `temperature`, `maxOutputTokens`, and other BasicAgent options to tune behaviour per provider.
+- **Tool Support**: Some providers (like Perplexity) only support text responses. Tools will be ignored unless the provider supports function calling.
+
+## Next Steps
+
+- Review the main [BasicAgent guide](/integrations/basicagent) for shared configuration options
+- Jump to [OpenAI](/integrations/basicagent/openai), [Anthropic](/integrations/basicagent/anthropic), or [Gemini](/integrations/basicagent/gemini) for detailed tutorials
+- Check out [Custom Integrations](/integrations/custom) to wrap internal gateways or bespoke providers

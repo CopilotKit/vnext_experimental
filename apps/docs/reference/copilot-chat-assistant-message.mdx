@@ -1,0 +1,59 @@
+---
+title: CopilotChatAssistantMessage
+description: Renders assistant responses with markdown, toolbar, and tool calls
+---
+
+`CopilotChatAssistantMessage` renders a single assistant message. It handles markdown rendering, toolbar actions (copy,
+feedback, regenerate, read aloud), and embedded tool call output via `CopilotChatToolCallsView`.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatAssistantMessage } from "@copilotkitnext/react";
+
+<CopilotChatAssistantMessage
+  message={assistantMessage}
+  messages={allMessages}
+  onThumbsUp={() => sendFeedback("up")}
+  onThumbsDown={() => sendFeedback("down")}
+  onReadAloud={readAloud}
+  onRegenerate={regenerate}
+/>
+```
+
+## Props
+
+| Prop                     | Description                                                       |
+| ------------------------ | ----------------------------------------------------------------- |
+| `message`                | The assistant `Message` to display.                               |
+| `messages`               | Full message list, used to resolve tool responses.                |
+| `isRunning`              | Disables toolbar while the agent is streaming the latest message.|
+| `onThumbsUp/Down`        | Feedback callbacks (optional).                                    |
+| `onReadAloud`            | Trigger a read-aloud action (optional).                           |
+| `onRegenerate`           | Request the agent to regenerate the reply (optional).             |
+| `additionalToolbarItems` | Extra toolbar JSX.                                                |
+| `toolbarVisible`         | Force toolbar visibility (defaults to auto).                      |
+
+## Slots
+
+| Slot               | Default Component                                | Purpose |
+| ------------------ | ------------------------------------------------ | ------- |
+| `markdownRenderer` | `CopilotChatAssistantMessage.MarkdownRenderer`   | Parses and renders the assistant message body. |
+| `toolbar`          | `CopilotChatAssistantMessage.Toolbar`            | Wrapper for action buttons beneath the message. |
+| `copyButton`       | `CopilotChatAssistantMessage.CopyButton`         | Copy-to-clipboard button. |
+| `thumbsUpButton`   | `CopilotChatAssistantMessage.ThumbsUpButton`     | Positive feedback control. |
+| `thumbsDownButton` | `CopilotChatAssistantMessage.ThumbsDownButton`   | Negative feedback control. |
+| `readAloudButton`  | `CopilotChatAssistantMessage.ReadAloudButton`    | Trigger text-to-speech or other read-aloud behavior. |
+| `regenerateButton` | `CopilotChatAssistantMessage.RegenerateButton`   | Request another answer from the agent. |
+| `toolCallsView`    | `CopilotChatToolCallsView`                       | Displays tool call output associated with the message. |
+
+## Markdown Rendering
+
+The default renderer uses `streamdown` (Markdown + syntax highlighting + KaTeX). Override `markdownRenderer` to plug in
+your own markdown implementation.
+
+## Toolbar Visibility
+
+- Toolbar hides when the assistant is still streaming the latest message.
+- Messages without text content (tool-call-only replies) suppress the toolbar by default.
+

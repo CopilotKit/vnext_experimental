@@ -1,0 +1,47 @@
+---
+title: CopilotSidebar
+description: Fixed sidebar wrapper around CopilotChat
+---
+
+`CopilotSidebar` renders `CopilotChat` inside a responsive, slide-in sidebar. It accepts the same props as
+`CopilotChat` (minus `chatView`) plus a few sidebar-specific options.
+
+## Basic Usage
+
+```tsx
+import { CopilotSidebar } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotSidebar
+      agentId="assistant"
+      defaultOpen={false}
+      width={420}
+      header={<h2 className="px-4 py-3 text-lg font-semibold">Copilot</h2>}
+    />
+  );
+}
+```
+
+## Props
+
+`CopilotSidebar` extends `CopilotChatProps` with the following additions:
+
+| Prop         | Type                | Description                                                                    |
+| ------------ | ------------------- | ------------------------------------------------------------------------------ |
+| `header`     | `ReactNode`         | Optional header slot rendered above the chat view.                             |
+| `defaultOpen`| `boolean`           | Controls whether the sidebar starts open. Defaults to `false`.                 |
+| `width`      | `number | string`   | Sets the desktop sidebar width (pixel value or CSS width). Defaults to 480px.  |
+
+All other props (e.g., `agentId`, `threadId`, `labels`, `messageView`, etc.) are forwarded to `CopilotChat`.
+
+## Behavior
+
+- Auto-injects `CopilotChatToggleButton` to open/close the sidebar on smaller viewports.
+- Resizes responsively: full width on mobile, fixed width on desktop.
+- Adjusts the document body margin so page content doesn’t shift under the sidebar when it opens.
+
+## Tips
+
+- Use alongside `CopilotChatConfigurationProvider` to share configuration between multiple chat surfaces.
+- Combine with `CopilotSidebarView` if you need to supply a custom chat view while keeping the sidebar shell.

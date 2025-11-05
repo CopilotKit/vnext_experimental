@@ -1,0 +1,317 @@
+---
+title: Frontend Actions
+description: Let AI agents interact with your UI
+icon: "wrench"
+---
+
+## Overview
+
+Frontend actions allow AI agents to directly update your application's UI - triggering state changes, showing notifications, navigating pages, and more.
+
+##
+
+ Quick Start
+
+<Tabs>
+  <Tab title="React">
+Use the `useFrontendTool` hook to register actions:
+
+```tsx
+import { useFrontendTool } from "@copilotkitnext/react";
+import { z } from "zod";
+
+function MyComponent() {
+  const [theme, setTheme] = useState("light");
+
+  useFrontendTool({
+    name: "updateTheme",
+    description: "Update the application theme",
+    parameters: z.object({
+      theme: z.enum(["light", "dark", "auto"]),
+    }),
+    handler: async ({ theme }) => {
+      setTheme(theme);
+      return `Theme updated to ${theme}`;
+    },
+  });
+
+  return <div>{/* Your UI */}</div>;
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+Use `registerFrontendTool` in your component constructor:
+
+```typescript
+import { Component, signal } from "@angular/core";
+import { registerFrontendTool } from "@copilotkitnext/angular";
+import { z } from "zod";
+
+@Component({
+  selector: "app-my-component",
+  template: `<div>{{ theme() }}</div>`,
+})
+export class MyComponent {
+  theme = signal("light");
+
+  constructor() {
+    registerFrontendTool({
+      name: "updateTheme",
+      description: "Update the application theme",
+      parameters: z.object({
+        theme: z.enum(["light", "dark", "auto"]),
+      }),
+      handler: async ({ theme }) => {
+        this.theme.set(theme);
+        return `Theme updated to ${theme}`;
+      },
+    });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### UI State Management
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useFrontendTool({
+  name: "toggleSidebar",
+  description: "Toggle sidebar visibility",
+  parameters: z.object({}),
+  handler: async () => {
+    setSidebarOpen(prev => !prev);
+    return `Sidebar ${sidebarOpen ? "closed" : "opened"}`;
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+constructor() {
+  registerFrontendTool({
+    name: "toggleSidebar",
+    description: "Toggle sidebar visibility",
+    parameters: z.object({}),
+    handler: async () => {
+      this.sidebarOpen.update(v => !v);
+      return `Sidebar ${this.sidebarOpen() ? "opened" : "closed"}`;
+    },
+  });
+}
+```
+  </Tab>
+</Tabs>
+
+### Navigation
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { useRouter } from "next/navigation";
+
+const router = useRouter();
+
+useFrontendTool({
+  name: "navigateToPage",
+  description: "Navigate to a page",
+  parameters: z.object({
+    page: z.enum(["home", "dashboard", "settings"]),
+  }),
+  handler: async ({ page }) => {
+    router.push(`/${page}`);
+    return `Navigated to ${page}`;
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+import { Router } from "@angular/router";
+import { inject } from "@angular/core";
+
+constructor() {
+  const router = inject(Router);
+  
+  registerFrontendTool({
+    name: "navigateToPage",
+    description: "Navigate to a page",
+    parameters: z.object({
+      page: z.enum(["home", "dashboard", "settings"]),
+    }),
+    handler: async ({ page }) => {
+      await router.navigate([`/${page}`]);
+      return `Navigated to ${page}`;
+    },
+  });
+}
+```
+  </Tab>
+</Tabs>
+
+### Form Manipulation
+
+<Tabs>
+  <Tab title="React">
+```tsx
+useFrontendTool({
+  name: "fillForm",
+  description: "Fill out a form",
+  parameters: z.object({
+    name: z.string(),
+    email: z.string().email(),
+  }),
+  handler: async ({ name, email }) => {
+    setFormData({ name, email });
+    return "Form filled successfully";
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+registerFrontendTool({
+  name: "fillForm",
+  description: "Fill out a form",
+  parameters: z.object({
+    name: z.string(),
+    email: z.string().email(),
+  }),
+  handler: async ({ name, email }) => {
+    this.formData.set({ name, email });
+    return "Form filled successfully";
+  },
+});
+```
+  </Tab>
+</Tabs>
+
+### Notifications
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { toast } from "sonner";
+
+useFrontendTool({
+  name: "showNotification",
+  description: "Display a notification",
+  parameters: z.object({
+    message: z.string(),
+    type: z.enum(["info", "success", "warning", "error"]),
+  }),
+  handler: async ({ message, type }) => {
+    toast[type](message);
+    return "Notification displayed";
+  },
+});
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+import { MatSnackBar } from "@angular/material/snack-bar";
+
+constructor() {
+  const snackBar = inject(MatSnackBar);
+  
+  registerFrontendTool({
+    name: "showNotification",
+    description: "Display a notification",
+    parameters: z.object({
+      message: z.string(),
+      type: z.enum(["info", "success", "warning", "error"]),
+    }),
+    handler: async ({ message, type }) => {
+      snackBar.open(message, "Close", { duration: 3000 });
+      return "Notification displayed";
+    },
+  });
+}
+```
+  </Tab>
+</Tabs>
+
+## Static Registration
+
+You can also register tools statically in the provider:
+
+<Tabs>
+  <Tab title="React">
+```tsx
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+const frontendTools = [
+  {
+    name: "updateTheme",
+    description: "Update theme",
+    parameters: z.object({ theme: z.enum(["light", "dark"]) }),
+    handler: async ({ theme }) => {
+      // Update theme logic
+      return `Theme set to ${theme}`;
+    },
+  },
+];
+
+function App() {
+  return (
+    <CopilotKitProvider
+      runtimeUrl="/api/copilotkit"
+      frontendTools={frontendTools}
+    >
+      {children}
+    </CopilotKitProvider>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+// app.config.ts
+import { provideCopilotKit } from "@copilotkitnext/angular";
+import { z } from "zod";
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideCopilotKit({
+      runtimeUrl: "/api/copilotkit",
+      frontendTools: [
+        {
+          name: "updateTheme",
+          description: "Update theme",
+          parameters: z.object({ theme: z.enum(["light", "dark"]) }),
+          handler: async ({ theme }) => {
+            // Update theme logic
+            return `Theme set to ${theme}`;
+          },
+        },
+      ],
+    }),
+  ],
+};
+```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Shared State" icon="repeat" href="/guides/shared-state">
+    Sync state between UI and agent
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Request user approval
+  </Card>
+  <Card title="Generative UI" icon="sparkles" href="/guides/generative-ui">
+    Render dynamic UI
+  </Card>
+</CardGroup>

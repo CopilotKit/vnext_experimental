@@ -1,0 +1,46 @@
+---
+title: CopilotPopup
+description: Floating modal wrapper for CopilotChat
+---
+
+`CopilotPopup` renders `CopilotChat` inside a floating modal window. It’s useful when you want Copilot to appear as a
+popup rather than a sidebar.
+
+## Basic Usage
+
+```tsx
+import { CopilotPopup } from "@copilotkitnext/react";
+
+function PopupExample() {
+  return (
+    <CopilotPopup
+      agentId="assistant"
+      defaultOpen={false}
+      header={<h2 className="px-4 py-2 font-semibold">Copilot</h2>}
+      width={420}
+      height={560}
+      clickOutsideToClose
+    />
+  );
+}
+```
+
+## Props
+
+`CopilotPopupProps` extends `CopilotChatProps` with:
+
+| Prop                 | Type                   | Description                                                     |
+| -------------------- | ---------------------- | --------------------------------------------------------------- |
+| `header`             | `ReactNode`            | Optional header content rendered above the chat view.           |
+| `defaultOpen`        | `boolean`              | Sets initial open state (defaults to `false`).                  |
+| `width`              | `number | string`      | Popup width.                                                     |
+| `height`             | `number | string`      | Popup height.                                                    |
+| `clickOutsideToClose`| `boolean`              | Close the popup when clicking the overlay (defaults to `true`). |
+
+All other props are forwarded to `CopilotChat` (agent configuration, labels, overrides, etc.).
+
+## Behavior
+
+- Uses `CopilotPopupView` under the hood to handle modal layout and overlay interactions.
+- Passes `isModalDefaultOpen` to `CopilotChat`, so the pop-up honors configuration changes from
+  `CopilotChatConfigurationProvider`.

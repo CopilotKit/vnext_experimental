@@ -1,0 +1,66 @@
+---
+title: useRenderActivityMessage
+description: Render custom components for activity messages in CopilotChat
+---
+
+`useRenderActivityMessage` returns a memoized function that chooses the correct activity renderer for an
+`ActivityMessage`. Activity messages represent structured status updates streamed by the agent (e.g., “Searching…”,
+“Tool call succeeded”).
+
+## Basic Usage
+
+```tsx
+import { useRenderActivityMessage } from "@copilotkitnext/react";
+import type { ActivityMessage } from "@ag-ui/core";
+
+function ActivityFeed({ message }: { message: ActivityMessage }) {
+  const renderActivity = useRenderActivityMessage();
+  const element = renderActivity(message);
+
+  if (!element) {
+    return null;
+  }
+
+  return <div className="activity-entry">{element}</div>;
+}
+```
+
+## How Renderers Are Selected
+
+`useRenderActivityMessage` inspects the registered activity renderers (`copilotkit.renderActivityMessages`) and picks the
+best match in this order:
+
+1. Renderer with the same `activityType` **and** matching `agentId`.
+2. Renderer with the same `activityType` and no `agentId`.
+3. Catch-all renderer where `activityType === "*"`.
+
+If no renderer matches, the hook returns `null`.
+
+## Validating Content
+
+- Activity renderers define a Zod schema (`content`) for their payload.
+- The hook calls `safeParse`. If parsing fails, CopilotKit logs a warning and returns `null` to avoid rendering invalid
+  data.
+
+## Example Registration
+
+```tsx
+copilotkit.addActivityMessageRenderer({
+  activityType: "retrieval",
+  content: z.object({ query: z.string(), sourceCount: z.number() }),
+  render: ({ content }) => (
+    <div className="retrieval-activity">
+      🔍 Searching "{content.query}" ({content.sourceCount} sources)
+    </div>
+  ),
+});
+```
+
+## Tips
+
+- The returned function is stable (memoized with `useCallback`), so it’s safe to use inside lists without causing extra
+  renders.
+- Renderers can access the resolved agent via the `agent` prop. Use this to read additional context (e.g., current
+  shared state).
+- Combine with `CopilotChatToolCallsView` or `CopilotChatMessageView` to enrich the assistant experience with structured
+  status updates.

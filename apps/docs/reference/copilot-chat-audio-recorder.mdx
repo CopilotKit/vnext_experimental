@@ -1,0 +1,36 @@
+---
+title: CopilotChatAudioRecorder
+description: Stub audio recorder used by CopilotChatInput
+---
+
+`CopilotChatAudioRecorder` renders the animated waveform and exposes a simple recorder interface for transcription mode.
+The default implementation is a stub—perfect for UI demos and easy to swap out for a real recorder.
+
+## Basic Usage
+
+```tsx
+import { CopilotChatAudioRecorder } from "@copilotkitnext/react";
+
+<CopilotChatAudioRecorder className="h-10 rounded bg-slate-900/80" />;
+```
+
+## Imperative API
+
+The component forwards a ref with the following interface:
+
+```ts
+interface AudioRecorderHandle {
+  state: "idle" | "recording" | "processing";
+  start(): Promise<void>;
+  stop(): Promise<Blob>;
+  dispose(): void;
+}
+```
+
+`CopilotChatInput` uses this handle to start/stop recording automatically when switching modes. The bundled recorder
+returns an empty `Blob`—swap it with your own implementation for real audio capture.
+
+## Styling
+
+- Uses a `<canvas>` element to draw a fake waveform animation.
+- Accepts `className`/`style` props to customize size and appearance.

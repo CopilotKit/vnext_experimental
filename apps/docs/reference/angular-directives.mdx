@@ -1,0 +1,42 @@
+---
+title: Angular Directives
+description: copilotkitAgentContext, stickToBottom, and tooltip directives
+---
+
+CopilotKit ships a few utility directives to simplify Angular integration.
+
+## `copilotkitAgentContext`
+
+See [Agent Context Utilities](/reference/angular-agent-context) for full details. This directive syncs template values to
+the agent context.
+
+```html
+<div
+  copilotkitAgentContext
+  [description]="'Active customer'"
+  [value]="customer | json"
+></div>
+```
+
+## `stickToBottom`
+
+Wrapper around `use-stick-to-bottom` that keeps scrollable chat regions pinned to the bottom while new messages stream
+in.
+
+```html
+<div stickToBottom class="chat-scroll">
+  <!-- message list -->
+</div>
+```
+
+Combine with `copilotkitAgentContext` or the provided chat components for fully reactive layouts.
+
+## `tooltip`
+
+`tooltip` is a lightweight directive backing the built-in chat toolbar tooltips. Apply it to any element:
+
+```html
+<button tooltip="Copy message">Copy</button>
+```
+
+Useful if you build custom toolbars and want consistent tooltip styling without pulling in another library.

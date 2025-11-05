@@ -1,0 +1,347 @@
+---
+title: Architecture
+description: Understand how CopilotKit works under the hood
+icon: "sitemap"
+---
+
+## Overview
+
+CopilotKit is thoughtfully architected to scale with you, your teams, and your product. The framework is designed with a clear separation of concerns, making it flexible, maintainable, and framework-agnostic.
+
+## High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend Layer                        │
+│  ┌────────────────┐              ┌────────────────┐         │
+│  │  React Package │              │ Angular Package│         │
+│  │  - Components  │              │  - Components  │         │
+│  │  - Hooks       │              │  - Services    │         │
+│  │  - Providers   │              │  - Directives  │         │
+│  └────────┬───────┘              └────────┬───────┘         │
+│           │                               │                  │
+│           └───────────┬───────────────────┘                  │
+│                       │                                      │
+│           ┌───────────▼───────────┐                         │
+│           │    Core Package        │                         │
+│           │  - CopilotKitCore     │                         │
+│           │  - Agent Management   │                         │
+│           │  - Tool Registry      │                         │
+│           │  - State Management   │                         │
+│           └───────────┬───────────┘                         │
+└───────────────────────┼─────────────────────────────────────┘
+                        │
+                        │ WebSocket / HTTP
+                        │
+┌───────────────────────▼─────────────────────────────────────┐
+│                      Runtime Layer                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              CopilotRuntime                           │  │
+│  │  - Request Handling                                   │  │
+│  │  - Agent Execution                                    │  │
+│  │  - Tool Orchestration                                 │  │
+│  │  - Streaming Support                                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │   Agent 1    │  │   Agent 2    │  │   Agent N    │     │
+│  │  (OpenAI)    │  │ (Anthropic)  │  │   (Custom)   │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Core Components
+
+### 1. Core Package (`@copilotkitnext/core`)
+
+The core package is framework-agnostic and provides the foundational functionality:
+
+**CopilotKitCore**
+- Central class that manages all CopilotKit functionality
+- Handles agent registration and discovery
+- Manages tool registry
+- Coordinates communication with runtime
+
+**Agent Management**
+- Abstract agent interface for different implementations
+- Agent lifecycle management
+- Message routing and state handling
+
+**Tool Registry**
+- Centralized registry for frontend and backend tools
+- Tool validation and schema management
+- Tool execution coordination
+
+**State Management**
+- Shared state between UI and agents
+- State synchronization mechanisms
+- Event-driven updates
+
+### 2. Framework Packages
+
+#### React Package (`@copilotkitnext/react`)
+
+Provides React-specific integrations:
+
+- **CopilotKitProvider**: React context provider
+- **Components**: Pre-built UI components (CopilotChat, etc.)
+- **Hooks**: React hooks for accessing CopilotKit functionality
+  - `useCopilotKit`: Access core instance
+  - `useAgent`: Interact with agents
+  - `useAgentContext`: Access shared state
+  - `useFrontendTool`: Register frontend tools
+  - `useHumanInTheLoop`: Define HITL interactions
+  - `useRenderToolCall`: Render generative UI
+
+#### Angular Package (`@copilotkitnext/angular`)
+
+Provides Angular-specific integrations:
+
+- **CopilotKitModule**: Angular module for setup
+- **Components**: Angular components (copilot-chat, etc.)
+- **Services**: Angular services for functionality
+  - `CopilotKitService`: Access core instance
+  - `AgentService`: Interact with agents
+  - `AgentContextService`: Access shared state
+  - `FrontendToolService`: Register frontend tools
+  - `HumanInTheLoopService`: Define HITL interactions
+  - `RenderToolCallService`: Render generative UI
+
+### 3. Runtime Package (`@copilotkitnext/runtime`)
+
+Server-side runtime for agent execution:
+
+**CopilotRuntime**
+- HTTP/WebSocket endpoint handler
+- Request validation and routing
+- Response streaming
+- Error handling
+
+**Agent Runners**
+- Execute agent logic
+- Manage agent state
+- Handle tool calls
+- Stream responses
+
+**Middleware**
+- Authentication and authorization
+- Rate limiting
+- Logging and monitoring
+- Custom middleware support
+
+## Communication Flow
+
+### 1. Frontend → Runtime
+
+```
+User Interaction
+    ↓
+Frontend Component
+    ↓
+CopilotKitCore
+    ↓
+HTTP/WebSocket Request
+    ↓
+CopilotRuntime
+    ↓
+Agent Execution
+```
+
+### 2. Tool Execution
+
+```
+Agent decides to use tool
+    ↓
+Runtime sends tool call request
+    ↓
+Frontend receives tool call
+    ↓
+Tool handler executes
+    ↓
+Result sent back to runtime
+    ↓
+Agent continues with result
+```
+
+### 3. State Synchronization
+
+```
+Agent updates state
+    ↓
+Runtime broadcasts state change
+    ↓
+Frontend receives update
+    ↓
+UI re-renders with new state
+    ↓
+User modifies state via UI
+    ↓
+Frontend sends state update
+    ↓
+Runtime updates agent state
+```
+
+## Key Design Principles
+
+### 1. Framework Agnostic Core
+
+The core package has no dependencies on React or Angular, making it:
+- Reusable across frameworks
+- Easier to test
+- More maintainable
+- Future-proof for new frameworks
+
+### 2. Type Safety
+
+Full TypeScript support throughout:
+- Strongly typed APIs
+- Schema validation with Zod
+- Type inference for tools and state
+- Compile-time error checking
+
+### 3. Extensibility
+
+Multiple extension points:
+- Custom agents
+- Custom tools
+- Custom middleware
+- Custom UI components
+
+### 4. Performance
+
+Optimized for performance:
+- Streaming responses
+- Efficient state updates
+- Lazy loading
+- Request batching
+
+### 5. Developer Experience
+
+Focus on great DX:
+- Intuitive APIs
+- Comprehensive documentation
+- Clear error messages
+- Helpful TypeScript types
+
+## Data Flow
+
+### Message Flow
+
+1. **User Input**: User sends a message through the chat UI
+2. **Frontend Processing**: Frontend packages the message with context
+3. **Runtime Request**: Message sent to runtime endpoint
+4. **Agent Processing**: Runtime routes to appropriate agent
+5. **Tool Execution**: Agent may call frontend or backend tools
+6. **Response Streaming**: Agent streams response back
+7. **UI Update**: Frontend displays response in real-time
+
+### State Flow
+
+1. **Initial State**: Agent initializes with default state
+2. **State Updates**: Agent or user modifies state
+3. **Synchronization**: Changes broadcast to all subscribers
+4. **UI Reflection**: Components re-render with new state
+5. **Persistence**: State optionally persisted to storage
+
+## Security Considerations
+
+### Frontend Security
+
+- **Input Validation**: All user inputs validated before sending
+- **XSS Prevention**: Proper sanitization of rendered content
+- **CSRF Protection**: Token-based request validation
+- **Secure Storage**: Sensitive data encrypted in storage
+
+### Runtime Security
+
+- **Authentication**: Support for various auth mechanisms
+- **Authorization**: Role-based access control
+- **Rate Limiting**: Prevent abuse and DoS attacks
+- **Input Sanitization**: Validate all incoming requests
+- **Audit Logging**: Track all agent actions
+
+### Tool Security
+
+- **Permission System**: Tools require explicit permissions
+- **Sandboxing**: Tools run in isolated contexts
+- **Validation**: All tool parameters validated
+- **Monitoring**: Track tool usage and errors
+
+## Scalability
+
+### Horizontal Scaling
+
+- **Stateless Runtime**: Runtime can be scaled horizontally
+- **Load Balancing**: Distribute requests across instances
+- **Session Management**: Sticky sessions or distributed state
+
+### Vertical Scaling
+
+- **Resource Management**: Efficient memory and CPU usage
+- **Connection Pooling**: Reuse database and API connections
+- **Caching**: Cache frequently accessed data
+
+### Performance Optimization
+
+- **Lazy Loading**: Load components and data on demand
+- **Code Splitting**: Split bundles for faster loading
+- **Streaming**: Stream responses for better perceived performance
+- **Debouncing**: Reduce unnecessary updates
+
+## Deployment Options
+
+### Self-Hosted
+
+Deploy the runtime on your own infrastructure:
+- Full control over data and security
+- Custom scaling and monitoring
+- Integration with existing systems
+
+### Cloud Platforms
+
+Deploy to popular cloud platforms:
+- Vercel, Netlify for frontend
+- AWS, GCP, Azure for runtime
+- Serverless or container-based
+
+### Hybrid
+
+Combine self-hosted and cloud:
+- Frontend on CDN
+- Runtime on private infrastructure
+- Best of both worlds
+
+## Monitoring and Observability
+
+### Built-in Monitoring
+
+- Request/response logging
+- Performance metrics
+- Error tracking
+- Usage analytics
+
+### Integration Points
+
+- Custom logging adapters
+- Metrics exporters
+- Tracing integration
+- Alert webhooks
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="React Quickstart" icon="react" href="/quickstart/react">
+    Get started with React
+  </Card>
+  <Card title="Angular Quickstart" icon="angular" href="/quickstart/angular">
+    Get started with Angular
+  </Card>
+  <Card title="Runtime Setup" icon="server" href="/concepts/runtime-setup">
+    Learn about runtime configuration
+  </Card>
+  <Card title="Security Best Practices" icon="shield-check" href="/concepts/security">
+    Secure your application
+  </Card>
+</CardGroup>
+
+

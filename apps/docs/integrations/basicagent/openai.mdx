@@ -1,0 +1,115 @@
+---
+title: OpenAI
+description: Use OpenAI models with BasicAgent
+icon: "openai"
+---
+
+## Overview
+
+Connect to OpenAI's GPT models using `BasicAgent`. Supports GPT-4, GPT-4o, and reasoning models.
+
+## Prerequisites
+
+- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+
+## Setup
+
+### 1. Environment Variables
+
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+### 2. Create Agent
+
+```typescript
+import { BasicAgent } from "@copilotkitnext/agent";
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
+```
+
+## Available Models
+
+```typescript
+// GPT-4o (recommended)
+model: "openai/gpt-4o"
+
+// GPT-4o mini (faster, cheaper)
+model: "openai/gpt-4o-mini"
+
+// GPT-4.1
+model: "openai/gpt-4.1"
+
+// GPT-4.1 mini
+model: "openai/gpt-4.1-mini"
+
+// GPT-4.1 nano
+model: "openai/gpt-4.1-nano"
+
+// O-series (reasoning)
+model: "openai/o3-mini"
+model: "openai/o4-mini"
+```
+
+## Configuration
+
+```typescript
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  temperature: 0.7,              // 0-2 (higher = more random)
+  maxOutputTokens: 1000,
+  topP: 1,
+  frequencyPenalty: 0,           // -2.0 to 2.0
+  presencePenalty: 0,            // -2.0 to 2.0
+  stopSequences: [],
+  seed: 42,                      // For deterministic output
+});
+```
+
+## Example
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+import { handle } from "hono/vercel";
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
+
+const runtime = new CopilotRuntime({
+  agents: { default: agent },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+## Context Window
+
+| Model | Context Window |
+|-------|----------------|
+| GPT-4o | 128K tokens |
+| GPT-4o mini | 128K tokens |
+| GPT-4.1 | 128K tokens |
+| O-series | 200K tokens |
+
+## Next Steps
+
+- [Add tools](/guides/frontend-actions) to your agent
+- [Configure shared state](/guides/shared-state)
+- Try [Anthropic](/integrations/basicagent/anthropic) or [Gemini](/integrations/basicagent/gemini)
+

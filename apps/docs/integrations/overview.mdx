@@ -1,0 +1,266 @@
+---
+title: Agent Integrations
+description: Connect CopilotKit with any agent framework or LLM
+icon: "plug"
+---
+
+## Overview
+
+CopilotKit is designed to work with any agent framework or LLM provider. The integration happens at the **runtime layer**, which means your frontend code remains the same regardless of which agent framework you use.
+
+This architecture gives you:
+- **Framework flexibility** - Switch agent frameworks without changing frontend code
+- **Multi-agent support** - Use different frameworks for different agents in the same app
+- **Simple integration** - Most integrations are just runtime configuration
+
+## How Agent Integrations Work
+
+```
+┌─────────────────────────────────────────┐
+│         Frontend (React/Angular)         │
+│  - CopilotChat component                │
+│  - Frontend tools                        │
+│  - Shared state                          │
+└────────────────┬────────────────────────┘
+                 │
+                 │ HTTP/WebSocket
+                 │
+┌────────────────▼────────────────────────┐
+│         CopilotRuntime                  │
+│  - Handles requests                     │
+│  - Routes to agents                     │
+│  - Manages tool calls                   │
+└────────────────┬────────────────────────┘
+                 │
+        ┌────────┴────────┐
+        │                 │
+┌───────▼──────┐  ┌──────▼────────┐
+│   Agent 1    │  │   Agent 2     │
+│  (LangGraph) │  │   (OpenAI)    │
+└──────────────┘  └───────────────┘
+```
+
+## Integration Points
+
+### 1. Runtime Configuration
+
+The main integration point is in your runtime endpoint where you configure your agents:
+
+```typescript
+// app/api/copilotkit/route.ts (Next.js example)
+import { createCopilotRuntimeHandler } from "@copilotkitnext/runtime";
+
+export const POST = createCopilotRuntimeHandler({
+  agents: {
+    assistant: {
+      // Your agent configuration here
+    },
+  },
+});
+```
+
+### 2. Agent Implementation
+
+Each agent framework has a specific way to implement the agent:
+
+- **Direct LLM** (OpenAI, Anthropic): Call the API directly
+- **LangGraph**: Connect to LangGraph graph
+- **Mastra**: Use Mastra agent instance
+- **CrewAI**: Connect to CrewAI crew
+- **Custom**: Implement your own agent interface
+
+### 3. Frontend (Same for All)
+
+Your frontend code is identical regardless of agent framework:
+
+```tsx
+<CopilotKitProvider runtimeUrl="/api/copilotkit">
+  <CopilotChat />
+</CopilotKitProvider>
+```
+
+## Available Integrations
+
+<CardGroup cols={2}>
+  <Card title="OpenAI" icon="openai" href="/integrations/openai">
+    Direct integration with OpenAI's GPT models
+  </Card>
+  <Card title="Anthropic" icon="message-square" href="/integrations/anthropic">
+    Direct integration with Anthropic's Claude models
+  </Card>
+  <Card title="LangGraph" icon="share-nodes" href="/integrations/langgraph">
+    Connect to LangGraph agents and graphs
+  </Card>
+  <Card title="Mastra" icon="wand-magic-sparkles" href="/integrations/mastra">
+    Integrate with Mastra agent framework
+  </Card>
+  <Card title="CrewAI" icon="users" href="/integrations/crewai">
+    Connect to CrewAI crews and agents
+  </Card>
+  <Card title="LlamaIndex" icon="book" href="/integrations/llamaindex">
+    Integrate with LlamaIndex agents
+  </Card>
+  <Card title="Custom Agent" icon="code" href="/integrations/custom">
+    Build your own custom agent integration
+  </Card>
+</CardGroup>
+
+## Quick Comparison
+
+| Framework | Best For | Complexity | Streaming | Multi-Agent |
+|-----------|----------|------------|-----------|-------------|
+| **OpenAI** | Simple chatbots, quick prototypes | Low | ✅ | ✅ |
+| **Anthropic** | Long context, complex reasoning | Low | ✅ | ✅ |
+| **LangGraph** | Complex workflows, state machines | Medium | ✅ | ✅ |
+| **Mastra** | Modern TypeScript agents | Medium | ✅ | ✅ |
+| **CrewAI** | Multi-agent collaboration | Medium | ✅ | ✅ |
+| **LlamaIndex** | RAG, document Q&A | Medium | ✅ | ✅ |
+| **Custom** | Specific requirements | Varies | ✅ | ✅ |
+
+## Choosing an Integration
+
+### Use Direct LLM (OpenAI/Anthropic) when:
+- You're building a simple chatbot
+- You want to get started quickly
+- You don't need complex agent logic
+- You want full control over the LLM interaction
+
+### Use LangGraph when:
+- You need complex, stateful workflows
+- You want graph-based agent orchestration
+- You're building multi-step reasoning systems
+- You need human-in-the-loop checkpoints
+
+### Use Mastra when:
+- You prefer TypeScript for agent logic
+- You want a modern, lightweight framework
+- You need good observability and debugging
+- You're building production applications
+
+### Use CrewAI when:
+- You need multiple specialized agents
+- You want role-based agent collaboration
+- You're building complex multi-agent systems
+- You prefer Python for agent logic
+
+### Use LlamaIndex when:
+- You're building RAG applications
+- You need document Q&A capabilities
+- You want to query over knowledge bases
+- You need advanced retrieval strategies
+
+## Integration Features
+
+All integrations support these CopilotKit features:
+
+<CardGroup cols={2}>
+  <Card title="Frontend Tools" icon="wrench">
+    All agent frameworks can call frontend tools
+  </Card>
+  <Card title="Shared State" icon="repeat">
+    Bidirectional state synchronization works with any framework
+  </Card>
+  <Card title="Human in the Loop" icon="user">
+    Request user approval regardless of agent framework
+  </Card>
+  <Card title="Generative UI" icon="sparkles">
+    Render dynamic UI components from any agent
+  </Card>
+  <Card title="Streaming" icon="wave-pulse">
+    Real-time streaming responses
+  </Card>
+  <Card title="Tool Execution" icon="bolt">
+    Execute tools and return results
+  </Card>
+</CardGroup>
+
+## Multi-Agent Setup
+
+You can use multiple agent frameworks in the same application:
+
+```typescript
+export const POST = createCopilotRuntimeHandler({
+  agents: {
+    // OpenAI for general chat
+    chatbot: {
+      model: "gpt-4",
+      async *run({ messages }) {
+        // OpenAI implementation
+      },
+    },
+    
+    // LangGraph for complex workflow
+    workflow: {
+      async *run({ messages }) {
+        // LangGraph implementation
+      },
+    },
+    
+    // Mastra for data analysis
+    analyst: {
+      async *run({ messages }) {
+        // Mastra implementation
+      },
+    },
+  },
+});
+```
+
+Then use different agents in your frontend:
+
+```tsx
+// General chatbot
+const chatAgent = useAgent("chatbot");
+
+// Complex workflow agent
+const workflowAgent = useAgent("workflow");
+
+// Data analysis agent
+const analystAgent = useAgent("analyst");
+```
+
+## Environment Variables
+
+Most integrations require API keys. Store them in `.env`:
+
+```bash
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# LangGraph (if using LangSmith)
+LANGSMITH_API_KEY=lsv2_...
+
+# Your custom keys
+CUSTOM_API_KEY=...
+```
+
+## Next Steps
+
+Choose an integration to get started:
+
+<CardGroup cols={3}>
+  <Card title="OpenAI" icon="forward" href="/integrations/openai">
+    Quick start
+  </Card>
+  <Card title="LangGraph" icon="forward" href="/integrations/langgraph">
+    Advanced workflows
+  </Card>
+  <Card title="Mastra" icon="forward" href="/integrations/mastra">
+    TypeScript agents
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Ask about integrations
+  </Card>
+  <Card title="Examples" icon="code" href="/examples">
+    See integration examples
+  </Card>
+</CardGroup>
+

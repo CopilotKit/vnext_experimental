@@ -1,0 +1,51 @@
+---
+title: Angular Tool Registration Helpers
+description: registerFrontendTool, registerHumanInTheLoop, and registerRenderToolCall
+---
+
+These helpers let you register Angular components as CopilotKit tools and renderers using Angular DI. They automatically
+clean up registrations when the host component is destroyed.
+
+## registerFrontendTool
+
+```ts
+registerFrontendTool({
+  name: "set_theme",
+  description: "Switch UI theme",
+  parameters: z.object({ theme: z.enum(["light", "dark"]) }),
+  component: ThemeToolComponent,
+  handler: async ({ theme }) => {
+    themeService.setTheme(theme);
+  },
+});
+```
+
+- Injects `CopilotKit` and `Injector` to bind the handler with Angular DI context.
+- Automatically removes the tool when the current `DestroyRef` triggers.
+
+## registerRenderToolCall
+
+```ts
+registerRenderToolCall({
+  name: "search_docs",
+  args: z.object({ query: z.string() }),
+  component: SearchToolRendererComponent,
+});
+```
+
+Registers an Angular component to render tool call output. Component receives a reactive `toolCall` signal with args,
+status, and result.
+
+## registerHumanInTheLoop
+
+```ts
+registerHumanInTheLoop({
+  name: "approval",
+  description: "Approve or reject an action",
+  parameters: z.object({ action: z.string() }),
+  component: ApprovalHitlComponent,
+});
+```
+
+Registers a HITL component. CopilotKit injects a `respond` function so you can resolve the tool call with the selected
+result.

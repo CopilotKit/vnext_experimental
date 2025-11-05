@@ -89,13 +89,23 @@ CSS class name for the root container.
 <CopilotChat className="h-screen bg-white" />
 ```
 
-### Component Slots
+## Component Slots
 
-CopilotChat supports slot customization for various parts of the UI:
+| Slot                   | Default Component               | Purpose |
+| ---------------------- | ------------------------------- | ------- |
+| `messageView`          | `CopilotChatMessageView`        | Transcript rendering (assistant/user/activity messages). |
+| `suggestionView`       | `CopilotChatSuggestionView`     | Suggestion pill bar above the input. |
+| `input`                | `CopilotChatInput`              | Composer UI (text area, send button, transcription). |
+| `inputContainer`       | `CopilotChatView.InputContainer`| Positions the input and disclaimer. |
+| `scrollView`           | `CopilotChatView.ScrollView`    | Scrollable container with stick-to-bottom behavior. |
+| `scrollToBottomButton` | `CopilotChatView.ScrollToBottomButton` | Floating button shown when scrolled up. |
+| `feather`              | `CopilotChatView.Feather`       | Decorative background element. |
+| `disclaimer`           | `CopilotChatView.Disclaimer`    | Footer text beneath the input. |
 
 ```tsx
 <CopilotChat
   messageView={CustomMessageView}
+  suggestionView={CustomSuggestionBar}
   input={CustomInput}
   scrollView={CustomScrollView}
   scrollToBottomButton={CustomScrollButton}
@@ -114,3 +124,23 @@ CopilotChat automatically scrolls to the bottom when:
 - `autoScroll` prop is true (default)
 
 The scroll-to-bottom button appears when the user scrolls up and new content is available.
+
+### Passthrough Slots
+
+Any slot accepted by `CopilotChatView` can be supplied directly to `CopilotChat`. This includes:
+
+- `messageView` – swap the entire transcript container (`CopilotChatMessageView` by default).
+- `suggestionView` – customize the suggestion pill tray (`CopilotChatSuggestionView` by default).
+- `input` / `inputContainer` – replace the composer UI (`CopilotChatInput`).
+- `scrollView`, `scrollToBottomButton`, `feather`, `disclaimer` – override layout chrome.
+
+Slots exposed by `CopilotChatMessageView` (assistant/user message renderers, cursor) can also be passed through. Use
+object notation when providing props alongside a slot component:
+
+```tsx
+<CopilotChat
+  messageView={{ component: MyMessageView, props: { className: "px-6" } }}
+  suggestionView={MySuggestionBar}
+  input={MyInput}
+/>
+```

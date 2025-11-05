@@ -1,0 +1,116 @@
+---
+title: LangGraph Integration
+description: Integrate CopilotKit with LangGraph agents
+icon: "diagram-project"
+---
+
+## Overview
+
+LangGraph is a powerful framework for building stateful, multi-actor applications with LLMs. CopilotKit integrates seamlessly with LangGraph agents using the `@ag-ui/langgraph` integration package.
+
+This guide shows you how to connect your LangGraph agents to CopilotKit.
+
+## Prerequisites
+
+- Node.js 18+
+- A deployed LangGraph agent (or running locally)
+- LangSmith API key (if using LangGraph Platform)
+
+## Setup
+
+### 1. Install Dependencies
+
+First, install the necessary packages:
+
+```bash
+pnpm add @copilotkitnext/runtime @ag-ui/langgraph ai
+```
+
+### 2. Configure Your Runtime Endpoint
+
+Create a runtime endpoint (e.g., `src/app/api/copilotkit/[[...slug]]/route.ts` for Next.js App Router) and use the `LangGraphAgent` class to connect to your deployed LangGraph agent.
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { LangGraphAgent } from "@ag-ui/langgraph";
+import { handle } from "hono/vercel";
+
+// Connect to your LangGraph deployment
+const agent = new LangGraphAgent({
+  deploymentUrl: "https://your-langgraph-deployment-url.com", // Your LangGraph agent URL
+  langsmithApiKey: process.env.LANGSMITH_API_KEY, // Only needed for LangGraph Platform deployments
+  graphId: "my_agent", // Usually the same as your agent name
+});
+
+const runtime = new CopilotRuntime({
+  agents: {
+    default: agent, // Register your LangGraph agent
+  },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+### 3. Connect to the Frontend
+
+In your React or Angular application, connect to this runtime endpoint using `CopilotKitProvider`:
+
+```typescript
+// React example
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      {/* Your app components */}
+    </CopilotKitProvider>
+  );
+}
+```
+
+## LangGraphAgent Configuration
+
+The `LangGraphAgent` class accepts the following configuration options:
+
+- `deploymentUrl` (required): The URL of your deployed LangGraph agent
+- `langsmithApiKey` (optional): Your LangSmith API key (only required for LangGraph Platform deployments)
+- `graphId` (required): The ID of your graph, usually the same as your agent name
+- `headers` (optional): Additional HTTP headers to include in requests
+
+## Python Integration
+
+If you're building your LangGraph agent in Python, you can use the `ag_ui_langgraph` package to handle AG-UI event streaming automatically:
+
+```bash
+pip install ag-ui-langgraph
+```
+
+Then in your Python code:
+
+```python
+from langgraph.graph import StateGraph
+from ag_ui_langgraph import LangGraphAgent
+
+# Define your LangGraph workflow
+workflow = StateGraph(...)
+# ... build your graph ...
+
+# Wrap it with AG-UI support
+agent = LangGraphAgent(workflow)
+
+# The agent will automatically handle AG-UI event streaming
+```
+
+## Next Steps
+
+- Learn about [Frontend Actions](/guides/frontend-actions)
+- Explore [Shared State](/guides/shared-state)
+- Implement [Human-in-the-loop](/guides/human-in-the-loop)

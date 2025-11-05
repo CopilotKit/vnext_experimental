@@ -1,0 +1,73 @@
+---
+title: CopilotKitCoreReact
+description: React-ready extension of CopilotKitCore
+---
+
+`CopilotKitCoreReact` extends the base `CopilotKitCore` class with React-specific capabilities. It manages registries for
+tool call renderers, custom message renderers, and activity renderers, exposing them to hooks such as
+`useRenderToolCall`, `useRenderCustomMessages`, and `useRenderActivityMessage`.
+
+## Construction
+
+```ts
+import { CopilotKitCoreReact } from "@copilotkitnext/react";
+
+const core = new CopilotKitCoreReact({
+  runtimeUrl: "/api/copilotkit",
+  renderToolCalls: [/* ReactToolCallRenderer[] */],
+  renderActivityMessages: [/* ReactActivityMessageRenderer[] */],
+  renderCustomMessages: [/* ReactCustomMessageRenderer[] */],
+});
+```
+
+All core options (`runtimeUrl`, headers, properties, agents, tools, etc.) are inherited from `CopilotKitCoreConfig`.
+
+## Additional Options
+
+| Option                   | Type                                | Description                                               |
+| ------------------------ | ----------------------------------- | --------------------------------------------------------- |
+| `renderToolCalls`        | `ReactToolCallRenderer[]`           | Initial list of tool call renderers.                      |
+| `renderActivityMessages` | `ReactActivityMessageRenderer[]`    | Initial list of activity message renderers.               |
+| `renderCustomMessages`   | `ReactCustomMessageRenderer[]`      | Initial list of custom message renderers for chat bubbles.|
+
+## Key Getters
+
+- `renderToolCalls` – current array of tool call renderers.
+- `renderActivityMessages` – current array of activity message renderers.
+- `renderCustomMessages` – current array of custom message renderers.
+
+Each getter returns a read-only array so consumers don’t mutate the registry directly.
+
+## setRenderToolCalls
+
+```ts
+core.setRenderToolCalls(renderers: ReactToolCallRenderer[]): void;
+```
+
+Replaces the tool call renderer list and notifies subscribers via
+`CopilotKitCoreReactSubscriber.onRenderToolCallsChanged`.
+
+## Subscriptions
+
+`CopilotKitCoreReact` overrides `subscribe`/`unsubscribe` so you can register
+`CopilotKitCoreReactSubscriber` objects that listen for render registry changes in addition to the base events:
+
+```ts
+const unsubscribe = core.subscribe({
+  onRenderToolCallsChanged: ({ renderToolCalls }) => {
+    console.log("Tool renderers updated", renderToolCalls.length);
+  },
+});
+
+// Later
+unsubscribe();
+```
+
+## When to Use
+
+- When you need to instantiate CopilotKit outside of the standard provider (e.g., custom testing setups, advanced
+  multi-core scenarios).
+- When you want to programmatically adjust renderers while still using the React hook ecosystem.
+
+Most applications rely on `CopilotKitProvider`, which creates a `CopilotKitCoreReact` instance internally. This document
+is useful if you need direct access to the core for lower-level integrations.

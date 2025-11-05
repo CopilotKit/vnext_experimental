@@ -1,0 +1,500 @@
+---
+title: Debugging Guide
+description: Advanced debugging techniques for CopilotKit
+icon: "bug"
+---
+
+## Enable Debug Mode
+
+CopilotKit includes built-in debugging tools to help you troubleshoot issues.
+
+### Frontend Debugging
+
+Enable debug logging in your provider:
+
+```tsx
+<CopilotKitProvider
+  runtimeUrl="/api/copilotkit"
+  debug={true} // Enable debug mode
+>
+  {children}
+</CopilotKitProvider>
+```
+
+This will log:
+- Agent messages and responses
+- Tool calls and results
+- State changes
+- Connection events
+
+### Runtime Debugging
+
+Enable debug logging in your runtime:
+
+```typescript
+export const POST = createCopilotRuntimeHandler({
+  debug: true, // Enable debug mode
+  agents: {
+    // ...
+  },
+});
+```
+
+## Browser DevTools
+
+### Console Logging
+
+Filter CopilotKit logs in the console:
+
+```
+[CopilotKit] Agent message: ...
+[CopilotKit] Tool call: addTodo
+[CopilotKit] State update: ...
+```
+
+Use console filters to focus on specific events:
+- `[CopilotKit]` - All CopilotKit logs
+- `[CopilotKit:Agent]` - Agent-specific logs
+- `[CopilotKit:Tool]` - Tool execution logs
+- `[CopilotKit:State]` - State changes
+
+### Network Tab
+
+Monitor runtime communication:
+
+1. Open DevTools → Network tab
+2. Filter by "copilotkit" or your runtime URL
+3. Inspect request/response payloads
+4. Check for errors or slow requests
+
+**What to look for:**
+- Request status codes (should be 200)
+- Response times
+- WebSocket connection status
+- Error messages in responses
+
+### React DevTools
+
+For React applications, use React DevTools:
+
+1. Install React DevTools extension
+2. Inspect component tree
+3. Check CopilotKitProvider context
+4. Monitor state changes in real-time
+
+## Debugging Tools
+
+### Tool Call Inspector
+
+Log all tool calls with detailed information:
+
+```tsx
+useFrontendTool({
+  name: "myTool",
+  description: "...",
+  parameters: schema,
+  handler: async (args) => {
+    console.log("Tool called:", {
+      name: "myTool",
+      args,
+      timestamp: new Date().toISOString(),
+    });
+    
+    try {
+      const result = await performAction(args);
+      console.log("Tool result:", result);
+      return result;
+    } catch (error) {
+      console.error("Tool error:", error);
+      throw error;
+    }
+  },
+});
+```
+
+### State Change Tracker
+
+Monitor state changes:
+
+```tsx
+function StateDebugger() {
+  const { state } = useAgentContext("agent");
+  
+  useEffect(() => {
+    console.log("State changed:", {
+      timestamp: new Date().toISOString(),
+      state: JSON.stringify(state, null, 2),
+    });
+  }, [state]);
+  
+  return null;
+}
+```
+
+### Message Inspector
+
+Log all agent messages:
+
+```tsx
+function MessageDebugger() {
+  const agent = useAgent("assistant");
+  
+  useEffect(() => {
+    const unsubscribe = agent.onMessage((message) => {
+      console.log("Agent message:", {
+        role: message.role,
+        content: message.content,
+        timestamp: new Date().toISOString(),
+      });
+    });
+    
+    return unsubscribe;
+  }, [agent]);
+  
+  return null;
+}
+```
+
+## Common Debugging Scenarios
+
+### Debugging Tool Execution
+
+**Problem:** Tool is called but doesn't work as expected
+
+**Debug Steps:**
+
+1. **Log the arguments:**
+```tsx
+handler: async (args) => {
+  console.log("Received args:", JSON.stringify(args, null, 2));
+  // Check if args match your expectations
+}
+```
+
+2. **Validate the schema:**
+```tsx
+parameters: z.object({
+  id: z.string(),
+}).passthrough() // Allow extra properties for debugging
+```
+
+3. **Test the handler directly:**
+```tsx
+// In browser console
+window.testTool = async (args) => {
+  return await yourToolHandler(args);
+};
+
+// Then test:
+await window.testTool({ id: "123" });
+```
+
+### Debugging State Synchronization
+
+**Problem:** State not syncing between UI and agent
+
+**Debug Steps:**
+
+1. **Log state updates:**
+```tsx
+const { state, setState } = useAgentContext("agent");
+
+const debugSetState = (newState) => {
+  console.log("Setting state:", {
+    old: state,
+    new: newState,
+  });
+  setState(newState);
+};
+```
+
+2. **Check state subscription:**
+```tsx
+useEffect(() => {
+  console.log("State subscription active");
+  return () => console.log("State subscription cleaned up");
+}, []);
+```
+
+3. **Verify state shape:**
+```tsx
+useEffect(() => {
+  console.log("Current state:", {
+    type: typeof state,
+    keys: Object.keys(state || {}),
+    values: state,
+  });
+}, [state]);
+```
+
+### Debugging Agent Responses
+
+**Problem:** Agent not responding or giving unexpected responses
+
+**Debug Steps:**
+
+1. **Log the full conversation:**
+```tsx
+const agent = useAgent("assistant");
+
+useEffect(() => {
+  console.log("Conversation history:", agent.messages);
+}, [agent.messages]);
+```
+
+2. **Check context:**
+```tsx
+<CopilotKitProvider
+  properties={{
+    debug: true,
+    context: "current context",
+  }}
+  onContextChange={(ctx) => console.log("Context changed:", ctx)}
+>
+```
+
+3. **Inspect runtime logs:**
+```typescript
+// In your runtime
+async *run({ messages, tools, context }) {
+  console.log("Runtime received:", {
+    messageCount: messages.length,
+    toolCount: tools.length,
+    context,
+  });
+  
+  // Your agent logic
+}
+```
+
+## Performance Debugging
+
+### Measure Render Performance
+
+Use React Profiler:
+
+```tsx
+import { Profiler } from 'react';
+
+function onRenderCallback(
+  id,
+  phase,
+  actualDuration,
+  baseDuration,
+  startTime,
+  commitTime
+) {
+  console.log(`${id} (${phase}) took ${actualDuration}ms`);
+}
+
+<Profiler id="CopilotChat" onRender={onRenderCallback}>
+  <CopilotChat />
+</Profiler>
+```
+
+### Measure Tool Execution Time
+
+```tsx
+handler: async (args) => {
+  const start = performance.now();
+  
+  try {
+    const result = await yourLogic(args);
+    const duration = performance.now() - start;
+    console.log(`Tool executed in ${duration}ms`);
+    return result;
+  } catch (error) {
+    const duration = performance.now() - start;
+    console.error(`Tool failed after ${duration}ms:`, error);
+    throw error;
+  }
+}
+```
+
+### Monitor Memory Usage
+
+```typescript
+// Log memory usage periodically
+setInterval(() => {
+  if (performance.memory) {
+    console.log("Memory usage:", {
+      used: `${(performance.memory.usedJSHeapSize / 1048576).toFixed(2)} MB`,
+      total: `${(performance.memory.totalJSHeapSize / 1048576).toFixed(2)} MB`,
+      limit: `${(performance.memory.jsHeapSizeLimit / 1048576).toFixed(2)} MB`,
+    });
+  }
+}, 10000); // Every 10 seconds
+```
+
+## Runtime Debugging
+
+### Server-Side Logging
+
+Add comprehensive logging to your runtime:
+
+```typescript
+export const POST = createCopilotRuntimeHandler({
+  agents: {
+    assistant: {
+      async *run({ messages, tools, context }) {
+        console.log("[Runtime] Request received:", {
+          messageCount: messages.length,
+          toolCount: tools.length,
+          context,
+        });
+        
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages,
+            tools,
+            stream: true,
+          });
+          
+          let chunkCount = 0;
+          for await (const chunk of response) {
+            chunkCount++;
+            console.log(`[Runtime] Chunk ${chunkCount}:`, chunk);
+            yield chunk;
+          }
+          
+          console.log(`[Runtime] Completed with ${chunkCount} chunks`);
+        } catch (error) {
+          console.error("[Runtime] Error:", error);
+          throw error;
+        }
+      },
+    },
+  },
+  onError: (error) => {
+    console.error("[Runtime] Handler error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+  },
+});
+```
+
+### Request/Response Logging
+
+Log all HTTP requests and responses:
+
+```typescript
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  
+  const originalSend = res.send;
+  res.send = function (data) {
+    console.log(`[${new Date().toISOString()}] Response:`, {
+      status: res.statusCode,
+      data: typeof data === 'string' ? data.substring(0, 100) : data,
+    });
+    return originalSend.call(this, data);
+  };
+  
+  next();
+});
+```
+
+## Testing Tools
+
+### Unit Testing Tools
+
+Test tool handlers in isolation:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+
+describe('addTodo tool', () => {
+  it('should add todo to list', async () => {
+    const handler = createAddTodoHandler();
+    const result = await handler({ task: 'Test task' });
+    
+    expect(result).toContain('Added');
+    expect(result).toContain('Test task');
+  });
+  
+  it('should handle errors', async () => {
+    const handler = createAddTodoHandler();
+    
+    await expect(
+      handler({ task: '' })
+    ).rejects.toThrow('Task cannot be empty');
+  });
+});
+```
+
+### Integration Testing
+
+Test full agent interactions:
+
+```typescript
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+describe('CopilotChat integration', () => {
+  it('should execute tool when requested', async () => {
+    const mockHandler = vi.fn().mockResolvedValue('Success');
+    
+    render(
+      <CopilotKitProvider runtimeUrl="/api/test">
+        <TestComponent toolHandler={mockHandler} />
+      </CopilotKitProvider>
+    );
+    
+    const input = screen.getByPlaceholderText('Type a message...');
+    await userEvent.type(input, 'Add a todo{enter}');
+    
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalled();
+    });
+  });
+});
+```
+
+## Debugging Checklist
+
+When debugging an issue, go through this checklist:
+
+- [ ] Check browser console for errors
+- [ ] Check server/runtime logs
+- [ ] Verify network requests in DevTools
+- [ ] Confirm runtime is running and accessible
+- [ ] Validate tool schemas and descriptions
+- [ ] Check agent configuration
+- [ ] Verify API keys and credentials
+- [ ] Test with debug mode enabled
+- [ ] Isolate the issue (frontend vs runtime)
+- [ ] Create minimal reproduction case
+
+## Getting Help
+
+If you're still stuck after debugging:
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/6dffbvGU3D">
+    Share your debugging findings with the community
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/copilotkit/copilotkit/issues">
+    Create a detailed bug report
+  </Card>
+  <Card title="Common Issues" icon="circle-question" href="/troubleshooting/common-issues">
+    Check solutions to common problems
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/concepts/architecture">
+    Understand the system architecture
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+1. **Always use debug mode during development**
+2. **Log important events and state changes**
+3. **Test tools in isolation first**
+4. **Monitor network requests**
+5. **Keep runtime logs accessible**
+6. **Use TypeScript for better error messages**
+7. **Write tests for critical functionality**
+8. **Document known issues and workarounds**
+
+

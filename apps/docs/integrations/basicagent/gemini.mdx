@@ -1,0 +1,112 @@
+---
+title: Google Gemini
+description: Use Google Gemini models with BasicAgent
+icon: "google"
+---
+
+## Overview
+
+Connect to Google's Gemini models using `BasicAgent`. Supports Gemini Pro and Flash models with multimodal capabilities.
+
+## Prerequisites
+
+- Google AI API key ([Get one here](https://makersuite.google.com/app/apikey))
+
+## Setup
+
+### 1. Environment Variables
+
+```bash
+GOOGLE_API_KEY=...
+```
+
+### 2. Create Agent
+
+```typescript
+import { BasicAgent } from "@copilotkitnext/agent";
+
+const agent = new BasicAgent({
+  model: "google/gemini-2.0-flash",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
+```
+
+## Available Models
+
+```typescript
+// Gemini 2.0 Flash (recommended - fast and capable)
+model: "google/gemini-2.0-flash"
+
+// Gemini 2.5 Pro (most capable)
+model: "google/gemini-2.5-pro"
+
+// Gemini 1.5 Flash
+model: "google/gemini-1.5-flash"
+
+// Gemini 1.5 Pro
+model: "google/gemini-1.5-pro"
+```
+
+## Configuration
+
+```typescript
+const agent = new BasicAgent({
+  model: "google/gemini-2.0-flash",
+  temperature: 0.7,              // 0-2 (higher = more random)
+  maxOutputTokens: 8192,
+  topP: 0.95,
+  topK: 40,
+});
+```
+
+## Example
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+import { handle } from "hono/vercel";
+
+const agent = new BasicAgent({
+  model: "google/gemini-2.0-flash",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
+
+const runtime = new CopilotRuntime({
+  agents: { default: agent },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+## Context Window
+
+| Model | Context Window |
+|-------|----------------|
+| Gemini 2.5 Pro | 2M tokens |
+| Gemini 2.0 Flash | 1M tokens |
+| Gemini 1.5 Pro | 2M tokens |
+| Gemini 1.5 Flash | 1M tokens |
+
+## Features
+
+- **Massive context**: Up to 2M tokens
+- **Multimodal**: Native image and video understanding
+- **Fast inference**: Flash models optimized for speed
+- **Cost effective**: Competitive pricing
+
+## Next Steps
+
+- [Add tools](/guides/frontend-actions) to your agent
+- [Configure shared state](/guides/shared-state)
+- Try [OpenAI](/integrations/basicagent/openai) or [Anthropic](/integrations/basicagent/anthropic)
+

@@ -1,0 +1,333 @@
+---
+title: Shared State
+description: Two-way state synchronization between UI and agents
+icon: "repeat"
+---
+
+## Overview
+
+Shared State provides bidirectional synchronization between your UI and AI agents. Your UI can read and update agent state, and agents can update state that reflects in your UI in real-time.
+
+## Quick Start
+
+<Tabs>
+  <Tab title="React">
+Use the `useAgent` hook to access and update state:
+
+```tsx
+import { useAgent } from "@copilotkitnext/react";
+
+function MyComponent() {
+  const { agent } = useAgent();
+
+  // Read agent state
+  const currentTask = agent?.state?.currentTask;
+  const progress = agent?.state?.progress;
+
+  // Update agent state
+  const updatePriority = () => {
+    agent?.setState({ priority: "high" });
+  };
+
+  return (
+    <div>
+      <h3>Current Task: {currentTask}</h3>
+      <progress value={progress} max={100} />
+      <button onClick={updatePriority}>Mark High Priority</button>
+    </div>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+Use `injectAgentStore` to access and update state:
+
+```typescript
+import { Component, computed } from "@angular/core";
+import { injectAgentStore } from "@copilotkitnext/angular";
+
+@Component({
+  selector: "app-my-component",
+  template: `
+    <div>
+      <h3>Current Task: {{ currentTask() }}</h3>
+      <progress [value]="progress()" max="100"></progress>
+      <button (click)="updatePriority()">Mark High Priority</button>
+    </div>
+  `,
+})
+export class MyComponent {
+  agentStore = injectAgentStore("default");
+  agent = computed(() => this.agentStore()?.agent);
+  state = computed(() => this.agentStore()?.state());
+
+  currentTask = computed(() => this.state()?.currentTask);
+  progress = computed(() => this.state()?.progress);
+
+  updatePriority() {
+    this.agent()?.setState({ priority: "high" });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Common Patterns
+
+### Task Progress Tracking
+
+<Tabs>
+  <Tab title="React">
+```tsx
+function TaskTracker() {
+  const { agent } = useAgent();
+  const tasks = agent?.state?.tasks || [];
+  const currentIndex = agent?.state?.currentIndex || 0;
+
+  return (
+    <div>
+      <h3>Task Progress</h3>
+      <p>{currentIndex + 1} of {tasks.length}</p>
+      <ul>
+        {tasks.map((task, i) => (
+          <li key={i}>
+            {task}
+            {i === currentIndex && " ← Current"}
+            {i < currentIndex && " ✓"}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-task-tracker",
+  template: `
+    <div>
+      <h3>Task Progress</h3>
+      <p>{{ currentIndex() + 1 }} of {{ tasks().length }}</p>
+      <ul>
+        <li *ngFor="let task of tasks(); let i = index">
+          {{ task }}
+          <span *ngIf="i === currentIndex()"> ← Current</span>
+          <span *ngIf="i < currentIndex()"> ✓</span>
+        </li>
+      </ul>
+    </div>
+  `,
+})
+export class TaskTrackerComponent {
+  agentStore = injectAgentStore("default");
+  state = computed(() => this.agentStore()?.state());
+  
+  tasks = computed(() => this.state()?.tasks || []);
+  currentIndex = computed(() => this.state()?.currentIndex || 0);
+}
+```
+  </Tab>
+</Tabs>
+
+### Form State Synchronization
+
+<Tabs>
+  <Tab title="React">
+```tsx
+function FormSync() {
+  const { agent } = useAgent();
+  const formData = agent?.state?.formData || {};
+
+  const updateField = (field: string, value: string) => {
+    agent?.setState({
+      formData: { ...formData, [field]: value },
+    });
+  };
+
+  return (
+    <form>
+      <input
+        value={formData.name || ""}
+        onChange={(e) => updateField("name", e.target.value)}
+      />
+      <input
+        value={formData.email || ""}
+        onChange={(e) => updateField("email", e.target.value)}
+      />
+    </form>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-form-sync",
+  template: `
+    <form>
+      <input
+        [value]="formData()?.name || ''"
+        (input)="updateField('name', $any($event.target).value)"
+      />
+      <input
+        [value]="formData()?.email || ''"
+        (input)="updateField('email', $any($event.target).value)"
+      />
+    </form>
+  `,
+})
+export class FormSyncComponent {
+  agentStore = injectAgentStore("default");
+  agent = computed(() => this.agentStore()?.agent);
+  state = computed(() => this.agentStore()?.state());
+  
+  formData = computed(() => this.state()?.formData || {});
+
+  updateField(field: string, value: string) {
+    const current = this.formData();
+    this.agent()?.setState({
+      formData: { ...current, [field]: value },
+    });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### User Preferences
+
+<Tabs>
+  <Tab title="React">
+```tsx
+function PreferencesPanel() {
+  const { agent } = useAgent();
+  const preferences = agent?.state?.preferences || {
+    theme: "light",
+    notifications: true,
+  };
+
+  const updatePreference = (key: string, value: any) => {
+    agent?.setState({
+      preferences: { ...preferences, [key]: value },
+    });
+  };
+
+  return (
+    <div>
+      <select
+        value={preferences.theme}
+        onChange={(e) => updatePreference("theme", e.target.value)}
+      >
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <label>
+        <input
+          type="checkbox"
+          checked={preferences.notifications}
+          onChange={(e) =>
+            updatePreference("notifications", e.target.checked)
+          }
+        />
+        Enable Notifications
+      </label>
+    </div>
+  );
+}
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+@Component({
+  selector: "app-preferences-panel",
+  template: `
+    <div>
+      <select
+        [value]="preferences().theme"
+        (change)="updatePreference('theme', $any($event.target).value)"
+      >
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <label>
+        <input
+          type="checkbox"
+          [checked]="preferences().notifications"
+          (change)="updatePreference('notifications', $any($event.target).checked)"
+        />
+        Enable Notifications
+      </label>
+    </div>
+  `,
+})
+export class PreferencesPanelComponent {
+  agentStore = injectAgentStore("default");
+  agent = computed(() => this.agentStore()?.agent);
+  state = computed(() => this.agentStore()?.state());
+  
+  preferences = computed(() => this.state()?.preferences || {
+    theme: "light",
+    notifications: true,
+  });
+
+  updatePreference(key: string, value: any) {
+    const current = this.preferences();
+    this.agent()?.setState({
+      preferences: { ...current, [key]: value },
+    });
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Specific Agent
+
+Access state from a specific agent:
+
+<Tabs>
+  <Tab title="React">
+```tsx
+const { agent } = useAgent({ agentId: "sales" });
+const salesData = agent?.state?.salesData;
+```
+  </Tab>
+
+  <Tab title="Angular">
+```typescript
+agentStore = injectAgentStore("sales");
+state = computed(() => this.agentStore()?.state());
+salesData = computed(() => this.state()?.salesData);
+```
+  </Tab>
+</Tabs>
+
+## State Updates
+
+State updates are merged with existing state:
+
+```typescript
+// Current state: { task: "research", priority: "low" }
+agent?.setState({ priority: "high" });
+// New state: { task: "research", priority: "high" }
+```
+
+## Next Steps
+
+<CardGroup cols={3}>
+  <Card title="Frontend Actions" icon="wrench" href="/guides/frontend-actions">
+    Let agents update your UI
+  </Card>
+  <Card title="Human in the Loop" icon="user" href="/guides/human-in-the-loop">
+    Request user approval
+  </Card>
+  <Card title="Generative UI" icon="sparkles" href="/guides/generative-ui">
+    Render dynamic UI
+  </Card>
+</CardGroup>

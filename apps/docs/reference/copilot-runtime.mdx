@@ -1,0 +1,77 @@
+---
+title: CopilotRuntime
+description: Runtime orchestration, request handlers, and agent runners
+---
+
+`CopilotRuntime` glues agents, runners, middleware, and transcription together. Pair it with the Hono-based helper
+`createCopilotEndpoint` to expose an HTTP API for React/Angular clients.
+
+## Constructing the Runtime
+
+```ts
+import { CopilotRuntime } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+
+const runtime = new CopilotRuntime({
+  agents: {
+    assistant: new BasicAgent({ model: "openai/gpt-4o" }),
+  },
+});
+```
+
+### Options (`CopilotRuntimeOptions`)
+
+| Option                    | Description                                                      |
+| ------------------------- | ---------------------------------------------------------------- |
+| `agents` (required)       | Map or promise resolving to `{ [id]: AbstractAgent }`.           |
+| `runner`                  | Custom `AgentRunner` implementation (defaults to `InMemoryAgentRunner`). |
+| `transcriptionService`    | Optional audio transcription service (e.g., OpenAI Whisper).     |
+| `beforeRequestMiddleware` | Function or webhook URL executed before each request.            |
+| `afterRequestMiddleware`  | Function or webhook URL executed after each response.            |
+
+## Exposing an HTTP endpoint
+
+```ts
+import { createCopilotEndpoint } from "@copilotkitnext/runtime";
+import { handle } from "hono/vercel";
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+Routes provided:
+
+- `POST /agent/:agentId/run` – Start a run and stream events.
+- `POST /agent/:agentId/connect` – Subscribe to historic + live events.
+- `POST /agent/:agentId/stop/:threadId` – Stop an in-flight run.
+- `GET /info` – Runtime metadata (agents, version, runner info).
+- `POST /transcribe` – Audio transcription (when a service is configured).
+
+All routes run through the optional middleware hooks; if a hook returns a `Response`, it short-circuits the handler.
+
+## Agent Runners
+
+`AgentRunner` abstracts the execution environment. The runtime ships with `InMemoryAgentRunner`, which stores run events
+in memory per thread and supports reconnection.
+
+### `AgentRunner` interface
+
+```ts
+abstract class AgentRunner {
+  abstract run(request: AgentRunnerRunRequest): Observable<BaseEvent>;
+  abstract connect(request: AgentRunnerConnectRequest): Observable<BaseEvent>;
+  abstract isRunning(request: AgentRunnerIsRunningRequest): Promise<boolean>;
+  abstract stop(request: AgentRunnerStopRequest): Promise<boolean | undefined>;
+}
+```
+
+### `InMemoryAgentRunner`
+
+Use the default runner for single-instance deployments. It keeps event history in process memory, compacting events for
+efficient reconnects. To implement persistence or multi-instance scaling, provide your own runner that extends
+`AgentRunner`.

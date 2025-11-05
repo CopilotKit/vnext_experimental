@@ -1,0 +1,106 @@
+---
+title: useSuggestions
+description: React hook for accessing AI chat suggestions
+---
+
+`useSuggestions` exposes the live set of CopilotKit chat suggestions for an agent. It keeps UI state in sync with the
+CopilotKit runtime, provides helpers to reload or clear suggestions, and tracks the loading state for you.
+
+## Basic Usage
+
+```tsx
+import { useSuggestions } from "@copilotkitnext/react";
+
+function SuggestionList() {
+  const { suggestions, isLoading, reloadSuggestions, clearSuggestions } = useSuggestions();
+
+  if (isLoading) {
+    return <p>Loading suggestions…</p>;
+  }
+
+  if (!suggestions.length) {
+    return (
+      <div className="empty">
+        <p>No suggestions yet.</p>
+        <button onClick={reloadSuggestions}>Refresh</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <ul>
+        {suggestions.map((suggestion) => (
+          <li key={suggestion.id}>{suggestion.title ?? suggestion.message}</li>
+        ))}
+      </ul>
+      <button onClick={clearSuggestions}>Clear all</button>
+    </div>
+  );
+}
+```
+
+## Parameters
+
+### agentId
+
+`string` **optional**
+
+By default the hook resolves the agent ID from the nearest `CopilotChatConfigurationProvider` (falling back to
+`"default"`). Pass `agentId` when you want to read suggestions for a specific agent regardless of the active chat
+configuration.
+
+```tsx
+const { suggestions } = useSuggestions({ agentId: "support" });
+```
+
+## Return Value
+
+The hook returns an object with four fields:
+
+| Field              | Type               | Description                                                    |
+| ------------------ | ------------------ | -------------------------------------------------------------- |
+| `suggestions`      | `Suggestion[]`     | The current list of suggestions for the agent.                 |
+| `isLoading`        | `boolean`          | `true` while suggestions are being generated or refreshed.     |
+| `reloadSuggestions`| `() => void`       | Requests a fresh set of suggestions from the runtime.          |
+| `clearSuggestions` | `() => void`       | Clears the suggestions cached for the agent.                   |
+
+## Behavior
+
+- Subscribes to CopilotKit suggestion events (`onSuggestionsChanged`, `onSuggestionsStartedLoading`,
+  `onSuggestionsFinishedLoading`, `onSuggestionsConfigChanged`).
+- Re-computes the agent ID when the surrounding chat configuration changes.
+- Keeps local state in sync with the runtime cache so components re-render whenever suggestions update.
+
+## Refreshing Suggestions
+
+`reloadSuggestions` triggers CopilotKit to regenerate suggestions. The runtime emits loading events which the hook uses
+to toggle `isLoading`.
+
+```tsx
+const { isLoading, reloadSuggestions } = useSuggestions();
+
+return (
+  <button onClick={reloadSuggestions} disabled={isLoading}>
+    {isLoading ? "Refreshing…" : "Refresh suggestions"}
+  </button>
+);
+```
+
+## Clearing Suggestions
+
+`clearSuggestions` removes any cached suggestions for the agent. This is useful for flows where suggestions should be
+reset after a user takes an action.
+
+```tsx
+const { clearSuggestions } = useSuggestions({ agentId: "assistant" });
+
+return <button onClick={clearSuggestions}>Reset suggestions</button>;
+```
+
+## Tips
+
+- When used alongside `useConfigureSuggestions`, the hook automatically reflects any dynamic or static suggestion
+  configuration you register.
+- Because the hook subscribes to updates, place it in components that need live data. For static reads (for example,
+  logging) call `copilotkit.getSuggestions(agentId)` directly.

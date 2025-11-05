@@ -1,0 +1,52 @@
+---
+title: Angular Agent Context Utilities
+description: connectAgentContext function and copilotkitAgentContext directive
+---
+
+These utilities push Angular state into the CopilotKit agent context so models receive additional background
+information.
+
+## connectAgentContext
+
+```ts
+import { connectAgentContext } from "@copilotkitnext/angular";
+
+connectAgentContext({
+  description: "Active ticket",
+  value: JSON.stringify(ticket),
+});
+```
+
+- Accepts a `Context` object or a `Signal<Context>`.
+- Automatically removes the context when the calling injector is destroyed.
+- Throws if called outside an injector—pass `{ injector }` in places like standalone functions.
+
+### Passing a Signal
+
+```ts
+const userContext = computed(() => ({
+  description: "User info",
+  value: JSON.stringify(authStore.user()),
+}));
+
+connectAgentContext(userContext);
+```
+
+## `copilotkitAgentContext` Directive
+
+Template-based alternative for binding context:
+
+```html
+<div
+  copilotkitAgentContext
+  [description]="'Selected account'"
+  [value]="selectedAccount | json"
+></div>
+```
+
+### Inputs
+
+- `[copilotkitAgentContext]` – Pass a full context object.
+- `description` / `value` – Alternate syntax when you want to provide fields separately.
+
+The directive adds the context on init, updates it when inputs change, and removes it on destroy.

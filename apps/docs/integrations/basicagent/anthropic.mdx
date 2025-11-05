@@ -1,0 +1,113 @@
+---
+title: Anthropic
+description: Use Anthropic Claude models with BasicAgent
+icon: "message-square"
+---
+
+## Overview
+
+Connect to Anthropic's Claude models using `BasicAgent`. Supports Claude Sonnet, Opus, and Haiku with 200K token context windows.
+
+## Prerequisites
+
+- Anthropic API key ([Get one here](https://console.anthropic.com/))
+
+## Setup
+
+### 1. Environment Variables
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### 2. Create Agent
+
+```typescript
+import { BasicAgent } from "@copilotkitnext/agent";
+
+const agent = new BasicAgent({
+  model: "anthropic/claude-sonnet-4.5",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 1.0,
+});
+```
+
+## Available Models
+
+```typescript
+// Claude Sonnet 4.5 (recommended)
+model: "anthropic/claude-sonnet-4.5"
+
+// Claude Opus 4.1 (most capable)
+model: "anthropic/claude-opus-4.1"
+
+// Claude 3.5 Haiku (fastest)
+model: "anthropic/claude-3.5-haiku"
+
+// Claude 3.7 Sonnet
+model: "anthropic/claude-3.7-sonnet"
+
+// Claude Opus 4
+model: "anthropic/claude-opus-4"
+
+// Claude Sonnet 4
+model: "anthropic/claude-sonnet-4"
+```
+
+## Configuration
+
+```typescript
+const agent = new BasicAgent({
+  model: "anthropic/claude-sonnet-4.5",
+  temperature: 1.0,              // 0-1 (higher = more random)
+  maxOutputTokens: 4096,
+  topP: 0.999,
+  topK: 250,                     // Anthropic-specific
+});
+```
+
+## Example
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+import { handle } from "hono/vercel";
+
+const agent = new BasicAgent({
+  model: "anthropic/claude-sonnet-4.5",
+  prompt: "You are a helpful AI assistant.",
+  temperature: 1.0,
+});
+
+const runtime = new CopilotRuntime({
+  agents: { default: agent },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+## Context Window
+
+All Claude models support **200K tokens** context window - excellent for long documents and conversations.
+
+## Key Differences from OpenAI
+
+- **Temperature range**: 0-1 (vs OpenAI's 0-2)
+- **Top K sampling**: Available (not in OpenAI)
+- **Penalties**: No frequency/presence penalties
+- **Context**: 200K tokens (vs OpenAI's 128K)
+
+## Next Steps
+
+- [Add tools](/guides/frontend-actions) to your agent
+- [Configure shared state](/guides/shared-state)
+- Try [OpenAI](/integrations/basicagent/openai) or [Gemini](/integrations/basicagent/gemini)
+

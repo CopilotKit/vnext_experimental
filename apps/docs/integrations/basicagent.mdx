@@ -1,0 +1,142 @@
+---
+title: Overview
+description: Direct LLM connections with CopilotKit using BasicAgent
+icon: "robot"
+---
+
+## Overview
+
+The `BasicAgent` in CopilotKit provides a straightforward way to connect directly to LLM providers. It handles AG-UI event streaming and model interaction automatically.
+
+This is the simplest way to create an AI agent with CopilotKit.
+
+## Supported Providers
+
+<CardGroup cols={2}>
+  <Card title="OpenAI" icon="openai" href="/integrations/basicagent/openai">
+    GPT-4, GPT-4o, and other OpenAI models
+  </Card>
+  <Card title="Anthropic" icon="message-square" href="/integrations/basicagent/anthropic">
+    Claude Sonnet, Opus, and Haiku models
+  </Card>
+  <Card title="Google Gemini" icon="google" href="/integrations/basicagent/gemini">
+    Gemini Pro and Flash models
+  </Card>
+  <Card title="Any Model" icon="sparkles" href="/integrations/basicagent/others">
+    Groq, Mistral, Perplexity, and custom gateways
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+pnpm add @copilotkitnext/agent @copilotkitnext/runtime ai
+```
+
+### 2. Create Runtime Endpoint
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { BasicAgent } from "@copilotkitnext/agent";
+import { handle } from "hono/vercel";
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o", // or any supported model
+  prompt: "You are a helpful AI assistant.",
+  temperature: 0.7,
+});
+
+const runtime = new CopilotRuntime({
+  agents: {
+    default: agent,
+  },
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+### 3. Connect Frontend
+
+```typescript
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider runtimeUrl="/api/copilotkit">
+      {/* Your app components */}
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Configuration Options
+
+```typescript
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",           // Model identifier (required)
+  prompt: "You are...",              // System prompt
+  temperature: 0.7,                  // Randomness (0-2 for OpenAI, 0-1 for Anthropic)
+  maxOutputTokens: 1000,             // Max response length
+  maxSteps: 5,                       // Max tool calling iterations
+  toolChoice: "auto",                // "auto" | "required" | "none"
+  tools: [],                         // Backend tools
+  overridableProperties: [],         // Properties that can be overridden from frontend
+});
+```
+
+## Adding Tools
+
+```typescript
+import { z } from "zod";
+
+const agent = new BasicAgent({
+  model: "openai/gpt-4o",
+  tools: [
+    {
+      name: "search_database",
+      description: "Search the database",
+      parameters: z.object({
+        query: z.string(),
+      }),
+      execute: async ({ query }) => {
+        return await database.search(query);
+      },
+    },
+  ],
+});
+```
+
+## Multiple Agents
+
+```typescript
+const runtime = new CopilotRuntime({
+  agents: {
+    fast: new BasicAgent({
+      model: "openai/gpt-4o-mini",
+    }),
+    powerful: new BasicAgent({
+      model: "anthropic/claude-opus-4.1",
+    }),
+  },
+  runner: new InMemoryAgentRunner(),
+});
+```
+
+## Next Steps
+
+Choose your LLM provider to get started:
+
+- [OpenAI](/integrations/basicagent/openai) - GPT models
+- [Anthropic](/integrations/basicagent/anthropic) - Claude models
+- [Google Gemini](/integrations/basicagent/gemini) - Gemini models
+- [Any model](/integrations/basicagent/others) - Groq, Mistral, Perplexity, custom gateways

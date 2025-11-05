@@ -1,0 +1,149 @@
+---
+title: Mastra Integration
+description: Integrate CopilotKit with Mastra agents
+icon: "wand-magic-sparkles"
+---
+
+## Overview
+
+Mastra is a modern framework for building AI agents with powerful orchestration capabilities. CopilotKit integrates seamlessly with Mastra agents using the `@ag-ui/mastra` integration package.
+
+This guide shows you how to connect your Mastra agents to CopilotKit.
+
+## Prerequisites
+
+- Node.js 18+
+- A Mastra instance with defined agents
+- OpenAI API key (or your preferred LLM provider)
+
+## Setup
+
+### 1. Install Dependencies
+
+First, install the necessary packages:
+
+```bash
+pnpm add @copilotkitnext/runtime @ag-ui/mastra @mastra/client-js ai
+```
+
+### 2. Create Your Mastra Instance
+
+First, set up your Mastra instance with your agents:
+
+```typescript
+// src/mastra/index.ts
+import { Mastra } from "@mastra/core";
+import { createAgent } from "@mastra/core/agents";
+
+export const mastra = new Mastra({
+  agents: {
+    myAgent: createAgent({
+      name: "My Agent",
+      instructions: "You are a helpful AI assistant.",
+      model: {
+        provider: "openai",
+        name: "gpt-4o",
+        toolChoice: "auto",
+      },
+      // ... other agent configuration
+    }),
+  },
+});
+```
+
+### 3. Configure Your Runtime Endpoint
+
+Create a runtime endpoint (e.g., `src/app/api/copilotkit/[[...slug]]/route.ts` for Next.js App Router) and use the `MastraAgent` helper to connect your Mastra agents.
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { MastraAgent } from "@ag-ui/mastra";
+import { mastra } from "@/mastra"; // Import your Mastra instance
+import { handle } from "hono/vercel";
+
+// Automatically get all agents from your Mastra instance
+const agents = MastraAgent.getLocalAgents({ mastra });
+
+const runtime = new CopilotRuntime({
+  agents, // Register all your Mastra agents
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+### 4. Connect to the Frontend
+
+In your React or Angular application, connect to this runtime endpoint using `CopilotKitProvider`. If you have multiple agents, specify which one to use:
+
+```typescript
+// React example
+import { CopilotKitProvider } from "@copilotkitnext/react";
+
+function App() {
+  return (
+    <CopilotKitProvider 
+      runtimeUrl="/api/copilotkit"
+      agent="myAgent" // Specify which Mastra agent to use
+    >
+      {/* Your app components */}
+    </CopilotKitProvider>
+  );
+}
+```
+
+## Using Mastra Client (Remote Agents)
+
+If you're running Mastra agents remotely, you can use the `MastraClient` to connect to them:
+
+```typescript
+// src/app/api/copilotkit/[[...slug]]/route.ts
+import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { MastraAgent } from "@ag-ui/mastra";
+import { MastraClient } from "@mastra/client-js";
+import { handle } from "hono/vercel";
+
+// Connect to a remote Mastra instance
+const mastraClient = new MastraClient({
+  url: "https://your-mastra-deployment.com",
+  apiKey: process.env.MASTRA_API_KEY,
+});
+
+// Get agents from the remote instance
+const agents = MastraAgent.getRemoteAgents({ mastraClient });
+
+const runtime = new CopilotRuntime({
+  agents,
+  runner: new InMemoryAgentRunner(),
+});
+
+const app = createCopilotEndpoint({
+  runtime,
+  basePath: "/api/copilotkit",
+});
+
+export const GET = handle(app);
+export const POST = handle(app);
+```
+
+## MastraAgent Helpers
+
+The `MastraAgent` class provides two helper methods:
+
+- `MastraAgent.getLocalAgents({ mastra })`: Automatically registers all agents from a local Mastra instance
+- `MastraAgent.getRemoteAgents({ mastraClient })`: Automatically registers all agents from a remote Mastra instance
+
+Both methods return an object where keys are agent names and values are agent instances compatible with CopilotRuntime.
+
+## Next Steps
+
+- Learn about [Frontend Actions](/guides/frontend-actions)
+- Explore [Shared State](/guides/shared-state)
+- Implement [Human-in-the-Loop](/guides/human-in-the-loop)

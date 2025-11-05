@@ -1,0 +1,48 @@
+---
+title: CopilotKit (Angular service)
+description: Root injectable service that bridges CopilotKitCore into Angular apps
+---
+
+The `CopilotKit` service wraps `CopilotKitCore` and exposes Angular-friendly helpers for registering tools, HITL
+handlers, and renderers.
+
+## Injecting the Service
+
+```ts
+import { Component, inject } from "@angular/core";
+import { CopilotKit } from "@copilotkitnext/angular";
+
+@Component({
+  selector: "app-root",
+  template: `<router-outlet />`,
+})
+export class AppComponent {
+  private readonly copilotKit = inject(CopilotKit);
+
+  ngOnInit() {
+    console.log(this.copilotKit.core.runtimeUrl);
+  }
+}
+```
+
+## Key Properties
+
+- `core` – Underlying `CopilotKitCore` instance.
+- `agents` – Signal listing currently registered agents.
+- `toolCallRenderConfigs` – Signal of registered tool call renderers.
+- `clientToolCallRenderConfigs` – Signal of registered frontend tool renderers.
+- `humanInTheLoopToolRenderConfigs` – Signal of registered HITL renderers.
+
+## Helper Methods
+
+| Method                          | Description                                              |
+| ------------------------------- | -------------------------------------------------------- |
+| `addFrontendTool(config)`       | Registers a frontend tool (injects dependencies).        |
+| `addRenderToolCall(config)`     | Registers a tool call renderer.                          |
+| `addHumanInTheLoop(config)`     | Registers a HITL renderer and adds it as a frontend tool.|
+| `removeTool(name, agentId?)`    | Removes a tool/renderer (works for frontend + HITL).     |
+| `getAgent(agentId)`             | Retrieves an agent instance.                             |
+| `updateRuntime(options)`        | Update runtime URL, headers, properties, or agents.      |
+
+These methods are used by the helper functions (`registerFrontendTool`, `registerHumanInTheLoop`, etc.), but you can
+call them directly when you need lower-level control.
