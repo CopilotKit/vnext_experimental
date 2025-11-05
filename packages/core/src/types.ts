@@ -10,6 +10,8 @@ export enum ToolCallStatus {
   Complete = "complete",
 }
 
+export type CopilotRuntimeTransport = "rest" | "single";
+
 export type FrontendTool<T extends Record<string, unknown> = Record<string, unknown>> = {
   name: string;
   description?: string;

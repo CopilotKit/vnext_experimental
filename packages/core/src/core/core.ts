@@ -1,5 +1,5 @@
 import { AbstractAgent, Context, State } from "@ag-ui/client";
-import { FrontendTool, SuggestionsConfig, Suggestion } from "../types";
+import { FrontendTool, SuggestionsConfig, Suggestion, CopilotRuntimeTransport } from "../types";
 import { AgentRegistry, CopilotKitCoreAddAgentParams } from "./agent-registry";
 import { ContextStore } from "./context-store";
 import { SuggestionEngine } from "./suggestion-engine";
@@ -15,6 +15,8 @@ import { StateManager } from "./state-manager";
 export interface CopilotKitCoreConfig {
   /** The endpoint of the CopilotRuntime. */
   runtimeUrl?: string;
+  /** Transport style for CopilotRuntime endpoints. Defaults to REST. */
+  runtimeTransport?: CopilotRuntimeTransport;
   /** Mapping from agent name to its `AbstractAgent` instance. For development only - production requires CopilotRuntime. */
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   /** Headers appended to every HTTP request made by `CopilotKitCore`. */
@@ -155,6 +157,7 @@ export class CopilotKitCore {
 
   constructor({
     runtimeUrl,
+    runtimeTransport = "rest",
     headers = {},
     properties = {},
     agents__unsafe_dev_only = {},
@@ -177,6 +180,7 @@ export class CopilotKitCore {
     this.suggestionEngine.initialize(suggestionsConfig);
     this.stateManager.initialize();
 
+    this.agentRegistry.setRuntimeTransport(runtimeTransport);
     this.agentRegistry.setRuntimeUrl(runtimeUrl);
 
     // Subscribe to agent changes to track state for new agents
@@ -254,6 +258,14 @@ export class CopilotKitCore {
 
   setRuntimeUrl(runtimeUrl: string | undefined): void {
     this.agentRegistry.setRuntimeUrl(runtimeUrl);
+  }
+
+  get runtimeTransport(): CopilotRuntimeTransport {
+    return this.agentRegistry.runtimeTransport;
+  }
+
+  setRuntimeTransport(runtimeTransport: CopilotRuntimeTransport): void {
+    this.agentRegistry.setRuntimeTransport(runtimeTransport);
   }
 
   get runtimeVersion(): string | undefined {
