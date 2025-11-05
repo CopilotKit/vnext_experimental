@@ -3,7 +3,7 @@ import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AbstractAgent } from "@ag-ui/client";
 
-import { createCopilotEndpointSingleRouteExpress } from "../endpoints";
+import { createCopilotEndpointSingleRouteExpress } from "../express";
 import { CopilotRuntime } from "../runtime";
 import { logger } from "@copilotkitnext/shared";
 

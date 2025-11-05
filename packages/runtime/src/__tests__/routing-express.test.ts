@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AbstractAgent } from "@ag-ui/client";
 import { Observable, of } from "rxjs";
 
-import { createCopilotEndpointExpress } from "../endpoints";
+import { createCopilotEndpointExpress } from "../express";
 import { CopilotRuntime } from "../runtime";
 
 vi.mock("../handlers/handle-run", () => ({
