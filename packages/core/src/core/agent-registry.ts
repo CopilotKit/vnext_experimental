@@ -3,6 +3,7 @@ import { logger, RuntimeInfo, AgentDescription } from "@copilotkitnext/shared";
 import { ProxiedCopilotRuntimeAgent } from "../agent";
 import type { CopilotKitCore } from "./core";
 import { CopilotKitCoreErrorCode, CopilotKitCoreRuntimeConnectionStatus, CopilotKitCoreFriendsAccess } from "./core";
+import { CopilotRuntimeTransport } from "../types";
 
 export interface CopilotKitCoreAddAgentParams {
   id: string;
@@ -22,6 +23,7 @@ export class AgentRegistry {
   private _runtimeVersion?: string;
   private _runtimeConnectionStatus: CopilotKitCoreRuntimeConnectionStatus =
     CopilotKitCoreRuntimeConnectionStatus.Disconnected;
+  private _runtimeTransport: CopilotRuntimeTransport = "rest";
 
   constructor(private core: CopilotKitCore) {}
 
@@ -44,6 +46,10 @@ export class AgentRegistry {
     return this._runtimeConnectionStatus;
   }
 
+  get runtimeTransport(): CopilotRuntimeTransport {
+    return this._runtimeTransport;
+  }
+
   /**
    * Initialize agents from configuration
    */
@@ -64,6 +70,15 @@ export class AgentRegistry {
     }
 
     this._runtimeUrl = normalizedRuntimeUrl;
+    void this.updateRuntimeConnection();
+  }
+
+  setRuntimeTransport(runtimeTransport: CopilotRuntimeTransport): void {
+    if (this._runtimeTransport === runtimeTransport) {
+      return;
+    }
+
+    this._runtimeTransport = runtimeTransport;
     void this.updateRuntimeConnection();
   }
 
@@ -166,16 +181,14 @@ export class AgentRegistry {
     await this.notifyRuntimeStatusChanged(CopilotKitCoreRuntimeConnectionStatus.Connecting);
 
     try {
-      const response = await fetch(`${this.runtimeUrl}/info`, {
-        headers: (this.core as unknown as CopilotKitCoreFriendsAccess).headers,
-      });
+      const runtimeInfoResponse = await this.fetchRuntimeInfo();
       const {
         version,
         ...runtimeInfo
       }: {
         agents: Record<string, AgentDescription>;
         version: string;
-      } = (await response.json()) as RuntimeInfo;
+      } = runtimeInfoResponse;
 
       const agents: Record<string, AbstractAgent> = Object.fromEntries(
         Object.entries(runtimeInfo.agents).map(([id, { description }]) => {
@@ -183,6 +196,7 @@ export class AgentRegistry {
             runtimeUrl: this.runtimeUrl,
             agentId: id, // Runtime agents always have their ID set correctly
             description: description,
+            transport: this._runtimeTransport,
           });
           this.applyHeadersToAgent(agent);
           return [id, agent];
@@ -216,6 +230,40 @@ export class AgentRegistry {
         },
       });
     }
+  }
+
+  private async fetchRuntimeInfo(): Promise<RuntimeInfo> {
+    if (!this.runtimeUrl) {
+      throw new Error("Runtime URL is not set");
+    }
+
+    const baseHeaders = (this.core as unknown as CopilotKitCoreFriendsAccess).headers;
+    const headers: Record<string, string> = {
+      ...baseHeaders,
+    };
+
+    if (this._runtimeTransport === "single") {
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+      const response = await fetch(this.runtimeUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ method: "info" }),
+      });
+      if ("ok" in response && !(response as Response).ok) {
+        throw new Error(`Runtime info request failed with status ${response.status}`);
+      }
+      return (await response.json()) as RuntimeInfo;
+    }
+
+    const response = await fetch(`${this.runtimeUrl}/info`, {
+      headers,
+    });
+    if ("ok" in response && !(response as Response).ok) {
+      throw new Error(`Runtime info request failed with status ${response.status}`);
+    }
+    return (await response.json()) as RuntimeInfo;
   }
 
   /**

@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { CopilotRuntime } from "./runtime";
-import { handleRunAgent } from "./handlers/handle-run";
-import { handleGetRuntimeInfo } from "./handlers/get-runtime-info";
-import { handleTranscribe } from "./handlers/handle-transcribe";
+import { CopilotRuntime } from "../runtime";
+import { handleRunAgent } from "../handlers/handle-run";
+import { handleGetRuntimeInfo } from "../handlers/get-runtime-info";
+import { handleTranscribe } from "../handlers/handle-transcribe";
 import { logger } from "@copilotkitnext/shared";
-import { callBeforeRequestMiddleware, callAfterRequestMiddleware } from "./middleware";
-import { handleConnectAgent } from "./handlers/handle-connect";
-import { handleStopAgent } from "./handlers/handle-stop";
+import { callBeforeRequestMiddleware, callAfterRequestMiddleware } from "../middleware";
+import { handleConnectAgent } from "../handlers/handle-connect";
+import { handleStopAgent } from "../handlers/handle-stop";
 
 interface CopilotEndpointParams {
   runtime: CopilotRuntime;

@@ -1,4 +1,4 @@
-import { createCopilotEndpoint } from "../endpoint";
+import { createCopilotEndpoint } from "../endpoints";
 import { CopilotRuntime } from "../runtime";
 import { describe, it, expect } from "vitest";
 import type { AbstractAgent } from "@ag-ui/client";

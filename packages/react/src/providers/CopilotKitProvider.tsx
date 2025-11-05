@@ -36,6 +36,7 @@ export interface CopilotKitProviderProps {
   runtimeUrl?: string;
   headers?: Record<string, string>;
   properties?: Record<string, unknown>;
+  useSingleEndpoint?: boolean;
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
   renderToolCalls?: ReactToolCallRenderer<any>[];
   renderActivityMessages?: ReactActivityMessageRenderer<any>[];
@@ -81,6 +82,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   frontendTools,
   humanInTheLoop,
   showDevConsole = false,
+  useSingleEndpoint = false,
 }) => {
   const [shouldRenderInspector, setShouldRenderInspector] = useState(false);
 
@@ -225,6 +227,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   const copilotkit = useMemo(() => {
     const copilotkit = new CopilotKitCoreReact({
       runtimeUrl,
+      runtimeTransport: useSingleEndpoint ? "single" : "rest",
       headers,
       properties,
       agents__unsafe_dev_only: agents,
@@ -236,7 +239,7 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
     return copilotkit;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTools, allRenderToolCalls, renderActivityMessagesList, renderCustomMessagesList]);
+  }, [allTools, allRenderToolCalls, renderActivityMessagesList, renderCustomMessagesList, useSingleEndpoint]);
 
   // Subscribe to render tool calls changes to force re-renders
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -255,10 +258,11 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   useEffect(() => {
     copilotkit.setRuntimeUrl(runtimeUrl);
+    copilotkit.setRuntimeTransport(useSingleEndpoint ? "single" : "rest");
     copilotkit.setHeaders(headers);
     copilotkit.setProperties(properties);
     copilotkit.setAgents__unsafe_dev_only(agents);
-  }, [runtimeUrl, headers, properties, agents]);
+  }, [runtimeUrl, headers, properties, agents, useSingleEndpoint]);
 
   return (
     <CopilotKitContext.Provider

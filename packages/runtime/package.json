@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./express": {
+      "types": "./dist/express.d.ts",
+      "import": "./dist/express.mjs",
+      "require": "./dist/express.js"
     }
   },
   "publishConfig": {
@@ -28,9 +33,12 @@
   "devDependencies": {
     "@copilotkitnext/eslint-config": "workspace:*",
     "@copilotkitnext/typescript-config": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/node": "^22.15.3",
     "eslint": "^9.30.0",
     "openai": "^5.9.0",
+    "supertest": "^7.1.1",
     "tsup": "^8.5.0",
     "typescript": "5.8.2",
     "vitest": "^3.0.5"
@@ -40,6 +48,8 @@
     "@ag-ui/core": "0.0.40-alpha.11",
     "@ag-ui/encoder": "0.0.40-alpha.11",
     "@copilotkitnext/shared": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "hono": "^4.6.13",
     "rxjs": "7.8.1"
   },

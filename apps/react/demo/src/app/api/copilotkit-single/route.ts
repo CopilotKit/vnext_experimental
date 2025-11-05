@@ -1,4 +1,4 @@
-import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
+import { CopilotRuntime, InMemoryAgentRunner, createCopilotEndpointSingleRoute } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { BasicAgent } from "@copilotkitnext/agent";
 
@@ -21,17 +21,16 @@ const agent = new BasicAgent({
   temperature: 0.7,
 });
 
-const honoRuntime = new CopilotRuntime({
+const singleRuntime = new CopilotRuntime({
   agents: {
     default: agent,
   },
   runner: new InMemoryAgentRunner(),
 });
 
-const app = createCopilotEndpoint({
-  runtime: honoRuntime,
-  basePath: "/api/copilotkit",
+const app = createCopilotEndpointSingleRoute({
+  runtime: singleRuntime,
+  basePath: "/api/copilotkit-single",
 });
 
-export const GET = handle(app);
 export const POST = handle(app);
