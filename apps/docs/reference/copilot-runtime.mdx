@@ -192,6 +192,64 @@ app.use(
 
 Single-route Express works identically to the Hono version: send the JSON envelope described earlier, and set `useSingleEndpoint` on the client.
 
+### NestJS (Express backend)
+
+NestJS uses Express by default. Mount the Express router in `main.ts`:
+
+```ts
+// main.ts
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { CopilotRuntime } from '@copilotkitnext/runtime';
+import { createCopilotEndpointExpress } from '@copilotkitnext/runtime/express';
+import { BasicAgent } from '@copilotkitnext/agent';
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  const runtime = new CopilotRuntime({
+    agents: {
+      default: new BasicAgent({ model: 'openai/gpt-4o', prompt: 'You are helpful.' }),
+    },
+  });
+
+  // Mount under /api/copilotkit (REST-style routes)
+  app.use(
+    '/api/copilotkit',
+    createCopilotEndpointExpress({ runtime, basePath: '/' }),
+  );
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+Available routes (no global prefix):
+
+- `POST /api/copilotkit/agent/:agentId/run`
+- `POST /api/copilotkit/agent/:agentId/connect`
+- `POST /api/copilotkit/agent/:agentId/stop/:threadId`
+- `GET  /api/copilotkit/info`
+- `POST /api/copilotkit/transcribe`
+
+If you prefer the single-route transport, mount the single-route helper instead and set `useSingleEndpoint` on the client:
+
+```ts
+import { createCopilotEndpointSingleRouteExpress } from '@copilotkitnext/runtime/express';
+
+app.use(
+  '/api/copilotkit',
+  createCopilotEndpointSingleRouteExpress({ runtime, basePath: '/' }),
+);
+```
+
+Notes:
+
+- If you call `app.setGlobalPrefix('api')`, the effective paths become `/api/copilotkit/...` (or `/api/copilotkit` for single-route).
+- Endpoints stream Server‑Sent Events; ensure your proxy honors `text/event-stream` and keep‑alive.
+- The router enables permissive CORS; tighten via Nest’s `enableCors` if needed.
+
 ## Runtime Metadata
 
 Calling `GET /info` (or the `info` single-route method) returns:
