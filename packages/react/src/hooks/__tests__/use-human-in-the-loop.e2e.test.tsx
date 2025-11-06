@@ -327,6 +327,136 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
     });
   });
 
+  describe("Multiple Hook Instances", () => {
+    it("should isolate state across two useHumanInTheLoop registrations", async () => {
+      const agent = new MockStepwiseAgent();
+
+      const DualHookComponent: React.FC = () => {
+        const primaryTool: ReactHumanInTheLoop<{ action: string }> = {
+          name: "primaryTool",
+          description: "Primary approval tool",
+          parameters: z.object({ action: z.string() }),
+          render: ({ status, args, respond, result }) => (
+            <div data-testid="primary-tool">
+              <div data-testid="primary-status">{status}</div>
+              <div data-testid="primary-action">{args.action ?? ""}</div>
+              {respond && (
+                <button
+                  data-testid="primary-respond"
+                  onClick={() => respond(JSON.stringify({ approved: true }))}
+                >
+                  Respond Primary
+                </button>
+              )}
+              {result && <div data-testid="primary-result">{result}</div>}
+            </div>
+          ),
+        };
+
+        const secondaryTool: ReactHumanInTheLoop<{ detail: string }> = {
+          name: "secondaryTool",
+          description: "Secondary approval tool",
+          parameters: z.object({ detail: z.string() }),
+          render: ({ status, args, respond, result }) => (
+            <div data-testid="secondary-tool">
+              <div data-testid="secondary-status">{status}</div>
+              <div data-testid="secondary-detail">{args.detail ?? ""}</div>
+              {respond && (
+                <button
+                  data-testid="secondary-respond"
+                  onClick={() => respond(JSON.stringify({ confirmed: true }))}
+                >
+                  Respond Secondary
+                </button>
+              )}
+              {result && <div data-testid="secondary-result">{result}</div>}
+            </div>
+          ),
+        };
+
+        useHumanInTheLoop(primaryTool);
+        useHumanInTheLoop(secondaryTool);
+        return null;
+      };
+
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <DualHookComponent />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Dual hook instance" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("Dual hook instance")).toBeDefined();
+      });
+
+      const messageId = testId("msg");
+      const primaryToolCallId = testId("tc-primary");
+      const secondaryToolCallId = testId("tc-secondary");
+
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: primaryToolCallId,
+          toolCallName: "primaryTool",
+          parentMessageId: messageId,
+          delta: JSON.stringify({ action: "archive" }),
+        })
+      );
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId: secondaryToolCallId,
+          toolCallName: "secondaryTool",
+          parentMessageId: messageId,
+          delta: JSON.stringify({ detail: "requires confirmation" }),
+        })
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("primary-status").textContent).toBe(ToolCallStatus.InProgress);
+        expect(screen.getByTestId("primary-action").textContent).toBe("archive");
+        expect(screen.getByTestId("secondary-status").textContent).toBe(ToolCallStatus.InProgress);
+        expect(screen.getByTestId("secondary-detail").textContent).toBe("requires confirmation");
+      });
+
+      agent.emit(runFinishedEvent());
+      agent.complete();
+
+      const primaryRespondButton = await screen.findByTestId("primary-respond");
+
+      expect(screen.getByTestId("primary-status").textContent).toBe(ToolCallStatus.Executing);
+      expect(screen.getByTestId("secondary-status").textContent).toBe(ToolCallStatus.InProgress);
+      expect(screen.queryByTestId("secondary-respond")).toBeNull();
+
+      fireEvent.click(primaryRespondButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("primary-status").textContent).toBe(ToolCallStatus.Complete);
+        expect(screen.getByTestId("primary-result").textContent).toContain("approved");
+        expect(screen.getByTestId("secondary-status").textContent).toBe(ToolCallStatus.Executing);
+        expect(screen.queryByTestId("secondary-result")).toBeNull();
+      });
+
+      const secondaryRespondButton = await screen.findByTestId("secondary-respond");
+
+      fireEvent.click(secondaryRespondButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("secondary-status").textContent).toBe(ToolCallStatus.Complete);
+        expect(screen.getByTestId("secondary-result").textContent).toContain("confirmed");
+      });
+    });
+  });
+
   describe("HITL Tool with Dynamic Registration", () => {
     it("should support dynamic registration and unregistration of HITL tools", async () => {
       const agent = new MockStepwiseAgent();
