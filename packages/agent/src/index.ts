@@ -28,8 +28,8 @@ import {
   tool as createVercelAISDKTool,
   ToolChoice,
   ToolSet,
-  experimental_createMCPClient as createMCPClient,
 } from "ai";
+import { experimental_createMCPClient as createMCPClient } from "@ai-sdk/mcp";
 import { Observable } from "rxjs";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
