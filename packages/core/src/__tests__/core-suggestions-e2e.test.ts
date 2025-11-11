@@ -780,6 +780,56 @@ describe("CopilotKitCore - Suggestions E2E", () => {
   });
 
   describe("Suggestion abortion and reload", () => {
+    it("should abort running suggestions when a user message is submitted (runAgent)", async () => {
+      const providerAgent = new MockAgent({ agentId: "default", runAgentDelay: 100 });
+      const consumerAgent = new MockAgent({
+        agentId: "consumer",
+        messages: [createMessage({ content: "Initial message" })],
+      });
+
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "default", agent: providerAgent as any });
+      copilotKitCore.addAgent__unsafe_dev_only({ id: "consumer", agent: consumerAgent as any });
+
+      const config = createSuggestionsConfig({ consumerAgentId: "consumer" });
+      copilotKitCore.addSuggestionsConfig(config);
+
+      // Begin generating suggestions and wait until the provider is cloned (run in progress)
+      copilotKitCore.reloadSuggestions("consumer");
+      await vi.waitFor(() => {
+        expect(providerAgent.clone).toHaveBeenCalled();
+      });
+
+      // Grab the cloned suggestion agent instance to assert abort
+      const clonedSuggestionAgent = (providerAgent.clone as any).mock.results[0]?.value;
+      expect(clonedSuggestionAgent).toBeDefined();
+
+      // Ensure loading state is on before user submits new message
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(true);
+      });
+
+      // Additionally assert abort happens before the user's run starts
+      consumerAgent.runAgentCallback = () => {
+        expect(clonedSuggestionAgent.abortRun).toHaveBeenCalled();
+      };
+
+      // Simulate user submitting a new message which triggers runAgent (and should clear/abort suggestions immediately)
+      await copilotKitCore.runAgent({
+        agent: consumerAgent as any,
+        withMessages: [createMessage({ content: "User follow-up" })],
+      });
+
+      // The in-flight suggestion run should be aborted
+      expect(clonedSuggestionAgent.abortRun).toHaveBeenCalled();
+
+      // Suggestions should be cleared and isLoading turned off
+      await vi.waitFor(() => {
+        const result = copilotKitCore.getSuggestions("consumer");
+        expect(result.isLoading).toBe(false);
+        expect(result.suggestions).toEqual([]);
+      });
+    });
     it("should abort running suggestions when clearSuggestions is called", async () => {
       const providerAgent = new MockAgent({ agentId: "default" });
       const consumerAgent = new MockAgent({ agentId: "consumer" });
