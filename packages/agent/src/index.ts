@@ -501,7 +501,7 @@ export class BasicAgent extends AbstractAgent {
     return this.config?.overridableProperties?.includes(property) ?? false;
   }
 
-  protected run(input: RunAgentInput): Observable<BaseEvent> {
+  run(input: RunAgentInput): Observable<BaseEvent> {
     return new Observable<BaseEvent>((subscriber) => {
       // Emit RUN_STARTED event
       const startEvent: RunStartedEvent = {

@@ -94,8 +94,8 @@ importers:
   apps/angular/demo-server:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ag-ui/langgraph':
         specifier: ^0.0.11
         version: 0.0.11(@opentelemetry/api@1.9.0)(openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.75))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -131,8 +131,8 @@ importers:
   apps/angular/storybook:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@angular/animations':
         specifier: ^18.2.0
         version: 18.2.13(@angular/core@18.2.13(rxjs@7.8.1)(zone.js@0.14.10))
@@ -268,15 +268,9 @@ importers:
 
   apps/react/demo:
     dependencies:
-      '@a2a-js/sdk':
-        specifier: ^0.2.2
-        version: 0.2.5
-      '@ag-ui/a2a':
-        specifier: 0.0.5
-        version: 0.0.5(@ag-ui/client@0.0.40-alpha.11)(@ag-ui/core@0.0.40-alpha.11)
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/agent':
         specifier: workspace:*
         version: link:../../../packages/agent
@@ -292,9 +286,6 @@ importers:
       '@copilotkitnext/shared':
         specifier: workspace:*
         version: link:../../../packages/shared
-      better-sqlite3:
-        specifier: ^12.2.0
-        version: 12.2.0
       hono:
         specifier: ^4.6.13
         version: 4.8.10
@@ -310,9 +301,6 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
-      rxjs:
-        specifier: 7.8.1
-        version: 7.8.1
       zod:
         specifier: ^3.25.75
         version: 3.25.75
@@ -412,8 +400,8 @@ importers:
   packages/agent:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ai-sdk/anthropic':
         specifier: ^2.0.22
         version: 2.0.23(zod@3.25.75)
@@ -464,11 +452,11 @@ importers:
   packages/angular:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -606,8 +594,8 @@ importers:
   packages/core:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/shared':
         specifier: workspace:*
         version: link:../shared
@@ -719,11 +707,11 @@ importers:
   packages/react:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -849,14 +837,14 @@ importers:
   packages/runtime:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ag-ui/core':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@ag-ui/encoder':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/shared':
         specifier: workspace:*
         version: link:../shared
@@ -910,8 +898,8 @@ importers:
   packages/shared:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       partial-json:
         specifier: ^0.1.7
         version: 0.1.7
@@ -941,8 +929,8 @@ importers:
   packages/sqlite-runner:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/runtime':
         specifier: workspace:*
         version: link:../runtime
@@ -983,8 +971,8 @@ importers:
   packages/web-inspector:
     dependencies:
       '@ag-ui/client':
-        specifier: 0.0.40-alpha.11
-        version: 0.0.40-alpha.11
+        specifier: 0.0.41-alpha.0
+        version: 0.0.41-alpha.0
       '@copilotkitnext/core':
         specifier: workspace:*
         version: link:../core
@@ -1025,36 +1013,26 @@ importers:
 
 packages:
 
-  '@a2a-js/sdk@0.2.5':
-    resolution: {integrity: sha512-VTDuRS5V0ATbJ/LkaQlisMnTAeYKXAK6scMguVBstf+KIBQ7HIuKhiXLv+G/hvejkV+THoXzoNifInAkU81P1g==}
-    engines: {node: '>=18'}
-
   '@adobe/css-tools@4.4.3':
     resolution: {integrity: sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA==}
-
-  '@ag-ui/a2a@0.0.5':
-    resolution: {integrity: sha512-ixCLWjsi89+HJ4sDgjX+27dDoHBfd3TKTlFc1yG8A7B8BqVVGhssECOlXEX89NRNyyGfWw68w2E3ncnmkdxbfg==}
-    peerDependencies:
-      '@ag-ui/client': '>=0.0.40'
-      '@ag-ui/core': '>=0.0.40'
 
   '@ag-ui/client@0.0.36':
     resolution: {integrity: sha512-1Ey2KqK9KQpRJcnJvKPfVyLiTK4+CLBQZ085oJvr6T1nznw224j0KyzXNJ7cRjXeEGnuafmXTgpU+xEbN3xuYQ==}
 
-  '@ag-ui/client@0.0.40-alpha.11':
-    resolution: {integrity: sha512-n04KBxlAdsUhAtD6aa5B9Y779fRrnDMNAb22EGm/L60eHhvocVEqztqb05+s84bSnVhncoX7aD2Da8Y3B+kjew==}
+  '@ag-ui/client@0.0.41-alpha.0':
+    resolution: {integrity: sha512-jpUsLMcUmhpO1l/X0IYsugdOOsRDwz5Eqg4B8ijwuexiWn1/jGKpci4V3MHQ3j8bEi6fZzg7+xJDgHsZBD2lkA==}
 
   '@ag-ui/core@0.0.36':
     resolution: {integrity: sha512-uYUrzw6uxuw4qVQ61mdSeiG0mFh2n/VAWmWsWzwETDuhqJZT7rFmd07IajcFWcyItMr1wjqxFDdlklucAyEYNA==}
 
-  '@ag-ui/core@0.0.40-alpha.11':
-    resolution: {integrity: sha512-zGOl1NSF3QOgHCniu58BeicIuCRPiuxQFmDFXb5asciI60LLM9GdF+E58EwUczMsq/+ouK5lNp9lKdrduiURWg==}
+  '@ag-ui/core@0.0.41-alpha.0':
+    resolution: {integrity: sha512-ZAlqwZRXCHg/Ojr/tX5GlcOZueJRIxyTh0W05NkI+4n6FAWLqzU6t2psH0sJ+Z+JUBDqP+SSXwZWQvDcP7D/EA==}
 
   '@ag-ui/encoder@0.0.36':
     resolution: {integrity: sha512-p8UNh6a77G/oe/4EZmwkTeYCN/5SnqSY2Cz8f8psZpk4LKzzrPkRNykrUAIBsi1wMp50/VQiM27oTRaade/Qkw==}
 
-  '@ag-ui/encoder@0.0.40-alpha.11':
-    resolution: {integrity: sha512-T/sLvCIpDK2H7I3/XI3Sa8kMRBuvpZTs+zRJfcpFyzLWfDbqovOXLACmMeruap7tlmk2IPXcY9CVUmJsQPBwjw==}
+  '@ag-ui/encoder@0.0.41-alpha.0':
+    resolution: {integrity: sha512-ZHiJhFOec8wZGVn6J7Np5oF53axFnVzXVAlGtucQ1D2LByUbN/IPGSP4qz1HXFa65D9REikA72T+adO+DV4nhQ==}
 
   '@ag-ui/langgraph@0.0.11':
     resolution: {integrity: sha512-3xUkaOelnpQ5tbsbuoOTin71tTgWEN0GDZBjGs/7xAwly2Dn4fahbBAoscXullO/pH9kTGGgbuJ0rWDUgo6fKQ==}
@@ -1062,8 +1040,8 @@ packages:
   '@ag-ui/proto@0.0.36':
     resolution: {integrity: sha512-yaWLwJQmBaCtFstSoZEALztVckCYv+RD8guU91kL5AvywRXvZPP5mjiN+bEwvtw8VU3idXoee1ZbJGpSlSAQ8A==}
 
-  '@ag-ui/proto@0.0.40-alpha.11':
-    resolution: {integrity: sha512-AlPaBBDdVAl8ZAu6fW/knFI4XDmSQJHDy6ADi+va8Hx4oPcG7cI9WhBaEVqETDLqhglRrFfGMt7KeQL+1NMo8Q==}
+  '@ag-ui/proto@0.0.41-alpha.0':
+    resolution: {integrity: sha512-hsU7HzQKleGRDbuDvoC38/TOXJOUN9cLMP64C9HdugByzTFBu5CMsQ4677fY9JXBg9kkmGIhPHuZaBtxQLyhmQ==}
 
   '@ai-sdk/anthropic@2.0.23':
     resolution: {integrity: sha512-ZEBiiv1UhjGjBwUU63pFhLK5LCSlNDb1idY9K1oZHm5/Fda1cuTojf32tOp0opH0RPbPAN/F8fyyNjbU33n9Kw==}
@@ -6542,6 +6520,9 @@ packages:
 
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
+
+  compare-versions@6.1.1:
+    resolution: {integrity: sha512-4hm4VPpIecmlg59CHXnRDnqGplJFrbLG4aFEl5vl6cK1u76ws3LLvX7ikFnTDl5vo39sjWD6AaDPYodJp/NNHg==}
 
   component-emitter@1.3.1:
     resolution: {integrity: sha512-T0+barUSQRTUQASh8bx02dl+DhF54GtIDY13Y3m9oWTklKbb3Wv974meRpeZ3lp1JpLVECWWNHC4vaG2XHXouQ==}
@@ -12565,27 +12546,7 @@ packages:
 
 snapshots:
 
-  '@a2a-js/sdk@0.2.5':
-    dependencies:
-      '@types/cors': 2.8.19
-      '@types/express': 4.17.23
-      body-parser: 2.2.0
-      cors: 2.8.5
-      express: 4.21.2
-      uuid: 11.1.0
-    transitivePeerDependencies:
-      - supports-color
-
   '@adobe/css-tools@4.4.3': {}
-
-  '@ag-ui/a2a@0.0.5(@ag-ui/client@0.0.40-alpha.11)(@ag-ui/core@0.0.40-alpha.11)':
-    dependencies:
-      '@a2a-js/sdk': 0.2.5
-      '@ag-ui/client': 0.0.40-alpha.11
-      '@ag-ui/core': 0.0.40-alpha.11
-      rxjs: 7.8.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ag-ui/client@0.0.36':
     dependencies:
@@ -12599,12 +12560,13 @@ snapshots:
       uuid: 11.1.0
       zod: 3.25.75
 
-  '@ag-ui/client@0.0.40-alpha.11':
+  '@ag-ui/client@0.0.41-alpha.0':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.11
-      '@ag-ui/encoder': 0.0.40-alpha.11
-      '@ag-ui/proto': 0.0.40-alpha.11
+      '@ag-ui/core': 0.0.41-alpha.0
+      '@ag-ui/encoder': 0.0.41-alpha.0
+      '@ag-ui/proto': 0.0.41-alpha.0
       '@types/uuid': 10.0.0
+      compare-versions: 6.1.1
       fast-json-patch: 3.1.1
       rxjs: 7.8.1
       untruncate-json: 0.0.1
@@ -12616,7 +12578,7 @@ snapshots:
       rxjs: 7.8.1
       zod: 3.25.75
 
-  '@ag-ui/core@0.0.40-alpha.11':
+  '@ag-ui/core@0.0.41-alpha.0':
     dependencies:
       rxjs: 7.8.1
       zod: 3.25.75
@@ -12626,10 +12588,10 @@ snapshots:
       '@ag-ui/core': 0.0.36
       '@ag-ui/proto': 0.0.36
 
-  '@ag-ui/encoder@0.0.40-alpha.11':
+  '@ag-ui/encoder@0.0.41-alpha.0':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.11
-      '@ag-ui/proto': 0.0.40-alpha.11
+      '@ag-ui/core': 0.0.41-alpha.0
+      '@ag-ui/proto': 0.0.41-alpha.0
 
   '@ag-ui/langgraph@0.0.11(@opentelemetry/api@1.9.0)(openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.75))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -12652,9 +12614,9 @@ snapshots:
       '@bufbuild/protobuf': 2.6.0
       '@protobuf-ts/protoc': 2.11.1
 
-  '@ag-ui/proto@0.0.40-alpha.11':
+  '@ag-ui/proto@0.0.41-alpha.0':
     dependencies:
-      '@ag-ui/core': 0.0.40-alpha.11
+      '@ag-ui/core': 0.0.41-alpha.0
       '@bufbuild/protobuf': 2.6.0
       '@protobuf-ts/protoc': 2.11.1
 
@@ -19722,6 +19684,8 @@ snapshots:
 
   commondir@1.0.1: {}
 
+  compare-versions@6.1.1: {}
+
   component-emitter@1.3.1: {}
 
   compressible@2.0.18:
@@ -20811,8 +20775,8 @@ snapshots:
       '@typescript-eslint/parser': 8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2)
       eslint: 9.30.0(jiti@2.5.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.0(jiti@2.5.1))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.0(jiti@2.5.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.30.0(jiti@2.5.1))
       eslint-plugin-react: 7.37.5(eslint@9.30.0(jiti@2.5.1))
       eslint-plugin-react-hooks: 5.2.0(eslint@9.30.0(jiti@2.5.1))
@@ -20835,7 +20799,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.0(jiti@2.5.1)):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1(supports-color@5.5.0)
@@ -20846,22 +20810,22 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.0(jiti@2.5.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2)
       eslint: 9.30.0(jiti@2.5.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.0(jiti@2.5.1))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1)(eslint@9.30.0(jiti@2.5.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -20872,7 +20836,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.30.0(jiti@2.5.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.30.0(jiti@2.5.1))(typescript@5.8.2))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1)))(eslint@9.30.0(jiti@2.5.1))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
