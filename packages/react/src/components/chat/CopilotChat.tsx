@@ -59,26 +59,22 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
         }
       }
     };
-    if (agent) {
-      agent.threadId = resolvedThreadId;
-      connect(agent);
-    }
+    agent.threadId = resolvedThreadId;
+    connect(agent);
     return () => {};
   }, [resolvedThreadId, agent, copilotkit, resolvedAgentId]);
 
   const onSubmitInput = useCallback(
     async (value: string) => {
-      agent?.addMessage({
+      agent.addMessage({
         id: randomUUID(),
         role: "user",
         content: value,
       });
-      if (agent) {
-        try {
-          await copilotkit.runAgent({ agent });
-        } catch (error) {
-          console.error("CopilotChat: runAgent failed", error);
-        }
+      try {
+        await copilotkit.runAgent({ agent });
+      } catch (error) {
+        console.error("CopilotChat: runAgent failed", error);
       }
     },
     [agent, copilotkit],
@@ -86,10 +82,6 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
 
   const handleSelectSuggestion = useCallback(
     async (suggestion: Suggestion) => {
-      if (!agent) {
-        return;
-      }
-
       agent.addMessage({
         id: randomUUID(),
         role: "user",
@@ -106,10 +98,6 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
   );
 
   const stopCurrentRun = useCallback(() => {
-    if (!agent) {
-      return;
-    }
-
     try {
       copilotkit.stopAgent({ agent });
     } catch (error) {
@@ -124,7 +112,7 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
 
   const mergedProps = merge(
     {
-      isRunning: agent?.isRunning ?? false,
+      isRunning: agent.isRunning,
       suggestions: autoSuggestions,
       onSelectSuggestion: handleSelectSuggestion,
       suggestionView: providedSuggestionView,
@@ -140,21 +128,21 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
   );
 
   const providedStopHandler = providedInputProps?.onStop;
-  const hasMessages = (agent?.messages?.length ?? 0) > 0;
-  const shouldAllowStop = (agent?.isRunning ?? false) && hasMessages;
+  const hasMessages = agent.messages.length > 0;
+  const shouldAllowStop = agent.isRunning && hasMessages;
   const effectiveStopHandler = shouldAllowStop ? providedStopHandler ?? stopCurrentRun : providedStopHandler;
 
   const finalInputProps = {
     ...providedInputProps,
     onSubmitMessage: onSubmitInput,
     onStop: effectiveStopHandler,
-    isRunning: agent?.isRunning ?? false,
+    isRunning: agent.isRunning,
   } as Partial<CopilotChatInputProps> & { onSubmitMessage: (value: string) => void };
 
-  finalInputProps.mode = agent?.isRunning ? "processing" : finalInputProps.mode ?? "input";
+  finalInputProps.mode = agent.isRunning ? "processing" : finalInputProps.mode ?? "input";
 
   const finalProps = merge(mergedProps, {
-    messages: agent?.messages ?? [],
+    messages: agent.messages,
     inputProps: finalInputProps,
   }) as CopilotChatViewProps;
 
