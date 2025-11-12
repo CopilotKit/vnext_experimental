@@ -27,7 +27,7 @@ const TEST_THREAD_ID = "test-thread";
 
 const renderWithProvider = (component: React.ReactElement) => {
   return render(
-    <CopilotKitProvider runtimeUrl="/test">
+    <CopilotKitProvider>
       <CopilotChatConfigurationProvider threadId={TEST_THREAD_ID}>
         {component}
       </CopilotChatConfigurationProvider>

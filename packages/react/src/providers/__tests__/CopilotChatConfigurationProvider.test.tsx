@@ -8,6 +8,7 @@ import {
 } from "../CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import { CopilotKitProvider } from "../CopilotKitProvider";
+import { MockStepwiseAgent } from "@/__tests__/utils/test-helpers";
 import { CopilotChat } from "../../components/chat/CopilotChat";
 
 // Test component to access configuration
@@ -95,7 +96,7 @@ describe("CopilotChatConfigurationProvider", () => {
       // CopilotChat creates its own provider, so we need to check inside it
       // We'll check the input placeholder which uses the configuration
       const { container } = render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ [DEFAULT_AGENT_ID]: new MockStepwiseAgent() }}>
           <CopilotChat />
         </CopilotKitProvider>
       );
@@ -109,7 +110,7 @@ describe("CopilotChatConfigurationProvider", () => {
 
     it("should inherit from existing provider when CopilotChat has no props", () => {
       const { container } = render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ "outer-agent": new MockStepwiseAgent({ agentId: "outer-agent" }) }}>
           <CopilotChatConfigurationProvider
             threadId="outer-thread"
             agentId="outer-agent"
@@ -127,7 +128,7 @@ describe("CopilotChatConfigurationProvider", () => {
 
     it("should override existing provider with CopilotChat props", () => {
       const { container } = render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ "inner-agent": new MockStepwiseAgent({ agentId: "inner-agent" }) }}>
           <CopilotChatConfigurationProvider
             threadId="outer-thread"
             agentId="outer-agent"
@@ -149,7 +150,7 @@ describe("CopilotChatConfigurationProvider", () => {
 
     it("should merge labels correctly with priority: default < existing < props", () => {
       const { container } = render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ [DEFAULT_AGENT_ID]: new MockStepwiseAgent() }}>
           <CopilotChatConfigurationProvider
             threadId="outer-thread"
             labels={{
@@ -174,7 +175,7 @@ describe("CopilotChatConfigurationProvider", () => {
 
     it("should handle partial overrides correctly", () => {
       const { container } = render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ "outer-agent": new MockStepwiseAgent({ agentId: "outer-agent" }) }}>
           <CopilotChatConfigurationProvider
             threadId="outer-thread"
             agentId="outer-agent"
@@ -201,7 +202,7 @@ describe("CopilotChatConfigurationProvider", () => {
       // This shows that ConfigurationDisplay outside CopilotChat
       // sees the outer provider values, not the inner merged ones
       render(
-        <CopilotKitProvider>
+        <CopilotKitProvider agents__unsafe_dev_only={{ "outer-agent": new MockStepwiseAgent({ agentId: "outer-agent" }) }}>
           <CopilotChatConfigurationProvider
             threadId="outer-thread"
             agentId="outer-agent"

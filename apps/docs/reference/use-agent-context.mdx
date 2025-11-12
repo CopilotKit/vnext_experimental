@@ -361,7 +361,7 @@ function IntegratedExample() {
 
   const handleSearch = async () => {
     // Agent has access to the context when running
-    agent?.addMessage({
+    agent.addMessage({
       id: crypto.randomUUID(),
       role: "user",
       content: `Help me refine my search for: ${productSearch}`,

@@ -50,7 +50,7 @@ Hook that reads the configuration context. It throws if used outside of `Copilot
 ## Hooks
 
 ### `useAgent({ agentId }?)`
-Retrieves a live `AbstractAgent` from `CopilotKitCore` (default id is `DEFAULT_AGENT_ID`) and subscribes to its lifecycle. Returns `{ agent, isRunning }`. The hook forces React updates when the agent changes messages, state, or run status so UI stays in sync.
+Retrieves a live `AbstractAgent` for the given id (default `DEFAULT_AGENT_ID`) and subscribes to its lifecycle. Returns `{ agent }` (never `undefined`). While the runtime is still syncing, the hook provides a provisional `ProxiedCopilotRuntimeAgent` so UI can optimistically bind and update. Once the runtime syncs, if the agent does not exist, the hook throws an error. The hook forces React updates when the agent changes messages, state, or run status so UI stays in sync.
 
 ### `useAgentContext(context)`
 Registers a dynamic `Context` object with the active Copilot runtime for the lifetime of the component. The hook adds the context on mount and removes it on unmount; update the incoming `context` object to refresh what the agent sees.
