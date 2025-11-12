@@ -5,6 +5,8 @@ description: "useAgent Hook API Reference"
 
 `useAgent` is a React hook that provides access to [AG-UI](https://ag-ui.com) agents and subscribes to their state
 changes. It enables components to interact with agents, access their messages, and respond to updates in real-time.
+The hook always returns an agent instance. While the runtime is syncing, it returns a provisional runtime agent; once
+the runtime has synced, if the agent id does not exist the hook throws an error.
 
 ## What is useAgent?
 
@@ -22,10 +24,6 @@ import { useAgent } from "@copilotkitnext/react";
 
 function ChatComponent() {
   const { agent } = useAgent({ agentId: "assistant" });
-
-  if (!agent) {
-    return <div>Loading agent...</div>;
-  }
 
   return (
     <div>
@@ -79,13 +77,11 @@ The hook returns an object with a single property:
 
 ### agent
 
-`AbstractAgent | undefined`
+`AbstractAgent`
 
-The agent instance if found, or `undefined` if:
-
-- The agent with the specified ID doesn't exist
-- The runtime is still connecting
-- No agents are available
+The agent instance. During runtime synchronization, the hook returns a provisional runtime agent so you can bind UI
+immediately. After the runtime has synced (Connected or Error), if the agent id does not exist the hook throws an
+error.
 
 ## Accessing Agent Messages
 
@@ -97,10 +93,6 @@ create interactive conversations.
 ```tsx
 function SimpleChat() {
   const { agent } = useAgent();
-
-  if (!agent) {
-    return <div>No agent available</div>;
-  }
 
   return (
     <div>
@@ -127,7 +119,6 @@ function MessageSender() {
   const { copilotkit } = useCopilotKit();
 
   const sendMessage = async (content: string) => {
-    if (!agent) return;
 
     // Add message to agent
     agent.addMessage({
@@ -145,7 +136,7 @@ function MessageSender() {
 
   return (
     <div>
-      <button onClick={() => sendMessage("Hello!")} disabled={!agent || agent.isRunning}>
+      <button onClick={() => sendMessage("Hello!")} disabled={agent.isRunning}>
         Send Hello
       </button>
     </div>
@@ -181,8 +172,6 @@ function StateDisplay() {
     updates: [UseAgentUpdate.OnStateChanged], // Subscribe to state changes
   });
 
-  if (!agent) return null;
-
   return (
     <div>
       <h3>Current State</h3>
@@ -201,8 +190,6 @@ function StateController() {
   });
 
   const updateState = (key: string, value: any) => {
-    if (!agent) return;
-
     // Update the shared state
     agent.setState({
       ...agent.state,
@@ -233,8 +220,6 @@ function CollaborativeTodo() {
     updates: [UseAgentUpdate.OnStateChanged],
   });
   const { copilotkit } = useCopilotKit();
-
-  if (!agent) return null;
 
   const todos = agent.state.todos || [];
 
@@ -301,7 +286,7 @@ function MessageList() {
     updates: [UseAgentUpdate.OnMessagesChanged],
   });
 
-  if (!agent) return null;
+  
 
   return (
     <ul>
@@ -326,7 +311,7 @@ function RunStatus() {
     updates: [UseAgentUpdate.OnRunStatusChanged],
   });
 
-  if (!agent) return null;
+  
 
   return (
     <div className={`status ${agent.isRunning ? "running" : "idle"}`}>
@@ -354,12 +339,12 @@ function DualAgentView() {
     <div className="dual-view">
       <div className="primary">
         <h3>Primary Assistant</h3>
-        {primaryAgent ? <div>Messages: {primaryAgent.messages.length}</div> : <div>Loading...</div>}
+        <div>Messages: {primaryAgent.messages.length}</div>
       </div>
 
       <div className="support">
         <h3>Support Assistant</h3>
-        {supportAgent ? <div>Messages: {supportAgent.messages.length}</div> : <div>Loading...</div>}
+        <div>Messages: {supportAgent.messages.length}</div>
       </div>
     </div>
   );
@@ -390,7 +375,7 @@ function MessageRenderer() {
     updates: [UseAgentUpdate.OnMessagesChanged], // Only re-render on message changes
   });
 
-  if (!agent || agent.messages.length === 0) {
+  if (agent.messages.length === 0) {
     return <div>No messages yet</div>;
   }
 
@@ -485,18 +470,17 @@ function ChatView() {
 
 ## Error Handling
 
-The hook returns `undefined` if the agent is not available. Always check for this:
+After the runtime has synced (Connected or Error), `useAgent` throws if the requested agent id does not exist. During
+runtime syncing, a provisional agent is returned. To avoid runtime errors:
+
+- Ensure the agent id you request is registered (via `agents__unsafe_dev_only` or exposed by your runtime).
+- Optionally wrap the component that calls `useAgent` in an error boundary to render a fallback UI if the agent is
+  missing due to misconfiguration in development.
+
+Example configuration with a local agent for development:
 
 ```tsx
-function SafeAgentComponent() {
-  const { agent } = useAgent({ agentId: "my-agent" });
-
-  if (!agent) {
-    // Handle missing agent gracefully
-    return <div className="error">Agent not available. Please check your configuration.</div>;
-  }
-
-  // Safe to use agent here
-  return <div>{agent.messages.length} messages</div>;
-}
+<CopilotKitProvider agents__unsafe_dev_only={{ myAgent: new MyAgent() }}>
+  <App />
+</CopilotKitProvider>
 ```

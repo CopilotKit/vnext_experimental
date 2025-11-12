@@ -104,6 +104,7 @@ describe("defineToolCallRenderer", () => {
       const mockAgent = {
         clone: vi.fn(),
         run: vi.fn(),
+        subscribe: vi.fn(() => ({ unsubscribe: () => {} })),
       } as unknown as AbstractAgent;
 
       // This is the exact code pattern the user wanted to use

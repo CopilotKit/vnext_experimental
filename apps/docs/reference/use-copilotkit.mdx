@@ -78,7 +78,7 @@ function AgentRunner() {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
-    if (!agent || !message) return;
+    if (!message) return;
 
     // Add user message
     agent.addMessage({
@@ -88,10 +88,7 @@ function AgentRunner() {
     });
 
     // Run the agent
-    await copilotkit.runAgent({
-      agent,
-      agentId: "assistant",
-    });
+    await copilotkit.runAgent({ agent, agentId: "assistant" });
 
     setMessage("");
   };
