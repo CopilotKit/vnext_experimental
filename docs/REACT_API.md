@@ -55,8 +55,10 @@ Retrieves a live `AbstractAgent` from `CopilotKitCore` (default id is `DEFAULT_A
 ### `useAgentContext(context)`
 Registers a dynamic `Context` object with the active Copilot runtime for the lifetime of the component. The hook adds the context on mount and removes it on unmount; update the incoming `context` object to refresh what the agent sees.
 
-### `useFrontendTool(tool)`
-Accepts a `ReactFrontendTool<T>` (a `FrontendTool` with an optional `render` component). The hook:
+### `useFrontendTool(tool, deps?)`
+Accepts a `ReactFrontendTool<T>` (a `FrontendTool` with an optional `render` component). Optionally pass a React-style dependency array to control when the tool’s `render` component should be re-registered; the hook memoizes the renderer for you.
+
+The hook:
 - Warns if a tool with the same name already exists.
 - Registers the tool with CopilotKit on mount.
 - Adds the tool’s render component to `currentRenderToolCalls` if provided.
@@ -64,8 +66,8 @@ Accepts a `ReactFrontendTool<T>` (a `FrontendTool` with an optional `render` com
 
 Use this to wire custom client-side tool handlers at component scope.
 
-### `useHumanInTheLoop(tool)`
-Wraps `useFrontendTool` for interactive tools that pause agent execution. Expects a `ReactHumanInTheLoop<T>`:
+### `useHumanInTheLoop(tool, deps?)`
+Wraps `useFrontendTool` for interactive tools that pause agent execution. Expects a `ReactHumanInTheLoop<T>` and accepts the same optional dependency array for renderer memoization:
 - Provides an internal status machine (`inProgress → executing → complete`).
 - Supplies a `respond(result)` callback to the render component while executing.
 - Resolves the tool call promise with the caller’s response.

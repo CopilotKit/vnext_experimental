@@ -198,6 +198,87 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
     });
   });
 
+  describe("Renderer dependency memoization", () => {
+    it("updates registered renderer when dependency array entries change", async () => {
+      const agent = new MockStepwiseAgent();
+      const TOOL_NAME = "statefulFrontendTool";
+
+      const StatefulRenderer: React.FC = () => {
+        const [label, setLabel] = useState("pending");
+
+        useFrontendTool(
+          {
+            name: TOOL_NAME,
+            description: "Stateful frontend tool renderer",
+            parameters: z.object({
+              message: z.string().optional(),
+            }),
+            render: ({ args }) => (
+              <div data-testid="frontend-stateful-hitl">
+                <div data-testid="frontend-stateful-label">{label}</div>
+                <div data-testid="frontend-stateful-args">{args.message ?? ""}</div>
+              </div>
+            ),
+          },
+          [label],
+        );
+
+        return (
+          <button data-testid="frontend-update-label" onClick={() => setLabel("updated")}>
+            Update Label
+          </button>
+        );
+      };
+
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <StatefulRenderer />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Trigger frontend tool" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("Trigger frontend tool")).toBeDefined();
+      });
+
+      const messageId = testId("msg");
+      const toolCallId = testId("tc_frontend_stateful");
+
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: TOOL_NAME,
+          parentMessageId: messageId,
+          delta: JSON.stringify({ message: "initial payload" }),
+        }),
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("frontend-stateful-args").textContent).toBe("initial payload");
+        expect(screen.getByTestId("frontend-stateful-label").textContent).toBe("pending");
+      });
+
+      fireEvent.click(screen.getByTestId("frontend-update-label"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("frontend-stateful-label").textContent).toBe("updated");
+      });
+
+      agent.emit(runFinishedEvent());
+      agent.complete();
+    });
+  });
+
   describe("Streaming tool calls with incomplete JSON", () => {
     it("renders tool calls progressively as incomplete JSON chunks arrive", async () => {
       const agent = new MockStepwiseAgent();

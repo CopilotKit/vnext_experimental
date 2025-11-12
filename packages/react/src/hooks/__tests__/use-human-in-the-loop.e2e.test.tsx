@@ -14,7 +14,85 @@ import {
   testId,
 } from "@/__tests__/utils/test-helpers";
 
+const statefulHitlArgs = z.object({
+  message: z.string().optional(),
+});
+
 describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
+  describe("HITL renderer state reactivity", () => {
+    it("updates the rendered output when the host component state changes", async () => {
+      const agent = new MockStepwiseAgent();
+      const TOOL_NAME = "statefulHitl";
+
+      const StatefulHITLComponent: React.FC = () => {
+        const [label, setLabel] = useState("pending");
+        const hitlTool: ReactHumanInTheLoop<{ message?: string }> = {
+          name: TOOL_NAME,
+          description: "Stateful HITL",
+          parameters: statefulHitlArgs,
+          render: ({ args }) => (
+            <div data-testid="stateful-hitl">
+              <div data-testid="stateful-label">{label}</div>
+              <div data-testid="stateful-args">{args.message ?? ""}</div>
+            </div>
+          ),
+        };
+
+        useHumanInTheLoop(hitlTool, [label]);
+
+        return (
+          <button data-testid="hitl-update-label" onClick={() => setLabel("updated")}>
+            Update Label
+          </button>
+        );
+      };
+
+      renderWithCopilotKit({
+        agent,
+        children: (
+          <>
+            <StatefulHITLComponent />
+            <div style={{ height: 400 }}>
+              <CopilotChat />
+            </div>
+          </>
+        ),
+      });
+
+      const input = await screen.findByRole("textbox");
+      fireEvent.change(input, { target: { value: "Trigger stateful HITL" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+      await waitFor(() => {
+        expect(screen.getByText("Trigger stateful HITL")).toBeDefined();
+      });
+
+      const messageId = testId("msg");
+      const toolCallId = testId("tc");
+
+      agent.emit(runStartedEvent());
+      agent.emit(
+        toolCallChunkEvent({
+          toolCallId,
+          toolCallName: TOOL_NAME,
+          parentMessageId: messageId,
+          delta: JSON.stringify({ message: "initial payload" }),
+        })
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("stateful-args").textContent).toBe("initial payload");
+        expect(screen.getByTestId("stateful-label").textContent).toBe("pending");
+      });
+
+      fireEvent.click(screen.getByTestId("hitl-update-label"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("stateful-label").textContent).toBe("updated");
+      });
+    });
+  });
+
   describe("HITL Renderer with Status Transitions", () => {
     it("should show InProgress → Complete transitions for HITL tool", async () => {
       const agent = new MockStepwiseAgent();

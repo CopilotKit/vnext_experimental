@@ -43,7 +43,25 @@ function SearchComponent() {
 
 ## Parameters
 
-The hook accepts a single `ReactFrontendTool` object with the following properties:
+The hook accepts a `ReactFrontendTool` object as its first argument, plus an optional React dependency array as the second argument. The dependency array memoizes the tool's `render` function (if provided) so you don't have to wrap the tool in `useMemo`.
+
+### deps (second argument)
+
+`React.DependencyList` **(optional)**
+
+Controls when CopilotKit should refresh the registered render component. Pass the same dependency list you would give to `useMemo` when deriving the renderer from React state.
+
+```tsx
+const [label, setLabel] = useState("pending");
+
+useFrontendTool(
+  {
+    name: "statefulRenderer",
+    render: () => <span>{label}</span>,
+  },
+  [label],
+);
+```
 
 ### name
 

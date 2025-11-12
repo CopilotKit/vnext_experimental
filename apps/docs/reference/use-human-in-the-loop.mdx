@@ -53,7 +53,19 @@ function ApprovalComponent() {
 
 ## Parameters
 
-The hook accepts a single `ReactHumanInTheLoop` object with the following properties:
+The hook accepts a `ReactHumanInTheLoop` object plus an optional React dependency array as the second argument. Dependencies memoize the tool’s render component so you can tie it to component state without wrapping the tool in `useMemo`.
+
+```tsx
+const [label, setLabel] = useState("pending");
+
+useHumanInTheLoop(
+  {
+    name: "statefulHitl",
+    render: () => <span>{label}</span>,
+  },
+  [label],
+);
+```
 
 ### name
 
