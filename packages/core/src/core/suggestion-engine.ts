@@ -434,11 +434,9 @@ const SUGGEST_TOOL: Tool = {
             },
           },
           required: ["title", "message"],
-          additionalProperties: false,
         },
       },
     },
     required: ["suggestions"],
-    additionalProperties: false,
   },
 };
