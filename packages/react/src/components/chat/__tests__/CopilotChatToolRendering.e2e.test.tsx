@@ -30,7 +30,7 @@ class MockStreamingAgent extends AbstractAgent {
     return new MockStreamingAgent();
   }
 
-  protected run(_input: RunAgentInput): Observable<BaseEvent> {
+  run(_input: RunAgentInput): Observable<BaseEvent> {
     return new Observable<BaseEvent>((observer) => {
       const messageId = `m_${Date.now()}`;
       const toolCallId = `tc_${Date.now()}`;
@@ -252,7 +252,7 @@ class MockStepwiseAgent extends AbstractAgent {
     return this;
   }
 
-  protected run(_input: RunAgentInput): Observable<BaseEvent> {
+  run(_input: RunAgentInput): Observable<BaseEvent> {
     return this.subject.asObservable();
   }
 }

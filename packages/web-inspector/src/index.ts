@@ -153,7 +153,7 @@ export class WebInspectorElement extends LitElement {
       },
     } satisfies CopilotKitCoreSubscriber;
 
-    this.coreUnsubscribe = core.subscribe(this.coreSubscriber);
+    this.coreUnsubscribe = core.subscribe(this.coreSubscriber).unsubscribe;
     this.processAgentsChanged(core.agents);
 
     // Initialize context from core

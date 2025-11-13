@@ -245,14 +245,14 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    const unsubscribe = copilotkit.subscribe({
+    const subscription = copilotkit.subscribe({
       onRenderToolCallsChanged: () => {
         forceUpdate();
       },
     });
 
     return () => {
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, [copilotkit]);
 
@@ -285,13 +285,13 @@ export const useCopilotKit = (): CopilotKitContextValue => {
     throw new Error("useCopilotKit must be used within CopilotKitProvider");
   }
   useEffect(() => {
-    const unsubscribe = context.copilotkit.subscribe({
+    const subscription = context.copilotkit.subscribe({
       onRuntimeConnectionStatusChanged: () => {
         forceUpdate();
       },
     });
     return () => {
-      unsubscribe();
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

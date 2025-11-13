@@ -106,6 +106,11 @@ export interface CopilotKitCoreSubscriber {
   }) => void | Promise<void>;
 }
 
+// Subscription object returned by subscribe()
+export interface CopilotKitCoreSubscription {
+  unsubscribe: () => void;
+}
+
 export enum CopilotKitCoreRuntimeConnectionStatus {
   Disconnected = "disconnected",
   Connected = "connected",
@@ -387,17 +392,15 @@ export class CopilotKitCore {
   /**
    * Subscription lifecycle
    */
-  subscribe(subscriber: CopilotKitCoreSubscriber): () => void {
+  subscribe(subscriber: CopilotKitCoreSubscriber): CopilotKitCoreSubscription {
     this.subscribers.add(subscriber);
 
-    // Return unsubscribe function
-    return () => {
-      this.unsubscribe(subscriber);
+    // Return subscription with unsubscribe method
+    return {
+      unsubscribe: () => {
+        this.subscribers.delete(subscriber);
+      },
     };
-  }
-
-  unsubscribe(subscriber: CopilotKitCoreSubscriber): void {
-    this.subscribers.delete(subscriber);
   }
 
   /**

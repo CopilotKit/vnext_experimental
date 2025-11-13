@@ -569,7 +569,7 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
           // Keep state across runs so the second run emits different args
           return this;
         }
-        protected run(_input: RunAgentInput): Observable<BaseEvent> {
+        run(_input: RunAgentInput): Observable<BaseEvent> {
           return new Observable<BaseEvent>((observer) => {
             const messageId = testId("m");
             const toolCallId = testId("tc");

@@ -36,7 +36,7 @@ export function useSuggestions({ agentId }: UseSuggestionsOptions = {}): UseSugg
   }, [copilotkit, resolvedAgentId]);
 
   useEffect(() => {
-    const unsubscribe = copilotkit.subscribe({
+    const subscription = copilotkit.subscribe({
       onSuggestionsChanged: ({ agentId: changedAgentId, suggestions }) => {
         if (changedAgentId !== resolvedAgentId) {
           return;
@@ -63,7 +63,7 @@ export function useSuggestions({ agentId }: UseSuggestionsOptions = {}): UseSugg
     });
 
     return () => {
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, [copilotkit, resolvedAgentId]);
 
