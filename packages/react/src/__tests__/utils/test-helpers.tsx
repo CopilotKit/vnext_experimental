@@ -53,7 +53,7 @@ export class MockStepwiseAgent extends AbstractAgent {
     return this;
   }
 
-  protected run(_input: RunAgentInput): Observable<BaseEvent> {
+  run(_input: RunAgentInput): Observable<BaseEvent> {
     return this.subject.asObservable();
   }
 }
@@ -299,7 +299,7 @@ export class SuggestionsProviderAgent extends MockStepwiseAgent {
     this._suggestions = suggestions;
   }
 
-  protected run(_input: RunAgentInput): Observable<BaseEvent> {
+  run(_input: RunAgentInput): Observable<BaseEvent> {
     // Call the parent's run() to get the Subject that's already set up
     const parentObservable = super.run(_input);
 

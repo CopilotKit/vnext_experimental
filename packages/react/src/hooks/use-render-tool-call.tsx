@@ -31,14 +31,14 @@ export function useRenderToolCall() {
     (callback) => {
       return copilotkit.subscribe({
         onRenderToolCallsChanged: callback,
-      });
+      }).unsubscribe;
     },
     () => copilotkit.renderToolCalls,
     () => copilotkit.renderToolCalls
   );
 
   useEffect(() => {
-    const unsubscribe = copilotkit.subscribe({
+    const subscription = copilotkit.subscribe({
       onToolExecutionStart: ({ toolCallId }) => {
         setExecutingToolCallIds((prev) => {
           if (prev.has(toolCallId)) return prev;
@@ -56,7 +56,7 @@ export function useRenderToolCall() {
         });
       },
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [copilotkit]);
 
   const renderToolCall = useCallback(

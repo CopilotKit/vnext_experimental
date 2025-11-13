@@ -18,7 +18,7 @@ class ImmediateSuggestionsProviderAgent extends AbstractAgent {
     super({ agentId: DEFAULT_AGENT_ID });
   }
 
-  protected run(): never {
+  run(): never {
     throw new Error("SuggestionsProviderAgent should not use stream run");
   }
 

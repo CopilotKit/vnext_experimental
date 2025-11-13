@@ -140,19 +140,11 @@ CopilotKitCore implements a robust event system that allows you to react to stat
 
 ### subscribe()
 
-Registers a subscriber to receive events. The returned function can be called to unsubscribe, making cleanup
-straightforward.
+Registers a subscriber to receive events. Returns a subscription object with an `unsubscribe()` method, keeping
+unsubscription localized to the subscription object.
 
 ```typescript
-subscribe(subscriber: CopilotKitCoreSubscriber): () => void
-```
-
-### unsubscribe()
-
-Manually removes a subscriber if you prefer explicit cleanup over using the returned function.
-
-```typescript
-unsubscribe(subscriber: CopilotKitCoreSubscriber): void
+subscribe(subscriber: CopilotKitCoreSubscriber): { unsubscribe(): void }
 ```
 
 ## Subscribing to Events
