@@ -550,7 +550,6 @@ export class RunHandler {
 const EMPTY_TOOL_SCHEMA = {
   type: "object",
   properties: {},
-  additionalProperties: false,
 } as const satisfies Record<string, unknown>;
 
 /**
@@ -558,7 +557,7 @@ const EMPTY_TOOL_SCHEMA = {
  */
 function createToolSchema(tool: FrontendTool<any>): Record<string, unknown> {
   if (!tool.parameters) {
-    return EMPTY_TOOL_SCHEMA;
+    return { ...EMPTY_TOOL_SCHEMA };
   }
 
   const rawSchema = zodToJsonSchema(tool.parameters, {
@@ -577,9 +576,28 @@ function createToolSchema(tool: FrontendTool<any>): Record<string, unknown> {
   if (typeof schema.properties !== "object" || schema.properties === null) {
     schema.properties = {};
   }
-  if (schema.additionalProperties === undefined) {
-    schema.additionalProperties = false;
+
+  stripAdditionalProperties(schema);
+  return schema;
+}
+
+function stripAdditionalProperties(schema: unknown): void {
+  if (!schema || typeof schema !== "object") {
+    return;
   }
 
-  return schema;
+  if (Array.isArray(schema)) {
+    schema.forEach(stripAdditionalProperties);
+    return;
+  }
+
+  const record = schema as Record<string, unknown>;
+
+  if (record.additionalProperties !== undefined) {
+    delete record.additionalProperties;
+  }
+
+  for (const value of Object.values(record)) {
+    stripAdditionalProperties(value);
+  }
 }
