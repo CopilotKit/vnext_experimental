@@ -130,7 +130,7 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
   const providedStopHandler = providedInputProps?.onStop;
   const hasMessages = agent.messages.length > 0;
   const shouldAllowStop = agent.isRunning && hasMessages;
-  const effectiveStopHandler = shouldAllowStop ? providedStopHandler ?? stopCurrentRun : providedStopHandler;
+  const effectiveStopHandler = shouldAllowStop ? (providedStopHandler ?? stopCurrentRun) : providedStopHandler;
 
   const finalInputProps = {
     ...providedInputProps,
@@ -139,7 +139,7 @@ export function CopilotChat({ agentId, threadId, labels, chatView, isModalDefaul
     isRunning: agent.isRunning,
   } as Partial<CopilotChatInputProps> & { onSubmitMessage: (value: string) => void };
 
-  finalInputProps.mode = agent.isRunning ? "processing" : finalInputProps.mode ?? "input";
+  finalInputProps.mode = agent.isRunning ? "processing" : (finalInputProps.mode ?? "input");
 
   const finalProps = merge(mergedProps, {
     messages: agent.messages,
