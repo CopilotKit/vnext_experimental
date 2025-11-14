@@ -104,6 +104,11 @@ export class RunHandler {
    */
   async connectAgent({ agent }: CopilotKitCoreConnectAgentParams): Promise<RunAgentResult> {
     try {
+      // Detach any active run before connecting to avoid previous runs interfering
+      await agent.detachActiveRun();
+      agent.setMessages([]);
+      agent.setState({});
+
       if (agent instanceof HttpAgent) {
         agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
       }
