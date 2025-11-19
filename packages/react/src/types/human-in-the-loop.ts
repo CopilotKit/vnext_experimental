@@ -1,10 +1,11 @@
+import type { ReactElement } from "react";
 import { FrontendTool, ToolCallStatus } from "@copilotkitnext/core";
-import React from "react";
 
 export type ReactHumanInTheLoop<
   T extends Record<string, unknown> = Record<string, unknown>,
 > = Omit<FrontendTool<T>, "handler"> & {
-  render: React.ComponentType<
+  render: (
+    props:
     | {
         name: string;
         description: string;
@@ -28,6 +29,6 @@ export type ReactHumanInTheLoop<
         status: ToolCallStatus.Complete;
         result: string;
         respond: undefined;
-      }
-  >;
+      },
+  ) => ReactElement | null;
 };
