@@ -53,7 +53,10 @@ function ApprovalComponent() {
 
 ## Parameters
 
-The hook accepts a single `ReactHumanInTheLoop` object with the following properties:
+The hook accepts:
+
+- A required `ReactHumanInTheLoop` object describing the tool
+- An optional `options` object for controlling dependency behavior
 
 ### name
 
@@ -180,6 +183,32 @@ useHumanInTheLoop({
   agentId: "admin-assistant",
   // ...
 });
+```
+
+## Options
+
+### deps (second argument)
+
+`ReadonlyArray<unknown>` **(optional)**
+
+Additional dependencies that should trigger re-registration of the human-in-the-loop tool. By default, the hook only
+depends on stable keys like the tool name and CopilotKit instance to avoid re-register loops from object identity
+changes. Pass a dependency array as the second argument when the tool configuration is derived from changing props or
+state:
+
+```tsx
+function VersionedApproval({ version }: { version: number }) {
+  useHumanInTheLoop(
+    {
+      name: "versionedApproval",
+      description: `Approve deployment v${version}`,
+      // ...
+    },
+    [version],
+  );
+
+  return null;
+}
 ```
 
 ## Differences from useFrontendTool

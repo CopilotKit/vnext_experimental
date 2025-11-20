@@ -3,10 +3,13 @@ import { useCopilotKit } from "../providers/CopilotKitProvider";
 import { ReactFrontendTool } from "../types/frontend-tool";
 import { ReactToolCallRenderer } from "../types/react-tool-call-renderer";
 
+const EMPTY_DEPS: ReadonlyArray<unknown> = [];
+
 export function useFrontendTool<
   T extends Record<string, unknown> = Record<string, unknown>,
->(tool: ReactFrontendTool<T>) {
+>(tool: ReactFrontendTool<T>, deps?: ReadonlyArray<unknown>) {
   const { copilotkit } = useCopilotKit();
+  const extraDeps = deps ?? EMPTY_DEPS;
 
   useEffect(() => {
     const name = tool.name;
@@ -49,6 +52,7 @@ export function useFrontendTool<
       copilotkit.removeTool(name, tool.agentId);
       // we are intentionally not removing the render here so that the tools can still render in the chat history
     };
-    // Depend only on stable keys to avoid re-register loops due to object identity
-  }, [tool.name, copilotkit]);
+    // Depend on stable keys by default and allow callers to opt into
+    // additional dependencies for dynamic tool configuration.
+  }, [tool.name, copilotkit, extraDeps.length, ...extraDeps]);
 }

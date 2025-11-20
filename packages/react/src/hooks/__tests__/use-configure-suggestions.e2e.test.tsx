@@ -249,7 +249,7 @@ const DependencyDrivenHarness: React.FC = () => {
   });
   const [version, setVersion] = useState(0);
 
-  useConfigureSuggestions(configRef.current, { deps: [version] });
+  useConfigureSuggestions(configRef.current, [version]);
 
   const { suggestions } = useSuggestions();
 
@@ -370,7 +370,7 @@ const DynamicStreamingHarness: React.FC = () => {
       consumerAgentId: "consumer",
       available: "always",
     },
-    { deps: [topic] },
+    [topic],
   );
 
   const { suggestions, reloadSuggestions } = useSuggestions({ agentId: "consumer" });

@@ -8,6 +8,7 @@ import { useCopilotKit } from "@/providers/CopilotKitProvider";
 
 export function useHumanInTheLoop<T extends Record<string, unknown> = Record<string, unknown>>(
   tool: ReactHumanInTheLoop<T>,
+  deps?: ReadonlyArray<unknown>,
 ) {
   const { copilotkit } = useCopilotKit();
   const resolvePromiseRef = useRef<((result: unknown) => void) | null>(null);
@@ -69,7 +70,7 @@ export function useHumanInTheLoop<T extends Record<string, unknown> = Record<str
     render: RenderComponent,
   };
 
-  useFrontendTool(frontendTool);
+  useFrontendTool(frontendTool, deps);
 
   // Human-in-the-loop tools should remove their renderer on unmount
   // since they can't respond to user interactions anymore

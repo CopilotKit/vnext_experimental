@@ -1622,6 +1622,78 @@ describe("useFrontendTool E2E - Dynamic Registration", () => {
     });
   });
 
+  describe("useFrontendTool dependencies", () => {
+    it("updates tool renderer when optional deps change", async () => {
+      const DependencyDrivenTool: React.FC = () => {
+        const [version, setVersion] = useState(0);
+
+        const tool: ReactFrontendTool<{ message: string }> = {
+          name: "dependencyTool",
+          parameters: z.object({ message: z.string() }),
+          render: ({ args }) => (
+            <div data-testid="dependency-tool-render">
+              {args.message} (v{version})
+            </div>
+          ),
+        };
+
+        useFrontendTool(tool, [version]);
+
+        const toolCallId = testId("dep_tc");
+        const assistantMessage: AssistantMessage = {
+          id: testId("dep_a"),
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            {
+              id: toolCallId,
+              type: "function",
+              function: {
+                name: "dependencyTool",
+                arguments: JSON.stringify({ message: "hello" }),
+              },
+            } as any,
+          ],
+        } as any;
+        const messages: Message[] = [];
+
+        return (
+          <>
+            <button
+              data-testid="bump-version"
+              type="button"
+              onClick={() => setVersion((v) => v + 1)}
+            >
+              Bump
+            </button>
+            <CopilotChatToolCallsView
+              message={assistantMessage}
+              messages={messages}
+            />
+          </>
+        );
+      };
+
+      renderWithCopilotKit({
+        children: <DependencyDrivenTool />,
+      });
+
+      await waitFor(() => {
+        const el = screen.getByTestId("dependency-tool-render");
+        expect(el).toBeDefined();
+        expect(el.textContent).toContain("hello");
+        expect(el.textContent).toContain("(v0)");
+      });
+
+      fireEvent.click(screen.getByTestId("bump-version"));
+
+      await waitFor(() => {
+        const el = screen.getByTestId("dependency-tool-render");
+        expect(el.textContent).toContain("(v1)");
+      });
+    });
+  });
+
   describe("Error Propagation", () => {
     it("should propagate handler errors to renderer", async () => {
       const agent = new MockStepwiseAgent();
