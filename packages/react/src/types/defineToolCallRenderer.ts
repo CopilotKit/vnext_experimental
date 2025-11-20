@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactElement } from "react";
 import { z } from "zod";
 import { ReactToolCallRenderer } from "./react-tool-call-renderer";
 import { ToolCallStatus } from "@copilotkitnext/core";
@@ -33,7 +33,7 @@ type RenderProps<T> =
 // Overload for wildcard tools without args
 export function defineToolCallRenderer(def: {
   name: "*";
-  render: (props: RenderProps<any>) => React.ReactElement;
+  render: (props: RenderProps<any>) => ReactElement;
   agentId?: string;
 }): ReactToolCallRenderer<any>;
 
@@ -41,7 +41,7 @@ export function defineToolCallRenderer(def: {
 export function defineToolCallRenderer<S extends z.ZodTypeAny>(def: {
   name: string;
   args: S;
-  render: (props: RenderProps<z.infer<S>>) => React.ReactElement;
+  render: (props: RenderProps<z.infer<S>>) => ReactElement;
   agentId?: string;
 }): ReactToolCallRenderer<z.infer<S>>;
 
@@ -49,7 +49,7 @@ export function defineToolCallRenderer<S extends z.ZodTypeAny>(def: {
 export function defineToolCallRenderer<S extends z.ZodTypeAny>(def: {
   name: string;
   args?: S;
-  render: (props: any) => React.ReactElement;
+  render: (props: any) => ReactElement;
   agentId?: string;
 }): ReactToolCallRenderer<any> {
   // For wildcard tools, default to z.any() if no args provided
@@ -58,7 +58,7 @@ export function defineToolCallRenderer<S extends z.ZodTypeAny>(def: {
   return {
     name: def.name,
     args: argsSchema as any,
-    render: def.render as React.ComponentType<any>,
+    render: def.render,
     ...(def.agentId ? { agentId: def.agentId } : {}),
   };
 }
