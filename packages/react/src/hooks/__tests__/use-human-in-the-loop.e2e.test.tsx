@@ -5,6 +5,8 @@ import { useHumanInTheLoop } from "../use-human-in-the-loop";
 import { ReactHumanInTheLoop } from "@/types";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { CopilotChat } from "@/components/chat/CopilotChat";
+import CopilotChatToolCallsView from "@/components/chat/CopilotChatToolCallsView";
+import { AssistantMessage, Message } from "@ag-ui/core";
 import {
   MockStepwiseAgent,
   renderWithCopilotKit,
@@ -571,6 +573,79 @@ describe("useHumanInTheLoop E2E - HITL Tool Rendering", () => {
 
       agent.emit(runFinishedEvent());
       agent.complete();
+    });
+  });
+
+  describe("useHumanInTheLoop dependencies", () => {
+    it("updates HITL renderer when optional deps change", async () => {
+      const DependencyDrivenHITLComponent: React.FC = () => {
+        const [version, setVersion] = useState(0);
+
+        const hitlTool: ReactHumanInTheLoop<{ message: string }> = {
+          name: "dependencyHitlTool",
+          description: "Dependency-driven HITL tool",
+          parameters: z.object({ message: z.string() }),
+          render: ({ args }) => (
+            <div data-testid="dependency-hitl-render">
+              {args.message} (v{version})
+            </div>
+          ),
+        };
+
+        useHumanInTheLoop(hitlTool, [version]);
+
+        const toolCallId = testId("hitl_dep_tc");
+        const assistantMessage: AssistantMessage = {
+          id: testId("hitl_dep_a"),
+          role: "assistant",
+          content: "",
+          toolCalls: [
+            {
+              id: toolCallId,
+              type: "function",
+              function: {
+                name: "dependencyHitlTool",
+                arguments: JSON.stringify({ message: "hello" }),
+              },
+            } as any,
+          ],
+        } as any;
+        const messages: Message[] = [];
+
+        return (
+          <>
+            <button
+              data-testid="hitl-bump-version"
+              type="button"
+              onClick={() => setVersion((v) => v + 1)}
+            >
+              Bump
+            </button>
+            <CopilotChatToolCallsView
+              message={assistantMessage}
+              messages={messages}
+            />
+          </>
+        );
+      };
+
+      renderWithCopilotKit({
+        children: <DependencyDrivenHITLComponent />,
+      });
+
+      await waitFor(() => {
+        const el = screen.getByTestId("dependency-hitl-render");
+        expect(el).toBeDefined();
+        expect(el.textContent).toContain("hello");
+        expect(el.textContent).toContain("(v0)");
+      });
+
+      fireEvent.click(screen.getByTestId("hitl-bump-version"));
+
+      await waitFor(() => {
+        const el = screen.getByTestId("dependency-hitl-render");
+        expect(el.textContent).toContain("(v1)");
+      });
     });
   });
 });

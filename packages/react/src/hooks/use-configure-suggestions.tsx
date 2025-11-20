@@ -17,19 +17,13 @@ type StaticSuggestionsConfigInput = Omit<StaticSuggestionsConfig, "suggestions">
 
 type SuggestionsConfigInput = DynamicSuggestionsConfig | StaticSuggestionsConfigInput;
 
-const EMPTY_DEPS: ReadonlyArray<unknown> = [];
-
-export interface UseConfigureSuggestionsOptions {
-  deps?: ReadonlyArray<unknown>;
-}
-
 export function useConfigureSuggestions(
   config: SuggestionsConfigInput | null | undefined,
-  options?: UseConfigureSuggestionsOptions,
+  deps?: ReadonlyArray<unknown>,
 ): void {
   const { copilotkit } = useCopilotKit();
   const chatConfig = useCopilotChatConfiguration();
-  const extraDeps = options?.deps ?? EMPTY_DEPS;
+  const extraDeps = deps ?? [];
 
   const resolvedConsumerAgentId = useMemo(() => chatConfig?.agentId ?? DEFAULT_AGENT_ID, [chatConfig?.agentId]);
 

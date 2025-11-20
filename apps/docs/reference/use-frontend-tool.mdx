@@ -43,7 +43,10 @@ function SearchComponent() {
 
 ## Parameters
 
-The hook accepts a single `ReactFrontendTool` object with the following properties:
+The hook accepts:
+
+- A required `ReactFrontendTool` object describing the tool
+- An optional dependency array to control when the tool is re-registered
 
 ### name
 
@@ -182,6 +185,28 @@ useFrontendTool({
     return await performAdminAction(args);
   },
 });
+```
+
+### deps (second argument)
+
+`ReadonlyArray<unknown>` **(optional)**
+
+Additional dependencies that should trigger re-registration of the tool. By default, the hook only depends on the tool
+name and CopilotKit instance to avoid re-register loops from object identity changes. Pass a dependency array as the
+second argument when the tool's configuration is derived from changing props or state:
+
+```tsx
+function PriceTool({ currency }: { currency: string }) {
+  useFrontendTool(
+    {
+      name: "convertPrice",
+      handler: async (args) => convertPrice(args.amount, currency),
+    },
+    [currency],
+  );
+
+  return null;
+}
 ```
 
 ## Lifecycle Management
