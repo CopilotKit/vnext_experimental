@@ -4,7 +4,12 @@ import tailwindStyles from "./styles/generated.css";
 import logoMarkUrl from "./assets/logo-mark.svg";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { icons } from "lucide";
-import type { CopilotKitCore, CopilotKitCoreSubscriber } from "@copilotkitnext/core";
+import {
+  CopilotKitCore,
+  CopilotKitCoreRuntimeConnectionStatus,
+  type CopilotKitCoreSubscriber,
+  type CopilotKitCoreErrorCode,
+} from "@copilotkitnext/core";
 import type { AbstractAgent, AgentSubscriber } from "@ag-ui/client";
 import type { Anchor, ContextKey, ContextState, DockMode, Position, Size } from "./lib/types";
 import {
@@ -43,34 +48,106 @@ const DRAG_THRESHOLD = 6;
 const MIN_WINDOW_WIDTH = 600;
 const MIN_WINDOW_WIDTH_DOCKED_LEFT = 420;
 const MIN_WINDOW_HEIGHT = 200;
-const COOKIE_NAME = "copilotkit_inspector_state";
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+const INSPECTOR_STORAGE_KEY = "copilotkit_inspector_state";
 const DEFAULT_BUTTON_SIZE: Size = { width: 48, height: 48 };
 const DEFAULT_WINDOW_SIZE: Size = { width: 840, height: 560 };
 const DOCKED_LEFT_WIDTH = 500; // Sensible width for left dock with collapsed sidebar
 const MAX_AGENT_EVENTS = 200;
 const MAX_TOTAL_EVENTS = 500;
 
+type InspectorAgentEventType =
+  | "RUN_STARTED"
+  | "RUN_FINISHED"
+  | "RUN_ERROR"
+  | "TEXT_MESSAGE_START"
+  | "TEXT_MESSAGE_CONTENT"
+  | "TEXT_MESSAGE_END"
+  | "TOOL_CALL_START"
+  | "TOOL_CALL_ARGS"
+  | "TOOL_CALL_END"
+  | "TOOL_CALL_RESULT"
+  | "STATE_SNAPSHOT"
+  | "STATE_DELTA"
+  | "MESSAGES_SNAPSHOT"
+  | "RAW_EVENT"
+  | "CUSTOM_EVENT";
+
+const AGENT_EVENT_TYPES: readonly InspectorAgentEventType[] = [
+  "RUN_STARTED",
+  "RUN_FINISHED",
+  "RUN_ERROR",
+  "TEXT_MESSAGE_START",
+  "TEXT_MESSAGE_CONTENT",
+  "TEXT_MESSAGE_END",
+  "TOOL_CALL_START",
+  "TOOL_CALL_ARGS",
+  "TOOL_CALL_END",
+  "TOOL_CALL_RESULT",
+  "STATE_SNAPSHOT",
+  "STATE_DELTA",
+  "MESSAGES_SNAPSHOT",
+  "RAW_EVENT",
+  "CUSTOM_EVENT",
+] as const;
+
+type SanitizedValue =
+  | string
+  | number
+  | boolean
+  | null
+  | SanitizedValue[]
+  | { [key: string]: SanitizedValue };
+
+type InspectorToolCall = {
+  id?: string;
+  function?: {
+    name?: string;
+    arguments?: SanitizedValue | string;
+  };
+  toolName?: string;
+  status?: string;
+};
+
+type InspectorMessage = {
+  id?: string;
+  role: string;
+  contentText: string;
+  contentRaw?: SanitizedValue;
+  toolCalls: InspectorToolCall[];
+};
+
+type InspectorToolDefinition = {
+  agentId: string;
+  name: string;
+  description?: string;
+  parameters?: unknown;
+  type: "handler" | "renderer";
+};
+
 type InspectorEvent = {
   id: string;
   agentId: string;
-  type: string;
+  type: InspectorAgentEventType;
   timestamp: number;
-  payload: unknown;
+  payload: SanitizedValue;
 };
 
 export class WebInspectorElement extends LitElement {
   static properties = {
     core: { attribute: false },
+    autoAttachCore: { type: Boolean, attribute: "auto-attach-core" },
   } as const;
 
   private _core: CopilotKitCore | null = null;
   private coreSubscriber: CopilotKitCoreSubscriber | null = null;
   private coreUnsubscribe: (() => void) | null = null;
+  private runtimeStatus: CopilotKitCoreRuntimeConnectionStatus | null = null;
+  private coreProperties: Readonly<Record<string, unknown>> = {};
+  private lastCoreError: { code: CopilotKitCoreErrorCode; message: string } | null = null;
   private agentSubscriptions: Map<string, () => void> = new Map();
   private agentEvents: Map<string, InspectorEvent[]> = new Map();
-  private agentMessages: Map<string, unknown[]> = new Map();
-  private agentStates: Map<string, unknown> = new Map();
+  private agentMessages: Map<string, InspectorMessage[]> = new Map();
+  private agentStates: Map<string, SanitizedValue> = new Map();
   private flattenedEvents: InspectorEvent[] = [];
   private eventCounter = 0;
   private contextStore: Record<string, { description?: string; value: unknown }> = {};
@@ -89,6 +166,12 @@ export class WebInspectorElement extends LitElement {
   private previousBodyMargins: { left: string; bottom: string } | null = null;
   private transitionTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private pendingSelectedContext: string | null = null;
+  private autoAttachCore = true;
+  private attemptedAutoAttach = false;
+  private cachedTools: InspectorToolDefinition[] = [];
+  private toolSignature = "";
+  private eventFilterText = "";
+  private eventTypeFilter: InspectorAgentEventType | "all" = "all";
 
   get core(): CopilotKitCore | null {
     return this._core;
@@ -136,19 +219,35 @@ export class WebInspectorElement extends LitElement {
   private isResizing = false;
 
   private readonly menuItems: MenuItem[] = [
-    { key: "ag-ui-events", label: "AG-UI Events", icon: "Zap" },
-    { key: "agents", label: "Agents", icon: "Bot" },
+    { key: "ag-ui-events", label: "Events", icon: "Zap" },
+    { key: "agents", label: "Agent", icon: "Bot" },
     { key: "frontend-tools", label: "Frontend Tools", icon: "Hammer" },
-    { key: "agent-context", label: "Agent Context", icon: "FileText" },
+    { key: "agent-context", label: "Context", icon: "FileText" },
   ];
 
   private attachToCore(core: CopilotKitCore): void {
+    this.runtimeStatus = core.runtimeConnectionStatus;
+    this.coreProperties = core.properties;
+    this.lastCoreError = null;
+
     this.coreSubscriber = {
+      onRuntimeConnectionStatusChanged: ({ status }) => {
+        this.runtimeStatus = status;
+        this.requestUpdate();
+      },
+      onPropertiesChanged: ({ properties }) => {
+        this.coreProperties = properties;
+        this.requestUpdate();
+      },
+      onError: ({ code, error }) => {
+        this.lastCoreError = { code, message: error.message };
+        this.requestUpdate();
+      },
       onAgentsChanged: ({ agents }) => {
         this.processAgentsChanged(agents);
       },
       onContextChanged: ({ context }) => {
-        this.contextStore = { ...context };
+        this.contextStore = this.normalizeContextStore(context);
         this.requestUpdate();
       },
     } satisfies CopilotKitCoreSubscriber;
@@ -158,7 +257,7 @@ export class WebInspectorElement extends LitElement {
 
     // Initialize context from core
     if (core.context) {
-      this.contextStore = { ...core.context };
+      this.contextStore = this.normalizeContextStore(core.context);
     }
   }
 
@@ -168,6 +267,11 @@ export class WebInspectorElement extends LitElement {
       this.coreUnsubscribe = null;
     }
     this.coreSubscriber = null;
+    this.runtimeStatus = null;
+    this.lastCoreError = null;
+    this.coreProperties = {};
+    this.cachedTools = [];
+    this.toolSignature = "";
     this.teardownAgentSubscriptions();
   }
 
@@ -204,7 +308,60 @@ export class WebInspectorElement extends LitElement {
     }
 
     this.updateContextOptions(seenAgentIds);
+    this.refreshToolsSnapshot();
     this.requestUpdate();
+  }
+
+  private refreshToolsSnapshot(): void {
+    if (!this._core) {
+      if (this.cachedTools.length > 0) {
+        this.cachedTools = [];
+        this.toolSignature = "";
+        this.requestUpdate();
+      }
+      return;
+    }
+
+    const tools = this.extractToolsFromAgents();
+    const signature = JSON.stringify(
+      tools.map((tool) => ({
+        agentId: tool.agentId,
+        name: tool.name,
+        type: tool.type,
+        hasDescription: Boolean(tool.description),
+        hasParameters: Boolean(tool.parameters),
+      })),
+    );
+
+    if (signature !== this.toolSignature) {
+      this.toolSignature = signature;
+      this.cachedTools = tools;
+      this.requestUpdate();
+    }
+  }
+
+  private tryAutoAttachCore(): void {
+    if (this.attemptedAutoAttach || this._core || !this.autoAttachCore || typeof window === "undefined") {
+      return;
+    }
+
+    this.attemptedAutoAttach = true;
+
+    const globalWindow = window as unknown as Record<string, unknown>;
+    const globalCandidates: Array<unknown> = [
+      // Common app-level globals used during development
+      globalWindow.__COPILOTKIT_CORE__,
+      (globalWindow.copilotkit as { core?: unknown } | undefined)?.core,
+      globalWindow.copilotkitCore,
+    ];
+
+    const foundCore = globalCandidates.find(
+      (candidate): candidate is CopilotKitCore => !!candidate && typeof candidate === "object",
+    );
+
+    if (foundCore) {
+      this.core = foundCore;
+    }
   }
 
   private subscribeToAgent(agent: AbstractAgent): void {
@@ -288,14 +445,15 @@ export class WebInspectorElement extends LitElement {
     }
   }
 
-  private recordAgentEvent(agentId: string, type: string, payload: unknown): void {
+  private recordAgentEvent(agentId: string, type: InspectorAgentEventType, payload: unknown): void {
     const eventId = `${agentId}:${++this.eventCounter}`;
+    const normalizedPayload = this.normalizeEventPayload(type, payload);
     const event: InspectorEvent = {
       id: eventId,
       agentId,
       type,
       timestamp: Date.now(),
-      payload,
+      payload: normalizedPayload,
     };
 
     const currentAgentEvents = this.agentEvents.get(agentId) ?? [];
@@ -303,6 +461,7 @@ export class WebInspectorElement extends LitElement {
     this.agentEvents.set(agentId, nextAgentEvents);
 
     this.flattenedEvents = [event, ...this.flattenedEvents].slice(0, MAX_TOTAL_EVENTS);
+    this.refreshToolsSnapshot();
     this.requestUpdate();
   }
 
@@ -311,9 +470,8 @@ export class WebInspectorElement extends LitElement {
       return;
     }
 
-    const messages = (agent as { messages?: unknown }).messages;
-
-    if (Array.isArray(messages)) {
+    const messages = this.normalizeAgentMessages((agent as { messages?: unknown }).messages);
+    if (messages) {
       this.agentMessages.set(agent.agentId, messages);
     } else {
       this.agentMessages.delete(agent.agentId);
@@ -332,7 +490,7 @@ export class WebInspectorElement extends LitElement {
     if (state === undefined || state === null) {
       this.agentStates.delete(agent.agentId);
     } else {
-      this.agentStates.set(agent.agentId, state);
+      this.agentStates.set(agent.agentId, this.sanitizeForLogging(state));
     }
 
     this.requestUpdate();
@@ -397,17 +555,42 @@ export class WebInspectorElement extends LitElement {
     return this.agentEvents.get(this.selectedContext) ?? [];
   }
 
-  private getLatestStateForAgent(agentId: string): unknown | null {
+  private filterEvents(events: InspectorEvent[]): InspectorEvent[] {
+    const query = this.eventFilterText.trim().toLowerCase();
+
+    return events.filter((event) => {
+      if (this.eventTypeFilter !== "all" && event.type !== this.eventTypeFilter) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const payloadText = this.stringifyPayload(event.payload, false).toLowerCase();
+      return (
+        event.type.toLowerCase().includes(query) ||
+        event.agentId.toLowerCase().includes(query) ||
+        payloadText.includes(query)
+      );
+    });
+  }
+
+  private getLatestStateForAgent(agentId: string): SanitizedValue | null {
     if (this.agentStates.has(agentId)) {
-      return this.agentStates.get(agentId);
+      const value = this.agentStates.get(agentId);
+      return value === undefined ? null : value;
     }
 
     const events = this.agentEvents.get(agentId) ?? [];
     const stateEvent = events.find((e) => e.type === "STATE_SNAPSHOT");
-    return stateEvent?.payload ?? null;
+    if (!stateEvent) {
+      return null;
+    }
+    return stateEvent.payload;
   }
 
-  private getLatestMessagesForAgent(agentId: string): unknown[] | null {
+  private getLatestMessagesForAgent(agentId: string): InspectorMessage[] | null {
     const messages = this.agentMessages.get(agentId);
     return messages ?? null;
   }
@@ -445,22 +628,11 @@ export class WebInspectorElement extends LitElement {
 
     const messages = this.agentMessages.get(agentId);
 
-    const toolCallCount = Array.isArray(messages)
-      ? (messages as unknown[]).reduce<number>((count, rawMessage) => {
-          if (!rawMessage || typeof rawMessage !== 'object') {
-            return count;
-          }
-
-          const toolCalls = (rawMessage as { toolCalls?: unknown }).toolCalls;
-          if (!Array.isArray(toolCalls)) {
-            return count;
-          }
-
-          return count + toolCalls.length;
-        }, 0)
+    const toolCallCount = messages
+      ? messages.reduce((count, message) => count + (message.toolCalls?.length ?? 0), 0)
       : events.filter((e) => e.type === "TOOL_CALL_END").length;
 
-    const messageCount = Array.isArray(messages) ? messages.length : 0;
+    const messageCount = messages?.length ?? 0;
 
     return {
       totalEvents: events.length,
@@ -471,7 +643,7 @@ export class WebInspectorElement extends LitElement {
     };
   }
 
-  private renderToolCallDetails(toolCalls: unknown[]) {
+  private renderToolCallDetails(toolCalls: InspectorToolCall[]) {
     if (!Array.isArray(toolCalls) || toolCalls.length === 0) {
       return nothing;
     }
@@ -479,10 +651,9 @@ export class WebInspectorElement extends LitElement {
     return html`
       <div class="mt-2 space-y-2">
         ${toolCalls.map((call, index) => {
-          const toolCall = call as any;
-          const functionName = typeof toolCall?.function?.name === 'string' ? toolCall.function.name : 'Unknown function';
-          const callId = typeof toolCall?.id === 'string' ? toolCall.id : `tool-call-${index + 1}`;
-          const argsString = this.formatToolCallArguments(toolCall?.function?.arguments);
+          const functionName = call.function?.name ?? call.toolName ?? "Unknown function";
+          const callId = typeof call?.id === "string" ? call.id : `tool-call-${index + 1}`;
+          const argsString = this.formatToolCallArguments(call.function?.arguments);
           return html`
             <div class="rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
               <div class="flex flex-wrap items-center justify-between gap-1 font-medium text-gray-900">
@@ -508,7 +679,7 @@ export class WebInspectorElement extends LitElement {
       try {
         const parsed = JSON.parse(args);
         return JSON.stringify(parsed, null, 2);
-      } catch (error) {
+      } catch {
         return args;
       }
     }
@@ -516,7 +687,7 @@ export class WebInspectorElement extends LitElement {
     if (typeof args === 'object') {
       try {
         return JSON.stringify(args, null, 2);
-      } catch (error) {
+      } catch {
         return String(args);
       }
     }
@@ -622,7 +793,7 @@ export class WebInspectorElement extends LitElement {
   private extractEventFromPayload(payload: unknown): unknown {
     // If payload is an object with an 'event' field, extract it
     if (payload && typeof payload === "object" && "event" in payload) {
-      return (payload as any).event;
+      return (payload as Record<string, unknown>).event;
     }
     // Otherwise, assume the payload itself is the event
     return payload;
@@ -695,6 +866,35 @@ export class WebInspectorElement extends LitElement {
         z-index: 50;
         background: transparent;
       }
+
+      .tooltip-target {
+        position: relative;
+      }
+
+      .tooltip-target::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%) translateY(-4px);
+        white-space: nowrap;
+        background: rgba(17, 24, 39, 0.95);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        line-height: 1.2;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 120ms ease, transform 120ms ease;
+        z-index: 4000;
+      }
+
+      .tooltip-target:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     `,
   ];
 
@@ -705,7 +905,8 @@ export class WebInspectorElement extends LitElement {
       window.addEventListener("pointerdown", this.handleGlobalPointerDown as EventListener);
 
       // Load state early (before first render) so menu selection is correct
-      this.hydrateStateFromCookieEarly();
+      this.hydrateStateFromStorageEarly();
+      this.tryAutoAttachCore();
     }
   }
 
@@ -724,6 +925,10 @@ export class WebInspectorElement extends LitElement {
       return;
     }
 
+    if (!this._core) {
+      this.tryAutoAttachCore();
+    }
+
     this.measureContext("button");
     this.measureContext("window");
 
@@ -733,7 +938,7 @@ export class WebInspectorElement extends LitElement {
     this.contextState.window.anchor = { horizontal: "right", vertical: "top" };
     this.contextState.window.anchorOffset = { x: EDGE_MARGIN, y: EDGE_MARGIN };
 
-    this.hydrateStateFromCookie();
+    this.hydrateStateFromStorage();
 
     // Apply docking styles if open and docked (skip transition on initial load)
     if (this.isOpen && this.dockMode !== 'floating') {
@@ -812,7 +1017,6 @@ export class WebInspectorElement extends LitElement {
     const windowState = this.contextState.window;
     const isDocked = this.dockMode !== 'floating';
     const isTransitioning = this.hasAttribute('data-transitioning');
-    const isCollapsed = this.dockMode === 'docked-left';
 
     const windowStyles = isDocked
       ? this.getDockedWindowStyles()
@@ -823,8 +1027,19 @@ export class WebInspectorElement extends LitElement {
           minHeight: `${MIN_WINDOW_HEIGHT}px`,
         };
 
-    const contextDropdown = this.renderContextDropdown();
-    const hasContextDropdown = contextDropdown !== nothing;
+    const hasContextDropdown = this.contextOptions.length > 0;
+    const contextDropdown = hasContextDropdown ? this.renderContextDropdown() : nothing;
+    const agentOptions = this.contextOptions.filter((opt) => opt.key !== "all-agents");
+    const agentCountLabel = agentOptions.length === 1 ? "1 agent" : `${agentOptions.length} agents`;
+    const coreStatus = this.getCoreStatusSummary();
+    const agentSelector = hasContextDropdown
+      ? contextDropdown
+      : html`
+          <div class="flex items-center gap-2 rounded-md border border-dashed border-gray-200 px-2 py-1 text-xs text-gray-400">
+            <span>${this.renderIcon("Bot")}</span>
+            <span class="truncate">No agents available</span>
+          </div>
+        `;
 
     return html`
       <section
@@ -846,150 +1061,87 @@ export class WebInspectorElement extends LitElement {
               ></div>
             `
           : nothing}
-        <div class="flex flex-1 overflow-hidden bg-white text-gray-800">
-          <nav
-            class="flex ${isCollapsed ? 'w-16' : 'w-56'} shrink-0 flex-col justify-between border-r border-gray-200 bg-gray-50/50 px-3 pb-3 pt-3 text-xs transition-all duration-300"
-            aria-label="Inspector sections"
+        <div class="flex flex-1 flex-col overflow-hidden bg-white text-gray-800">
+          <div
+            class="drag-handle relative z-30 flex flex-col border-b border-gray-200 bg-white/95 backdrop-blur-sm ${isDocked ? '' : (this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab')}"
+            data-drag-context="window"
+            @pointerdown=${isDocked ? undefined : this.handlePointerDown}
+            @pointermove=${isDocked ? undefined : this.handlePointerMove}
+            @pointerup=${isDocked ? undefined : this.handlePointerUp}
+            @pointercancel=${isDocked ? undefined : this.handlePointerCancel}
           >
-            <div class="flex flex-col gap-4 overflow-y-auto">
-              <div
-                class="flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 pl-1'} touch-none select-none ${this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab'}"
-                data-drag-context="window"
-                @pointerdown=${this.handlePointerDown}
-                @pointermove=${this.handlePointerMove}
-                @pointerup=${this.handlePointerUp}
-                @pointercancel=${this.handlePointerCancel}
-                title="${isCollapsed ? 'Acme Inc - Enterprise' : ''}"
-              >
-                <span
-                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-900 text-white pointer-events-none"
-                >
-                  ${this.renderIcon("Building2")}
-                </span>
-                ${!isCollapsed
-                  ? html`
-                    <div class="flex flex-1 flex-col leading-tight pointer-events-none">
-                      <span class="text-sm font-semibold text-gray-900">Acme Inc</span>
-                      <span class="text-[10px] text-gray-500">Enterprise</span>
-                    </div>
-                  `
-                  : nothing}
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-900 text-white shadow-sm">
+                  <img src=${logoMarkUrl} alt="CopilotKit logo" class="h-6 w-6" loading="lazy" />
+                </div>
+                <div class="flex flex-col leading-tight">
+                  <span class="text-sm font-semibold text-gray-900">CopilotKit Inspector</span>
+                  <span class="text-[10px] text-gray-500">${agentCountLabel}</span>
+                </div>
               </div>
-
-              <div class="flex flex-col gap-2 pt-2">
-                ${!isCollapsed
-                  ? html`<div class="px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Platform</div>`
-                  : nothing}
-                <div class="flex flex-col gap-0.5">
-                  ${this.menuItems.map(({ key, label, icon }) => {
-                    const isSelected = this.selectedMenu === key;
-                    const buttonClasses = [
-                      "group flex w-full items-center",
-                      isCollapsed ? "justify-center p-2" : "gap-2 px-2 py-1.5",
-                      "rounded-md text-left text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
-                      isSelected
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                    ].join(" ");
-
-                    const badgeClasses = isSelected
-                      ? "bg-gray-800 text-white"
-                      : "bg-white border border-gray-200 text-gray-500 group-hover:border-gray-300 group-hover:text-gray-700";
-
-                    return html`
-                      <button
-                        type="button"
-                        class=${buttonClasses}
-                        aria-pressed=${isSelected}
-                        title="${isCollapsed ? label : ''}"
-                        @click=${() => this.handleMenuSelect(key)}
-                      >
-                        <span
-                          class="flex h-6 w-6 items-center justify-center rounded ${isCollapsed && isSelected ? 'text-white' : isCollapsed ? 'text-gray-600' : badgeClasses}"
-                          aria-hidden="true"
-                        >
-                          ${this.renderIcon(icon)}
-                        </span>
-                        ${!isCollapsed
-                          ? html`
-                            <span class="flex-1">${label}</span>
-                            <span class="text-gray-400 opacity-60">${this.renderIcon("ChevronRight")}</span>
-                          `
-                          : nothing}
-                      </button>
-                    `;
-                  })}
+              <div class="ml-auto flex min-w-0 items-center gap-2">
+                <div class="min-w-[160px] max-w-xs">
+                  ${agentSelector}
+                </div>
+                <div class="flex items-center gap-1">
+                  ${this.renderDockControls()}
+                  <button
+                    class="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+                    type="button"
+                    aria-label="Close Web Inspector"
+                    @pointerdown=${this.handleClosePointerDown}
+                    @click=${this.handleCloseClick}
+                  >
+                    ${this.renderIcon("X")}
+                  </button>
                 </div>
               </div>
             </div>
+            <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-3 py-2 text-xs">
+              ${this.menuItems.map(({ key, label, icon }) => {
+                const isSelected = this.selectedMenu === key;
+                const tabClasses = [
+                  "inline-flex items-center gap-2 rounded-md px-3 py-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300",
+                  isSelected ? "bg-gray-900 text-white shadow-sm" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                ].join(" ");
 
-            <div
-              class="relative flex items-center ${isCollapsed ? 'justify-center p-1' : ''} rounded-lg border border-gray-200 bg-white ${isCollapsed ? '' : 'px-2 py-2'} text-left text-xs text-gray-700 cursor-pointer hover:bg-gray-50 transition"
-              title="${isCollapsed ? 'John Snow - john@snow.com' : ''}"
-            >
-              <span
-                class="${isCollapsed ? 'w-8 h-8 shrink-0' : 'w-6 h-6'} flex items-center justify-center overflow-hidden rounded bg-gray-100 text-[10px] font-semibold text-gray-700"
-              >
-                JS
-              </span>
-              ${!isCollapsed
-                ? html`
-                  <div class="pl-2 flex flex-1 flex-col leading-tight">
-                    <span class="font-medium text-gray-900">John Snow</span>
-                    <span class="text-[10px] text-gray-500">john@snow.com</span>
-                  </div>
-                  <span class="text-gray-300">${this.renderIcon("ChevronRight")}</span>
-                `
-                : nothing}
-            </div>
-          </nav>
-          <div class="relative flex flex-1 flex-col overflow-hidden">
-            <div
-              class="drag-handle flex items-center justify-between border-b border-gray-200 px-4 py-3 touch-none select-none ${isDocked ? '' : (this.isDragging && this.pointerContext === 'window' ? 'cursor-grabbing' : 'cursor-grab')}"
-              data-drag-context="window"
-              @pointerdown=${isDocked ? undefined : this.handlePointerDown}
-              @pointermove=${isDocked ? undefined : this.handlePointerMove}
-              @pointerup=${isDocked ? undefined : this.handlePointerUp}
-              @pointercancel=${isDocked ? undefined : this.handlePointerCancel}
-            >
-              <div class="flex min-w-0 flex-1 items-center gap-2 text-xs text-gray-500">
-                <div class="flex min-w-0 flex-1 items-center text-xs text-gray-600">
-                  <span class="flex shrink-0 items-center gap-1">
-                    <span>🪁</span>
-                    <span class="font-medium whitespace-nowrap">CopilotKit Inspector</span>
-                  </span>
-                  <span class="mx-3 h-3 w-px shrink-0 bg-gray-200"></span>
-                  <span class="shrink-0 text-gray-400">
-                    ${this.renderIcon(this.getSelectedMenu().icon)}
-                  </span>
-                  <span class="ml-2 truncate">${this.getSelectedMenu().label}</span>
-                  ${hasContextDropdown
-                    ? html`
-                        <span class="mx-3 h-3 w-px shrink-0 bg-gray-200"></span>
-                        <div class="min-w-0">${contextDropdown}</div>
-                      `
-                    : nothing}
-                </div>
-              </div>
-              <div class="flex items-center gap-1">
-                ${this.renderDockControls()}
-                <button
-                  class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-                  type="button"
-                  aria-label="Close Web Inspector"
-                  @pointerdown=${this.handleClosePointerDown}
-                  @click=${this.handleCloseClick}
-                >
-                  ${this.renderIcon("X")}
-                </button>
-              </div>
-            </div>
-            <div class="flex-1 overflow-auto">
-              ${this.renderMainContent()}
-              <slot></slot>
+                return html`
+                  <button
+                    type="button"
+                    class=${tabClasses}
+                    aria-pressed=${isSelected}
+                    @click=${() => this.handleMenuSelect(key)}
+                  >
+                    <span class="text-gray-400 ${isSelected ? 'text-white' : ''}">
+                      ${this.renderIcon(icon)}
+                    </span>
+                    <span>${label}</span>
+                  </button>
+                `;
+              })}
             </div>
           </div>
-        </div>
+            <div class="flex flex-1 flex-col overflow-hidden">
+              <div class="flex-1 overflow-auto">
+                ${this.renderCoreWarningBanner()}
+                ${this.renderMainContent()}
+                <slot></slot>
+              </div>
+              <div class="border-t border-gray-200 bg-gray-50 px-4 py-2">
+                <div
+                  class="flex items-center gap-2 rounded-md px-3 py-2 text-xs ${coreStatus.tone} w-full overflow-hidden my-1"
+                  title=${coreStatus.description}
+                >
+                  <span class="flex h-6 w-6 items-center justify-center rounded bg-white/60">
+                    ${this.renderIcon("Activity")}
+                  </span>
+                  <span class="font-medium">${coreStatus.label}</span>
+                  <span class="truncate text-[11px] opacity-80">${coreStatus.description}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         <div
           class="resize-handle pointer-events-auto absolute bottom-1 right-1 flex h-5 w-5 cursor-nwse-resize items-center justify-center text-gray-400 transition hover:text-gray-600"
           role="presentation"
@@ -1015,12 +1167,12 @@ export class WebInspectorElement extends LitElement {
     `;
   }
 
-  private hydrateStateFromCookieEarly(): void {
+  private hydrateStateFromStorageEarly(): void {
     if (typeof document === "undefined" || typeof window === "undefined") {
       return;
     }
 
-    const persisted = loadInspectorState(COOKIE_NAME);
+    const persisted = loadInspectorState(INSPECTOR_STORAGE_KEY);
     if (!persisted) {
       return;
     }
@@ -1050,12 +1202,12 @@ export class WebInspectorElement extends LitElement {
     }
   }
 
-  private hydrateStateFromCookie(): void {
+  private hydrateStateFromStorage(): void {
     if (typeof document === "undefined" || typeof window === "undefined") {
       return;
     }
 
-    const persisted = loadInspectorState(COOKIE_NAME);
+    const persisted = loadInspectorState(INSPECTOR_STORAGE_KEY);
     if (!persisted) {
       return;
     }
@@ -1114,6 +1266,11 @@ export class WebInspectorElement extends LitElement {
     const target = event.currentTarget as HTMLElement | null;
     const contextAttr = target?.dataset.dragContext;
     const context: ContextKey = contextAttr === "window" ? "window" : "button";
+
+    const eventTarget = event.target as HTMLElement | null;
+    if (context === "window" && eventTarget?.closest("button")) {
+      return;
+    }
 
     this.pointerContext = context;
     this.measureContext(context);
@@ -1433,7 +1590,7 @@ export class WebInspectorElement extends LitElement {
       selectedMenu: this.selectedMenu,
       selectedContext: this.selectedContext,
     };
-    saveInspectorState(COOKIE_NAME, state, COOKIE_MAX_AGE_SECONDS);
+    saveInspectorState(INSPECTOR_STORAGE_KEY, state);
     this.pendingSelectedContext = state.selectedContext ?? null;
   }
 
@@ -1463,7 +1620,6 @@ export class WebInspectorElement extends LitElement {
     // Clean up previous dock state
     this.removeDockStyles();
 
-    const previousMode = this.dockMode;
     this.dockMode = mode;
 
     if (mode !== 'floating') {
@@ -1719,7 +1875,7 @@ export class WebInspectorElement extends LitElement {
       // Show dock left button
       return html`
         <button
-          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+          class="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
           type="button"
           aria-label="Dock to left"
           title="Dock Left"
@@ -1732,7 +1888,7 @@ export class WebInspectorElement extends LitElement {
       // Show float button
       return html`
         <button
-          class="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+          class="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
           type="button"
           aria-label="Float window"
           title="Float"
@@ -1777,6 +1933,179 @@ export class WebInspectorElement extends LitElement {
       .join(" ");
   }
 
+  private sanitizeForLogging(value: unknown, depth = 0, seen = new WeakSet<object>()): SanitizedValue {
+    if (value === undefined) {
+      return "[undefined]";
+    }
+
+    if (value === null || typeof value === "number" || typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (typeof value === "bigint" || typeof value === "symbol" || typeof value === "function") {
+      return String(value);
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (Array.isArray(value)) {
+      if (depth >= 4) {
+        return "[Truncated depth]" as SanitizedValue;
+      }
+      return value.map((item) => this.sanitizeForLogging(item, depth + 1, seen));
+    }
+
+    if (typeof value === "object") {
+      if (seen.has(value as object)) {
+        return "[Circular]" as SanitizedValue;
+      }
+      seen.add(value as object);
+
+      if (depth >= 4) {
+        return "[Truncated depth]" as SanitizedValue;
+      }
+
+      const result: Record<string, SanitizedValue> = {};
+      for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+        result[key] = this.sanitizeForLogging(entry, depth + 1, seen);
+      }
+      return result;
+    }
+
+    return String(value);
+  }
+
+  private normalizeEventPayload(_type: InspectorAgentEventType, payload: unknown): SanitizedValue {
+    if (payload && typeof payload === "object" && "event" in payload) {
+      const { event, ...rest } = payload as Record<string, unknown>;
+      const cleaned = Object.keys(rest).length === 0 ? event : { event, ...rest };
+      return this.sanitizeForLogging(cleaned);
+    }
+
+    return this.sanitizeForLogging(payload);
+  }
+
+  private normalizeMessageContent(content: unknown): string {
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (content && typeof content === "object" && "text" in (content as Record<string, unknown>)) {
+      const maybeText = (content as Record<string, unknown>).text;
+      if (typeof maybeText === "string") {
+        return maybeText;
+      }
+    }
+
+    if (content === null || content === undefined) {
+      return "";
+    }
+
+    if (typeof content === "object") {
+      try {
+        return JSON.stringify(this.sanitizeForLogging(content));
+      } catch {
+        return "";
+      }
+    }
+
+    return String(content);
+  }
+
+  private normalizeToolCalls(raw: unknown): InspectorToolCall[] {
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+
+    return raw
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") {
+          return null;
+        }
+        const call = entry as Record<string, unknown>;
+        const fn = call.function as Record<string, unknown> | undefined;
+        const functionName = typeof fn?.name === "string" ? fn.name : typeof call.toolName === "string" ? call.toolName : undefined;
+        const args = fn && "arguments" in fn ? (fn as Record<string, unknown>).arguments : call.arguments;
+
+        const normalized: InspectorToolCall = {
+          id: typeof call.id === "string" ? call.id : undefined,
+          toolName: typeof call.toolName === "string" ? call.toolName : functionName,
+          status: typeof call.status === "string" ? call.status : undefined,
+        };
+
+        if (functionName) {
+          normalized.function = {
+            name: functionName,
+            arguments: this.sanitizeForLogging(args),
+          };
+        }
+
+        return normalized;
+      })
+      .filter((call): call is InspectorToolCall => Boolean(call));
+  }
+
+  private normalizeAgentMessage(message: unknown): InspectorMessage | null {
+    if (!message || typeof message !== "object") {
+      return null;
+    }
+
+    const raw = message as Record<string, unknown>;
+    const role = typeof raw.role === "string" ? raw.role : "unknown";
+    const contentText = this.normalizeMessageContent(raw.content);
+    const toolCalls = this.normalizeToolCalls(raw.toolCalls);
+
+    return {
+      id: typeof raw.id === "string" ? raw.id : undefined,
+      role,
+      contentText,
+      contentRaw: raw.content !== undefined ? this.sanitizeForLogging(raw.content) : undefined,
+      toolCalls,
+    };
+  }
+
+  private normalizeAgentMessages(messages: unknown): InspectorMessage[] | null {
+    if (!Array.isArray(messages)) {
+      return null;
+    }
+
+    const normalized = messages
+      .map((message) => this.normalizeAgentMessage(message))
+      .filter((msg): msg is InspectorMessage => msg !== null);
+
+    return normalized;
+  }
+
+  private normalizeContextStore(
+    context: Readonly<Record<string, unknown>> | null | undefined,
+  ): Record<string, { description?: string; value: unknown }> {
+    if (!context || typeof context !== "object") {
+      return {};
+    }
+
+    const normalized: Record<string, { description?: string; value: unknown }> = {};
+    for (const [key, entry] of Object.entries(context)) {
+      if (entry && typeof entry === "object" && "value" in (entry as Record<string, unknown>)) {
+        const candidate = entry as Record<string, unknown>;
+        const description =
+          typeof candidate.description === "string" && candidate.description.trim().length > 0
+            ? candidate.description
+            : undefined;
+        normalized[key] = { description, value: candidate.value };
+      } else {
+        normalized[key] = { value: entry };
+      }
+    }
+
+    return normalized;
+  }
+
   private contextOptions: Array<{ key: string; label: string }> = [
     { key: "all-agents", label: "All Agents" },
   ];
@@ -1786,10 +2115,73 @@ export class WebInspectorElement extends LitElement {
   private copiedEvents: Set<string> = new Set();
   private expandedTools: Set<string> = new Set();
   private expandedContextItems: Set<string> = new Set();
+  private copiedContextItems: Set<string> = new Set();
 
   private getSelectedMenu(): MenuItem {
     const found = this.menuItems.find((item) => item.key === this.selectedMenu);
     return found ?? this.menuItems[0]!;
+  }
+
+  private renderCoreWarningBanner() {
+    if (this._core) {
+      return nothing;
+    }
+
+    return html`
+      <div class="mx-4 my-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <span class="mt-0.5 shrink-0 text-amber-600">${this.renderIcon("AlertTriangle")}</span>
+        <div class="space-y-1">
+          <div class="font-semibold text-amber-900">CopilotKit core not attached</div>
+          <p class="text-[11px] leading-snug text-amber-800">
+            Pass a live <code>CopilotKitCore</code> instance to <code>&lt;web-inspector&gt;</code> or expose it on
+            <code>window.__COPILOTKIT_CORE__</code> for auto-attach.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private getCoreStatusSummary(): { label: string; tone: string; description: string } {
+    if (!this._core) {
+      return {
+        label: "Core not attached",
+        tone: "border border-amber-200 bg-amber-50 text-amber-800",
+        description: "Pass a CopilotKitCore instance to <web-inspector> or enable auto-attach.",
+      };
+    }
+
+    const status = this.runtimeStatus ?? CopilotKitCoreRuntimeConnectionStatus.Disconnected;
+    const lastErrorMessage = this.lastCoreError?.message;
+
+    if (status === CopilotKitCoreRuntimeConnectionStatus.Error) {
+      return {
+        label: "Runtime error",
+        tone: "border border-rose-200 bg-rose-50 text-rose-700",
+        description: lastErrorMessage ?? "CopilotKit runtime reported an error.",
+      };
+    }
+
+    if (status === CopilotKitCoreRuntimeConnectionStatus.Connecting) {
+      return {
+        label: "Connecting",
+        tone: "border border-amber-200 bg-amber-50 text-amber-800",
+        description: "Waiting for CopilotKit runtime to finish connecting.",
+      };
+    }
+
+    if (status === CopilotKitCoreRuntimeConnectionStatus.Connected) {
+      return {
+        label: "Connected",
+        tone: "border border-emerald-200 bg-emerald-50 text-emerald-700",
+        description: "Live runtime connection established.",
+      };
+    }
+
+    return {
+      label: "Disconnected",
+      tone: "border border-gray-200 bg-gray-50 text-gray-700",
+      description: lastErrorMessage ?? "Waiting for CopilotKit runtime to connect.",
+    };
   }
 
   private renderMainContent() {
@@ -1809,17 +2201,13 @@ export class WebInspectorElement extends LitElement {
       return this.renderContextView();
     }
 
-    // Default placeholder content for other sections
-    return html`
-      <div class="flex flex-col gap-3 p-4">
-        <div class="h-24 rounded-lg bg-gray-50"></div>
-        <div class="h-20 rounded-lg bg-gray-50"></div>
-      </div>
-    `;
+    return nothing;
   }
 
   private renderEventsTable() {
     const events = this.getEventsForSelectedContext();
+    const filteredEvents = this.filterEvents(events);
+    const selectedLabel = this.selectedContext === "all-agents" ? "all agents" : `agent ${this.selectedContext}`;
 
     if (events.length === 0) {
       return html`
@@ -1835,81 +2223,219 @@ export class WebInspectorElement extends LitElement {
       `;
     }
 
-    return html`
-      <div class="relative h-full overflow-auto">
-        <table class="w-full border-separate border-spacing-0 text-xs">
-          <thead class="sticky top-0 z-10">
-            <tr class="bg-white">
-              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                Agent
-              </th>
-              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                Time
-              </th>
-              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                Event Type
-              </th>
-              <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
-                AG-UI Event
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            ${events.map((event, index) => {
-              const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/50";
-              const badgeClasses = this.getEventBadgeClasses(event.type);
-              const extractedEvent = this.extractEventFromPayload(event.payload);
-              const inlineEvent = this.stringifyPayload(extractedEvent, false) || "—";
-              const prettyEvent = this.stringifyPayload(extractedEvent, true) || inlineEvent;
-              const isExpanded = this.expandedRows.has(event.id);
+    if (filteredEvents.length === 0) {
+      return html`
+        <div class="flex h-full items-center justify-center px-4 py-8 text-center">
+          <div class="max-w-md space-y-3">
+            <div class="flex justify-center text-gray-300 [&>svg]:!h-8 [&>svg]:!w-8">
+              ${this.renderIcon("Filter")}
+            </div>
+            <p class="text-sm text-gray-600">No events match the current filters.</p>
+            <div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md bg-gray-900 px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-gray-800"
+                @click=${this.resetEventFilters}
+              >
+                ${this.renderIcon("RefreshCw")}
+                <span>Reset filters</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
-              return html`
-                <tr
-                  class="${rowBg} cursor-pointer transition hover:bg-blue-50/50"
-                  @click=${() => this.toggleRowExpansion(event.id)}
-                >
-                  <td class="border-l border-r border-b border-gray-200 px-3 py-2">
-                    <span class="font-mono text-[11px] text-gray-600">${event.agentId}</span>
-                  </td>
-                  <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[11px] text-gray-600">
-                    <span title=${new Date(event.timestamp).toLocaleString()}>
-                      ${new Date(event.timestamp).toLocaleTimeString()}
-                    </span>
-                  </td>
-                  <td class="border-r border-b border-gray-200 px-3 py-2">
-                    <span class=${badgeClasses}>${event.type}</span>
-                  </td>
-                  <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[10px] text-gray-600 ${isExpanded ? '' : 'truncate max-w-xs'}">
-                    ${isExpanded
-                      ? html`
-                          <div class="group relative">
-                            <pre class="m-0 whitespace-pre-wrap text-[10px] font-mono text-gray-600">${prettyEvent}</pre>
-                            <button
-                              class="absolute right-0 top-0 cursor-pointer rounded px-2 py-1 text-[10px] opacity-0 transition group-hover:opacity-100 ${
-                                this.copiedEvents.has(event.id)
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-                              }"
-                              @click=${(e: Event) => {
-                                e.stopPropagation();
-                                this.copyToClipboard(prettyEvent, event.id);
-                              }}
-                            >
-                              ${this.copiedEvents.has(event.id)
-                                ? html`<span>✓ Copied</span>`
-                                : html`<span>Copy</span>`}
-                            </button>
-                          </div>
-                        `
-                      : inlineEvent}
-                  </td>
-                </tr>
-              `;
-            })}
-          </tbody>
-        </table>
+    return html`
+      <div class="flex h-full flex-col">
+        <div class="flex flex-col gap-1.5 border-b border-gray-200 bg-white px-4 py-2.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative min-w-[200px] flex-1">
+              <input
+                type="search"
+                class="w-full rounded-md border border-gray-200 px-3 py-1.5 text-[11px] text-gray-700 shadow-sm outline-none ring-1 ring-transparent transition focus:border-gray-300 focus:ring-gray-200"
+                placeholder="Search agent, type, payload"
+                .value=${this.eventFilterText}
+                @input=${this.handleEventFilterInput}
+              />
+            </div>
+            <select
+              class="w-40 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-[11px] text-gray-700 shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-gray-200"
+              .value=${this.eventTypeFilter}
+              @change=${this.handleEventTypeChange}
+            >
+              <option value="all">All event types</option>
+              ${AGENT_EVENT_TYPES.map(
+                (type) =>
+                  html`<option value=${type}>${type.toLowerCase().replace(/_/g, " ")}</option>`,
+              )}
+            </select>
+            <div class="flex items-center gap-1 text-[11px]">
+              <button
+                type="button"
+                class="tooltip-target flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Reset filters"
+                data-tooltip="Reset filters"
+                aria-label="Reset filters"
+                @click=${this.resetEventFilters}
+                ?disabled=${!this.eventFilterText && this.eventTypeFilter === "all"}
+              >
+                ${this.renderIcon("RotateCw")}
+              </button>
+              <button
+                type="button"
+                class="tooltip-target flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Export JSON"
+                data-tooltip="Export JSON"
+                aria-label="Export JSON"
+                @click=${() => this.exportEvents(filteredEvents)}
+                ?disabled=${filteredEvents.length === 0}
+              >
+                ${this.renderIcon("Download")}
+              </button>
+              <button
+                type="button"
+                class="tooltip-target flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Clear events"
+                data-tooltip="Clear events"
+                aria-label="Clear events"
+                @click=${this.handleClearEvents}
+                ?disabled=${events.length === 0}
+              >
+                ${this.renderIcon("Trash2")}
+              </button>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-500">
+            Showing ${filteredEvents.length} of ${events.length}${this.selectedContext === "all-agents" ? "" : ` for ${selectedLabel}`}
+          </div>
+        </div>
+        <div class="relative h-full overflow-auto">
+          <table class="w-full border-separate border-spacing-0 text-xs">
+            <thead class="sticky top-0 z-10">
+              <tr class="bg-white">
+                <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                  Agent
+                </th>
+                <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                  Time
+                </th>
+                <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                  Event Type
+                </th>
+                <th class="border-b border-gray-200 bg-white px-3 py-2 text-left font-medium text-gray-900">
+                  AG-UI Event
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredEvents.map((event, index) => {
+                const rowBg = index % 2 === 0 ? "bg-white" : "bg-gray-50/50";
+                const badgeClasses = this.getEventBadgeClasses(event.type);
+                const extractedEvent = this.extractEventFromPayload(event.payload);
+                const inlineEvent = this.stringifyPayload(extractedEvent, false) || "—";
+                const prettyEvent = this.stringifyPayload(extractedEvent, true) || inlineEvent;
+                const isExpanded = this.expandedRows.has(event.id);
+
+                return html`
+                  <tr
+                    class="${rowBg} cursor-pointer transition hover:bg-blue-50/50"
+                    @click=${() => this.toggleRowExpansion(event.id)}
+                  >
+                    <td class="border-l border-r border-b border-gray-200 px-3 py-2">
+                      <span class="font-mono text-[11px] text-gray-600">${event.agentId}</span>
+                    </td>
+                    <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[11px] text-gray-600">
+                      <span title=${new Date(event.timestamp).toLocaleString()}>
+                        ${new Date(event.timestamp).toLocaleTimeString()}
+                      </span>
+                    </td>
+                    <td class="border-r border-b border-gray-200 px-3 py-2">
+                      <span class=${badgeClasses}>${event.type}</span>
+                    </td>
+                    <td class="border-r border-b border-gray-200 px-3 py-2 font-mono text-[10px] text-gray-600 ${isExpanded ? '' : 'truncate max-w-xs'}">
+                      ${isExpanded
+                        ? html`
+                            <div class="group relative">
+                              <pre class="m-0 whitespace-pre-wrap text-[10px] font-mono text-gray-600">${prettyEvent}</pre>
+                              <button
+                                class="absolute right-0 top-0 cursor-pointer rounded px-2 py-1 text-[10px] opacity-0 transition group-hover:opacity-100 ${
+                                  this.copiedEvents.has(event.id)
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                                }"
+                                @click=${(e: Event) => {
+                                  e.stopPropagation();
+                                  this.copyToClipboard(prettyEvent, event.id);
+                                }}
+                              >
+                                ${this.copiedEvents.has(event.id)
+                                  ? html`<span>✓ Copied</span>`
+                                  : html`<span>Copy</span>`}
+                              </button>
+                            </div>
+                          `
+                        : inlineEvent}
+                    </td>
+                  </tr>
+                `;
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
+  }
+
+  private handleEventFilterInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.eventFilterText = target?.value ?? "";
+    this.requestUpdate();
+  }
+
+  private handleEventTypeChange(event: Event): void {
+    const target = event.target as HTMLSelectElement | null;
+    const value = target?.value as InspectorAgentEventType | "all" | undefined;
+    if (!value) {
+      return;
+    }
+    this.eventTypeFilter = value;
+    this.requestUpdate();
+  }
+
+  private resetEventFilters(): void {
+    this.eventFilterText = "";
+    this.eventTypeFilter = "all";
+    this.requestUpdate();
+  }
+
+  private handleClearEvents = (): void => {
+    if (this.selectedContext === "all-agents") {
+      this.agentEvents.clear();
+      this.flattenedEvents = [];
+    } else {
+      this.agentEvents.delete(this.selectedContext);
+      this.flattenedEvents = this.flattenedEvents.filter((event) => event.agentId !== this.selectedContext);
+    }
+
+    this.expandedRows.clear();
+    this.copiedEvents.clear();
+    this.requestUpdate();
+  };
+
+  private exportEvents(events: InspectorEvent[]): void {
+    try {
+      const payload = JSON.stringify(events, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `copilotkit-events-${Date.now()}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export events", error);
+    }
   }
 
   private renderAgentsView() {
@@ -2013,7 +2539,7 @@ export class WebInspectorElement extends LitElement {
             <h4 class="text-sm font-semibold text-gray-900">Current Messages</h4>
           </div>
           <div class="overflow-auto">
-            ${messages && Array.isArray(messages) && messages.length > 0
+            ${messages && messages.length > 0
               ? html`
                   <table class="w-full text-xs">
                     <thead class="bg-gray-50">
@@ -2023,26 +2549,20 @@ export class WebInspectorElement extends LitElement {
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
-                      ${messages.map((msg: any, idx: number) => {
-                        const role = msg?.role ?? "unknown";
+                      ${messages.map((msg) => {
+                        const role = msg.role || "unknown";
                         const roleColors: Record<string, string> = {
                           user: "bg-blue-100 text-blue-800",
                           assistant: "bg-green-100 text-green-800",
                           system: "bg-gray-100 text-gray-800",
+                          tool: "bg-amber-100 text-amber-800",
                           unknown: "bg-gray-100 text-gray-600",
                         };
 
-                        const rawContent = typeof msg?.content === "string"
-                          ? msg.content
-                          : msg?.content != null
-                            ? JSON.stringify(msg.content)
-                            : "";
-
-                        const toolCalls = Array.isArray(msg?.toolCalls) ? msg.toolCalls : [];
+                        const rawContent = msg.contentText ?? "";
+                        const toolCalls = msg.toolCalls ?? [];
                         const hasContent = rawContent.trim().length > 0;
-                        const contentFallback = toolCalls.length > 0
-                          ? "Invoked tool call"
-                          : "—";
+                        const contentFallback = toolCalls.length > 0 ? "Invoked tool call" : "—";
 
                         return html`
                           <tr>
@@ -2080,15 +2600,6 @@ export class WebInspectorElement extends LitElement {
   }
 
   private renderContextDropdown() {
-    // Agent Context doesn't use the dropdown - it's global
-    if (this.selectedMenu === "agent-context") {
-      return nothing;
-    }
-
-    if (this.selectedMenu !== "ag-ui-events" && this.selectedMenu !== "agents" && this.selectedMenu !== "frontend-tools") {
-      return nothing;
-    }
-
     // Filter out "all-agents" when in agents view
     const filteredOptions = this.selectedMenu === "agents"
       ? this.contextOptions.filter((opt) => opt.key !== "all-agents")
@@ -2097,10 +2608,10 @@ export class WebInspectorElement extends LitElement {
     const selectedLabel = filteredOptions.find((opt) => opt.key === this.selectedContext)?.label ?? "";
 
     return html`
-      <div class="relative min-w-0 flex-1" data-context-dropdown-root="true">
+      <div class="relative z-40 min-w-0 flex-1" data-context-dropdown-root="true">
         <button
           type="button"
-          class="flex w-full min-w-0 max-w-[150px] items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+          class="relative z-40 flex w-full min-w-0 max-w-[240px] items-center gap-1.5 rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
           @pointerdown=${this.handleContextDropdownToggle}
         >
           <span class="truncate flex-1 text-left">${selectedLabel}</span>
@@ -2187,7 +2698,8 @@ export class WebInspectorElement extends LitElement {
       `;
     }
 
-    const allTools = this.extractToolsFromAgents();
+    this.refreshToolsSnapshot();
+    const allTools = this.cachedTools;
 
     if (allTools.length === 0) {
       return html`
@@ -2206,7 +2718,7 @@ export class WebInspectorElement extends LitElement {
     // Filter tools by selected agent
     const filteredTools = this.selectedContext === "all-agents"
       ? allTools
-      : allTools.filter(tool => tool.agentId === this.selectedContext);
+      : allTools.filter((tool) => !tool.agentId || tool.agentId === this.selectedContext);
 
     return html`
       <div class="flex h-full flex-col overflow-hidden">
@@ -2219,39 +2731,43 @@ export class WebInspectorElement extends LitElement {
     `;
   }
 
-  private extractToolsFromAgents(): Array<{
-    agentId: string;
-    name: string;
-    description?: string;
-    parameters?: unknown;
-    type: 'handler' | 'renderer';
-  }> {
+  private extractToolsFromAgents(): InspectorToolDefinition[] {
     if (!this._core) {
       return [];
     }
 
-    const tools: Array<{
-      agentId: string;
-      name: string;
-      description?: string;
-      parameters?: unknown;
-      type: 'handler' | 'renderer';
-    }> = [];
+    const tools: InspectorToolDefinition[] = [];
 
+    // Start with tools registered on the core (frontend tools / HIL)
+    for (const coreTool of this._core.tools ?? []) {
+      tools.push({
+        agentId: coreTool.agentId ?? "",
+        name: coreTool.name,
+        description: coreTool.description,
+        parameters: coreTool.parameters,
+        type: 'handler',
+      });
+    }
+
+    // Augment with agent-level tool handlers/renderers
     for (const [agentId, agent] of Object.entries(this._core.agents)) {
       if (!agent) continue;
 
       // Try to extract tool handlers
-      const handlers = (agent as any).toolHandlers;
+      const handlers = (agent as { toolHandlers?: Record<string, unknown> }).toolHandlers;
       if (handlers && typeof handlers === 'object') {
         for (const [toolName, handler] of Object.entries(handlers)) {
           if (handler && typeof handler === 'object') {
-            const handlerObj = handler as any;
+            const handlerObj = handler as Record<string, unknown>;
             tools.push({
               agentId,
               name: toolName,
-              description: handlerObj.description || handlerObj.tool?.description,
-              parameters: handlerObj.parameters || handlerObj.tool?.parameters,
+              description:
+                (typeof handlerObj.description === "string" && handlerObj.description) ||
+                (handlerObj.tool as { description?: string } | undefined)?.description,
+              parameters:
+                handlerObj.parameters ??
+                (handlerObj.tool as { parameters?: unknown } | undefined)?.parameters,
               type: 'handler',
             });
           }
@@ -2259,18 +2775,22 @@ export class WebInspectorElement extends LitElement {
       }
 
       // Try to extract tool renderers
-      const renderers = (agent as any).toolRenderers;
+      const renderers = (agent as { toolRenderers?: Record<string, unknown> }).toolRenderers;
       if (renderers && typeof renderers === 'object') {
         for (const [toolName, renderer] of Object.entries(renderers)) {
           // Don't duplicate if we already have it as a handler
           if (!tools.some(t => t.agentId === agentId && t.name === toolName)) {
             if (renderer && typeof renderer === 'object') {
-              const rendererObj = renderer as any;
+              const rendererObj = renderer as Record<string, unknown>;
               tools.push({
                 agentId,
                 name: toolName,
-                description: rendererObj.description || rendererObj.tool?.description,
-                parameters: rendererObj.parameters || rendererObj.tool?.parameters,
+                description:
+                  (typeof rendererObj.description === "string" && rendererObj.description) ||
+                  (rendererObj.tool as { description?: string } | undefined)?.description,
+                parameters:
+                  rendererObj.parameters ??
+                  (rendererObj.tool as { parameters?: unknown } | undefined)?.parameters,
                 type: 'renderer',
               });
             }
@@ -2286,13 +2806,7 @@ export class WebInspectorElement extends LitElement {
     });
   }
 
-  private renderToolCard(tool: {
-    agentId: string;
-    name: string;
-    description?: string;
-    parameters?: unknown;
-    type: 'handler' | 'renderer';
-  }) {
+  private renderToolCard(tool: InspectorToolDefinition) {
     const isExpanded = this.expandedTools.has(`${tool.agentId}:${tool.name}`);
     const schema = this.extractSchemaInfo(tool.parameters);
 
@@ -2423,18 +2937,27 @@ export class WebInspectorElement extends LitElement {
     }
 
     // Try Zod schema introspection
-    const zodDef = (parameters as any)._def;
-    if (zodDef) {
+    const zodDef = (parameters as { _def?: Record<string, unknown> })._def;
+    if (zodDef && typeof zodDef === "object") {
       // Handle Zod object schema
       if (zodDef.typeName === 'ZodObject') {
-        const shape = zodDef.shape?.() || zodDef.shape;
+        const rawShape = zodDef.shape;
+        const shape =
+          typeof rawShape === "function"
+            ? (rawShape as () => Record<string, unknown>)()
+            : (rawShape as Record<string, unknown> | undefined);
+
+        if (!shape || typeof shape !== "object") {
+          return result;
+        }
         const requiredKeys = new Set<string>();
 
         // Get required fields
         if (zodDef.unknownKeys === 'strict' || !zodDef.catchall) {
-          Object.keys(shape || {}).forEach(key => {
-            const fieldDef = shape[key]?._def;
-            if (fieldDef && !this.isZodOptional(shape[key])) {
+          Object.keys(shape || {}).forEach((key) => {
+            const candidate = (shape as Record<string, unknown>)[key];
+            const fieldDef = (candidate as { _def?: Record<string, unknown> } | undefined)?._def;
+            if (fieldDef && !this.isZodOptional(candidate)) {
               requiredKeys.add(key);
             }
           });
@@ -2453,20 +2976,27 @@ export class WebInspectorElement extends LitElement {
           });
         }
       }
-    } else if ((parameters as any).type === 'object' && (parameters as any).properties) {
+    } else if (
+      (parameters as { type?: string; properties?: Record<string, unknown> }).type === 'object' &&
+      (parameters as { properties?: Record<string, unknown> }).properties
+    ) {
       // Handle JSON Schema format
-      const props = (parameters as any).properties;
-      const required = new Set((parameters as any).required || []);
+      const props = (parameters as { properties?: Record<string, unknown> }).properties;
+      const required = new Set(
+        Array.isArray((parameters as { required?: string[] }).required)
+          ? (parameters as { required?: string[] }).required
+          : [],
+      );
 
-      for (const [key, value] of Object.entries(props)) {
-        const prop = value as any;
+      for (const [key, value] of Object.entries(props ?? {})) {
+        const prop = value as Record<string, unknown>;
         result.properties.push({
           name: key,
-          type: prop.type,
-          description: prop.description,
+          type: prop.type as string | undefined,
+          description: typeof prop.description === "string" ? prop.description : undefined,
           required: required.has(key),
           defaultValue: prop.default,
-          enum: prop.enum,
+          enum: Array.isArray(prop.enum) ? prop.enum : undefined,
         });
       }
     }
@@ -2474,10 +3004,11 @@ export class WebInspectorElement extends LitElement {
     return result;
   }
 
-  private isZodOptional(zodSchema: any): boolean {
-    if (!zodSchema?._def) return false;
+  private isZodOptional(zodSchema: unknown): boolean {
+    const schema = zodSchema as { _def?: Record<string, unknown> };
+    if (!schema?._def) return false;
 
-    const def = zodSchema._def;
+    const def = schema._def;
 
     // Check if it's explicitly optional or nullable
     if (def.typeName === 'ZodOptional' || def.typeName === 'ZodNullable') {
@@ -2492,7 +3023,7 @@ export class WebInspectorElement extends LitElement {
     return false;
   }
 
-  private extractZodFieldInfo(zodSchema: any): {
+  private extractZodFieldInfo(zodSchema: unknown): {
     type?: string;
     description?: string;
     defaultValue?: unknown;
@@ -2505,23 +3036,26 @@ export class WebInspectorElement extends LitElement {
       enum?: unknown[];
     } = {};
 
-    if (!zodSchema?._def) return info;
+    const schema = zodSchema as { _def?: Record<string, unknown> };
+    if (!schema?._def) return info;
 
-    let currentSchema = zodSchema;
-    let def = currentSchema._def;
+    let currentSchema = schema as { _def?: Record<string, unknown> };
+    let def = currentSchema._def as Record<string, unknown>;
 
     // Unwrap optional/nullable
     while (def.typeName === 'ZodOptional' || def.typeName === 'ZodNullable' || def.typeName === 'ZodDefault') {
       if (def.typeName === 'ZodDefault' && def.defaultValue !== undefined) {
         info.defaultValue = typeof def.defaultValue === 'function' ? def.defaultValue() : def.defaultValue;
       }
-      currentSchema = def.innerType;
+      currentSchema = (def.innerType as { _def?: Record<string, unknown> }) ?? currentSchema;
       if (!currentSchema?._def) break;
-      def = currentSchema._def;
+      def = currentSchema._def as Record<string, unknown>;
     }
 
     // Extract description
-    info.description = def.description;
+    info.description = typeof def.description === "string" ? def.description : undefined;
+
+    const typeName = typeof def.typeName === "string" ? def.typeName : undefined;
 
     // Extract type
     const typeMap: Record<string, string> = {
@@ -2536,12 +3070,12 @@ export class WebInspectorElement extends LitElement {
       ZodAny: 'any',
       ZodUnknown: 'unknown',
     };
-    info.type = typeMap[def.typeName] || def.typeName?.replace('Zod', '').toLowerCase();
+    info.type = typeName ? typeMap[typeName] || typeName.replace('Zod', '').toLowerCase() : undefined;
 
     // Extract enum values
-    if (def.typeName === 'ZodEnum' && Array.isArray(def.values)) {
-      info.enum = def.values;
-    } else if (def.typeName === 'ZodLiteral' && def.value !== undefined) {
+    if (typeName === 'ZodEnum' && Array.isArray(def.values)) {
+      info.enum = def.values as unknown[];
+    } else if (typeName === 'ZodLiteral' && def.value !== undefined) {
       info.enum = [def.value];
     }
 
@@ -2589,6 +3123,7 @@ export class WebInspectorElement extends LitElement {
     const isExpanded = this.expandedContextItems.has(id);
     const valuePreview = this.getContextValuePreview(context.value);
     const hasValue = context.value !== undefined && context.value !== null;
+    const title = context.description?.trim() || id;
 
     return html`
       <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
@@ -2599,11 +3134,9 @@ export class WebInspectorElement extends LitElement {
         >
           <div class="flex items-start justify-between gap-3">
             <div class="flex-1 min-w-0">
-              ${context.description
-                ? html`<p class="text-sm font-medium text-gray-900 mb-1">${context.description}</p>`
-                : html`<p class="text-sm font-medium text-gray-500 italic mb-1">No description</p>`}
+              <p class="text-sm font-medium text-gray-900 mb-1">${title}</p>
               <div class="flex items-center gap-2 text-xs text-gray-500">
-                <span class="font-mono">${id.substring(0, 8)}...</span>
+                <span class="font-mono truncate inline-block align-middle" style="max-width: 180px;">${id}</span>
                 ${hasValue
                   ? html`
                       <span class="text-gray-300">•</span>
@@ -2627,7 +3160,19 @@ export class WebInspectorElement extends LitElement {
                 </div>
                 ${hasValue
                   ? html`
-                      <h5 class="mb-2 text-xs font-semibold text-gray-700">Value</h5>
+                      <div class="mb-2 flex items-center justify-between gap-2">
+                        <h5 class="text-xs font-semibold text-gray-700">Value</h5>
+                        <button
+                          class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium text-gray-700 transition hover:bg-gray-50"
+                          type="button"
+                          @click=${(e: Event) => {
+                            e.stopPropagation();
+                            void this.copyContextValue(context.value, id);
+                          }}
+                        >
+                          ${this.copiedContextItems.has(id) ? "Copied" : "Copy JSON"}
+                        </button>
+                      </div>
                       <div class="rounded-md border border-gray-200 bg-white p-3">
                         <pre class="overflow-auto text-xs text-gray-800 max-h-96"><code>${this.formatContextValue(context.value)}</code></pre>
                       </div>
@@ -2688,8 +3233,28 @@ export class WebInspectorElement extends LitElement {
 
     try {
       return JSON.stringify(value, null, 2);
-    } catch (error) {
+    } catch {
       return String(value);
+    }
+  }
+
+  private async copyContextValue(value: unknown, contextId: string): Promise<void> {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      console.warn("Clipboard API is not available in this environment.");
+      return;
+    }
+
+    const serialized = this.formatContextValue(value);
+    try {
+      await navigator.clipboard.writeText(serialized);
+      this.copiedContextItems.add(contextId);
+      this.requestUpdate();
+      setTimeout(() => {
+        this.copiedContextItems.delete(contextId);
+        this.requestUpdate();
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to copy context value:", error);
     }
   }
 
