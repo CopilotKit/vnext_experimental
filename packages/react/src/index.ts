@@ -1,8 +1,7 @@
 "use client";
 
-// Re-export AG-UI runtime and types to provide a single import surface
-// This helps avoid version mismatches by letting apps import everything from '@copilotkitnext/react'
-export * from "@ag-ui/core";
+// Re-export AG-UI client runtime and types from a single import surface.
+// Avoid re-exporting @ag-ui/core to prevent star-export name collisions.
 export * from "@ag-ui/client";
 
 // React components and hooks for CopilotKit2
