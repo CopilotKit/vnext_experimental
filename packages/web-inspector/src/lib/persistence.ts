@@ -16,45 +16,53 @@ export type PersistedState = {
   selectedContext?: string;
 };
 
-export function loadInspectorState(cookieName: string): PersistedState | null {
-  if (typeof document === 'undefined') {
+export function loadInspectorState(storageKey: string): PersistedState | null {
+  if (typeof window === "undefined") {
     return null;
   }
 
-  const prefix = `${cookieName}=`;
-  const entry = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
-  if (!entry) {
-    return null;
-  }
-
-  const raw = entry.substring(prefix.length);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw));
-    if (parsed && typeof parsed === 'object') {
-      return parsed as PersistedState;
+  const raw = window.localStorage.getItem(storageKey);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        return parsed as PersistedState;
+      }
+    } catch {
+      // Fall through to cookie migration path
     }
-  } catch (error) {
-    return null;
+  }
+
+  // Backwards compatibility: try to read the legacy cookie and migrate it
+  if (typeof document !== "undefined") {
+    const prefix = `${storageKey}=`;
+    const entry = document.cookie.split("; ").find((cookie) => cookie.startsWith(prefix));
+    if (entry) {
+      const legacyRaw = entry.substring(prefix.length);
+      try {
+        const parsed = JSON.parse(decodeURIComponent(legacyRaw));
+        if (parsed && typeof parsed === "object") {
+          return parsed as PersistedState;
+        }
+      } catch {
+        return null;
+      }
+    }
   }
 
   return null;
 }
 
-export function saveInspectorState(
-  cookieName: string,
-  state: PersistedState,
-  maxAgeSeconds: number,
-): void {
-  if (typeof document === 'undefined') {
+export function saveInspectorState(storageKey: string, state: PersistedState): void {
+  if (typeof window === "undefined") {
     return;
   }
 
-  const encoded = encodeURIComponent(JSON.stringify(state));
-  document.cookie = `${cookieName}=${encoded}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
+  } catch (error) {
+    console.warn("Failed to persist inspector state", error);
+  }
 }
 
 export function isValidAnchor(value: unknown): value is Anchor {

@@ -25,6 +25,10 @@
         "../../packages/shared/dist/index.d.ts",
         "../../packages/shared/dist/index.mjs",
         "../../packages/shared/src/index.ts"
+      ],
+      "@copilotkitnext/web-inspector": [
+        "../../packages/web-inspector/dist/index.d.ts",
+        "../../packages/web-inspector/src/index.ts"
       ]
     }
   },

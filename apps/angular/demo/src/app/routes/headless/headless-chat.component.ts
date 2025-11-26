@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, input, signal } from "@angular/core";
+import { Component, ChangeDetectionStrategy, computed, inject, input, signal, OnDestroy, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import {
@@ -10,6 +10,7 @@ import {
   registerHumanInTheLoop,
 } from "@copilotkitnext/angular";
 import { RenderToolCalls } from "@copilotkitnext/angular";
+import { WEB_INSPECTOR_TAG, type WebInspectorElement } from "@copilotkitnext/web-inspector";
 import { z } from "zod";
 
 @Component({
@@ -76,7 +77,7 @@ export class RequireApprovalComponent implements HumanInTheLoopToolRenderer {
     </div>
   `,
 })
-export class HeadlessChatComponent {
+export class HeadlessChatComponent implements OnInit, OnDestroy {
   readonly agentStore = injectAgentStore("openai");
   readonly agent = computed(() => this.agentStore()?.agent);
   readonly isRunning = computed(() => !!this.agentStore()?.isRunning());
@@ -84,6 +85,7 @@ export class HeadlessChatComponent {
   readonly copilotkit = inject(CopilotKit);
 
   inputValue = "";
+  private inspectorElement: WebInspectorElement | null = null;
 
   constructor() {
     registerHumanInTheLoop({
@@ -102,6 +104,28 @@ export class HeadlessChatComponent {
         description: "active",
       }),
     );
+  }
+
+  ngOnInit(): void {
+    if (typeof document === "undefined") return;
+
+    const existing = document.querySelector<WebInspectorElement>(WEB_INSPECTOR_TAG);
+    const inspector = existing ?? (document.createElement(WEB_INSPECTOR_TAG) as WebInspectorElement);
+    inspector.core = this.copilotkit.core;
+    inspector.setAttribute("auto-attach-core", "false");
+
+    if (!existing) {
+      document.body.appendChild(inspector);
+    }
+
+    this.inspectorElement = inspector;
+  }
+
+  ngOnDestroy(): void {
+    if (this.inspectorElement && this.inspectorElement.isConnected) {
+      this.inspectorElement.remove();
+    }
+    this.inspectorElement = null;
   }
 
   async send() {
