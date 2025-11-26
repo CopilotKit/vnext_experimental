@@ -19,9 +19,22 @@
     "@angular/forms": "^18.2.0",
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
+    "@ag-ui/client": "0.0.42",
+    "@ag-ui/core": "0.0.42",
+    "@ag-ui/encoder": "0.0.42",
+    "@ag-ui/proto": "0.0.42",
     "@copilotkitnext/angular": "workspace:*",
+    "@copilotkitnext/web-inspector": "workspace:*",
+    "compare-versions": "^6.1.1",
+    "fast-json-patch": "^3.1.1",
+    "lit": "^3.3.1",
+    "lucide": "^0.525.0",
+    "partial-json": "^0.1.7",
+    "untruncate-json": "^0.0.1",
+    "uuid": "^11.1.0",
     "rxjs": "^7.8.1",
     "tslib": "^2.8.1",
+    "zod-to-json-schema": "^3.24.6",
     "zod": "^3.25.75",
     "zone.js": "^0.14.0"
   },
@@ -32,5 +45,10 @@
     "nodemon": "^3.1.7",
     "rimraf": "^6.0.1",
     "typescript": "~5.4.5"
+  },
+  "pnpm": {
+    "publicHoistPattern": [
+      "*"
+    ]
   }
 }
