@@ -1,48 +1,40 @@
 import * as React from "react";
 import { createComponent } from "@lit-labs/react";
-import {
-  WEB_INSPECTOR_TAG,
-  WebInspectorElement,
-  defineWebInspector,
-} from "@copilotkitnext/web-inspector";
 import type { CopilotKitCore } from "@copilotkitnext/core";
 
-defineWebInspector();
+type CopilotKitInspectorBaseProps = {
+  core?: CopilotKitCore | null;
+  [key: string]: unknown;
+};
 
-const CopilotKitInspectorBase = createComponent({
-  tagName: WEB_INSPECTOR_TAG,
-  elementClass: WebInspectorElement,
-  react: React,
+type InspectorComponent = React.ComponentType<CopilotKitInspectorBaseProps>;
+
+// Lazy-load the lit custom element so consumers don't pay the cost until they render it.
+const CopilotKitInspectorBase = React.lazy<InspectorComponent>(() => {
+  if (typeof window === "undefined") {
+    const NullComponent: InspectorComponent = () => null;
+    return Promise.resolve({ default: NullComponent });
+  }
+
+  return import("@copilotkitnext/web-inspector").then((mod) => {
+    mod.defineWebInspector?.();
+
+    const Component = createComponent({
+      tagName: mod.WEB_INSPECTOR_TAG,
+      elementClass: mod.WebInspectorElement,
+      react: React,
+    }) as InspectorComponent;
+
+    return { default: Component };
+  });
 });
 
-export type CopilotKitInspectorBaseProps = React.ComponentProps<typeof CopilotKitInspectorBase>;
+export interface CopilotKitInspectorProps extends CopilotKitInspectorBaseProps {}
 
-export interface CopilotKitInspectorProps extends Omit<CopilotKitInspectorBaseProps, "core"> {
-  core?: CopilotKitCore | null;
-}
-
-export const CopilotKitInspector = React.forwardRef<
-  WebInspectorElement,
-  CopilotKitInspectorProps
->(
-  ({ core, ...rest }, ref) => {
-    const innerRef = React.useRef<WebInspectorElement>(null);
-
-    React.useImperativeHandle(ref, () => innerRef.current as WebInspectorElement, []);
-
-    React.useEffect(() => {
-      if (innerRef.current) {
-        innerRef.current.core = core ?? null;
-      }
-    }, [core]);
-
-    return (
-      <CopilotKitInspectorBase
-        {...(rest as CopilotKitInspectorBaseProps)}
-        ref={innerRef}
-      />
-    ); // eslint-disable-line react/jsx-props-no-spreading
-  },
+export const CopilotKitInspector: React.FC<CopilotKitInspectorProps> = ({ core, ...rest }) => (
+  <React.Suspense fallback={null}>
+    <CopilotKitInspectorBase {...rest} core={core ?? null} />
+  </React.Suspense>
 );
 
 CopilotKitInspector.displayName = "CopilotKitInspector";
