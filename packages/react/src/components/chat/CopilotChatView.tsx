@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { WithSlots, renderSlot } from "@/lib/slots";
+import { WithSlots, SlotValue, renderSlot } from "@/lib/slots";
 import CopilotChatMessageView from "./CopilotChatMessageView";
 import CopilotChatInput, { CopilotChatInputProps } from "./CopilotChatInput";
 import CopilotChatSuggestionView, { CopilotChatSuggestionViewProps } from "./CopilotChatSuggestionView";
@@ -113,20 +113,19 @@ export function CopilotChatView({
   });
 
   const BoundInput = renderSlot(input, CopilotChatInput, (inputProps ?? {}) as CopilotChatInputProps);
+
   const hasSuggestions = Array.isArray(suggestions) && suggestions.length > 0;
   const BoundSuggestionView = hasSuggestions
-    ? renderSlot<typeof CopilotChatSuggestionView, CopilotChatSuggestionViewProps>(
-        suggestionView,
-        CopilotChatSuggestionView,
-        {
-          suggestions,
-          loadingIndexes: suggestionLoadingIndexes,
-          onSelectSuggestion,
-          className: "mb-3 lg:ml-4 lg:mr-4 ml-0 mr-0",
-        },
-      )
+    ? renderSlot(suggestionView, CopilotChatSuggestionView, {
+        suggestions,
+        loadingIndexes: suggestionLoadingIndexes,
+        onSelectSuggestion,
+        className: "mb-3 lg:ml-4 lg:mr-4 ml-0 mr-0",
+      })
     : null;
+
   const BoundFeather = renderSlot(feather, CopilotChatView.Feather, {});
+
   const BoundScrollView = renderSlot(scrollView, CopilotChatView.ScrollView, {
     autoScroll,
     scrollToBottomButton,
@@ -187,7 +186,7 @@ export namespace CopilotChatView {
   // Inner component that has access to StickToBottom context
   const ScrollContent: React.FC<{
     children: React.ReactNode;
-    scrollToBottomButton?: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+    scrollToBottomButton?: SlotValue<React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>>;
     inputContainerHeight: number;
     isResizing: boolean;
   }> = ({ children, scrollToBottomButton, inputContainerHeight, isResizing }) => {
@@ -219,7 +218,7 @@ export namespace CopilotChatView {
   export const ScrollView: React.FC<
     React.HTMLAttributes<HTMLDivElement> & {
       autoScroll?: boolean;
-      scrollToBottomButton?: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+      scrollToBottomButton?: SlotValue<React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>>>;
       inputContainerHeight?: number;
       isResizing?: boolean;
     }
