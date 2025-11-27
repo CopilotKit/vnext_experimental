@@ -283,6 +283,182 @@ describe("Tool Call Re-render Prevention", () => {
     agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
     agent.complete();
   });
+
+  it("should re-render a tool call when its arguments change during streaming", async () => {
+    const agent = new MockStepwiseAgent();
+
+    // Track render counts and captured args
+    let toolRenderCount = 0;
+    const capturedArgs: string[] = [];
+
+    const renderToolCalls = [
+      defineToolCallRenderer({
+        name: "search",
+        args: z.object({
+          query: z.string(),
+        }),
+        render: ({ args }) => {
+          toolRenderCount++;
+          capturedArgs.push(args.query);
+
+          return (
+            <div data-testid="search-tool">
+              <span data-testid="search-render-count">{toolRenderCount}</span>
+              <span data-testid="search-query">{args.query}</span>
+            </div>
+          );
+        },
+      }),
+    ] as unknown as ReactToolCallRenderer<unknown>[];
+
+    render(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
+        <div style={{ height: 400 }}>
+          <CopilotChat />
+        </div>
+      </CopilotKitProvider>
+    );
+
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Search for something" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Search for something")).toBeDefined();
+    });
+
+    const messageId = "m_search_update";
+    const toolCallId = "tc_search_update";
+
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+
+    // Stream partial args first
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "search",
+      parentMessageId: messageId,
+      delta: '{"query":"Rea',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("search-query").textContent).toBe("Rea");
+    });
+
+    const renderCountAfterFirstChunk = toolRenderCount;
+
+    // Stream more args
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "search",
+      parentMessageId: messageId,
+      delta: 'ct hooks"}',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("search-query").textContent).toBe("React hooks");
+    });
+
+    const renderCountAfterSecondChunk = toolRenderCount;
+
+    // THE KEY ASSERTION: Tool should re-render when arguments change
+    expect(renderCountAfterSecondChunk).toBeGreaterThan(renderCountAfterFirstChunk);
+    expect(capturedArgs).toContain("Rea");
+    expect(capturedArgs).toContain("React hooks");
+
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
+
+  it("should re-render a tool call when status changes to complete", async () => {
+    const agent = new MockStepwiseAgent();
+
+    let toolRenderCount = 0;
+    const capturedStatuses: string[] = [];
+
+    const renderToolCalls = [
+      defineToolCallRenderer({
+        name: "getData",
+        args: z.object({ id: z.string() }),
+        render: ({ status, result }) => {
+          toolRenderCount++;
+          capturedStatuses.push(status);
+
+          return (
+            <div data-testid="data-tool">
+              <span data-testid="data-status">{status}</span>
+              <span data-testid="data-result">{result ? String(result) : "none"}</span>
+            </div>
+          );
+        },
+      }),
+    ] as unknown as ReactToolCallRenderer<unknown>[];
+
+    render(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderToolCalls={renderToolCalls}
+      >
+        <div style={{ height: 400 }}>
+          <CopilotChat />
+        </div>
+      </CopilotKitProvider>
+    );
+
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Get data" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Get data")).toBeDefined();
+    });
+
+    const messageId = "m_data";
+    const toolCallId = "tc_data";
+
+    agent.emit({ type: EventType.RUN_STARTED } as BaseEvent);
+
+    // Send tool call
+    agent.emit({
+      type: EventType.TOOL_CALL_CHUNK,
+      toolCallId,
+      toolCallName: "getData",
+      parentMessageId: messageId,
+      delta: '{"id":"123"}',
+    } as BaseEvent);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("data-status").textContent).toBe("inProgress");
+    });
+
+    const renderCountBeforeResult = toolRenderCount;
+
+    // Send tool result
+    agent.emit({
+      type: EventType.TOOL_CALL_RESULT,
+      toolCallId,
+      messageId: `${messageId}_result`,
+      content: JSON.stringify({ data: "found" }),
+    } as BaseEvent);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("data-status").textContent).toBe("complete");
+    });
+
+    const renderCountAfterResult = toolRenderCount;
+
+    // THE KEY ASSERTION: Tool should re-render when status changes
+    expect(renderCountAfterResult).toBeGreaterThan(renderCountBeforeResult);
+    expect(capturedStatuses).toContain("inProgress");
+    expect(capturedStatuses).toContain("complete");
+
+    agent.emit({ type: EventType.RUN_FINISHED } as BaseEvent);
+    agent.complete();
+  });
 });
 
 describe("Text Message Re-render Prevention", () => {
@@ -553,6 +729,165 @@ describe("Text Message Re-render Prevention", () => {
       userMessageRenderCountInitial
     );
   });
+
+  it("should re-render an assistant message when its content changes", async () => {
+    const renderCounts: Record<string, number> = {};
+    const capturedContent: string[] = [];
+
+    const TrackedAssistantMessage: React.FC<{
+      message: AssistantMessage;
+      messages?: Message[];
+      isRunning?: boolean;
+    }> = ({ message }) => {
+      renderCounts[message.id] = (renderCounts[message.id] || 0) + 1;
+      capturedContent.push(message.content);
+      return (
+        <div data-testid={`assistant-message-${message.id}`}>
+          <span data-testid={`content-${message.id}`}>{message.content}</span>
+        </div>
+      );
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "Hello",
+      } as AssistantMessage,
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={true}
+            assistantMessage={TrackedAssistantMessage}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("assistant-message-msg-1")).toBeDefined();
+    });
+
+    const renderCountAfterInitial = renderCounts["msg-1"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Update message content (streaming)
+    const updatedMessages: Message[] = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "Hello! How can I help",
+      } as AssistantMessage,
+    ];
+
+    rerender(
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={true}
+            assistantMessage={TrackedAssistantMessage}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("content-msg-1").textContent).toBe(
+        "Hello! How can I help"
+      );
+    });
+
+    const renderCountAfterUpdate = renderCounts["msg-1"];
+
+    // THE KEY ASSERTION: Message should re-render when content changes
+    expect(renderCountAfterUpdate).toBeGreaterThan(renderCountAfterInitial);
+    expect(capturedContent).toContain("Hello");
+    expect(capturedContent).toContain("Hello! How can I help");
+  });
+
+  it("should re-render a user message when its content changes", async () => {
+    const renderCounts: Record<string, number> = {};
+    const capturedContent: string[] = [];
+
+    const TrackedUserMessage: React.FC<{
+      message: Message;
+    }> = ({ message }) => {
+      renderCounts[message.id] = (renderCounts[message.id] || 0) + 1;
+      const content = typeof message.content === "string" ? message.content : "";
+      capturedContent.push(content);
+      return (
+        <div data-testid={`user-message-${message.id}`}>
+          <span data-testid={`user-content-${message.id}`}>{content}</span>
+        </div>
+      );
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "user-1",
+        role: "user",
+        content: "Initial message",
+      },
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={false}
+            userMessage={TrackedUserMessage}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-message-user-1")).toBeDefined();
+    });
+
+    const renderCountAfterInitial = renderCounts["user-1"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Update user message content (e.g., editing)
+    const updatedMessages: Message[] = [
+      {
+        id: "user-1",
+        role: "user",
+        content: "Updated message",
+      },
+    ];
+
+    rerender(
+      <CopilotKitProvider>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={false}
+            userMessage={TrackedUserMessage}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-content-user-1").textContent).toBe(
+        "Updated message"
+      );
+    });
+
+    const renderCountAfterUpdate = renderCounts["user-1"];
+
+    // THE KEY ASSERTION: User message should re-render when content changes
+    expect(renderCountAfterUpdate).toBeGreaterThan(renderCountAfterInitial);
+    expect(capturedContent).toContain("Initial message");
+    expect(capturedContent).toContain("Updated message");
+  });
 });
 
 describe("Activity Message Re-render Prevention", () => {
@@ -786,6 +1121,175 @@ describe("Activity Message Re-render Prevention", () => {
     // THE KEY ASSERTION: Activity message should not re-render when assistant streams
     expect(activityRenderCountAfterStreaming).toBe(activityRenderCountInitial);
   });
+
+  it("should re-render an activity message when its content changes", async () => {
+    const renderCounts: Record<string, number> = {};
+    const capturedContent: { status: string; percent: number }[] = [];
+
+    const activityRenderer: ReactActivityMessageRenderer<{ status: string; percent: number }> = {
+      activityType: "progress",
+      content: z.object({ status: z.string(), percent: z.number() }),
+      render: ({ content, message }) => {
+        renderCounts[message.id] = (renderCounts[message.id] || 0) + 1;
+        capturedContent.push({ ...content });
+        return (
+          <div data-testid={`activity-${message.id}`}>
+            <span data-testid={`activity-status-${message.id}`}>{content.status}</span>
+            <span data-testid={`activity-percent-${message.id}`}>{content.percent}</span>
+          </div>
+        );
+      },
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "activity-1",
+        role: "activity",
+        activityType: "progress",
+        content: { status: "Starting", percent: 0 },
+      } as ActivityMessage,
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider renderActivityMessages={[activityRenderer]}>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={true}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("activity-activity-1")).toBeDefined();
+    });
+
+    const renderCountAfterInitial = renderCounts["activity-1"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Update activity content (progress update)
+    const updatedMessages: Message[] = [
+      {
+        id: "activity-1",
+        role: "activity",
+        activityType: "progress",
+        content: { status: "Processing", percent: 50 },
+      } as ActivityMessage,
+    ];
+
+    rerender(
+      <CopilotKitProvider renderActivityMessages={[activityRenderer]}>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={true}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("activity-status-activity-1").textContent).toBe("Processing");
+      expect(screen.getByTestId("activity-percent-activity-1").textContent).toBe("50");
+    });
+
+    const renderCountAfterUpdate = renderCounts["activity-1"];
+
+    // THE KEY ASSERTION: Activity should re-render when content changes
+    expect(renderCountAfterUpdate).toBeGreaterThan(renderCountAfterInitial);
+    expect(capturedContent).toContainEqual({ status: "Starting", percent: 0 });
+    expect(capturedContent).toContainEqual({ status: "Processing", percent: 50 });
+  });
+
+  it("should re-render an activity message when its activityType changes", async () => {
+    const renderCounts: Record<string, number> = {};
+
+    const progressRenderer: ReactActivityMessageRenderer<{ status: string }> = {
+      activityType: "progress",
+      content: z.object({ status: z.string() }),
+      render: ({ content, message }) => {
+        renderCounts[message.id] = (renderCounts[message.id] || 0) + 1;
+        return (
+          <div data-testid={`activity-${message.id}`}>
+            <span data-testid={`activity-type-${message.id}`}>progress</span>
+            <span data-testid={`activity-status-${message.id}`}>{content.status}</span>
+          </div>
+        );
+      },
+    };
+
+    const completedRenderer: ReactActivityMessageRenderer<{ result: string }> = {
+      activityType: "completed",
+      content: z.object({ result: z.string() }),
+      render: ({ content, message }) => {
+        renderCounts[message.id] = (renderCounts[message.id] || 0) + 1;
+        return (
+          <div data-testid={`activity-${message.id}`}>
+            <span data-testid={`activity-type-${message.id}`}>completed</span>
+            <span data-testid={`activity-result-${message.id}`}>{content.result}</span>
+          </div>
+        );
+      },
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "activity-1",
+        role: "activity",
+        activityType: "progress",
+        content: { status: "Loading..." },
+      } as ActivityMessage,
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider renderActivityMessages={[progressRenderer, completedRenderer]}>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={true}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("activity-type-activity-1").textContent).toBe("progress");
+    });
+
+    const renderCountAfterInitial = renderCounts["activity-1"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Change activity type
+    const updatedMessages: Message[] = [
+      {
+        id: "activity-1",
+        role: "activity",
+        activityType: "completed",
+        content: { result: "Done!" },
+      } as ActivityMessage,
+    ];
+
+    rerender(
+      <CopilotKitProvider renderActivityMessages={[progressRenderer, completedRenderer]}>
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={false}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("activity-type-activity-1").textContent).toBe("completed");
+    });
+
+    const renderCountAfterTypeChange = renderCounts["activity-1"];
+
+    // THE KEY ASSERTION: Activity should re-render when activityType changes
+    expect(renderCountAfterTypeChange).toBeGreaterThan(renderCountAfterInitial);
+  });
 });
 
 describe("Custom Message Re-render Prevention", () => {
@@ -1007,5 +1511,184 @@ describe("Custom Message Re-render Prevention", () => {
 
     // THE KEY ASSERTION: Custom message should not re-render just because isRunning changed
     expect(renderCountAfterRunningChanged).toBe(renderCountWhileRunning);
+  });
+
+  it("should re-render a custom message when its message content changes", async () => {
+    const agent = new MockStepwiseAgent();
+    const renderCounts: Record<string, number> = {};
+    const capturedContent: string[] = [];
+
+    const customRenderer: ReactCustomMessageRenderer = {
+      render: ({ message, position }) => {
+        if (message.role !== "assistant" || position !== "after") {
+          return null;
+        }
+
+        const key = `${message.id}-${position}`;
+        renderCounts[key] = (renderCounts[key] || 0) + 1;
+        const content = typeof message.content === "string" ? message.content : "";
+        capturedContent.push(content);
+
+        return (
+          <div data-testid={`custom-${message.id}`}>
+            <span data-testid={`custom-content-${message.id}`}>{content}</span>
+            <span data-testid={`custom-render-count-${message.id}`}>
+              {renderCounts[key]}
+            </span>
+          </div>
+        );
+      },
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: "Hello",
+      } as AssistantMessage,
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderCustomMessages={[customRenderer]}
+      >
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={true}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("custom-assistant-1")).toBeDefined();
+    });
+
+    const renderCountAfterInitial = renderCounts["assistant-1-after"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Update message content (streaming)
+    const updatedMessages: Message[] = [
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: "Hello! How can I help you today?",
+      } as AssistantMessage,
+    ];
+
+    rerender(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderCustomMessages={[customRenderer]}
+      >
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={true}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("custom-content-assistant-1").textContent).toBe(
+        "Hello! How can I help you today?"
+      );
+    });
+
+    const renderCountAfterUpdate = renderCounts["assistant-1-after"];
+
+    // THE KEY ASSERTION: Custom message should re-render when content changes
+    expect(renderCountAfterUpdate).toBeGreaterThan(renderCountAfterInitial);
+    expect(capturedContent).toContain("Hello");
+    expect(capturedContent).toContain("Hello! How can I help you today?");
+  });
+
+  it("should re-render a custom message when its message role changes", async () => {
+    const agent = new MockStepwiseAgent();
+    const renderCounts: Record<string, number> = {};
+
+    const customRenderer: ReactCustomMessageRenderer = {
+      render: ({ message, position }) => {
+        if (position !== "after") {
+          return null;
+        }
+
+        const key = `${message.id}-${position}`;
+        renderCounts[key] = (renderCounts[key] || 0) + 1;
+
+        return (
+          <div data-testid={`custom-${message.id}`}>
+            <span data-testid={`custom-role-${message.id}`}>{message.role}</span>
+            <span data-testid={`custom-render-count-${message.id}`}>
+              {renderCounts[key]}
+            </span>
+          </div>
+        );
+      },
+    };
+
+    const initialMessages: Message[] = [
+      {
+        id: "msg-1",
+        role: "user",
+        content: "Hello",
+      },
+    ];
+
+    const { rerender } = render(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderCustomMessages={[customRenderer]}
+      >
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={initialMessages}
+            isRunning={false}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("custom-role-msg-1").textContent).toBe("user");
+    });
+
+    const renderCountAfterInitial = renderCounts["msg-1-after"];
+    expect(renderCountAfterInitial).toBe(1);
+
+    // Change message role (unusual but possible)
+    const updatedMessages: Message[] = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "Hello",
+      } as AssistantMessage,
+    ];
+
+    rerender(
+      <CopilotKitProvider
+        agents__unsafe_dev_only={{ default: agent }}
+        renderCustomMessages={[customRenderer]}
+      >
+        <CopilotChatConfigurationProvider agentId="default" threadId="test">
+          <CopilotChatMessageView
+            messages={updatedMessages}
+            isRunning={false}
+          />
+        </CopilotChatConfigurationProvider>
+      </CopilotKitProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("custom-role-msg-1").textContent).toBe("assistant");
+    });
+
+    const renderCountAfterRoleChange = renderCounts["msg-1-after"];
+
+    // THE KEY ASSERTION: Custom message should re-render when role changes
+    expect(renderCountAfterRoleChange).toBeGreaterThan(renderCountAfterInitial);
   });
 });
