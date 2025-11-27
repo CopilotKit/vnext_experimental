@@ -1,15 +1,98 @@
-import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ToolCall, ToolMessage } from "@ag-ui/core";
 import { ToolCallStatus } from "@copilotkitnext/core";
 import { useCopilotKit } from "@/providers/CopilotKitProvider";
 import { useCopilotChatConfiguration } from "@/providers/CopilotChatConfigurationProvider";
 import { DEFAULT_AGENT_ID } from "@copilotkitnext/shared";
 import { partialJSONParse } from "@copilotkitnext/shared";
+import { ReactToolCallRenderer } from "@/types/react-tool-call-renderer";
 
 export interface UseRenderToolCallProps {
   toolCall: ToolCall;
   toolMessage?: ToolMessage;
 }
+
+/**
+ * Props for the memoized ToolCallRenderer component
+ */
+interface ToolCallRendererProps {
+  toolCall: ToolCall;
+  toolMessage?: ToolMessage;
+  RenderComponent: ReactToolCallRenderer<unknown>["render"];
+  isExecuting: boolean;
+}
+
+/**
+ * Memoized component that renders a single tool call.
+ * This prevents unnecessary re-renders when parent components update
+ * but the tool call data hasn't changed.
+ */
+const ToolCallRenderer = React.memo(
+  function ToolCallRenderer({
+    toolCall,
+    toolMessage,
+    RenderComponent,
+    isExecuting,
+  }: ToolCallRendererProps) {
+    // Memoize args based on the arguments string to maintain stable reference
+    const args = useMemo(
+      () => partialJSONParse(toolCall.function.arguments),
+      [toolCall.function.arguments]
+    );
+
+    const toolName = toolCall.function.name;
+
+    // Render based on status to preserve discriminated union type inference
+    if (toolMessage) {
+      return (
+        <RenderComponent
+          name={toolName}
+          args={args}
+          status={ToolCallStatus.Complete}
+          result={toolMessage.content}
+        />
+      );
+    } else if (isExecuting) {
+      return (
+        <RenderComponent
+          name={toolName}
+          args={args}
+          status={ToolCallStatus.Executing}
+          result={undefined}
+        />
+      );
+    } else {
+      return (
+        <RenderComponent
+          name={toolName}
+          args={args}
+          status={ToolCallStatus.InProgress}
+          result={undefined}
+        />
+      );
+    }
+  },
+  // Custom comparison function to prevent re-renders when tool call data hasn't changed
+  (prevProps, nextProps) => {
+    // Compare tool call identity and content
+    if (prevProps.toolCall.id !== nextProps.toolCall.id) return false;
+    if (prevProps.toolCall.function.name !== nextProps.toolCall.function.name) return false;
+    if (prevProps.toolCall.function.arguments !== nextProps.toolCall.function.arguments) return false;
+
+    // Compare tool message (result)
+    const prevResult = prevProps.toolMessage?.content;
+    const nextResult = nextProps.toolMessage?.content;
+    if (prevResult !== nextResult) return false;
+
+    // Compare executing state
+    if (prevProps.isExecuting !== nextProps.isExecuting) return false;
+
+    // Compare render component reference
+    if (prevProps.RenderComponent !== nextProps.RenderComponent) return false;
+
+    return true;
+  }
+);
 
 /**
  * Hook that returns a function to render tool calls based on the render functions
@@ -86,49 +169,18 @@ export function useRenderToolCall() {
       }
 
       const RenderComponent = renderConfig.render;
+      const isExecuting = executingToolCallIds.has(toolCall.id);
 
-      // Parse the arguments if they're a string
-      const args = partialJSONParse(toolCall.function.arguments);
-
-      // Create props based on status with proper typing
-      const toolName = toolCall.function.name;
-
-      if (toolMessage) {
-        // Complete status with result
-        return (
-          <RenderComponent
-            key={toolCall.id}
-            name={toolName}
-            args={args}
-            status={ToolCallStatus.Complete}
-            result={toolMessage.content}
-          />
-        );
-      } else if (executingToolCallIds.has(toolCall.id)) {
-        // Tool is currently executing
-        return (
-          <RenderComponent
-            key={toolCall.id}
-            name={toolName}
-            // args should be complete when executing; but pass whatever we have
-            args={args}
-            status={ToolCallStatus.Executing}
-            result={undefined}
-          />
-        );
-      } else {
-        // In progress status - tool call exists but hasn't completed yet
-        // This remains true even after agent stops running, until we get a result
-        return (
-          <RenderComponent
-            key={toolCall.id}
-            name={toolName}
-            args={args}
-            status={ToolCallStatus.InProgress}
-            result={undefined}
-          />
-        );
-      }
+      // Use the memoized ToolCallRenderer component to prevent unnecessary re-renders
+      return (
+        <ToolCallRenderer
+          key={toolCall.id}
+          toolCall={toolCall}
+          toolMessage={toolMessage}
+          RenderComponent={RenderComponent}
+          isExecuting={isExecuting}
+        />
+      );
     },
     [renderToolCalls, executingToolCallIds, agentId]
   );
