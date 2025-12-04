@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { z } from "zod";
+import type { AbstractAgent } from "@ag-ui/client";
 
 // Protocol version supported
 const PROTOCOL_VERSION = "2025-06-18";
@@ -74,13 +75,12 @@ function extractHtmlFromResource(resource: MCPAppsActivityContent["resource"]): 
 
 /**
  * Props for the activity renderer component
- * We use generic types to avoid requiring @ag-ui/core as a direct dependency
  */
 interface MCPAppsActivityRendererProps {
   activityType: string;
   content: MCPAppsActivityContent;
   message: unknown; // ActivityMessage from @ag-ui/core
-  agent: unknown | undefined; // AbstractAgent from @ag-ui/client
+  agent: AbstractAgent | undefined;
 }
 
 /**
@@ -88,7 +88,7 @@ interface MCPAppsActivityRendererProps {
  *
  * Renders MCP Apps UI in a sandboxed iframe with full protocol support.
  */
-export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = ({ content }) => {
+export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = ({ content, agent }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeReady, setIframeReady] = useState(false);
@@ -98,6 +98,10 @@ export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = (
   // Use refs for values that shouldn't trigger re-renders but need latest values
   const contentRef = useRef(content);
   contentRef.current = content;
+
+  // Store agent in a ref for use in async handlers
+  const agentRef = useRef(agent);
+  agentRef.current = agent;
 
   // Callback to send a message to the iframe
   const sendToIframe = useCallback((msg: JSONRPCMessage) => {
@@ -228,52 +232,36 @@ export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = (
               }
 
               case "tools/call": {
-                // Proxy tool call to MCP server
+                // Proxy tool call to MCP server via agent.runAgent()
                 const { serverUrl, serverType } = contentRef.current;
+                const currentAgent = agentRef.current;
+
                 if (!serverUrl) {
                   sendErrorResponse(msg.id, -32603, "No server URL available for proxying");
                   break;
                 }
 
+                if (!currentAgent) {
+                  sendErrorResponse(msg.id, -32603, "No agent available for proxying");
+                  break;
+                }
+
                 try {
-                  const response = await fetch("/api/copilotkit", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      forwardedProps: {
-                        __proxiedMCPRequest: {
-                          serverUrl,
-                          serverType: serverType || "http",
-                          method: "tools/call",
-                          params: msg.params,
-                        },
+                  // Use agent.runAgent() to proxy the MCP request
+                  // The middleware will intercept forwardedProps.__proxiedMCPRequest
+                  const runResult = await currentAgent.runAgent({
+                    forwardedProps: {
+                      __proxiedMCPRequest: {
+                        serverUrl,
+                        serverType: serverType || "http",
+                        method: "tools/call",
+                        params: msg.params,
                       },
-                    }),
+                    },
                   });
 
-                  if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                  }
-
-                  // Parse SSE response to get the result
-                  const text = await response.text();
-                  // Look for RUN_FINISHED event with result
-                  const lines = text.split("\n");
-                  let result: unknown = null;
-                  for (const line of lines) {
-                    if (line.startsWith("data: ")) {
-                      try {
-                        const data = JSON.parse(line.slice(6));
-                        if (data.type === "RUN_FINISHED" && data.result) {
-                          result = data.result;
-                        }
-                      } catch {
-                        // Ignore parse errors
-                      }
-                    }
-                  }
-
-                  sendResponse(msg.id, result || {});
+                  // The result from runAgent contains the MCP response
+                  sendResponse(msg.id, runResult.result || {});
                 } catch (err) {
                   console.error("[MCPAppsRenderer] tools/call error:", err);
                   sendErrorResponse(msg.id, -32603, String(err));
