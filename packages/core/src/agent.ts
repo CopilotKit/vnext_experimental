@@ -126,6 +126,14 @@ export class ProxiedCopilotRuntimeAgent extends HttpAgent {
     return super.run(input);
   }
 
+  public override clone(): ProxiedCopilotRuntimeAgent {
+    const cloned = super.clone() as ProxiedCopilotRuntimeAgent;
+    cloned.runtimeUrl = this.runtimeUrl;
+    cloned.transport = this.transport;
+    cloned.singleEndpointUrl = this.singleEndpointUrl;
+    return cloned;
+  }
+
   private createSingleRouteRequestInit(input: RunAgentInput, method: string, params?: Record<string, string>): RequestInit {
     if (!this.agentId) {
       throw new Error("ProxiedCopilotRuntimeAgent requires agentId to make runtime requests");
