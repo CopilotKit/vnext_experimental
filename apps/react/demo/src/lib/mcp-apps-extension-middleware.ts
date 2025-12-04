@@ -313,12 +313,18 @@ export class MCPAppsExtensionMiddleware extends Middleware {
                   };
                   subscriber.next(resultEvent);
 
-                  // Emit activity snapshot with full MCP result and resource
+                  // Emit activity snapshot with full MCP result, resource, and server info
                   const activityEvent: ActivitySnapshotEvent = {
                     type: EventType.ACTIVITY_SNAPSHOT,
                     messageId: randomUUID(),
                     activityType: "MCP-APPS-EXTENSION",
-                    content: { result: mcpResult, resource },
+                    content: {
+                      result: mcpResult,
+                      resource,
+                      serverUrl: toolInfo.serverConfig.url,
+                      serverType: toolInfo.serverConfig.type,
+                      toolInput: args,
+                    },
                     replace: true,
                   };
                   subscriber.next(activityEvent);
