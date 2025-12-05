@@ -175,18 +175,18 @@ const app = (() => {
 
 window.addEventListener("load", async () => {
   const root = document.getElementById("root")!;
-  const appendText = (textContent: string, opts: Partial<HTMLDivElement> = {}) => {
-    root.appendChild(
-      Object.assign(document.createElement("div"), {
-        textContent,
-        ...opts,
-      }),
-    );
+  const appendText = (textContent: string, style?: string) => {
+    const div = document.createElement("div");
+    div.textContent = textContent;
+    if (style) {
+      div.setAttribute("style", style);
+    }
+    root.appendChild(div);
   };
   const appendError = (error: unknown) =>
     appendText(
       `Error: ${error instanceof Error ? error.message : String(error)}`,
-      { style: "color: red;" } as Partial<HTMLDivElement>,
+      "color: red;",
     );
 
   // Register notification handlers

@@ -22,7 +22,7 @@ const agent = new BasicAgent({
   temperature: 0.7,
 }).use(new MCPAppsExtensionMiddleware({
   mcpServers: [
-    // Example: { type: "sse", url: "http://localhost:3001/sse" }
+    { type: "http", url: "http://localhost:3001/mcp" }
   ],
 }));
 

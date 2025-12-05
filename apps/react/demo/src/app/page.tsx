@@ -10,10 +10,7 @@ import {
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo, useState } from "react";
-import {
-  MCPAppsActivityRenderer,
-  MCPAppsActivityContentSchema,
-} from "../components/MCPAppsActivityRenderer";
+import { MCPAppsActivityRenderer, MCPAppsActivityContentSchema } from "../components/MCPAppsActivityRenderer";
 
 // Disable static optimization for this page
 export const dynamic = "force-dynamic";

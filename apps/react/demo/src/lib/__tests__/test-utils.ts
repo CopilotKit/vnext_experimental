@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { vi } from "vitest";
-import { AbstractAgent, BaseEvent, EventType, RunAgentInput, Message, Tool, ToolCall, AssistantMessage } from "@ag-ui/client";
+import { AbstractAgent, BaseEvent, EventType, RunAgentInput, Message, Tool, AssistantMessage } from "@ag-ui/client";
 import { Observable } from "rxjs";
 import { firstValueFrom, toArray } from "rxjs";
 
@@ -120,7 +121,7 @@ export class AsyncMockAgent extends AbstractAgent {
     this.delayMs = delayMs;
   }
 
-  run(input: RunAgentInput): Observable<BaseEvent> {
+  run(_input: RunAgentInput): Observable<BaseEvent> {
     return new Observable((subscriber) => {
       let cancelled = false;
 

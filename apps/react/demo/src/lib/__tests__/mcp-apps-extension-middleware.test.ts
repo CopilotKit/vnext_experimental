@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from "vitest";
-import { Observable } from "rxjs";
-import { EventType, BaseEvent, RunAgentInput } from "@ag-ui/client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { EventType, BaseEvent } from "@ag-ui/client";
 import {
   MCPAppsExtensionMiddleware,
   MCPClientConfig,
