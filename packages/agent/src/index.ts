@@ -951,7 +951,11 @@ export class BasicAgent extends AbstractAgent {
   }
 
   clone() {
-    return new BasicAgent(this.config);
+    const cloned = new BasicAgent(this.config);
+    // Copy middlewares from parent class
+    // @ts-expect-error - accessing protected property from parent
+    cloned.middlewares = [...this.middlewares];
+    return cloned;
   }
 
   abortRun(): void {

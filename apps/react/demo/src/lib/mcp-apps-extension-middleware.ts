@@ -146,6 +146,7 @@ export class MCPAppsExtensionMiddleware extends Middleware {
           ...input,
           tools: [...input.tools, ...uiToolInfos.map((info) => info.tool)],
         };
+
         // Use runNextWithState to get state with each event
         return this.processStream(this.runNextWithState(enhancedInput, next), uiToolsMap);
       })
