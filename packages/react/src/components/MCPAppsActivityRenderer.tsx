@@ -7,6 +7,11 @@ import type { AbstractAgent } from "@ag-ui/client";
 // Protocol version supported
 const PROTOCOL_VERSION = "2025-06-18";
 
+/**
+ * Activity type for MCP Apps events - must match the middleware's MCPAppsActivityType
+ */
+export const MCPAppsActivityType = "mcp-apps";
+
 // Zod schema for activity content validation
 export const MCPAppsActivityContentSchema = z.object({
   result: z.object({
@@ -20,9 +25,8 @@ export const MCPAppsActivityContentSchema = z.object({
     text: z.string().optional(),
     blob: z.string().optional(),
   }),
-  // Server info for proxying requests
-  serverUrl: z.string().optional(),
-  serverType: z.enum(["http", "sse"]).optional(),
+  // Server ID for proxying requests (MD5 hash of server config)
+  serverId: z.string().optional(),
   // Original tool input arguments
   toolInput: z.record(z.unknown()).optional(),
 });
@@ -233,11 +237,11 @@ export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = (
 
               case "tools/call": {
                 // Proxy tool call to MCP server via agent.runAgent()
-                const { serverUrl, serverType } = contentRef.current;
+                const { serverId } = contentRef.current;
                 const currentAgent = agentRef.current;
 
-                if (!serverUrl) {
-                  sendErrorResponse(msg.id, -32603, "No server URL available for proxying");
+                if (!serverId) {
+                  sendErrorResponse(msg.id, -32603, "No server ID available for proxying");
                   break;
                 }
 
@@ -252,8 +256,7 @@ export const MCPAppsActivityRenderer: React.FC<MCPAppsActivityRendererProps> = (
                   const runResult = await currentAgent.runAgent({
                     forwardedProps: {
                       __proxiedMCPRequest: {
-                        serverUrl,
-                        serverType: serverType || "http",
+                        serverId,
                         method: "tools/call",
                         params: msg.params,
                       },

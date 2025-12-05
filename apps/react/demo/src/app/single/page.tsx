@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CopilotChat,
-  CopilotKitProvider,
-  useFrontendTool,
-  defineToolCallRenderer,
-} from "@copilotkitnext/react";
+import { CopilotChat, CopilotKitProvider, useFrontendTool, defineToolCallRenderer } from "@copilotkitnext/react";
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo } from "react";
@@ -40,15 +35,6 @@ export default function SingleEndpointDemo() {
       useSingleEndpoint
       renderToolCalls={[wildcardRenderer]}
       showDevConsole="auto"
-      renderActivityMessages={[
-        {
-          activityType: "a2ui-surface",
-          content: z.any(),
-          render: ({ content }) => {
-            return <pre>{JSON.stringify(content, null, 2)}</pre>;
-          },
-        },
-      ]}
     >
       <div style={{ height: "100vh", margin: 0, padding: 0, overflow: "hidden" }}>
         <Chat />
@@ -103,4 +89,3 @@ function Chat() {
 
   return <CopilotChat inputProps={{ toolsMenu }} threadId="xyz" />;
 }
-

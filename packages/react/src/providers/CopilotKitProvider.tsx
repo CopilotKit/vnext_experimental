@@ -19,6 +19,11 @@ import { FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 import { CopilotKitCoreReact } from "../lib/react-core";
 import { CopilotKitInspector } from "../components/CopilotKitInspector";
+import {
+  MCPAppsActivityRenderer,
+  MCPAppsActivityContentSchema,
+  MCPAppsActivityType,
+} from "../components/MCPAppsActivityRenderer";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
@@ -135,6 +140,21 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     "renderActivityMessages must be a stable array.",
   );
 
+  // Built-in activity renderers that are always included
+  const builtInActivityRenderers = useMemo<ReactActivityMessageRenderer<any>[]>(() => [
+    {
+      activityType: MCPAppsActivityType,
+      content: MCPAppsActivityContentSchema,
+      render: MCPAppsActivityRenderer,
+    },
+  ], []);
+
+  // Combine user-provided activity renderers with built-in ones
+  // User-provided renderers take precedence (come first) so they can override built-ins
+  const allActivityRenderers = useMemo(() => {
+    return [...renderActivityMessagesList, ...builtInActivityRenderers];
+  }, [renderActivityMessagesList, builtInActivityRenderers]);
+
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
     frontendTools,
     "frontendTools must be a stable array. If you want to dynamically add or remove tools, use `useFrontendTool` instead.",
@@ -233,13 +253,13 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
       agents__unsafe_dev_only: agents,
       tools: allTools,
       renderToolCalls: allRenderToolCalls,
-      renderActivityMessages: renderActivityMessagesList,
+      renderActivityMessages: allActivityRenderers,
       renderCustomMessages: renderCustomMessagesList,
     });
 
     return copilotkit;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTools, allRenderToolCalls, renderActivityMessagesList, renderCustomMessagesList, useSingleEndpoint]);
+  }, [allTools, allRenderToolCalls, allActivityRenderers, renderCustomMessagesList, useSingleEndpoint]);
 
   // Subscribe to render tool calls changes to force re-renders
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
