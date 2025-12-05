@@ -1,7 +1,8 @@
 import { CopilotRuntime, createCopilotEndpoint, InMemoryAgentRunner } from "@copilotkitnext/runtime";
 import { handle } from "hono/vercel";
 import { BasicAgent } from "@copilotkitnext/agent";
-import { MCPAppsExtensionMiddleware } from "@/lib/mcp-apps-extension-middleware";
+// TODO: Re-enable once @ag-ui/mcp-apps-middleware is published
+// import { MCPAppsMiddleware } from "@ag-ui/mcp-apps-middleware";
 
 const determineModel = () => {
   if (process.env.OPENAI_API_KEY?.trim()) {
@@ -20,11 +21,13 @@ const agent = new BasicAgent({
   model: determineModel(),
   prompt: "You are a helpful AI assistant.",
   temperature: 0.7,
-}).use(new MCPAppsExtensionMiddleware({
-  mcpServers: [
-    { type: "http", url: "http://localhost:3001/mcp" }
-  ],
-}));
+});
+// TODO: Re-enable once @ag-ui/mcp-apps-middleware is published
+// .use(new MCPAppsMiddleware({
+//   mcpServers: [
+//     { type: "http", url: "http://localhost:3001/mcp" }
+//   ],
+// }));
 
 const honoRuntime = new CopilotRuntime({
   agents: {
