@@ -10,6 +10,10 @@ import {
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo, useState } from "react";
+import {
+  MCPAppsActivityRenderer,
+  MCPAppsActivityContentSchema,
+} from "../components/MCPAppsActivityRenderer";
 
 // Disable static optimization for this page
 export const dynamic = "force-dynamic";
@@ -44,6 +48,11 @@ export default function Home() {
       renderToolCalls={[wildcardRenderer]}
       showDevConsole="auto"
       renderActivityMessages={[
+        {
+          activityType: "MCP-APPS-EXTENSION",
+          content: MCPAppsActivityContentSchema,
+          render: MCPAppsActivityRenderer,
+        },
         {
           activityType: "a2ui-surface",
           content: z.any(),
