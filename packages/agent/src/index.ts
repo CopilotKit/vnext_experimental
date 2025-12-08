@@ -782,6 +782,12 @@ export class BasicAgent extends AbstractAgent {
                 break;
               }
 
+              case "text-start": {
+                // New text message starting - use the SDK-provided id
+                messageId = "id" in part ? (part.id as typeof messageId) : randomUUID();
+                break;
+              }
+
               case "text-delta": {
                 // Accumulate text content - in AI SDK 5.0, the property is 'text'
                 const textDelta = "text" in part ? part.text : "";

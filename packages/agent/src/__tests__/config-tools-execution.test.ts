@@ -335,6 +335,60 @@ describe("Config Tools Server-Side Execution", () => {
     });
   });
 
+  describe("Message ID Generation", () => {
+    it("should use messageId from text-start event", async () => {
+      const executeFn = vi.fn().mockResolvedValue({ result: "ok" });
+
+      const tool = defineTool({
+        name: "myTool",
+        description: "My tool",
+        parameters: z.object({}),
+        execute: executeFn,
+      });
+
+      const agent = new BasicAgent({
+        model: "openai/gpt-4o",
+        tools: [tool],
+      });
+
+      vi.mocked(streamText).mockReturnValue(
+        mockStreamTextResponse([
+          { type: "text-start", id: "msg-1" },
+          { type: "text-delta", text: "Before " },
+          { type: "text-delta", text: "tool" },
+          toolCallStreamingStart("call1", "myTool"),
+          toolCall("call1", "myTool"),
+          toolResult("call1", "myTool", { result: "ok" }),
+          { type: "text-start", id: "msg-2" },
+          { type: "text-delta", text: "After " },
+          { type: "text-delta", text: "tool" },
+          finish(),
+        ]) as any,
+      );
+
+      const input: RunAgentInput = {
+        threadId: "thread1",
+        runId: "run1",
+        messages: [],
+        tools: [],
+        context: [],
+        state: {},
+      };
+
+      const events = await collectEvents(agent["run"](input));
+
+      const textEvents = events.filter((e: any) => e.type === EventType.TEXT_MESSAGE_CHUNK);
+
+      // First two text chunks should have messageId from first text-start
+      expect(textEvents[0].messageId).toBe("msg-1");
+      expect(textEvents[1].messageId).toBe("msg-1");
+
+      // After tool result, text chunks should have messageId from second text-start
+      expect(textEvents[2].messageId).toBe("msg-2");
+      expect(textEvents[3].messageId).toBe("msg-2");
+    });
+  });
+
   describe("Multi-Step Execution (maxSteps)", () => {
     it("should pass stopWhen with stepCountIs when maxSteps is configured", async () => {
       const executeFn = vi.fn().mockResolvedValue({ result: "ok" });
