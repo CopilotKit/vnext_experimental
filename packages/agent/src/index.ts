@@ -28,6 +28,7 @@ import {
   tool as createVercelAISDKTool,
   ToolChoice,
   ToolSet,
+  stepCountIs,
 } from "ai";
 import { experimental_createMCPClient as createMCPClient } from "@ai-sdk/mcp";
 import { Observable } from "rxjs";
@@ -41,7 +42,6 @@ import {
   StreamableHTTPClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { u } from "vitest/dist/chunks/reporters.d.BFLkQcL6.js";
 
 /**
  * Properties that can be overridden by forwardedProps
@@ -211,6 +211,7 @@ export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny>
   name: string;
   description: string;
   parameters: TParameters;
+  execute: (args: z.infer<TParameters>) => Promise<unknown>;
 }
 
 /**
@@ -218,17 +219,20 @@ export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny>
  * @param name - The name of the tool
  * @param description - Description of what the tool does
  * @param parameters - Zod schema for the tool's input parameters
+ * @param execute - Function to execute the tool server-side
  * @returns Tool definition
  */
 export function defineTool<TParameters extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TParameters;
+  execute: (args: z.infer<TParameters>) => Promise<unknown>;
 }): ToolDefinition<TParameters> {
   return {
     name: config.name,
     description: config.description,
     parameters: config.parameters,
+    execute: config.execute,
   };
 }
 
@@ -411,6 +415,7 @@ export function convertToolDefinitionsToVercelAITools(tools: ToolDefinition[]): 
     result[tool.name] = createVercelAISDKTool({
       description: tool.description,
       inputSchema: tool.parameters,
+      execute: tool.execute,
     });
   }
 
@@ -577,6 +582,7 @@ export class BasicAgent extends AbstractAgent {
         messages,
         tools: allTools,
         toolChoice: this.config.toolChoice,
+        stopWhen: this.config.maxSteps ? stepCountIs(this.config.maxSteps) : undefined,
         maxOutputTokens: this.config.maxOutputTokens,
         temperature: this.config.temperature,
         topP: this.config.topP,
