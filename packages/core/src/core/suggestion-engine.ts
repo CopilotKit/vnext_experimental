@@ -124,7 +124,9 @@ export class SuggestionEngine {
   ): Promise<void> {
     let agent: AbstractAgent | undefined = undefined;
     try {
-      const suggestionsProviderAgent = (this.core as unknown as CopilotKitCoreFriendsAccess).getAgent(config.providerAgentId ?? "default");
+      const suggestionsProviderAgent = (this.core as unknown as CopilotKitCoreFriendsAccess).getAgent(
+        config.providerAgentId ?? "default",
+      );
       if (!suggestionsProviderAgent) {
         throw new Error(`Suggestions provider agent not found: ${config.providerAgentId}`);
       }
@@ -135,7 +137,7 @@ export class SuggestionEngine {
 
       const clonedAgent: AbstractAgent = suggestionsProviderAgent.clone();
       agent = clonedAgent;
-      agent.agentId = suggestionId;
+      //agent.agentId = suggestionId;
       agent.threadId = suggestionId;
       agent.messages = JSON.parse(JSON.stringify(suggestionsConsumerAgent.messages));
       agent.state = JSON.parse(JSON.stringify(suggestionsConsumerAgent.state));

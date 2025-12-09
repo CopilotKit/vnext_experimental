@@ -5,6 +5,7 @@ import {
   CopilotKitProvider,
   useFrontendTool,
   defineToolCallRenderer,
+  useConfigureSuggestions,
 } from "@copilotkitnext/react";
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
@@ -69,6 +70,10 @@ function Chat() {
     },
   });
 
+  useConfigureSuggestions({
+    instructions: "Suggest follow-up tasks based on the current page content",
+  });
+
   const toolsMenu = useMemo<(ToolsMenuItem | "-")[]>(
     () => [
       {
@@ -103,4 +108,3 @@ function Chat() {
 
   return <CopilotChat inputProps={{ toolsMenu }} threadId="xyz" />;
 }
-

@@ -69,6 +69,10 @@ function Chat() {
     { id: "thread---c", label: "Thread C" },
   ];
 
+  useConfigureSuggestions({
+    instructions: "Suggest follow-up tasks based on the current page content",
+  });
+
   useAgentContext({ description: "The current Thread ID is:", value: selectedThreadId });
 
   //useConfigureSuggestions({
