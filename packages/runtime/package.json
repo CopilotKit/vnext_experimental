@@ -1,6 +1,6 @@
 {
   "name": "@copilotkitnext/runtime",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "description": "Server-side runtime package for CopilotKit2",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
