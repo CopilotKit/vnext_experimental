@@ -9,32 +9,38 @@ type CopilotKitInspectorBaseProps = {
 
 type InspectorComponent = React.ComponentType<CopilotKitInspectorBaseProps>;
 
-// Lazy-load the lit custom element so consumers don't pay the cost until they render it.
-const CopilotKitInspectorBase = React.lazy<InspectorComponent>(() => {
-  if (typeof window === "undefined") {
-    const NullComponent: InspectorComponent = () => null;
-    return Promise.resolve({ default: NullComponent });
-  }
-
-  return import("@copilotkitnext/web-inspector").then((mod) => {
-    mod.defineWebInspector?.();
-
-    const Component = createComponent({
-      tagName: mod.WEB_INSPECTOR_TAG,
-      elementClass: mod.WebInspectorElement,
-      react: React,
-    }) as InspectorComponent;
-
-    return { default: Component };
-  });
-});
-
 export interface CopilotKitInspectorProps extends CopilotKitInspectorBaseProps {}
 
-export const CopilotKitInspector: React.FC<CopilotKitInspectorProps> = ({ core, ...rest }) => (
-  <React.Suspense fallback={null}>
-    <CopilotKitInspectorBase {...rest} core={core ?? null} />
-  </React.Suspense>
-);
+export const CopilotKitInspector: React.FC<CopilotKitInspectorProps> = ({ core, ...rest }) => {
+  const [InspectorComponent, setInspectorComponent] = React.useState<InspectorComponent | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    // Load the web component only on the client to keep SSR output stable.
+    import("@copilotkitnext/web-inspector").then((mod) => {
+      mod.defineWebInspector?.();
+
+      const Component = createComponent({
+        tagName: mod.WEB_INSPECTOR_TAG,
+        elementClass: mod.WebInspectorElement,
+        react: React,
+      }) as InspectorComponent;
+
+      if (mounted) {
+        setInspectorComponent(() => Component);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // During SSR (and until the client finishes loading), render nothing to keep markup consistent.
+  if (!InspectorComponent) return null;
+
+  return <InspectorComponent {...rest} core={core ?? null} />;
+};
 
 CopilotKitInspector.displayName = "CopilotKitInspector";
