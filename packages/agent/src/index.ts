@@ -747,6 +747,19 @@ export class BasicAgent extends AbstractAgent {
           // Process fullStream events
           for await (const part of response.fullStream) {
             switch (part.type) {
+              case 'abort':
+                const abortEndEvent: RunFinishedEvent = {
+                  type: EventType.RUN_FINISHED,
+                  threadId: input.threadId,
+                  runId: input.runId,
+                };
+                subscriber.next(abortEndEvent);
+                terminalEventEmitted = true;
+
+                // Complete the observable
+                subscriber.complete();
+                break;
+
               case "tool-input-start": {
                 const toolCallId = part.id;
                 const state = ensureToolCallState(toolCallId);
