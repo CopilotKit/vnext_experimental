@@ -1,15 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useMemo,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useReducer, useRef, useState } from "react";
 import { ReactActivityMessageRenderer, ReactToolCallRenderer } from "../types";
 import { ReactCustomMessageRenderer } from "../types/react-custom-message-renderer";
 import { ReactFrontendTool } from "../types/frontend-tool";
@@ -19,6 +10,9 @@ import { FrontendTool } from "@copilotkitnext/core";
 import { AbstractAgent } from "@ag-ui/client";
 import { CopilotKitCoreReact } from "../lib/react-core";
 import { CopilotKitInspector } from "../components/CopilotKitInspector";
+
+const HEADER_NAME = "X-CopilotCloud-Public-Api-Key";
+const COPILOT_CLOUD_CHAT_URL = "https://api.cloud.copilotkit.ai/copilotkit/v1";
 
 // Define the context value interface - idiomatic React naming
 export interface CopilotKitContextValue {
@@ -35,6 +29,14 @@ export interface CopilotKitProviderProps {
   children: ReactNode;
   runtimeUrl?: string;
   headers?: Record<string, string>;
+  /**
+   * The Copilot Cloud public API key.
+   */
+  publicApiKey?: string;
+  /**
+   * Alias for `publicApiKey`
+   **/
+  publicLicenseKey?: string;
   properties?: Record<string, unknown>;
   useSingleEndpoint?: boolean;
   agents__unsafe_dev_only?: Record<string, AbstractAgent>;
@@ -74,6 +76,8 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   children,
   runtimeUrl,
   headers = {},
+  publicApiKey,
+  publicLicenseKey,
   properties = {},
   agents__unsafe_dev_only: agents = {},
   renderToolCalls,
@@ -134,6 +138,31 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
     renderActivityMessages,
     "renderActivityMessages must be a stable array.",
   );
+
+  const resolvedPublicKey = publicApiKey ?? publicLicenseKey;
+  const hasLocalAgents = agents && Object.keys(agents).length > 0;
+
+  // Merge a provided publicApiKey into headers (without overwriting an explicit header).
+  const mergedHeaders = useMemo(() => {
+    if (!resolvedPublicKey) return headers;
+    if (headers[HEADER_NAME]) return headers;
+    return {
+      ...headers,
+      [HEADER_NAME]: resolvedPublicKey,
+    };
+  }, [headers, resolvedPublicKey]);
+
+  if (!runtimeUrl && !resolvedPublicKey && !hasLocalAgents) {
+    const message = "Missing required prop: 'runtimeUrl' or 'publicApiKey' or 'publicLicenseKey'";
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(message);
+    } else {
+      // In dev/test we warn but allow to facilitate local agents and unit tests.
+      console.warn(message);
+    }
+  }
+
+  const chatApiEndpoint = runtimeUrl ?? (resolvedPublicKey ? COPILOT_CLOUD_CHAT_URL : undefined);
 
   const frontendToolsList = useStableArrayProp<ReactFrontendTool>(
     frontendTools,
@@ -226,9 +255,9 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
 
   const copilotkit = useMemo(() => {
     const copilotkit = new CopilotKitCoreReact({
-      runtimeUrl,
+      runtimeUrl: chatApiEndpoint,
       runtimeTransport: useSingleEndpoint ? "single" : "rest",
-      headers,
+      headers: mergedHeaders,
       properties,
       agents__unsafe_dev_only: agents,
       tools: allTools,
@@ -257,12 +286,12 @@ export const CopilotKitProvider: React.FC<CopilotKitProviderProps> = ({
   }, [copilotkit]);
 
   useEffect(() => {
-    copilotkit.setRuntimeUrl(runtimeUrl);
+    copilotkit.setRuntimeUrl(chatApiEndpoint);
     copilotkit.setRuntimeTransport(useSingleEndpoint ? "single" : "rest");
-    copilotkit.setHeaders(headers);
+    copilotkit.setHeaders(mergedHeaders);
     copilotkit.setProperties(properties);
     copilotkit.setAgents__unsafe_dev_only(agents);
-  }, [runtimeUrl, headers, properties, agents, useSingleEndpoint]);
+  }, [chatApiEndpoint, mergedHeaders, properties, agents, useSingleEndpoint]);
 
   return (
     <CopilotKitContext.Provider
