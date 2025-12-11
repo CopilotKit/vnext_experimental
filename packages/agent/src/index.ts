@@ -62,9 +62,9 @@ export type OverridableProperty =
   | "prompt";
 
 /**
- * Supported model identifiers for BasicAgent
+ * Supported model identifiers for BuiltInAgent
  */
-export type BasicAgentModel =
+export type BuiltInAgentModel =
   // OpenAI models
   | "openai/gpt-5"
   | "openai/gpt-5-mini"
@@ -205,7 +205,7 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
 }
 
 /**
- * Tool definition for BasicAgent
+ * Tool definition for BuiltInAgent
  */
 export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
@@ -215,7 +215,7 @@ export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny>
 }
 
 /**
- * Define a tool for use with BasicAgent
+ * Define a tool for use with BuiltInAgent
  * @param name - The name of the tool
  * @param description - Description of what the tool does
  * @param parameters - Zod schema for the tool's input parameters
@@ -423,13 +423,13 @@ export function convertToolDefinitionsToVercelAITools(tools: ToolDefinition[]): 
 }
 
 /**
- * Configuration for BasicAgent
+ * Configuration for BuiltInAgent
  */
-export interface BasicAgentConfiguration {
+export interface BuiltInAgentConfiguration {
   /**
    * The model to use
    */
-  model: BasicAgentModel | LanguageModel;
+  model: BuiltInAgentModel | LanguageModel;
   /**
    * Maximum number of steps/iterations for tool calling (default: 1)
    */
@@ -492,10 +492,10 @@ export interface BasicAgentConfiguration {
   tools?: ToolDefinition[];
 }
 
-export class BasicAgent extends AbstractAgent {
+export class BuiltInAgent extends AbstractAgent {
   private abortController?: AbortController;
 
-  constructor(private config: BasicAgentConfiguration) {
+  constructor(private config: BuiltInAgentConfiguration) {
     super();
   }
 
@@ -976,10 +976,20 @@ export class BasicAgent extends AbstractAgent {
   }
 
   clone() {
-    return new BasicAgent(this.config);
+    return new BuiltInAgent(this.config);
   }
 
   abortRun(): void {
     this.abortController?.abort();
+  }
+}
+
+/**
+ * @deprecated Use BuiltInAgent instead
+ */
+export class BasicAgent extends BuiltInAgent {
+  constructor(config: BuiltInAgentConfiguration) {
+    super(config);
+    console.warn("BasicAgent is deprecated, use BuiltInAgent instead");
   }
 }
