@@ -7,7 +7,6 @@ import { FrontendTool } from "../types";
 
 export interface CopilotKitCoreRunAgentParams {
   agent: AbstractAgent;
-  withMessages?: Message[];
 }
 
 export interface CopilotKitCoreConnectAgentParams {
@@ -140,7 +139,7 @@ export class RunHandler {
   /**
    * Run an agent
    */
-  async runAgent({ agent, withMessages }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
+  async runAgent({ agent }: CopilotKitCoreRunAgentParams): Promise<RunAgentResult> {
     // Agent ID is guaranteed to be set by validateAndAssignAgentId
     if (agent.agentId) {
       void (this.core as unknown as CopilotKitCoreFriendsAccess).suggestionEngine.clearSuggestions(agent.agentId);
@@ -150,9 +149,6 @@ export class RunHandler {
       agent.headers = { ...(this.core as unknown as CopilotKitCoreFriendsAccess).headers };
     }
 
-    if (withMessages) {
-      agent.addMessages(withMessages);
-    }
     try {
       const runAgentResult = await agent.runAgent(
         {
@@ -168,9 +164,6 @@ export class RunHandler {
       const context: Record<string, any> = {};
       if (agent.agentId) {
         context.agentId = agent.agentId;
-      }
-      if (withMessages) {
-        context.messageCount = withMessages.length;
       }
       await (this.core as unknown as CopilotKitCoreFriendsAccess).emitError({
         error: runError,

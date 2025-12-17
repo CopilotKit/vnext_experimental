@@ -35,29 +35,6 @@ describe("CopilotKitCore.runAgent - Basic Functionality", () => {
     expect(agent.runAgentCalls[0].forwardedProps).toEqual({});
   });
 
-  it("should pass withMessages to agent.addMessages", async () => {
-    const initialMessages = [createMessage({ content: "Initial" })];
-    const newMessages = [createAssistantMessage({ content: "Response" })];
-    const agent = new MockAgent({ newMessages });
-    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
-
-    await copilotKitCore.runAgent({ agent: agent as any, withMessages: initialMessages });
-
-    expect(agent.addMessages).toHaveBeenCalledWith(initialMessages);
-    expect(agent.messages).toContain(initialMessages[0]);
-  });
-
-  it("should work without withMessages parameter", async () => {
-    const newMessages = [createAssistantMessage({ content: "Response" })];
-    const agent = new MockAgent({ newMessages });
-    copilotKitCore.addAgent__unsafe_dev_only({ id: "test", agent: agent as any });
-
-    const result = await copilotKitCore.runAgent({ agent: agent as any });
-
-    expect(result.newMessages).toEqual(newMessages);
-    expect(agent.addMessages).not.toHaveBeenCalled();
-  });
-
   it("should forward properties to agent.runAgent", async () => {
     const properties = { apiKey: "test-key", model: "gpt-4" };
     copilotKitCore = new CopilotKitCore({ properties });

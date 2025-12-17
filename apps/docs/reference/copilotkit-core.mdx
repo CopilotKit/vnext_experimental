@@ -314,8 +314,6 @@ runAgent(params: CopilotKitCoreRunAgentParams): Promise<RunAgentResult>
 ```typescript
 interface CopilotKitCoreRunAgentParams {
   agent: AbstractAgent; // The agent to execute
-  withMessages?: Message[]; // Initial messages to send to the agent
-  agentId?: string; // Override the agent's default identifier
 }
 ```
 

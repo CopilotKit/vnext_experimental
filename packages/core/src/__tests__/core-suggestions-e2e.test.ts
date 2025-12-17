@@ -815,9 +815,9 @@ describe("CopilotKitCore - Suggestions E2E", () => {
       };
 
       // Simulate user submitting a new message which triggers runAgent (and should clear/abort suggestions immediately)
+      consumerAgent.addMessages([createMessage({ content: "User follow-up" })]);
       await copilotKitCore.runAgent({
         agent: consumerAgent as any,
-        withMessages: [createMessage({ content: "User follow-up" })],
       });
 
       // The in-flight suggestion run should be aborted
