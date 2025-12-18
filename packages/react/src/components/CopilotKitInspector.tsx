@@ -1,48 +1,46 @@
 import * as React from "react";
 import { createComponent } from "@lit-labs/react";
-import {
-  WEB_INSPECTOR_TAG,
-  WebInspectorElement,
-  defineWebInspector,
-} from "@copilotkitnext/web-inspector";
 import type { CopilotKitCore } from "@copilotkitnext/core";
 
-defineWebInspector();
-
-const CopilotKitInspectorBase = createComponent({
-  tagName: WEB_INSPECTOR_TAG,
-  elementClass: WebInspectorElement,
-  react: React,
-});
-
-export type CopilotKitInspectorBaseProps = React.ComponentProps<typeof CopilotKitInspectorBase>;
-
-export interface CopilotKitInspectorProps extends Omit<CopilotKitInspectorBaseProps, "core"> {
+type CopilotKitInspectorBaseProps = {
   core?: CopilotKitCore | null;
-}
+  [key: string]: unknown;
+};
 
-export const CopilotKitInspector = React.forwardRef<
-  WebInspectorElement,
-  CopilotKitInspectorProps
->(
-  ({ core, ...rest }, ref) => {
-    const innerRef = React.useRef<WebInspectorElement>(null);
+type InspectorComponent = React.ComponentType<CopilotKitInspectorBaseProps>;
 
-    React.useImperativeHandle(ref, () => innerRef.current as WebInspectorElement, []);
+export interface CopilotKitInspectorProps extends CopilotKitInspectorBaseProps {}
 
-    React.useEffect(() => {
-      if (innerRef.current) {
-        innerRef.current.core = core ?? null;
+export const CopilotKitInspector: React.FC<CopilotKitInspectorProps> = ({ core, ...rest }) => {
+  const [InspectorComponent, setInspectorComponent] = React.useState<InspectorComponent | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    // Load the web component only on the client to keep SSR output stable.
+    import("@copilotkitnext/web-inspector").then((mod) => {
+      mod.defineWebInspector?.();
+
+      const Component = createComponent({
+        tagName: mod.WEB_INSPECTOR_TAG,
+        elementClass: mod.WebInspectorElement,
+        react: React,
+      }) as InspectorComponent;
+
+      if (mounted) {
+        setInspectorComponent(() => Component);
       }
-    }, [core]);
+    });
 
-    return (
-      <CopilotKitInspectorBase
-        {...(rest as CopilotKitInspectorBaseProps)}
-        ref={innerRef}
-      />
-    ); // eslint-disable-line react/jsx-props-no-spreading
-  },
-);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // During SSR (and until the client finishes loading), render nothing to keep markup consistent.
+  if (!InspectorComponent) return null;
+
+  return <InspectorComponent {...rest} core={core ?? null} />;
+};
 
 CopilotKitInspector.displayName = "CopilotKitInspector";

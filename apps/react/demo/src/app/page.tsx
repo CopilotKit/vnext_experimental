@@ -6,6 +6,7 @@ import {
   useFrontendTool,
   defineToolCallRenderer,
   useConfigureSuggestions,
+  useAgentContext,
 } from "@copilotkitnext/react";
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
@@ -54,6 +55,12 @@ function Chat() {
     { id: "thread---b", label: "Thread B" },
     { id: "thread---c", label: "Thread C" },
   ];
+
+  useConfigureSuggestions({
+    instructions: "Suggest follow-up tasks based on the current page content",
+  });
+
+  useAgentContext({ description: "The current Thread ID is:", value: selectedThreadId });
 
   //useConfigureSuggestions({
   //  instructions: "Suggest helpful next actions",

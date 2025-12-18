@@ -1,6 +1,12 @@
 "use client";
 
-import { CopilotChat, CopilotKitProvider, useFrontendTool, defineToolCallRenderer } from "@copilotkitnext/react";
+import {
+  CopilotChat,
+  CopilotKitProvider,
+  useFrontendTool,
+  defineToolCallRenderer,
+  useConfigureSuggestions,
+} from "@copilotkitnext/react";
 import type { ToolsMenuItem } from "@copilotkitnext/react";
 import { z } from "zod";
 import { useMemo } from "react";
@@ -53,6 +59,10 @@ function Chat() {
       alert(`Hello ${name}`);
       return `Hello ${name}`;
     },
+  });
+
+  useConfigureSuggestions({
+    instructions: "Suggest follow-up tasks based on the current page content",
   });
 
   const toolsMenu = useMemo<(ToolsMenuItem | "-")[]>(

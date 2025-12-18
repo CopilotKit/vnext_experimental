@@ -331,6 +331,7 @@ describe("BasicAgent", () => {
         name: "configTool",
         description: "A config tool",
         parameters: z.object({ input: z.string() }),
+        execute: async () => ({ result: "ok" }),
       });
 
       const agent = new BasicAgent({
@@ -360,6 +361,7 @@ describe("BasicAgent", () => {
         name: "configTool",
         description: "From config",
         parameters: z.object({}),
+        execute: async () => ({ result: "ok" }),
       });
 
       const agent = new BasicAgent({

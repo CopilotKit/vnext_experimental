@@ -28,6 +28,7 @@ import {
   tool as createVercelAISDKTool,
   ToolChoice,
   ToolSet,
+  stepCountIs,
 } from "ai";
 import { experimental_createMCPClient as createMCPClient } from "@ai-sdk/mcp";
 import { Observable } from "rxjs";
@@ -41,7 +42,6 @@ import {
   StreamableHTTPClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { u } from "vitest/dist/chunks/reporters.d.BFLkQcL6.js";
 
 /**
  * Properties that can be overridden by forwardedProps
@@ -62,9 +62,9 @@ export type OverridableProperty =
   | "prompt";
 
 /**
- * Supported model identifiers for BasicAgent
+ * Supported model identifiers for BuiltInAgent
  */
-export type BasicAgentModel =
+export type BuiltInAgentModel =
   // OpenAI models
   | "openai/gpt-5"
   | "openai/gpt-5-mini"
@@ -205,30 +205,34 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
 }
 
 /**
- * Tool definition for BasicAgent
+ * Tool definition for BuiltInAgent
  */
 export interface ToolDefinition<TParameters extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
   description: string;
   parameters: TParameters;
+  execute: (args: z.infer<TParameters>) => Promise<unknown>;
 }
 
 /**
- * Define a tool for use with BasicAgent
+ * Define a tool for use with BuiltInAgent
  * @param name - The name of the tool
  * @param description - Description of what the tool does
  * @param parameters - Zod schema for the tool's input parameters
+ * @param execute - Function to execute the tool server-side
  * @returns Tool definition
  */
 export function defineTool<TParameters extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TParameters;
+  execute: (args: z.infer<TParameters>) => Promise<unknown>;
 }): ToolDefinition<TParameters> {
   return {
     name: config.name,
     description: config.description,
     parameters: config.parameters,
+    execute: config.execute,
   };
 }
 
@@ -411,6 +415,7 @@ export function convertToolDefinitionsToVercelAITools(tools: ToolDefinition[]): 
     result[tool.name] = createVercelAISDKTool({
       description: tool.description,
       inputSchema: tool.parameters,
+      execute: tool.execute,
     });
   }
 
@@ -418,13 +423,13 @@ export function convertToolDefinitionsToVercelAITools(tools: ToolDefinition[]): 
 }
 
 /**
- * Configuration for BasicAgent
+ * Configuration for BuiltInAgent
  */
-export interface BasicAgentConfiguration {
+export interface BuiltInAgentConfiguration {
   /**
    * The model to use
    */
-  model: BasicAgentModel | LanguageModel;
+  model: BuiltInAgentModel | LanguageModel;
   /**
    * Maximum number of steps/iterations for tool calling (default: 1)
    */
@@ -487,10 +492,10 @@ export interface BasicAgentConfiguration {
   tools?: ToolDefinition[];
 }
 
-export class BasicAgent extends AbstractAgent {
+export class BuiltInAgent extends AbstractAgent {
   private abortController?: AbortController;
 
-  constructor(private config: BasicAgentConfiguration) {
+  constructor(private config: BuiltInAgentConfiguration) {
     super();
   }
 
@@ -577,6 +582,7 @@ export class BasicAgent extends AbstractAgent {
         messages,
         tools: allTools,
         toolChoice: this.config.toolChoice,
+        stopWhen: this.config.maxSteps ? stepCountIs(this.config.maxSteps) : undefined,
         maxOutputTokens: this.config.maxOutputTokens,
         temperature: this.config.temperature,
         topP: this.config.topP,
@@ -741,6 +747,19 @@ export class BasicAgent extends AbstractAgent {
           // Process fullStream events
           for await (const part of response.fullStream) {
             switch (part.type) {
+              case 'abort':
+                const abortEndEvent: RunFinishedEvent = {
+                  type: EventType.RUN_FINISHED,
+                  threadId: input.threadId,
+                  runId: input.runId,
+                };
+                subscriber.next(abortEndEvent);
+                terminalEventEmitted = true;
+
+                // Complete the observable
+                subscriber.complete();
+                break;
+
               case "tool-input-start": {
                 const toolCallId = part.id;
                 const state = ensureToolCallState(toolCallId);
@@ -773,6 +792,12 @@ export class BasicAgent extends AbstractAgent {
 
               case "tool-input-end": {
                 // No direct event – the subsequent "tool-call" part marks completion.
+                break;
+              }
+
+              case "text-start": {
+                // New text message starting - use the SDK-provided id
+                messageId = "id" in part ? (part.id as typeof messageId) : randomUUID();
                 break;
               }
 
@@ -951,7 +976,7 @@ export class BasicAgent extends AbstractAgent {
   }
 
   clone() {
-    const cloned = new BasicAgent(this.config);
+    const cloned = new BuiltInAgent(this.config);
     // Copy middlewares from parent class
     // @ts-expect-error - accessing protected property from parent
     cloned.middlewares = [...this.middlewares];
@@ -962,3 +987,15 @@ export class BasicAgent extends AbstractAgent {
     this.abortController?.abort();
   }
 }
+
+/**
+ * @deprecated Use BuiltInAgent instead
+ */
+export class BasicAgent extends BuiltInAgent {
+  constructor(config: BuiltInAgentConfiguration) {
+    super(config);
+    console.warn("BasicAgent is deprecated, use BuiltInAgent instead");
+  }
+}
+
+export type BasicAgentConfiguration = BuiltInAgentConfiguration;

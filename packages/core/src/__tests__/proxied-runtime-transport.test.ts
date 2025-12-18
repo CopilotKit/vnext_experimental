@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { ProxiedCopilotRuntimeAgent } from "../agent";
 import { CopilotKitCore } from "../core";
+import { createSuggestionsConfig, MockAgent } from "./test-utils";
 
 type TransportMatrixEntry = {
   label: string;
@@ -165,6 +166,104 @@ describe("ProxiedCopilotRuntimeAgent transport integration", () => {
         const headers = new Headers(init.headers as HeadersInit);
         expect(headers.get("content-type")).toBe("application/json");
       });
+    });
+  });
+});
+
+describe("ProxiedCopilotRuntimeAgent cloning", () => {
+  const originalFetch = global.fetch;
+  const runtimeUrl = "https://runtime.example/single";
+
+  beforeEach(() => {
+    // @ts-expect-error - Node typings allow reassigning fetch in tests
+    global.fetch = vi.fn(() => Promise.resolve(createSseResponse()));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    global.fetch = originalFetch;
+  });
+
+  it("preserves single-endpoint envelope on cloned agents", async () => {
+    const agentId = "clone-agent";
+    const agent = new ProxiedCopilotRuntimeAgent({
+      runtimeUrl,
+      agentId,
+      transport: "single",
+    });
+
+    const cloned = agent.clone();
+    await expect(cloned.runAgent({})).resolves.toMatchObject({
+      newMessages: expect.any(Array),
+    });
+
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(runtimeUrl);
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      method: "agent/run",
+      params: {
+        agentId,
+      },
+    });
+  });
+});
+
+describe("Suggestions engine with single-endpoint runtime agents", () => {
+  const originalFetch = global.fetch;
+  const runtimeUrl = "https://runtime.example/single";
+
+  beforeEach(() => {
+    // @ts-expect-error - Node typings allow reassigning fetch in tests
+    global.fetch = vi.fn(() => Promise.resolve(createSseResponse()));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    global.fetch = originalFetch;
+  });
+
+  it("envelopes suggestion runs with method and params when cloning runtime agents", async () => {
+    const providerAgent = new ProxiedCopilotRuntimeAgent({
+      runtimeUrl,
+      agentId: "provider",
+      transport: "single",
+    });
+    const consumerAgent = new MockAgent({ agentId: "consumer" }) as unknown as any;
+
+    const core = new CopilotKitCore({
+      runtimeUrl,
+      runtimeTransport: "single",
+      agents__unsafe_dev_only: {
+        provider: providerAgent,
+        consumer: consumerAgent,
+      },
+    });
+
+    core.addSuggestionsConfig(
+      createSuggestionsConfig({
+        providerAgentId: "provider",
+        consumerAgentId: "consumer",
+      }),
+    );
+
+    core.reloadSuggestions("consumer");
+
+    const fetchMock = global.fetch as ReturnType<typeof vi.fn>;
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(runtimeUrl);
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({
+      method: "agent/run",
+      params: {
+        agentId: expect.any(String),
+      },
     });
   });
 });

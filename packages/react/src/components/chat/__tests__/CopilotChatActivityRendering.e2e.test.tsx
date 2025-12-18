@@ -10,6 +10,7 @@ import {
   testId,
 } from "@/__tests__/utils/test-helpers";
 import { ReactActivityMessageRenderer } from "@/types";
+import { useCopilotKit } from "@/providers";
 
 describe("CopilotChat activity message rendering", () => {
   it("renders custom components for activity snapshots", async () => {
@@ -89,5 +90,57 @@ describe("CopilotChat activity message rendering", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("activity-card")).toBeNull();
     });
+  });
+
+  it("useCopilotKit provides valid copilotkit instance inside activity message renderer", async () => {
+    const agent = new MockStepwiseAgent();
+    const agentId = "test-agent";
+    agent.agentId = agentId;
+
+    let capturedCopilotkit: any = "not-called";
+
+    // Matches real-world pattern: inline arrow function with hooks
+    const activityRenderer: ReactActivityMessageRenderer<{ message: string }> = {
+      activityType: "test-activity",
+      content: z.object({ message: z.string() }),
+      render: ({ content }) => {
+        const { copilotkit } = useCopilotKit();
+        capturedCopilotkit = copilotkit;
+        return <div data-testid="activity-render">{content.message}</div>;
+      },
+    };
+
+    renderWithCopilotKit({
+      agents: { [agentId]: agent },
+      agentId,
+      renderActivityMessages: [activityRenderer],
+    });
+
+    // Trigger user message and activity event
+    const input = await screen.findByRole("textbox");
+    fireEvent.change(input, { target: { value: "Test message" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Test message")).toBeDefined();
+    });
+
+    agent.emit(runStartedEvent());
+    agent.emit(
+      activitySnapshotEvent({
+        messageId: testId("activity"),
+        activityType: "test-activity",
+        content: { message: "Rendered content" },
+      }),
+    );
+    agent.emit(runFinishedEvent());
+
+    await waitFor(() => {
+      expect(screen.getByTestId("activity-render")).toBeDefined();
+    });
+
+    // Verify context is properly propagated - copilotkit should NOT be null
+    expect(capturedCopilotkit).not.toBeNull();
+    expect(capturedCopilotkit).toBeDefined();
   });
 });
