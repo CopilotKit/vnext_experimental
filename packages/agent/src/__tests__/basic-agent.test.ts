@@ -42,6 +42,20 @@ vi.mock("@ai-sdk/google", () => ({
   })),
 }));
 
+vi.mock("@ai-sdk/amazon-bedrock", () => ({
+  createAmazonBedrock: vi.fn(() => (modelId: string) => ({
+    modelId,
+    provider: "bedrock",
+  })),
+}));
+
+vi.mock("@ai-sdk/azure", () => ({
+  createAzure: vi.fn(() => (modelId: string) => ({
+    modelId,
+    provider: "azure",
+  })),
+}));
+
 describe("BasicAgent", () => {
   const originalEnv = process.env;
 

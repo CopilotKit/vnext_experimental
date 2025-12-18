@@ -35,6 +35,9 @@ import { Observable } from "rxjs";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
+import { createAzure } from '@ai-sdk/azure';
+
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import {
@@ -198,6 +201,22 @@ export function resolveModel(spec: ModelSpecifier): LanguageModel {
       // Accepts any Gemini id, e.g. "gemini-2.5-pro", "gemini-2.5-flash"
       return google(model);
     }
+    case "bedrock":
+      const bedrock = createAmazonBedrock({
+        region: process.env.AWS_REGION,
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        sessionToken: process.env.AWS_ACCESS_KEY_ID,
+      })
+      return bedrock(model);
+    case "azure":
+      const azure = createAzure({
+        apiKey: process.env.AZURE_API_KEY,
+        baseURL: process.env.AZURE_BASE_URL,
+        resourceName: process.env.AZURE_RESOURCE_NAME,
+        apiVersion: process.env.AZURE_API_VERSION
+      });
+      return azure(model);
 
     default:
       throw new Error(`Unknown provider "${provider}" in "${spec}". Supported: openai, anthropic, google (gemini).`);
